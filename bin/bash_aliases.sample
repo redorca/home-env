@@ -1,0 +1,54 @@
+alias valias="vim ~/.bash_aliases"
+alias resource="source ~/.bashrc"
+alias home="pushd ~ >/dev/null && dirs -v"
+alias vi=vim
+alias po="popd >/dev/null && dirs -v"
+alias dirs="dirs -v"
+alias jobs="jobs -l"
+alias path="echo \$PATH"
+
+export EDITOR=vim
+PS1='\[\033[01;32m\]\u\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n :: '
+
+
+function pd()
+{
+	pushd $1 >/dev/null && dirs -v
+}
+
+#
+# Add a directory to the PATH variable if it exists.
+#
+function add_path()
+{
+        if echo $PATH | sed -e 's/:/ /' | grep -w "$1" >/dev/null ; then
+                return
+        fi
+
+        if [ ! -d "$1" ] ; then
+                return
+        fi
+        PATH=$1:$PATH
+}
+
+#
+# Remove a directory path from the PATH variable.
+#
+function del_path()
+{
+        if [ -z "$1" ] ; then
+                return
+        fi
+
+        FOO=$(echo $PATH | sed -e 's/:/ /g' | eval sed -e "'s:$1::'")
+        if [ $? -eq 0 -a -n "$FOO" ] ; then
+                PATH=$(echo $FOO | sed -e 's/^ //' -e 's/  */:/g')
+        fi
+}
+
+
+add_path $HOME/bin/jre/bin
+add_path $HOME/bin/eclipse
+add_path $HOME/bin/embedded/bin
+add_path $HOME/bin
+
