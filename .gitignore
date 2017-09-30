@@ -50,3 +50,14 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Usual developer cruft informally assisting work.
+/tmp
+*.tmp
+*.swp
+*.swo
+*.orig
+*.rej
+*.dep
+
+
