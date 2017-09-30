@@ -18,5 +18,6 @@ echo "Found git at $GIT_DIR"
 if [ -L ".git" ] ; then
 	echo "A symlink already exists in the home dir." >&2
 fi
-echo ln -sf $GIT_DIR
+[ -n "$FORCE" ] && ln -sf $GIT_DIR
 popd >/dev/null
+
