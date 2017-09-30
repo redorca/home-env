@@ -64,10 +64,12 @@ dkms.conf
 Downloads/
 Music/
 Packages/
+# bin/
 examples.desktop
 gerrit/
 git-repo/
 pkgs.list.centos
 src/
 workspace/
+home-env/
 
