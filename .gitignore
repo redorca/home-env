@@ -73,3 +73,18 @@ src/
 workspace/
 home-env/
 
+# bin files not to be tracked
+astyle
+checkpatch.pl
+eclipse/
+embedded
+*.log
+jre
+jre1.8.0_121/
+mergehex
+nrf-debug
+nrfjprog
+nuttx-debug
+restyle
+zglue-env_setup
+
