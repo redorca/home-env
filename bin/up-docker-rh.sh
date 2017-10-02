@@ -93,7 +93,8 @@ rh_dkr_setup()
 	Exec sudo systemctl start docker
 	Exec sudo docker run hello-world
 	if [ -z "$DOCKER_VER" ] ; then
-		Exec yum list docker-ce.x86_64  --showduplicates | sort -r
+		VER=$(yum list docker-ce.x86_64 --showduplicates | sort -r | \
+		    grep -i docker | head -1 | awk '{print $2}' | sed -e 's/\-.*//')
 	fi
 
 	Exec sudo systemctl enable docker
