@@ -44,6 +44,7 @@ Exec()
 
 config_check()
 {
+	return 0
 	curl https://raw.githubusercontent.com/docker/docker/master/contrib/check-config.sh > /tmp/check-config.sh
 
 	/tmp/check-config.sh
