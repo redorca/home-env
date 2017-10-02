@@ -1,0 +1,375 @@
+#!/bin/bash
+clear
+
+CACHE_FILE=/tmp/.cache
+if [ -d "$(dirname $1 2>/dev/null)" ] ; then
+        CACHE_FILE=$1
+fi
+ZGLUE_SETUP=zglue-fw-dev-setup
+SSH_GITHUB='git@github.com'
+HTTPS_GITHUB='https://github.com'
+REPO=fw_devtools.git
+GITHUB_ACCOUNT=zglue
+
+# Where git keeps its credential handler's sources
+CRED_PATH=/usr/share/doc/git/contrib/credential
+
+# Where are the task bar favorites stored? (in order to remove Amazon)"
+START_SCHEMA=com.canonical.Unity.Launcher
+
+# If the working directory of a fresh clone is to be
+# from a branch other than master declare it here:
+#
+CLONE_BRANCH=Bill-tools
+
+# This repo is used only by this file and will
+# be removed once the main setup file is copied out.
+#
+DEVTOOL_REPODIR=/tmp/.tools
+
+#
+#  User facing variable to be filled out.
+#  The location of the nuttx and nuttx_apps (nuttx_tools too?) repos
+#
+NUTTX_DIRECTORY=
+
+#
+#  What username to use at github for cloning.
+#  User facing variable to be filled out.
+#  Not necessary if git's credential handling is used.
+GITHUB_UNAME=
+
+#
+#  What password to use for GITHUB_UNAME?
+#  User facing variable to be filled out.
+#  Not necessary if git's credential handling is used.
+GITHUB_PASSWORD=
+
+#
+#  What name to use for the local repo's reference
+#  User facing variable to be filled out.
+GIT_CONFIG_NAME=
+
+#
+#  What email to use for the local repo's reference
+#  User facing variable to be filled out.
+GIT_CONFIG_EMAIL=
+
+#
+#  The list of variables to be filled in by the user
+#  either inline with this file or through requests
+#  during runtime.
+VAR_LIST="NUTTX_DIRECTORY GIT_CONFIG_NAME GIT_CONFIG_EMAIL"
+
+#
+#  Configure sudo so that this user will not need to enter a password.
+#
+setup_sudo()
+{
+        local EXE=/tmp/go
+
+        echo "Enabling sudo acccess."
+        if sudo -n ls /root >/dev/null 2>&1 ; then
+                echo "No password was required to access sudo.  Already setup."
+                return
+        fi
+        cat > $EXE << "EOFB"
+#!/bin/bash
+
+SUDOERS_FILE=/etc/sudoers.d/$SUDO_USER
+if [ ! -f $SUDOERS_FILE ] ; then
+        echo "Setting up sudo so no password is required."
+        echo "$SUDO_USER  ALL=(ALL:ALL)  NOPASSWD: ALL" > $SUDOERS_FILE
+fi
+EOFB
+        chmod +x $EXE
+        sudo  $EXE
+        rm $EXE
+}
+
+#
+# Ask a question and gather an answer.
+# If the first argument is a number then the loop will count that
+# number of tries to get an answer.
+#
+# The next argument is expected to be a variable to contain the answer
+# and the final argument is whatever follows and is expected to be
+# the prompt to the user.
+#
+ASK()
+{
+        local action
+        local loops
+        local prompt
+        local answer
+        local again
+        if [ $# -lt 2 ] ; then
+                return -1
+        fi
+
+        if [ -n "$1" -a -z "$(echo $1 | sed -e 's/[0-9]*//g')" ] ; then
+                loops=$1; shift
+        else
+                loops=1000
+        fi
+        action=$1; shift
+        prompt="$*"
+        count=0
+        while [ $(( count++ )) -lt $loops ] ; do
+                echo -n "$prompt [${!action}] "
+                read answer
+                answer="$(echo $answer | sed -e 's/^[[:space:]]*//' \
+                                            -e 's/[[:space:]]*$//')"
+                if [ -z "$answer" ] ; then
+                        if [ -n "${!action}" ] ; then
+                                answer="${!action}"
+                        else
+                                echo "That was no answer.  Please enter again."
+                                continue
+                        fi
+                fi
+                echo "[$answer] is your answer."
+                if [ -n "$answer" ] ; then
+                        eval ${action}=\"$answer\"
+                        return 0
+                fi
+        done
+}
+
+#
+# Strip out the credentials from the remote ref
+# in the .git/config file placed there when the
+# clone occurred.
+#
+# Arg 1: the cloned directory containing .git
+#
+reset_remote_refs()
+{
+        local Repo_dir=$1
+        local rname=
+        local rurl=
+        if [ ! -d "$Repo_dir" ] ; then
+                return -1
+        fi
+        pushd $Repo_dir >/dev/null
+        rname=$(git remote -v |head -1 | awk '{print $1}')
+        rurl=$(git remote get-url $rname)
+        git remote set-url $rname $(echo $rurl | sed -e 's/\/\/.*@/\/\//')
+        popd >/dev/null
+}
+
+#
+# Create a prompt string that references the specified variable
+# in a pleasing way.
+#
+mkprompt()
+{
+        local Myvar=$1
+        local Myref=
+
+        if [ -z "$Myvar" ] ; then
+                echo -n ""
+                return -1
+        fi
+
+        Myref="$(echo $Myvar | tr [:upper:] [:lower:] | sed -e 's/_/ /g')"
+        eval echo "What $Myref to use?:"
+}
+
+#
+#  Ensure all the required user configurable variables are set
+#  If no variables need filling in then return non-zero.
+#
+fill_user_vars()
+{
+        local var
+        local RV=1
+        local LIST="$@"
+        echo -n "" > $CACHE_FILE
+        for var in $LIST ; do
+                while [ -z "${!var}" ] ; do
+                        ASK ${var} $(mkprompt ${var})
+                        RV=0
+                done
+                echo "$var=${!var}" >> $CACHE_FILE
+        done
+}
+
+#
+# Setup credential helpers for git credential handling.  Return the
+# first helper successfully built back to the caller.
+#
+build_git_cred_helpers()
+{
+        local HELPERS
+        local CRED_PREFIX
+        local helper
+
+        HELPERS="$@"
+        CRED_PREFIX=git-credential-
+
+        pushd $CRED_PATH >/dev/null
+        for helper in $HELPERS ; do
+                if [ ! -d $helper ] ; then
+                        echo "No helper directory found for ($helper)" >&2
+                        continue
+                fi
+                if [ -x $helper/${CRED_PREFIX}${helper} ] ; then
+                        # Found a valid credential helper.  break and return.
+                        break
+                fi
+                if [ -f $helper/${CRED_PREFIX}${helper} ] ; then
+                        sudo chmod +x $helper/${CRED_PREFIX}${helper}
+                        break
+                fi
+                pushd $helper >/dev/null
+                if sudo make ; then
+                        pushd /usr/bin >/dev/null
+                        sudo ln -sf $CRED_PATH/$helper/${CRED_PREFIX}${helper}
+                        popd >/dev/null
+                        break
+                fi
+                popd >/dev/null
+                # Reset helper in case this is the last loop so return a NULL.
+                helper=
+        done
+        popd >/dev/null
+
+        echo $helper
+}
+
+#
+# Fill in git identity info used in history/commit
+# records (user.name, user.email).
+#
+setup_git_identity()
+{
+        GIT_CONFIG_NAME=$(git config user.name)
+        GIT_CONFIG_EMAIL=$(git config user.email)
+        for var in GIT_CONFIG_NAME GIT_CONFIG_EMAIL ; do
+                if [ -z "${!var}" ] ; then
+                        ASK $var "$(mkprompt $var)"
+                fi
+                action="$(echo $var | sed -e 's/.*_//' | tr [A-Z] [a-z])"
+                git config --global user.${action} "${!var}"
+        done
+}
+
+# Enable logn credential management for git.  Of the two possibilities
+# return the first one successfully enabled (out of netrc or libsecret).
+#
+enable_git_credentials()
+{
+        echo "Setup a credential helper for git."
+        local GIT_CRED_HELPERS="$@"
+        if HELPER=$(build_git_cred_helpers $GIT_CRED_HELPERS) ; then
+                echo "HELPER set to [$HELPER]" >&2
+                if ! git config --global credential.helper $HELPER ; then
+                        return 1
+                fi
+                if [ "$HELPER" == "netrc" ] ; then
+                        fill_user_vars GITHUB_UNAME GITHUB_PASSWORD
+                        if grep github.com ~/.netrc >/dev/null 2>&1 ; then
+                                return 0
+                        fi
+                        if [ -z "$GITHUB_UNAME" -o -z "$GITHUB_PASSWORD" ]; then
+                                return 1
+                        fi
+                        echo "machine github.com" >> ~/.netrc
+                        echo "login $GITHUB_UNAME" >> ~/.netrc
+                        echo "password $GITHUB_PASSWORD" >> ~/.netrc
+                fi
+        else
+                echo "Unable to enable a credential assistant for git." >&2
+        fi
+}
+
+#
+# Wrap apt-get with a call to sudo and a retry cycle spanning 3 minutes.
+#
+apt_get_retry()
+{
+        # Set a three minute span of tries (3 * (4 * 15))
+        APT_RETRIES=12
+        while ! sudo apt-get "$@"; do
+                ping -w 2 github.com >/dev/null
+                if [ $? -eq 0 ] ; then
+                        continue
+                fi
+                APT_RETRIES=$(( APT_RETRIES - 1 ))
+                sleep 15
+        done
+
+        if [ $APT_RETRIES -eq 0 ] ; then
+                echo "There is a network problem. Please fix, then try again."
+                exit -1
+        fi
+
+        return 0
+}
+
+# Setup sudo creds for seamless (i.e. no cred requests) use.
+#
+setup_sudo
+
+echo "Removing the Amazon entry in the task bar for security."
+NEW_SCHEMA="$(gsettings get $START_SCHEMA favorites | \
+              sed -e 's/, [^,]*amazon[^,]*,/,/')"
+gsettings set $START_SCHEMA favorites "$NEW_SCHEMA"
+
+apt_get_retry update
+
+PKGS="git libsecret-1-0 libsecret-1-dev libglib2.0 libglib2.0-dev"
+echo "Installing packages for git credential handling. Note: not" >&2
+echo "all packages will install successfully.  That is OK!." >&2
+for pkg in $PKGS ; do
+        apt_get_retry install --yes $pkg
+done
+
+setup_git_identity
+
+# NOTE! The order here is intentional. Attempt libsecret first,
+# it is the more secure. Only after libsecret is attempted and
+# fails is netrc checked.
+#
+enable_git_credentials libsecret netrc
+echo "=========================================" >&2
+
+# Clear out any existing files.
+#
+if [ -d $DEVTOOL_REPODIR ] ; then
+        rm -rf $DEVTOOL_REPODIR
+fi
+mkdir -p $DEVTOOL_REPODIR
+pushd $DEVTOOL_REPODIR >/dev/null
+
+REPO_DIR=${REPO%.git}
+if [ ! -d "$REPO_DIR" ] ; then
+        GITHUB_URL="${HTTPS_GITHUB}/${GITHUB_ACCOUNT}"
+        if [ -n "$CLONE_BRANCH" ] ; then
+                CLONE_BRANCH="--branch $CLONE_BRANCH"
+        fi
+        while ! git clone $CLONE_BRANCH $GITHUB_URL/$REPO ; do
+                echo "Use ^C to exit." >&2
+                sleep 2
+        done
+fi
+
+# See if there are any user sensitve variables undefined.
+#
+fill_user_vars $VAR_LIST
+
+# Finally, launch the main install script.
+#
+if [ -f "$REPO_DIR/$ZGLUE_SETUP" ] ; then
+        if [ ! -x $REPO_DIR/$ZGLUE_SETUP ] ; then
+                chmod +x $REPO_DIR/$ZGLUE_SETUP
+        fi
+        cp $REPO_DIR/$ZGLUE_SETUP /tmp
+        popd >/dev/null
+        rm -rf $DEVTOOL_REPODIR
+        if /tmp/$ZGLUE_SETUP "CACHE_FILE=$CACHE_FILE" \
+                "NUTTX_DIRECTORY=${NUTTX_DIRECTORY}" ; then
+                rm "$0"
+        fi
+fi
