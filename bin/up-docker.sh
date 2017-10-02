@@ -34,7 +34,6 @@ arg_decode()
 arg_decode "$@"
 access_chk
 
-
 $SUDO apt-get update
 $SUDO apt-get install apt-transport-https ca-certificates \
         curl software-properties-common
