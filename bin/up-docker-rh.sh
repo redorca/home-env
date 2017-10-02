@@ -42,6 +42,13 @@ Exec()
 	fi
 }
 
+config_check()
+{
+	curl https://raw.githubusercontent.com/docker/docker/master/contrib/check-config.sh > /tmp/check-config.sh
+
+	/tmp/check-config.sh
+}
+
 ubu_dkr_setup()
 {
 	$SUDO apt-get update
@@ -71,6 +78,10 @@ ubu_dkr_setup()
 rh_dkr_setup()
 {
 	local DOCKER_VER=$1
+
+	if ! config_check ; then
+		return 1
+	fi
 	# Prep tools for install.
 	Exec sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 
@@ -83,6 +94,8 @@ rh_dkr_setup()
 	if [ -z "$DOCKER_VER" ] ; then
 		Exec yum list docker-ce.x86_64  --showduplicates | sort -r
 	fi
+
+	Exec sudo systemctl enable docker
 }
 
 arg_decode "$@"
