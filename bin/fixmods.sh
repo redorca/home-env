@@ -1,5 +1,22 @@
 #!/bin/bash
 
+
+help()
+{
+        cat <<"EOF"
+        fixmods.sh <file>
+
+             Remove any -x perm attr if the file is a text
+             file and not a script (.bat, .sh, .py, .pl)
+
+EOF
+}
+
+if [ -z "$1" ] ; then
+        help
+        exit 4
+fi
+
 #
 # Make sure this is a file:
 #
