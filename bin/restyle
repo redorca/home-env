@@ -1,0 +1,233 @@
+#!/bin/bash
+
+VERSION=1.0
+DATE=18:25:34.Sep-25
+THIS_DIR="."
+TMPFILE=/tmp/.a.sh
+DEBUG=
+GDB_CMDFILE=/tmp/.blah
+
+on_exit()
+{
+        RETURN=$?
+
+        clean_up "$THIS_DIR"
+        [[ $RETURN -eq 0 ]] && rm -f $TMPFILE $GDB_CMDFILE
+
+        return $RETURN
+}
+
+help()
+{
+	cat << "EOF"
+	restyle <astyle options file> <file or dir path [, #2, #3, #4 ... ]>
+EOF
+}
+
+#
+# Look for the location of FILE starting
+# with the current directory and traversing
+# up the tree until /.
+#
+find_file()
+{
+        local File=${!1}
+        local CDir=$(pwd)
+
+        if [ -z "$File" ] ; then
+                echo "Nothing to find." >&2
+                return -1
+        fi
+        while [ ! -f $CDir/$File ] ; do
+                CDir=$(dirname $CDir)
+        done
+        # echo "Found $File at ($CDir)" >&2
+        eval ${1}=$CDir/$File
+        return 0
+}
+
+#
+# Create a tmp file to be used by a 'find'
+# call to operate on every file of *.[ch].
+# See style_file() and style_dir().
+#
+setup_flip_hashmark()
+{
+        if [ -z "$1" ] ; then
+                echo "Is this a file? ($1)?" >&2
+                return -1
+        fi
+        cat >$1 <<"EOF"
+#!/bin/bash
+#
+# For every line that starts with some whitespace leading up to a hash (#)
+# replace that set with a leading hash and a space where the original hash
+# was
+#
+# For every instance of '*const', convert to '* const'
+#
+flip_hashmark()
+{
+        sed -i  -e '/^  *#/s/^./#/' -e '/^#  *#/s/ #/  /' \
+                -e '/^\/\*/,/\*\//s/^\*/ \*/' \
+                -e 's/\*const/\* const/g' $1
+}
+
+if [ ! -f "$1" ] ; then
+        echo "No file to sed: $(1)" >&2
+        exit -1
+fi
+
+flip_hashmark $1
+EOF
+        chmod +x $1
+}
+
+#
+# Process comment indentation to handle
+# the overly agressive indenting by astyle.
+#
+align_comments()
+{
+        if [ ! -f "$1" ] ; then
+                echo "No such file: ($1)" >&2
+                return -1
+        fi
+}
+
+#
+# Apply astyle to the given File.
+#
+style_file()
+{
+        local File="$1"; shift
+        local Script=$1; shift
+        local Tmpfile="$1"; shift
+        local CMD=
+        local OPTS=
+
+        OPTS="--options=$Script $File"
+        CMD="$ASTYLE $OPTS"
+        if [ -n "$DEBUG" ] ; then
+                echo -n "" > $GDB_CMDFILE
+                echo "b main" >> $GDB_CMDFILE
+                echo "r $OPTS" >> $GDB_CMDFILE
+                CMD="$ASTYLE -x $GDB_CMDFILE"
+        fi
+        # echo $CMD
+        $CMD
+        $Tmpfile $File
+}
+
+#
+# Apply astyle starting at the
+# given dir for all *.[ch] files.
+#
+style_dir()
+{
+        local Dir=$1; shift
+        local Script=$1; shift
+	local Tmpfile=$1; shift
+	local CMD=
+
+        if [ ! -d "$Dir" ] ; then
+                Dir=.
+        fi
+        CMD="$ASTYLE -r --options=$Script $Dir/\*.c"
+        $CMD
+        CMD="$ASTYLE -r --options=$Script $Dir/\*.h"
+        $CMD
+
+	# Adjust any '#' markers indented from "   #." to "#    ."
+        find $Dir -type f -name "*.[ch]" -exec $Tmpfile {} \;
+}
+
+#
+# For any file or dir, style them individualy.
+#
+run_style()
+{
+	local script=$1; shift
+	local tmpfile=$1; shift
+	local CMD=
+
+        #
+        # Expecting anywhere from 1 to many args to style.
+        #
+        while [ -e "$1" ] ; do
+                THIS="$1"; shift
+        
+                [[ -d "$THIS" ]] && TYPE=dir || TYPE=file
+                [[ "$TYPE" == file ]] && [[ -n "${THIS##*.[ch]}" ]] && continue
+        
+                CMD="style_file"
+                if [ "$TYPE" == "dir" ] ; then
+                        CMD="style_dir"
+                fi
+       		CMD="$CMD $THIS $script $tmpfile" 
+                $CMD
+        done
+}
+
+#
+# Remove all of the side files that astyle creates
+# when processing files: *.orig.
+#
+clean_up()
+{
+        local dir=$1
+        if [ ! -d "$dir" ] ; then
+                echo "No such dir: ($dir)" >&2
+                return -1
+        fi
+        find $dir -type f -name "*.orig" -exec rm {} \;
+
+        return 0
+}
+
+###############################################################################
+###############################################################################
+###############################  main code flow ###############################
+###############################################################################
+###############################################################################
+[ $# -ne 2 ] && help
+
+[[ -n "$VERSION" ]] && [[ -n "$DATE" ]] && echo -n "==:  "
+[[ -n "$VERSION" ]] && echo -n "Version $VERSION: "
+[[ -n "$DATE" ]] && echo -n "Date $DATE: "
+
+#
+# Make sure to clean up the processed files
+# side effects no matter the exit condition.
+#
+trap on_exit EXIT
+
+if [ "$DEBUG" == "yes" ] ; then
+        ASTYLE="gdb astyled"
+else
+        ASTYLE="astyle -v"
+fi
+
+SHARE_DIR=/usr/share/zglue/astyle
+SCRIPT=$1 ; shift
+if [ ! -f "$SCRIPT" ] ; then
+        if [ -f "$SHARE_DIR/$SCRIPT" ] ; then
+                SCRIPT=$SHARE_DIR/$SCRIPT
+
+        elif [ -f "$SHARE_DIR"/astyle-nuttx ] ; then
+                SCRIPT=$SHARE_DIR/astyle-nuttx
+        elif [ ! -f "$SCRIPT" ] ; then
+                echo "Couldn't find the astyle required options file." >&2
+                exit -1
+        fi
+fi
+
+#
+# Insert code into TMPFILE to execute later
+#
+setup_flip_hashmark $TMPFILE
+
+CMD="run_style $SCRIPT $TMPFILE $@"
+echo $CMD
+$CMD
+

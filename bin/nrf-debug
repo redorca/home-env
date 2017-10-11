@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+COMMAND=JLinkGDBServer
+DEVICE=nRF52832_xxAA
+if ps -ef | grep ${COMMAND} >/dev/null ; then
+    killall ${COMMAND}
+fi
+if ! which ${COMMAND} 2>/dev/null ; then
+   echo "Could not find ${COMMAND}" >&2
+   exit -1
+fi
+pushd ~ >/dev/null
+exec ${COMMAND} -device ${DEVICE} -if SWD
+echo ""
+popd >/dev/null

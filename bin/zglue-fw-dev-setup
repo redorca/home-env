@@ -1,0 +1,184 @@
+#!/bin/bash
+##############################################################################
+#                                                                            #
+#  Copy the contents of this page/file into a Bash shell window to run.      #
+#                                                                            #
+#                                                                            #
+##############################################################################
+EXE=/tmp/go
+cat > $EXE << "EOF"
+#!/bin/bash
+
+PACKAGES="
+gcc
+g++
+make
+gcc-arm-embedded
+node.js
+npm
+exuberant-ctags
+cscope
+cscope-el
+emacs
+autotools-dev
+autoconf
+automake
+gperf
+libtool
+flex
+bison
+gawk
+libncurses5-dev
+ncurses-term
+m17n-docs
+pkg-config
+g++-multilib
+g++-5-multilib
+gcc-5-doc
+libstdc++6-5-dbg
+libstdc++-5-doc
+pkg-config
+python-pip
+"
+
+PPAs="
+ppa:team-gcc-arm-embedded/ppa
+"
+
+LOGFILE=/tmp/log.txt
+echo -n "" > $LOGFILE
+if [ $(id -u) -ne 0 ] ; then
+        echo "Please run this script as root.  sudo $(basename $0)" >&2
+        sleep 5
+        exit -1
+fi
+
+SUDOERS_FILE=/etc/sudoers.d/$SUDO_USER
+if [ ! -f $SUDOERS_FILE ] ; then
+        echo "Setting up sudo so no password is required."
+        echo "$SUDO_USER  ALL=(ALL:ALL)  NOPASSWD: ALL" > $SUDOERS_FILE
+fi
+
+if [ -n "$PPAs" ] ; then
+        echo "Adding repositories."
+fi
+for i in $PPAs ; do
+        tmp=${i##ppa:}
+        if grep -r ${tmp%%/ppa} /etc/apt >/dev/null 2>&1 ; then
+                echo "$i is already registered."
+                continue
+        fi
+        echo "  :: $i"
+        if ! add-apt-repository -y $i ; then
+                echo "Failed to add repository $i" >&2
+                exit -2
+        fi
+done
+
+echo "Upgrading the system"
+apt-get --yes update >> $LOGFILE 2>&1
+if ! apt-get --yes upgrade >> $LOGFILE 2>&1; then
+        echo "Failed to upgrade." >&2
+        exit -3
+fi
+
+dpkg -l > /tmp/foo
+for i in $PACKAGES ; do
+        if grep -w $i /tmp/foo > /dev/null; then
+                echo "$i already installed."
+                continue
+        fi
+        echo "Installing $i"
+        if ! apt-get --yes install $i >> $LOGFILE 2>&1 ; then
+            echo "Unable to install package $i" >&2
+            exit -3
+        fi
+        echo "############################################" >> $LOGFILE
+done
+
+apt-get --yes autoremove
+
+DIRS="
+$HOME/.ssh
+$HOME/bin
+$HOME/src/zglue
+"
+for dir in $DIRS ; do
+        if [ ! -d "$dir" ] ; then
+                echo "Creating $dir"
+                mkdir -p $dir
+        else
+                echo "Already created: $dir"
+        fi
+done
+
+if [ ! -f $HOME/.ssh/id_rsa ] ; then
+        echo "Creating an ssh public/private key pair in $HOME/.ssh/id_rsa"
+        ssh-keygen -t rsa -f $HOME/.ssh/id_rsa -N ""
+        echo "Make sure to share ~/.ssh/id_rsa.pub with your github account."
+        sleep 3
+fi
+
+echo "Cloning the necessary repos from github.com.  You will need to enter your"
+echo "github username and github password to complete."
+pushd $HOME/src/zglue >/dev/null
+REPOS="
+firmware.git
+"
+count=0
+for repo in $REPOS ; do
+        if [ -d ${repo%.git} ] ; then
+                echo "Repo $repo already exists."
+                continue
+        fi
+        echo "Cloning $repo ..."
+        while ! git clone https://github.com/zglue/$repo ; do
+                count=$(( count + 1 ))
+                if [ $count -eq 3 ] ; then
+                        echo "Too many attempts, failure to clone $repo" >&2
+                        exit -1
+                fi
+                echo "Try again ..."
+        done
+done
+
+echo "Checking for kconfig-mconf ..."
+if [ ! -f /usr/local/bin/kconfig-mconf ] ; then
+        echo "Build Kconfig tool ..."
+        cd firmware/rtos/Nuttx/tools/kconfig-frontends
+        if ./configure --enable-mconf >> $LOGFILE 2>&1 ; then
+                make install >> $LOGFILE 2>&1
+        fi
+fi
+popd >/dev/null
+
+NUTTX_CONFIG_FILE=$HOME/src/zglue/firmware/rtos/Nuttx/nuttx/.config
+echo "Looking for a nuttx .config file ..."
+if [ ! -f $NUTTX_CONFIG_FILE ] ; then
+        echo "Did not find one so creating a nuttx .config file."
+        pushd $HOME/src/zglue/firmware/rtos/Nuttx/nuttx/configs/nrf52832_dk >/dev/null
+        git checkout nrf52 >> $LOGFILE 2>&1
+        make hello >> $LOGFILE 2>&1 
+        popd >/dev/null
+else
+        echo "Found one, nuttx appears to be already setup."
+fi
+
+ldconfig
+
+if [ ! -f $HOME/.vimrc ] ; then
+        echo "color murphy" >> $HOME/.vimrc
+        echo "set expandtab " >> $HOME/.vimrc
+        echo "set ts=8" >> $HOME/.vimrc
+fi
+
+echo "Reset the uid and gid of $HOME"
+chown -R $SUDO_USER $HOME
+chgrp -R $SUDO_USER $HOME
+echo "Done!"
+
+EOF
+chmod +x $EXE
+echo "Using sudo to run this program so please enter your password..."
+sudo  $EXE
+

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+while read file ; do
+        if [ ${file%%.c} == $file -a ${file%%.h} == $file ] ; then
+                echo "Skipping $file"
+                continue
+        fi
+        sed -i -e 's/  *$//' $file
+done

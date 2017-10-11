@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ ! -f nuttx.hex ] ; then
+    echo "Where's nuttx.hex?"
+    exit -1
+fi
+
+nrfjprog -e
+nrfjprog --program nuttx.hex
+
