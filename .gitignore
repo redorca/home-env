@@ -59,11 +59,13 @@ dkms.conf
 *.orig
 *.rej
 *.dep
-
+[a-z][a-z][a-z]
 /.??*
+Documents/
 Downloads/
 Music/
 Packages/
+usr/
 # bin/
 examples.desktop
 gerrit/
@@ -86,4 +88,5 @@ nrf-debug
 nrfjprog
 nuttx-debug
 restyle
-
+/*.txt
+/patch.*
