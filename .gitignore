@@ -66,6 +66,7 @@ Music/
 Packages/
 usr/
 bin/
+!bin/.gitignore
 examples.desktop
 gerrit/
 git-repo/
