@@ -5,6 +5,9 @@ if [ ! -f nuttx.hex ] ; then
     exit -1
 fi
 
+SOFTDEVICE_DIR=arch/arm/src/nrf52/softdevice
+SOFTDEVICE=s132_nrf52_5.0.0-1.alpha_softdevice.hex
 nrfjprog -e
 nrfjprog --program nuttx.hex
+nrfjprog --program $SOFTDEVICE_DIR/$SOFTDEVICE
 
