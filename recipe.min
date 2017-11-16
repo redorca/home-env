@@ -1,0 +1,36 @@
+ 1512  mkdir zglue-Min
+ 1513  cd zglue-Min/
+ 1514  ls
+ 1515  git clone ssh://bill@101.132.142.37:30149/nuttx.git
+ 1516  git clone ssh://bill@101.132.142.37:30149/nuttx_apps.git apps
+ 1517  cd nuttx/
+ 1518  git log
+ 1519  git branch
+ 1520  git checkout zdk
+ 1521  cd ../apps/
+ 1522  git checkout zdk
+ 1523  git log
+ 1524  git branch -a
+ 1525  cd ../nuttx/
+ 1526  git branch -a
+ 1527  git log
+ 1528  git reset --hard 8e8f98ce108db1aba2ca2603bac37f0164b672f4
+ 1529  git branch -a
+ 1530  ls
+ 1531  git log
+ 1532  cd ../apps/
+ 1533  git log
+ 1534  git reset --hard 17cee1a1376e2b6e6dc40b413853b4b3faeafa2d
+ 1535  git log
+ 1536  git cherry-pick
+ 1537  cd ../nuttx/
+ 1538  git fetch ssh://bill@101.132.142.37:30149/nuttx refs/changes/40/140/2 && git cherry-pick FETCH_HEAD
+ 1539  cd ../apps/
+ 1540  git fetch ssh://bill@101.132.142.37:30149/nuttx_apps refs/changes/39/139/2 && git cherry-pick FETCH_HEAD
+ 1541  git log
+ 1542  history | grep hard
+ 1543  git diff 17cee1a1376e2b6e6dc40b413853b4b3faeafa2d
+ 1544  git diff 17cee1a1376e2b6e6dc40b413853b4b3faeafa2d > abc
+ 1545  vi abc
+ 1546  vi examples/ble_hello/app_config.h
+ 1547  fg
