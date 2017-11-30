@@ -60,6 +60,8 @@ dkms.conf
 *.rej
 *.dep
 /.??*
+!/.bash_aliases
+!/.vimrc
 Documents/
 Downloads/
 Music/

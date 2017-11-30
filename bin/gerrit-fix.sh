@@ -1,6 +1,11 @@
 ##/usr/bin/env bash
 #!/binbash -x
 
+#
+# Attempt to collapse multiple commits of a common author
+# at the top of a working tree/repo so that it may be
+# successfully pushed to Gerrit.
+#
 
 find_commits()
 {
