@@ -3,26 +3,43 @@
 BOARD=nrf52832_dk
 ARG_LIST="BOARD TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE"
 
+#
+# Filter out everything but the while loop and the two boundary markers.
+# Then filter out anything that does not have a '-' in it.  Voila, instant
+# help message!
+#
+help_msg()
+{
+        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" | grep "\-" | \
+                grep -v 'while'
+}
+
+### HELP message start
 while [ $# -ne 0 ] ; do
         case "$1" in
-        -b) BOARD="$2"; shift
+        -b) BOARD="$2"; shift   # Specify the directory to build from
                 ;;
-        -t) TARGET_DIRS="$TARGET_DIRS $2"; shift
+        -e) NO_ERRORS="NO_ERRORS=1" # Disable -Werror (warnings are errors)
                 ;;
-        -e) NO_ERRORS="NO_ERRORS=1"
+        -h) help_msg && exit 0
                 ;;
-        -Q) Q="@";
+        -p) print_vars && exit 0
                 ;;
-        -V) V=1
+        -Q) Q="";   # Expose the raw commands make issues.
                 ;;
-        -v) VERBOSE="${VERBOSE}V"
+        -t) TARGET_DIRS="$TARGET_DIRS $2"; shift   # Specify build target.
                 ;;
-        *)
-           echo "Unexpected argument. ($1)" >&2 && exit 1
+        -v) VERBOSE="${VERBOSE}V"   # Print info beyond success/failure.
+                ;;
+        -V) V=2         # Essentially a dup of -Q 
+                ;;
+        *|--) echo "Unexpected argument. ($1)" >&2  #
+                exit 1
                 ;;
         esac
         shift
 done
+### HELP message end
 
 find_make_dir()
 {
@@ -57,7 +74,7 @@ set_app_list()
 }
 
 V=${V:-0}
-Q=${Q:-}
+Q=${Q:-@}
 # DEFAULT_APPS="nsh hello ble_hello ble_app_uart"
 RELOCATE=$(find_make_dir $BOARD)
 DEFAULT_APPS=$(set_app_list $RELOCATE)
