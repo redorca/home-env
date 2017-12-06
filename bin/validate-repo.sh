@@ -60,9 +60,39 @@ verified_active()
         return 1
 }
 
-ACTIVELY_MANAGED="zdk@nuttx zdk@nuttx_apps master@nuttx master@nuttx_apps"
+#
+# From a list of repo@remote tuples see if the currently local
+# repo maps back to any in the list.  If it does then the local
+# repo is valid.
+#
+in_managed_repo()
+{
+        local RemoteTuple=
+
+        RemoteName=$(git remote)
+        [ -z "$RemoteName" ] && dbg "No remote backing for this repo." && return 1
+        RemoteTuple=( $(git remote get-url origin | sed -e 's/^.*@//' | awk -F'/' '{print $1, $2}') )
+
+        VerifyTuple=${RemoteTuple[1]%%.git}@${RemoteTuple[0]%%:*}
+        for tuple in $@ ; do
+                [ $tuple == $VerifyTuple ] && echo "$VerifyTuple Matched!" && return 0
+        done
+
+        return 1
+}
+
+REPO_HOST="101.132.142.37"
+REPO_PORT="30149"
+ACTIVELY_MANAGED_REPOS="nuttx@$REPO_HOST nuttx_apps@$REPO_HOST auto_test@$REPO_HOST"
+if ! in_managed_repo $ACTIVELY_MANAGED_REPOS ; then
+        echo "This working tree is not from an actively managed repo." >&2
+        exit 0
+fi
+echo "This repo is actively managed."
+exit
+
 if ! verified_active $ACTIVELY_MANAGED ; then
-        dbg "This branch  is acively managed."
+        dbg "This branch is not acively managed."
         exit 1
 fi
 dbg "This branch  is acively managed."
