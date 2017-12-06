@@ -87,7 +87,7 @@ if [ ! -d "$RELOCATE" ] ; then
 fi
 pushd $RELOCATE >/dev/null
 for build in $TARGET_DIRS ; do
-        CMD="make Q="$Q" V="$V"  $NO_ERRORS distclean $build"
+        CMD="make V=\"$V\"  $NO_ERRORS distclean $build"
         [ "${VERBOSE:0:2}" = "VV" ] && echo "$CMD"
         echo -n "Building for $build: ... "
         if ! $CMD > out.$build 2>&1 ; then
