@@ -61,4 +61,7 @@ alias status="git status | sed -n -e '1,/^Untracked/p'"
 alias mods="git status | grep modified:"
 
 PS1='${debian_chroot:+($debian_chroot)}\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
+[ -f $LS_COLOR_DATA_FILE ] && eval $(dircolors -b $LS_COLOR_DATA_FILE)
+
 
