@@ -1,5 +1,15 @@
 #!/bin/bash
 
+#
+# This script will run make from the configs/nrf52832_dk directory against every
+# example directory contiaining the file defconfig.
+#
+
+#
+# Standard routine is to peform a distclean, <example app>, > out.<example>, and to cycle
+# through each of the possible examples.
+#
+
 BOARD=nrf52832_dk
 ARG_LIST="BOARD TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE"
 
@@ -12,6 +22,13 @@ help_msg()
 {
         sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" | sed -n -e '/)/p'
 #       grep "\-" |  grep -v 'while'
+}
+
+print_vars()
+{
+        for var in $ARG_LIST ; do
+                echo -e "$var\t(${!var})"
+        done
 }
 
 ### HELP message start
@@ -55,13 +72,6 @@ find_make_dir()
         else
                 find . -type d -name $BOARD
         fi
-}
-
-print_vars()
-{
-        for var in $ARG_LIST ; do
-                echo -e "$var\t(${!var})"
-        done
 }
 
 set_app_list()
