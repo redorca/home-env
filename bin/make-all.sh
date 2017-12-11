@@ -50,8 +50,8 @@ while [ $# -ne 0 ] ; do
                 ;;
         -V) V=2                            # Essentially a dup of -Q 
                 ;;
-        *|--) echo "Unexpected argument. ($1)" >&2  #
-                exit 1
+        *) [ ! -d "$1" ] && echo "Unexpected argument. ($1)" >&2 && exit 1 #
+           TARGET_DIRS="$TARGET_DIRS $1";  # Specify build target. May specify multiple times.
                 ;;
         esac
         shift
