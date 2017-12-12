@@ -75,7 +75,6 @@ git-repo/
 pkgs.list.centos
 src/
 workspace/
-~/bin
 home-env/bin
 
 # bin files not to be tracked
