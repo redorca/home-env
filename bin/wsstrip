@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+strip_srcs()
+{
 while read file ; do
         if [ ${file%%.c} == $file -a ${file%%.h} == $file ] ; then
                 echo "Skipping $file"
@@ -7,3 +10,17 @@ while read file ; do
         fi
         sed -i -e 's/  *$//' $file
 done
+}
+
+strip_ascii()
+{
+        while read file ; do
+                [ ! -f $file ] && continue
+                file $file | grep -i elf >/dev/null 2>&1 && continue
+                file $file | grep -i text >/dev/null || continue
+                [ "$(basename $0)" == "$(basename $file)" ] && echo ======== && continue
+        sed -i -e 's/[ ]\+$//' -e 's/^[ ]\+	/	/' $file && echo "Process: $file"
+        done
+}
+
+strip_ascii
