@@ -1,4 +1,5 @@
 
 # syntax: glob
 
-home-env/bin
+# home-env/bin
+home-env/
