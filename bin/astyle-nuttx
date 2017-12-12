@@ -2,6 +2,7 @@ style=gnu
 indent=spaces=2
 indent-switches
 indent-cases
+convert-tabs
 # indent-preproc-block
 # indent-preproc-define
 # indent-after-parens
