@@ -67,7 +67,7 @@ Downloads/
 Music/
 Packages/
 usr/
-bin/
+# bin/
 !bin/.gitignore
 examples.desktop
 gerrit/
@@ -75,7 +75,7 @@ git-repo/
 pkgs.list.centos
 src/
 workspace/
-home-env/
+home-env/bin
 
 # bin files not to be tracked
 # astyle
