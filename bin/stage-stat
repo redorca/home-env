@@ -1,0 +1,55 @@
+#!/bin/bash
+
+#
+# Stage all modified files tracked but not yet
+# in the index based on a git status.
+#
+
+#
+# Generate a git status --porcelain output and filter for
+# M,A,R,C and D files.
+#
+stat_files()
+{
+        local ADDED=
+        local DELETED=
+
+        CMD="git status --porcelain=v1"
+        eval $1=\"$($CMD | sed -n -e '/^[ 	][MARC]/p' | awk '{print $2}')\"
+        eval $2=\"$($CMD | sed -n -e '/^[ 	]D/p' | awk '{print $2}')\"
+}
+
+git_action()
+{
+        local ACTION=
+        local Token=
+        local CMD=
+
+        ACTION=${1##FILES_TO_}
+        CMD='git ${ACTION,,} $Token'
+        for Token in ${!1} ; do
+                eval echo $CMD
+                eval $CMD
+        done
+}
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+#
+# Variables holding files to process.  The variable name
+# contians the action to take on the set of files. E.G.
+# git ACT <files> <==> FILES_TO_{ACT} so git add <files>
+# uses the variable FILES_TO_ADD.
+#
+FILES_TO_ADD=
+FILES_TO_RM=
+
+if stat_files FILES_TO_ADD  FILES_TO_RM ; then
+        for setlist in FILES_TO_ADD FILES_TO_RM ; do
+                [ -z "${!setlist}" ] && continue
+                git_action $setlist
+        done
+fi
+
+echo "FILES_TO_ADD:  ($FILES_TO_ADD)"
+echo "FILES_TO_RM:  ($FILES_TO_RM)"
+
