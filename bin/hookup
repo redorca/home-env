@@ -1,0 +1,170 @@
+#!/bin/bash
+
+
+# ROOT=~
+HASH=sha256sum
+HOOKS_DIR=/usr/share/git-core/templates/hooks
+STYLES_DIR=/usr/share/zglue/styles
+HOOKS="pre-commit commit-msg"
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+RESET='\033[0;39;49m'
+
+
+#
+# List of files required to provide style checking
+# and pre-commit hook support to git repos.
+#
+set_bins()
+{
+    BINS="
+        ${ROOT}/usr/bin/style_file
+        ${ROOT}/usr/bin/astyle
+        ${ROOT}/usr/bin/hookup
+        ${ROOT}${HOOKS_DIR}/pre-commit
+        ${ROOT}${HOOKS_DIR}/commit-msg
+        ${ROOT}${STYLES_DIR}/astyle-nuttx
+"
+}
+
+#
+#
+#
+help()
+{
+        cat <<"EOF"
+        This file will install style_file, astyle, pre-commit, commit-msg
+        and astyle-nuttx to provide style checking for git commits.
+
+        -p : Place all of these files in the proper locations. Must run as root!
+        -u : Refresh .git/hooks with the latest pre-commit and commit-msg.
+             Must be run from the root of the repo.
+
+
+EOF
+}
+
+#
+# List the steps to be done.
+#
+instructions()
+{
+        local COLOR=
+
+        COLOR=$BLUE
+        echo -e "\t${COLOR}As root or using sudo do the following will occur: ...\n"
+        echo -ne "\tchmod +x "
+        for bin in $BINS ; do
+                echo -ne "$(basename $bin) "
+        done
+        echo ""
+        for bin in $BINS ; do
+                echo -e "\tcp $(basename $bin)\t\t$bin"
+        done
+        echo -e "${RESET}"
+}
+
+#
+# Copy the global pre-commit and commit-msg hooks into place.
+#
+refresh_hooks()
+{
+        local FA=
+        local CMD=
+        local Here=
+        local hook=
+        local RepoRoot=
+        FA=0
+
+        RepoRoot=$(git rev-parse --show-toplevel)
+        Here=$(pwd)
+
+        cd $RepoRoot
+        for hook in $HOOKS ; do
+                [ ! -f $HOOKS_DIR/$hook ] && echo "Missing $HOOKS_DIR/$hook." >&2 && FA=1 && continue
+                CMD="cp $HOOKS_DIR/$hook .git/hooks/"
+                echo "$CMD && chmod +x .git/hooks/$hook"
+                $CMD && chmod +x .git/hooks/$hook
+        done
+        cd $Here
+
+        return $FA
+}
+
+#
+# validate the required files are available to place.
+#
+validate_horde()
+{
+        local FA=
+        local bin=
+        local Found=
+        local NotFound=
+        FA=0
+# DEBUG=1
+	for bin in $BINS ; do
+                [   -f $(basename $bin) ] && Found="$Found $(basename $bin)"
+                [ ! -f $(basename $bin) ] && FA=1 && NotFound="$NotFound $(basename $bin)"
+	done
+        [ -n "$Found" ] && echo -e "\tFound: $Found." >&2
+        [ -n "$NotFound" ] && echo -e "\t${RED}Not found: $NotFound.${RESET}" >&2
+
+        return $FA
+}
+
+#
+# Update the binaries if necessary.
+#
+place_files()
+{
+        local CMD=
+        local bin=
+
+        if [ $(id -u) -ne 0 -a -z "$ROOT" ] ; then
+                echo "Placing the files needs root privileges, please retry." >&2
+                exit 1
+        fi
+        if ! validate_horde ; then
+                echo "Not all of the required files are available in this local directory." >&2
+                return 1
+        fi
+	for bin in $BINS ; do
+	        this_bin=$(basename $bin)
+	        echo -n -e "Placing $this_bin:\t\t"
+	        [ ! -d $(dirname $bin) ] && CMD="mkdir -p $(dirname $bin)"
+	        [ -n "$CMD" ] && echo "$CMD" && $CMD && unset CMD
+                CMD="cp $(basename $bin) $bin"
+	        [ -n "$CMD" ] && echo "$CMD" && $CMD && unset CMD
+	        [ "$(dirname $bin)" == "${ROOT}${STYLES_DIR}" ] || chmod +x $bin
+	        sleep 1
+	done
+}
+
+if [ "$1" == "" ] ; then
+        help
+        exit 0
+fi
+while [ $# -ne 0 ] ; do
+        case $1 in
+        -h|--help) CMD="help && exit 0"
+          ;;
+        -i) CMD="instructions && exit 0"
+          ;;
+        -p|--place) CMD=place_files
+          ;;
+        -r|--root) [ -d "$2" ] && ROOT=$2 && shift
+          ;;
+        -u|--update) CMD=refresh_hooks
+          ;;
+        -v|--validate) CMD=validate_horde
+          ;;
+        *) echo "That makes no sense: [$1]" >&2; exit 1
+          ;;
+        esac
+        shift
+done
+set_bins
+$CMD
+
