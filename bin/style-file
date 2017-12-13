@@ -5,7 +5,7 @@
 #
 echo_err()
 {
-        echo -e "$@" >&2
+        /bin/echo -e "$@" >&2
 }
 
 #
@@ -13,16 +13,21 @@ echo_err()
 #
 echo_dbg()
 {
+        local i=
+        local tmp=
+
         [ -z "$DEBUG" ] && return
 
         #
         # If the first arg has no dereferenced value it is probably a string.
         #
-        [  "${1:0:1}" == ":" ] && shift  && echo_err "$@" && return
+#       [  "${1:0:1}" == ":" ] && shift  && echo_err "$@" && return
+        tmp="$(echo $file | sed -n -e '/^:/p')"
+        [ -n "$tmp" ] && shift  && echo_err "$@" && return
 
         for i in $@ ; do
-                echo -n -e "    ::  $i\t\t" >&2
-                echo -e "(${!i})" >&2
+                /bin/echo -n -e "    ::  $i\t\t" >&2
+                /bin/echo -e "(${!i})" >&2
         done
 }
 
@@ -77,7 +82,7 @@ set_files()
         # Default to working on staged files in the index.
         #
         Action="diff --cached"
-        [ "$1" == "unstaged" ] && Action="diff"
+        [ "$1" = "unstaged" ] && Action="diff"
         GIT_CMD="git \$Action --name-status --diff-filter=d \$AGAINST | \
                         awk '{print \$NF}'"
 
@@ -274,7 +279,9 @@ strip_files()
         for file in "$@" ; do
                 tmp=${file%%*.[ch]}
                 [ -n "$tmp" ] && continue
-                [ "${file:0:1}" != "/" ] && file=$REPOROOT/$file
+#               [ "${file:0:1}" != "/" ] && file=$REPOROOT/$file
+                tmp="$(echo $file | sed -n -e '/^\//p')"
+                [ -n "$tmp" ] && file=$REPOROOT/$file
                 echo -n "$file "
                 echo_dbg file
         done
@@ -391,19 +398,19 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[1;34m'
 RESET='\033[39;49m'
-FUNC="echo_err \"--> ${FUNCNAME[0]}\""
+# FUNC="echo_err \"--> ${FUNCNAME[0]}\""
 
-if [ "$(basename $0)" = "style_file" ] ; then
+if [ "$(basename $0)" != "pre-commit" ] ; then
         set_env $@
 elif [ "$#" -ne 0 ] ; then
-        echo_err "Ignoring command line arguments"
+        echo_dbg "Ignoring command line arguments"
 fi
 
 [ -z "$FILES" ] && FILES=$(set_files $ALT)
 #
 # If there are no files to process there weren't any style errors!
 #
-[ -z "$FILES" ] && echo -e "${GREEN}\tFound no files to process.${RESET}" && exit 0
+[ -z "$FILES" ] && /bin/echo -e "${GREEN}\tFound no files to process.${RESET}" && exit 0
 
 [ -n "$REPOROOT" ] && cd $REPOROOT && REPOROOT=$(pwd) && cd $(ORIGIN)
 #
@@ -415,7 +422,7 @@ REPOROOT=$(find_repo $FILES)
 # If there are no SRCS to format then by default there are no style errors.
 #
 SRCS=$(strip_files $FILES)
-[ -z "$SRCS" ] && echo -e "${GREEN}\tNo files, no style errors.${RESET}" && exit 0
+[ -z "$SRCS" ] && /bin/echo -e "${GREEN}\tNo files, no style errors.${RESET}" && exit 0
 echo_dbg SRCS REPOROOT ORIGIN
 
 if ! filter_files $REPOROOT $SRCS ; then
@@ -430,5 +437,5 @@ if ! filter_files $REPOROOT $SRCS ; then
         echo_err "${RED}\tSee style.errs in the root of this repo ($REPOROOT)."
         exit 2
 fi
-echo -e "${GREEN}\tNo style errors found.${RESET}"
+/bin/echo -e "${GREEN}\tNo style errors found.${RESET}"
 
