@@ -1,0 +1,1154 @@
+From 08b85432bb81d90fc51c54627989041099da1e56 Mon Sep 17 00:00:00 2001
+From: Bill Rees <bill@zglue.com>
+Date: Mon, 18 Dec 2017 01:11:58 -0800
+Subject:     Nordic NRF52 RNG stuff
+
+Amend:  Spell CONFIG_DEV_RANDOM and CONFIG_DEV_URANDOM correctly.
+Amend:  Init sema, first.data flag, device struct.
+
+Change-Id: Ic77f4316e4a2e671fdc0fe4e1b88ceb9c5879455
+---
+ arch/arm/src/nrf52/Kconfig          |  14 +-
+ arch/arm/src/nrf52/Make.defs        |   2 +-
+ arch/arm/src/nrf52/chip/nrf52_rng.h |  49 ++----
+ arch/arm/src/nrf52/nrf52_rng.c      | 304 ++++++++++++++++--------------------
+ arch/arm/src/nrf52/nrf_drv_rng.c    | 273 ++++++++++++++++++++++++++++++++
+ arch/arm/src/nrf52/nrf_drv_rng.h    | 120 ++++++++++++++
+ configs/nrf52832_dk/nsh/defconfig   |  59 +++----
+ drivers/Kconfig                     |  10 +-
+ 8 files changed, 572 insertions(+), 259 deletions(-)
+ create mode 100644 arch/arm/src/nrf52/nrf_drv_rng.c
+ create mode 100644 arch/arm/src/nrf52/nrf_drv_rng.h
+
+diff --git a/arch/arm/src/nrf52/Kconfig b/arch/arm/src/nrf52/Kconfig
+index 4550dc98f8..3c873d90bd 100644
+--- a/arch/arm/src/nrf52/Kconfig
++++ b/arch/arm/src/nrf52/Kconfig
+@@ -43,6 +43,7 @@ config NRF52_NRF52832_HAVE_PERIPH
+ 	select NRF52_HAVE_COMP
+ 	select NRF52_HAVE_I2S
+ 	select NRF52_HAVE_BLUETOOTH
++	select NRF52_HAVE_RNG
+ 
+ config NRF52_NRF52840_HAVE_PERIPH
+ 	bool
+@@ -54,6 +55,7 @@ config NRF52_NRF52840_HAVE_PERIPH
+ 	select NRF52_HAVE_COMP
+ 	select NRF52_HAVE_I2S
+ 	select NRF52_HAVE_BLUETOOTH
++	select NRF52_HAVE_RNG
+ 
+ choice
+ 	prompt "Embedded FLASH size"
+@@ -101,6 +103,10 @@ config NRF52_HAVE_I2S
+ 	bool
+ 	default n
+ 
++config NRF52_HAVE_RNG
++	bool
++	default n
++
+ config NRF52_HAVE_UART0
+ 	bool
+ 	default n
+@@ -291,9 +297,15 @@ config NRF52_AES
+ 	default n
+ 
+ config NRF52_RNG
+-	bool "RNG"
++	bool "Random Number Generator (RNG)"
+ 	default n
++	depends on NRF52_HAVE_RNG
+ 	select ARCH_HAVE_RNG
++	---help---
++                The random number generator returns two variations: a biased,
++                and an unbiased value.  Bias is the tendency of bits of '1's to
++                overshadow the occurrence of '0's.  Unbiased data is available
++                through /dev/random, and biased data through /dev/urandom.
+ 
+ choice
+         prompt "Run I2S on a low or high priority work queue?"
+diff --git a/arch/arm/src/nrf52/Make.defs b/arch/arm/src/nrf52/Make.defs
+index 24f431aac3..c5b97295d9 100644
+--- a/arch/arm/src/nrf52/Make.defs
++++ b/arch/arm/src/nrf52/Make.defs
+@@ -228,7 +228,7 @@ endif
+ #endif
+ 
+ #ifeq ($(CONFIG_NRF52_RNG),y)
+-#CHIP_CSRCS += nrf52_rng.c
++CHIP_CSRCS += nrf52_rng.c nrf_drv_rng.c
+ #endif
+ 
+ #ifeq ($(CONFIG_NRF52_SAI),y)
+diff --git a/arch/arm/src/nrf52/chip/nrf52_rng.h b/arch/arm/src/nrf52/chip/nrf52_rng.h
+index 7812110b62..6b6c8f2f90 100644
+--- a/arch/arm/src/nrf52/chip/nrf52_rng.h
++++ b/arch/arm/src/nrf52/chip/nrf52_rng.h
+@@ -1,8 +1,9 @@
+-/************************************************************************************
+- * arch/arm/src/stm32/chip/stm32l4_rng.h
++/******************************************************************************
++ * arch/arm/src/nrf52/chip/nrf52_rng.h
+  *
+  *   Copyright (C) 2012 Max Holtzberg. All rights reserved.
+  *   Author: Max Holtzberg <mh@uvc.de>
++ *   Mods for the Nordic nRF52 port: bill@zglue.com
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+@@ -31,47 +32,15 @@
+  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  * POSSIBILITY OF SUCH DAMAGE.
+  *
+- ************************************************************************************/
++ ******************************************************************************/
+ 
+-#ifndef __ARCH_ARM_STC_STM32L4_CHIP_STM32L4_RNG_H
+-#define __ARCH_ARM_STC_STM32L4_CHIP_STM32L4_RNG_H
++#ifndef __ARCH_ARM_SRC_NRF52_CHIP_NRF52_RNG_H
++#define __ARCH_ARM_SRC_NRF52_CHIP_NRF52_RNG_H
+ 
+-/************************************************************************************
++/******************************************************************************
+  * Included Files
+- ************************************************************************************/
++ ******************************************************************************/
+ 
+ #include <nuttx/config.h>
+-#include "chip.h"
++#endif /* __ARCH_ARM_SRC_NRF52_CHIP_NRF52_RNG_H */
+ 
+-/************************************************************************************
+- * Pre-processor Definitions
+- ************************************************************************************/
+-
+-/* Register Offsets *****************************************************************/
+-
+-#define STM32L4_RNG_CR_OFFSET     0x0000  /* RNG Control Register */
+-#define STM32L4_RNG_SR_OFFSET     0x0004  /* RNG Status Register */
+-#define STM32L4_RNG_DR_OFFSET     0x0008  /* RNG Data Register */
+-
+-/* Register Addresses ***************************************************************/
+-
+-#define STM32L4_RNG_CR            (STM32L4_RNG_BASE+STM32L4_RNG_CR_OFFSET)
+-#define STM32L4_RNG_SR            (STM32L4_RNG_BASE+STM32L4_RNG_SR_OFFSET)
+-#define STM32L4_RNG_DR            (STM32L4_RNG_BASE+STM32L4_RNG_DR_OFFSET)
+-
+-/* Register Bitfield Definitions ****************************************************/
+-
+-/* RNG Control Register */
+-
+-#define RNG_CR_RNGEN              (1 << 2)  /* Bit 2: RNG enable */
+-#define RNG_CR_IE                 (1 << 3)  /* Bit 3: Interrupt enable */
+-
+-/* RNG Status Register */
+-
+-#define RNG_SR_DRDY               (1 << 0) /* Bit 0: Data ready */
+-#define RNG_SR_CECS               (1 << 1) /* Bit 1: Clock error current status */
+-#define RNG_SR_SECS               (1 << 2) /* Bit 2: Seed error current status */
+-#define RNG_SR_CEIS               (1 << 5) /* Bit 5: Clock error interrupt status */
+-#define RNG_SR_SEIS               (1 << 6) /* Bit 6: Seed error interrupt status */
+-
+-#endif /* __ARCH_ARM_STC_STM32L4_CHIP_STM32L4_RNG_H */
+diff --git a/arch/arm/src/nrf52/nrf52_rng.c b/arch/arm/src/nrf52/nrf52_rng.c
+index dd0f782f2d..ff20c78193 100644
+--- a/arch/arm/src/nrf52/nrf52_rng.c
++++ b/arch/arm/src/nrf52/nrf52_rng.c
+@@ -1,9 +1,9 @@
+ /****************************************************************************
+- * arch/arm/src/stm32/stm32l4_rng.c
++ * arch/arm/src/nrf52/nrf52_rng.c
+  *
+  *   Copyright (C) 2012 Max Holtzberg. All rights reserved.
+  *   Author: Max Holtzberg <mh@uvc.de>
+- *   mods for STL32L4 port by dev@ziggurat29.com
++ *   mods for NRF52 port by bill@zglue.com
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+@@ -51,22 +51,25 @@
+ #include <nuttx/fs/fs.h>
+ #include <nuttx/drivers/drivers.h>
+ 
++#include "chip/nrf52_bitfields.h"
+ #include "up_arch.h"
+-#include "chip/stm32l4_rng.h"
++#include "chip/nrf52_rng.h"
+ #include "up_internal.h"
+ 
+-#if defined(CONFIG_STM32L4_RNG)
+-#if defined(CONFIG_DEV_RANDOM) || defined(CONFIG_DEV_URANDOM_ARCH)
++#if defined(CONFIG_NRF52_RNG)
++#if !defined(CONFIG_DEV_RANDOM) && !defined(CONFIG_DEV_URANDOM)
++#error The NRF52 Random Number Generator is configured witout a /dev/ driver.
++#endif
+ 
+ /****************************************************************************
+  * Private Function Prototypes
+  ****************************************************************************/
+-
+-static int stm32l4_rng_initialize(void);
+-static int stm32l4_rnginterrupt(int irq, void *context, FAR void *arg);
+-static void stm32l4_rngenable(void);
+-static void stm32l4_rngdisable(void);
+-static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t);
++static ssize_t nrf52_rng_read(struct file *filep, char *buffer, size_t count);
++static ssize_t nrf52_rng_write(struct file *filep, const char *buffer, size_t count);
++static ssize_t nrf52_rng_open(struct file *filep);
++static ssize_t nrf52_rng_close(struct file *filep);
++static int nrf52_rng_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
++static int  nrf52_rng_initialize(void);
+ 
+ /****************************************************************************
+  * Private Types
+@@ -90,206 +93,162 @@ static struct rng_dev_s g_rngdev;
+ 
+ static const struct file_operations g_rngops =
+ {
++#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
++  nrf52_rng_open,  /* open */
++  nrf52_rng_close, /* close */
++#else
+   0,               /* open */
+   0,               /* close */
+-  stm32l4_rngread, /* read */
+-  0,               /* write */
++#endif
++  nrf52_rng_read,  /* read */
++  nrf52_rng_write, /* write */
+   0,               /* seek */
+-  0                /* ioctl */
++  nrf52_rng_ioctl, /* ioctl */
+ #ifndef CONFIG_DISABLE_POLL
+-  , 0              /* poll */
++  0,               /* poll */
+ #endif
+ #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
+-  , 0              /* unlink */
++  0,               /* unlink */
+ #endif
+-
+ };
+ 
+ /****************************************************************************
+  * Private functions
+  ****************************************************************************/
+ 
+-static int stm32l4_rng_initialize(void)
++/****************************************************************************
++ * Name: nrf52_rng_initialize
++ *
++ * Description:
++ *   Enable the RNG and start filling the numbers pool
++ *
++ * Input Parameters:
++ *
++ * Returned Value:
++ *   Success (OK) or failure (NOK)
++ *
++ ****************************************************************************/
++
++static int  nrf52_rng_initialize(void)
+ {
+-  _info("Initializing RNG\n");
++  uint8_t data = 0;
+ 
+   memset(&g_rngdev, 0, sizeof(struct rng_dev_s));
+-
+   sem_init(&g_rngdev.rd_devsem, 0, 1);
+-
+-  if (irq_attach(STM32L4_IRQ_RNG, stm32l4_rnginterrupt, NULL))
+-    {
+-      /* We could not attach the ISR to the interrupt */
+-
+-      _info("Could not attach IRQ.\n");
+-
+-      return -EAGAIN;
+-    }
+-
+-  return OK;
+-}
+-
+-static void stm32l4_rngenable(void)
+-{
+-  uint32_t regval;
+-
+   g_rngdev.rd_first = true;
+-
+-  /* Enable generation and interrupts */
+-
+-  regval  = getreg32(STM32L4_RNG_CR);
+-  regval |= RNG_CR_RNGEN;
+-  regval |= RNG_CR_IE;
+-  putreg32(regval, STM32L4_RNG_CR);
+-
+-  up_enable_irq(STM32L4_IRQ_RNG);
+-}
+-
+-static void stm32l4_rngdisable()
+-{
+-  uint32_t regval;
+-
+-  up_disable_irq(STM32L4_IRQ_RNG);
+-
+-  regval  =  getreg32(STM32L4_RNG_CR);
+-  regval &= ~RNG_CR_IE;
+-  regval &= ~RNG_CR_RNGEN;
+-  putreg32(regval, STM32L4_RNG_CR);
+-}
+-
+-static int stm32l4_rnginterrupt(int irq, void *context, FAR void *arg)
+-{
+-  uint32_t rngsr;
+-  uint32_t data;
+-
+-  rngsr = getreg32(STM32L4_RNG_SR);
+-  if (rngsr & RNG_SR_CEIS) /* Check for clock error int stat */
+-    {
+-      /* Clear it, we will try again. */
+-
+-      putreg32(rngsr & ~RNG_SR_CEIS, STM32L4_RNG_SR);
+-      return OK;
+-    }
+-
+-  if (rngsr & RNG_SR_SEIS) /* Check for seed error in int stat */
+-    {
+-      uint32_t crval;
+-
+-      /* Clear seed error, then disable/enable the rng and try again. */
+-
+-      putreg32(rngsr & ~RNG_SR_SEIS, STM32L4_RNG_SR);
+-      crval = getreg32(STM32L4_RNG_CR);
+-      crval &= ~RNG_CR_RNGEN;
+-      putreg32(crval, STM32L4_RNG_CR);
+-      crval |= RNG_CR_RNGEN;
+-      putreg32(crval, STM32L4_RNG_CR);
+-      return OK;
+-    }
+-
+-  if (!(rngsr & RNG_SR_DRDY)) /* Data ready must be set */
+-    {
+-      /* This random value is not valid, we will try again. */
+-
+-      return OK;
+-    }
+-
+-  data = getreg32(STM32L4_RNG_DR);
+-
+-  /* As required by the FIPS PUB (Federal Information Processing Standard
+-   * Publication) 140-2, the first random number generated after setting the
+-   * RNGEN bit should not be used, but saved for comparison with the next
+-   * generated random number. Each subsequent generated random number has to be
+-   * compared with the previously generated number. The test fails if any two
+-   * compared numbers are equal (continuous random number generator test).
+-   */
+-
+   if (g_rngdev.rd_first)
+     {
+       g_rngdev.rd_first = false;
+-      g_rngdev.rd_lastval = data;
+-      return OK;
+-    }
+-
+-  if (g_rngdev.rd_lastval == data)
+-    {
+-      /* Two subsequent same numbers, we will try again. */
+-
+-      return OK;
+-    }
+-
+-  /* If we get here, the random number is valid. */
+-
+-  g_rngdev.rd_lastval = data;
+-
+-  if (g_rngdev.rd_buflen >= 4)
+-    {
+-      g_rngdev.rd_buflen -= 4;
+-      *(uint32_t *)&g_rngdev.rd_buf[g_rngdev.rd_buflen] = data;
+     }
+   else
+     {
+-      while (g_rngdev.rd_buflen > 0)
+-        {
+-          g_rngdev.rd_buf[--g_rngdev.rd_buflen] = (char)data;
+-          data >>= 8;
+-        }
+-    }
+-
+-  if (g_rngdev.rd_buflen == 0)
+-    {
+-      /* Buffer filled, stop further interrupts. */
+-
+-      stm32l4_rngdisable();
+-      sem_post(&g_rngdev.rd_readsem);
++      g_rngdev.rd_lastval = data;
+     }
+ 
+   return OK;
+ }
+ 
+ /****************************************************************************
+- * Name: stm32l4_rngread
++ * Name: nrf52_rng_read
++ *
++ * Description:
++ *   Return data from the RNG pool, assuming there's enough.
++ *
++ * Input Parameters:
++ *   File struct pointer        To identf the app.
++ *   Buffer                     To receive the data.
++ *   Amount                     The number of bytes to return.
++ *
++ * Returned Value:
++ *   The number of bytes returned or an error
++ *
+  ****************************************************************************/
+ 
+-static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t buflen)
++static ssize_t nrf52_rng_read(struct file *filep, char *buffer, size_t count)
+ {
+-  if (sem_wait(&g_rngdev.rd_devsem) != OK)
+-    {
+-      return -errno;
+-    }
+-  else
+-    {
+-      /* We've got the device semaphore, proceed with reading */
+-
+-      /* Initialize the operation semaphore with 0 for blocking until the
+-       * buffer is filled from interrupts.  The waitsem semaphore is used
+-       * for signaling and, hence, should not have priority inheritance
+-       * enabled.
+-       */
+-
+-      sem_init(&g_rngdev.rd_readsem, 0, 0);
+-      sem_setprotocol(&g_rngdev.rd_readsem, SEM_PRIO_NONE);
+-
+-      g_rngdev.rd_buflen = buflen;
+-      g_rngdev.rd_buf = buffer;
+-
+-      /* Enable RNG with interrupts */
++  return 0;
++}
+ 
+-      stm32l4_rngenable();
++/****************************************************************************
++ * Name: nrf52_rng_write
++ *
++ * Description:
++ *   No OP.
++ *
++ * Input Parameters:
++ *   File struct pointer        To identf the app.
++ *   Buffer                     To receive the data.
++ *   Amount                     The number of bytes to return.
++ *
++ * Returned Value:
++ *   -ENOSYS
++ *
++ ****************************************************************************/
+ 
+-      /* Wait until the buffer is filled */
++static ssize_t nrf52_rng_write(struct file *filep, const char *buffer, size_t count)
++{
++  return -ENOSYS;
++}
+ 
+-      sem_wait(&g_rngdev.rd_readsem);
++/****************************************************************************
++ * Name: nrf52_rng_open
++ *
++ * Description:
++ *   No OP.
++ *
++ * Input Parameters:
++ *   File struct pointer        To identf the app.
++ *
++ * Returned Value:
++ *
++ *
++ ****************************************************************************/
+ 
+-      /* Done with the operation semaphore */
++#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
++static ssize_t nrf52_rng_open(struct file *filep)
++{
++  return OK;
++}
++#endif
+ 
+-      sem_destroy(&g_rngdev.rd_readsem);
++/****************************************************************************
++ * Name: nrf52_rng_close
++ *
++ * Description:
++ *   No OP.
++ *
++ * Input Parameters:
++ *   File struct pointer        To identf the app.
++ *
++ * Returned Value:
++ *
++ *
++ ****************************************************************************/
+ 
+-      /* Free RNG via the device semaphore for next use */
++#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
++static ssize_t nrf52_rng_close(struct file *filep)
++{
++  return OK;
++}
++#endif
+ 
+-      sem_post(&g_rngdev.rd_devsem);
++/****************************************************************************
++ * Name: nrf52_rng_close
++ *
++ * Description:
++ *   No OP.
++ *
++ * Input Parameters:
++ *   File struct pointer        To identf the app.
++ *
++ * Returned Value:
++ *
++ *
++ ****************************************************************************/
+ 
+-      return buflen;
+-    }
++static int nrf52_rng_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
++{
++  return OK;
+ }
+ 
+ /****************************************************************************
+@@ -314,7 +273,7 @@ static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t buflen)
+ #ifdef CONFIG_DEV_RANDOM
+ void devrandom_register(void)
+ {
+-  stm32l4_rng_initialize();
++  nrf52_rng_initialize();
+   (void)register_driver("/dev/random", &g_rngops, 0444, NULL);
+ }
+ #endif
+@@ -337,11 +296,10 @@ void devrandom_register(void)
+ void devurandom_register(void)
+ {
+ #ifndef CONFIG_DEV_RANDOM
+-  stm32l4_rng_initialize();
++  nrf52_rng_initialize();
+ #endif
+   (void)register_driver("/dev/urandom", &g_rngops, 0444, NULL);
+ }
+ #endif
+ 
+ #endif /* CONFIG_DEV_RANDOM || CONFIG_DEV_URANDOM_ARCH */
+-#endif /* CONFIG_STM32L4_RNG */
+diff --git a/arch/arm/src/nrf52/nrf_drv_rng.c b/arch/arm/src/nrf52/nrf_drv_rng.c
+new file mode 100644
+index 0000000000..cf2152c86b
+--- /dev/null
++++ b/arch/arm/src/nrf52/nrf_drv_rng.c
+@@ -0,0 +1,273 @@
++/* Copyright (c) 2016 Nordic Semiconductor. All Rights Reserved.
++ *
++ * The information contained herein is property of Nordic Semiconductor ASA.
++ * Terms and conditions of usage are described in detail in NORDIC
++ * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.
++ *
++ * Licensees are granted free, non-transferable use of the information. NO
++ * WARRANTY of ANY KIND is provided. This heading must NOT be removed from
++ * the file.
++ *
++ */
++
++#include "sdk_common.h"
++#if NRF_MODULE_ENABLED(RNG)
++
++#include <stdint.h>
++#include <stddef.h>
++#include "nrf_drv_rng.h"
++#include "nrf_drv_common.h"
++#include "nordic_common.h"
++#include "nrf_assert.h"
++#include "nrf_queue.h"
++
++#ifdef SOFTDEVICE_PRESENT
++#include "softdevice_handler.h"
++#include "nrf_soc.h"
++#include "app_util_platform.h"
++#endif // SOFTDEVICE_PRESENT
++
++#define NRF_LOG_MODULE_NAME "RNG"
++
++#if RNG_CONFIG_LOG_ENABLED
++#define NRF_LOG_LEVEL       RNG_CONFIG_LOG_LEVEL
++#define NRF_LOG_INFO_COLOR  RNG_CONFIG_INFO_COLOR
++#define NRF_LOG_DEBUG_COLOR RNG_CONFIG_DEBUG_COLOR
++#else //RNG_CONFIG_LOG_ENABLED
++#define NRF_LOG_LEVEL       0
++#endif //RNG_CONFIG_LOG_ENABLED
++#include "nrf_log.h"
++#include "nrf_log_ctrl.h"
++
++/* Validate configuration */
++INTERRUPT_PRIORITY_VALIDATION(RNG_CONFIG_IRQ_PRIORITY);
++
++typedef struct
++{
++  nrf_drv_state_t      state;
++  nrf_drv_rng_config_t config;
++} nrf_drv_rng_cb_t;
++
++static nrf_drv_rng_cb_t m_rng_cb;
++NRF_QUEUE_DEF(uint8_t, m_rand_pool, RNG_CONFIG_POOL_SIZE, NRF_QUEUE_MODE_OVERFLOW);
++static const nrf_drv_rng_config_t m_default_config = NRF_DRV_RNG_DEFAULT_CONFIG;
++
++#ifdef SOFTDEVICE_PRESENT
++#define SD_RAND_POOL_SIZE           (32)
++STATIC_ASSERT(RNG_CONFIG_POOL_SIZE == SD_RAND_POOL_SIZE);
++
++#define NRF_DRV_RNG_LOCK()          CRITICAL_REGION_ENTER()
++#define NRF_DRV_RNG_RELEASE()       CRITICAL_REGION_EXIT()
++#define NRF_DRV_RNG_SD_IS_ENABLED() softdevice_handler_is_enabled()
++#else
++#define NRF_DRV_RNG_LOCK()          do { } while (0)
++#define NRF_DRV_RNG_RELEASE()       do { } while (0)
++#define NRF_DRV_RNG_SD_IS_ENABLED() false
++#endif // SOFTDEVICE_PRESENT
++
++/**
++ * @brief Function for starting generation.
++ */
++static void nrf_drv_rng_start(void)
++{
++  ASSERT(!NRF_DRV_RNG_SD_IS_ENABLED());
++
++  nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
++  nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
++  nrf_rng_task_trigger(NRF_RNG_TASK_START);
++}
++
++/**
++ * @brief Function for stoping generation.
++ */
++static void nrf_drv_rng_stop(void)
++{
++  ASSERT(!NRF_DRV_RNG_SD_IS_ENABLED());
++
++  nrf_rng_int_disable(NRF_RNG_INT_VALRDY_MASK);
++  nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
++}
++
++/**
++ * @brief Function for setting up RNG hardware.
++ */
++static void nrf_drv_rng_setup(void)
++{
++  ASSERT(!NRF_DRV_RNG_SD_IS_ENABLED());
++
++  if (m_rng_cb.config.error_correction)
++    {
++      nrf_rng_error_correction_enable();
++    }
++  nrf_rng_shorts_disable(NRF_RNG_SHORT_VALRDY_STOP_MASK);
++  nrf_drv_common_irq_enable(RNG_IRQn, m_rng_cb.config.interrupt_priority);
++}
++
++ret_code_t nrf_drv_rng_init(nrf_drv_rng_config_t const *p_config)
++{
++  if (m_rng_cb.state != NRF_DRV_STATE_UNINITIALIZED)
++    {
++      return NRF_ERROR_MODULE_ALREADY_INITIALIZED;
++    }
++
++  if (p_config == NULL)
++    {
++      p_config = &m_default_config;
++    }
++  m_rng_cb.config = *p_config;
++
++  NRF_DRV_RNG_LOCK();
++
++  if (!NRF_DRV_RNG_SD_IS_ENABLED())
++    {
++      nrf_drv_rng_setup();
++      nrf_drv_rng_start();
++    }
++
++  NRF_DRV_RNG_RELEASE();
++
++  m_rng_cb.state = NRF_DRV_STATE_INITIALIZED;
++
++  return NRF_SUCCESS;
++}
++
++void nrf_drv_rng_uninit(void)
++{
++  ASSERT(m_rng_cb.state == NRF_DRV_STATE_INITIALIZED);
++
++  NRF_DRV_RNG_LOCK();
++
++  if (!NRF_DRV_RNG_SD_IS_ENABLED())
++    {
++      nrf_drv_rng_stop();
++      nrf_drv_common_irq_disable(RNG_IRQn);
++    }
++
++  NRF_DRV_RNG_RELEASE();
++
++  nrf_queue_reset(&m_rand_pool);
++  m_rng_cb.state = NRF_DRV_STATE_UNINITIALIZED;
++  NRF_LOG_INFO("Uninitialized.\r\n");
++}
++
++void nrf_drv_rng_bytes_available(uint8_t *p_bytes_available)
++{
++  ASSERT(m_rng_cb.state == NRF_DRV_STATE_INITIALIZED);
++
++#ifdef SOFTDEVICE_PRESENT
++  if (NRF_DRV_RNG_SD_IS_ENABLED())
++    {
++      if (NRF_SUCCESS == sd_rand_application_bytes_available_get(p_bytes_available))
++        {
++          return;
++        }
++    }
++#endif // SOFTDEVICE_PRESENT
++
++  *p_bytes_available  = nrf_queue_utilization_get(&m_rand_pool);
++
++  NRF_LOG_INFO("Function: %s, available bytes: %d.\r\n", (uint32_t)__func__, *p_bytes_available);
++}
++
++ret_code_t nrf_drv_rng_rand(uint8_t *p_buff, uint8_t length)
++{
++  ret_code_t err_code = NRF_SUCCESS;
++  ASSERT(m_rng_cb.state == NRF_DRV_STATE_INITIALIZED);
++
++#ifdef SOFTDEVICE_PRESENT
++  do
++    {
++      bool sd_is_enabled;
++      NRF_DRV_RNG_LOCK();
++      sd_is_enabled = NRF_DRV_RNG_SD_IS_ENABLED();
++      if (!sd_is_enabled)
++#endif // SOFTDEVICE_PRESENT
++        {
++          err_code = nrf_queue_read(&m_rand_pool, p_buff, (uint32_t)length);
++          nrf_drv_rng_start();
++        }
++#ifdef SOFTDEVICE_PRESENT
++      NRF_DRV_RNG_RELEASE();
++
++      if (sd_is_enabled)
++        {
++          err_code = sd_rand_application_vector_get(p_buff, length);
++          if (err_code == NRF_ERROR_SOC_RAND_NOT_ENOUGH_VALUES)
++            {
++              err_code = NRF_ERROR_NOT_FOUND;
++            }
++        }
++    }
++  while (err_code == NRF_ERROR_SOFTDEVICE_NOT_ENABLED);
++#endif // SOFTDEVICE_PRESENT
++  ASSERT((err_code == NRF_SUCCESS) || (err_code == NRF_ERROR_NOT_FOUND));
++
++  NRF_LOG_DEBUG("Rand buffer data:\r\n");
++  NRF_LOG_HEXDUMP_DEBUG((uint8_t *)p_buff, length);
++  NRF_LOG_WARNING("Function: %s, error code: %s.\r\n",
++                  (uint32_t)__func__,
++                  (uint32_t)ERR_TO_STR(err_code));
++
++  return err_code;
++}
++
++void nrf_drv_rng_block_rand(uint8_t *p_buff, uint32_t length)
++{
++  ASSERT(m_rng_cb.state == NRF_DRV_STATE_INITIALIZED);
++
++  while (length)
++    {
++      uint32_t    len = MIN(length, RNG_CONFIG_POOL_SIZE);
++      ret_code_t  err_code;
++
++      do
++        {
++          err_code = nrf_drv_rng_rand(p_buff, len);
++        }
++      while (err_code != NRF_SUCCESS);
++
++      length -= len;
++      p_buff += len;
++    }
++
++  NRF_LOG_DEBUG("Rand buffer data:\r\n");
++  NRF_LOG_HEXDUMP_DEBUG((uint8_t *)p_buff, length);
++}
++
++#ifdef SOFTDEVICE_PRESENT
++void nrf_drv_rng_on_sd_disable(void)
++{
++  NRF_DRV_RNG_LOCK();
++  if (m_rng_cb.state == NRF_DRV_STATE_INITIALIZED)
++    {
++      nrf_drv_rng_setup();
++      nrf_drv_rng_start();
++    }
++  NRF_DRV_RNG_RELEASE();
++}
++#endif // SOFTDEVICE_PRESENT
++
++void RNG_IRQHandler(void)
++{
++  NRF_DRV_RNG_LOCK();
++  if (
++    !NRF_DRV_RNG_SD_IS_ENABLED()            &&
++    nrf_rng_event_get(NRF_RNG_EVENT_VALRDY) &&
++    nrf_rng_int_get(NRF_RNG_INT_VALRDY_MASK))
++    {
++      nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
++
++      uint8_t new_value = nrf_rng_random_value_get();
++      UNUSED_RETURN_VALUE(nrf_queue_push(&m_rand_pool, &new_value));
++
++      if (nrf_queue_is_full(&m_rand_pool))
++        {
++          nrf_drv_rng_stop();
++        }
++
++      NRF_LOG_DEBUG("Event: NRF_RNG_EVENT_VALRDY.\r\n");
++    }
++  NRF_DRV_RNG_RELEASE();
++}
++
++#endif // NRF_MODULE_ENABLED(RNG)
+diff --git a/arch/arm/src/nrf52/nrf_drv_rng.h b/arch/arm/src/nrf52/nrf_drv_rng.h
+new file mode 100644
+index 0000000000..3233a21df0
+--- /dev/null
++++ b/arch/arm/src/nrf52/nrf_drv_rng.h
+@@ -0,0 +1,120 @@
++/* Copyright (c) 2016 Nordic Semiconductor. All Rights Reserved.
++ *
++ * The information contained herein is property of Nordic Semiconductor ASA.
++ * Terms and conditions of usage are described in detail in NORDIC
++ * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.
++ *
++ * Licensees are granted free, non-transferable use of the information. NO
++ * WARRANTY of ANY KIND is provided. This heading must NOT be removed from
++ * the file.
++ *
++ */
++
++#ifndef NRF_DRV_RNG_H__
++#define NRF_DRV_RNG_H__
++
++#include <stdbool.h>
++#include <stdint.h>
++
++#include "nrf_rng.h"
++#include "sdk_errors.h"
++#include "sdk_config.h"
++#include "nrf_drv_common.h"
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/**
++ * @addtogroup nrf_rng RNG HAL and driver
++ * @ingroup nrf_drivers
++ * @brief Random number generator (RNG) APIs.
++ * @details The RNG HAL provides basic APIs for accessing the registers of the random number
++ * generator. The RNG driver provides APIs on a higher level.
++ *
++ * @defgroup nrf_drv_rng RNG driver
++ * @{
++ * @ingroup nrf_rng
++ * @brief Driver for managing the random number generator (RNG).
++ */
++
++/**@brief Struct for RNG configuration. */
++typedef struct
++{
++  bool     error_correction : 1;  /**< Error correction flag. */
++  uint8_t  interrupt_priority;    /**< interrupt priority */
++} nrf_drv_rng_config_t;
++
++/**@brief RNG default configuration. */
++#define NRF_DRV_RNG_DEFAULT_CONFIG                                                    \
++    {                                                                                 \
++        .error_correction   = RNG_CONFIG_ERROR_CORRECTION,                            \
++        .interrupt_priority = RNG_CONFIG_IRQ_PRIORITY,                                \
++    }
++
++/**
++ * @brief Function for initializing the nrf_drv_rng module.
++ *
++ * @param[in]  p_config                 Initial configuration. Default configuration used if NULL.
++ *
++ * @retval  NRF_SUCCESS                             Driver was successfully initialized.
++ * @retval  NRF_ERROR_MODULE_ALREADY_INITIALIZED    Driver was already initialized.
++ */
++ret_code_t nrf_drv_rng_init(nrf_drv_rng_config_t const *p_config);
++
++/**
++ * @brief Function for uninitializing the nrf_drv_rng module.
++ */
++void nrf_drv_rng_uninit(void);
++
++/**
++ * @brief Function for getting the number of currently available random bytes.
++ *
++ * @param[out] p_bytes_available        The number of bytes currently available in the pool.
++ */
++void nrf_drv_rng_bytes_available(uint8_t *p_bytes_available);
++
++/**
++ * @brief Function for getting the vector of random numbers.
++ *
++ * @param[out] p_buff                   Pointer to uint8_t buffer for storing the bytes.
++ * @param[in]  length                   Number of bytes to take from the pool and place in p_buff.
++ *
++ * @retval     NRF_SUCCESS              If the requested bytes were written to p_buff.
++ * @retval     NRF_ERROR_NOT_FOUND      If no bytes were written to the buffer because there were
++ *                                      not enough bytes available in the pool.
++ */
++ret_code_t nrf_drv_rng_rand(uint8_t *p_buff, uint8_t length);
++
++/**
++ * @brief Blocking function for getting an arbitrary array of random numbers.
++ *
++ * @note This function may execute for a substantial amount of time depending on the length
++ *       of the buffer required and on the state of the current internal pool of random numbers.
++ *
++ * @param[out] p_buff                   Pointer to uint8_t buffer for storing the bytes.
++ * @param[in]  length                   Number of bytes place in p_buff.
++ */
++void nrf_drv_rng_block_rand(uint8_t *p_buff, uint32_t length);
++
++#ifdef SOFTDEVICE_PRESENT
++/**
++ * @brief Function called by the SoftDevice handler when the SoftDevice has been disabled.
++ *
++ * This function is called just after the SoftDevice has been properly disabled.
++ * It has two purposes:
++ * 1. Reinitializes RNG hardware.
++ * 2. Trigger new random numbers generation.
++ */
++void nrf_drv_rng_on_sd_disable(void);
++
++#endif
++/**
++ *@}
++ **/
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif // NRF_DRV_RNG_H__
+diff --git a/configs/nrf52832_dk/nsh/defconfig b/configs/nrf52832_dk/nsh/defconfig
+index e1a81e65d8..ea3aef8577 100644
+--- a/configs/nrf52832_dk/nsh/defconfig
++++ b/configs/nrf52832_dk/nsh/defconfig
+@@ -57,7 +57,6 @@ CONFIG_DEBUG_ASSERTIONS=y
+ #
+ # Subsystem Debug Options
+ #
+-# CONFIG_DEBUG_AUDIO is not set
+ # CONFIG_DEBUG_BINFMT is not set
+ CONFIG_DEBUG_FS=y
+ CONFIG_DEBUG_FS_ERROR=y
+@@ -85,7 +84,6 @@ CONFIG_DEBUG_ANALOG_WARN=y
+ CONFIG_DEBUG_I2C=y
+ CONFIG_DEBUG_I2C_ERROR=y
+ CONFIG_DEBUG_I2C_WARN=y
+-# CONFIG_DEBUG_I2S is not set
+ CONFIG_DEBUG_PWM=y
+ CONFIG_DEBUG_PWM_ERROR=y
+ CONFIG_DEBUG_PWM_WARN=y
+@@ -232,6 +230,7 @@ CONFIG_NRF52_HAVE_LPTIM1=y
+ CONFIG_NRF52_HAVE_LPTIM2=y
+ CONFIG_NRF52_HAVE_COMP=y
+ CONFIG_NRF52_HAVE_I2S=y
++CONFIG_NRF52_HAVE_RNG=y
+ CONFIG_NRF52_HAVE_UART0=y
+ CONFIG_NRF52_HAVE_BLUETOOTH=y
+ # CONFIG_NRF52_BLUETOOTH is not set
+@@ -255,6 +254,8 @@ CONFIG_NRF52_ADC_CHANNEL=1
+ # CONFIG_NRF52_PPI is not set
+ CONFIG_NRF52_AES=y
+ CONFIG_NRF52_RNG=y
++CONFIG_NRF52_I2S_LOWPRIO=y
++# CONFIG_NRF52_I2S_HIGHPRIO is not set
+ # CONFIG_NRF52_I2S is not set
+ # CONFIG_NRF52_FMC is not set
+ CONFIG_NRF52_PWR=y
+@@ -267,14 +268,18 @@ CONFIG_NRF52_PWR=y
+ # CONFIG_NRF52_RTC1 is not set
+ # CONFIG_NRF52_RTC2 is not set
+ # CONFIG_NRF52_SPI0 is not set
++##  <<<<<<< HEAD
+ # CONFIG_NRF52_LEGACY_SPI0 is not set
+ # CONFIG_NRF52_SPI1 is not set
+ # CONFIG_NRF52_LEGACY_SPI1 is not set
+ # CONFIG_NRF52_SPI2 is not set
+ CONFIG_NRF52_LEGACY_SPI2=y
++##  =======
++##  CONFIG_NRF52_SPI1=y
++##  # CONFIG_NRF52_SPI2 is not set
++##  >>>>>>>     Nordic NRF52 RNG stuff
+ CONFIG_NRF52_UART0=y
+ CONFIG_NRF52_I2C0=y
+-# CONFIG_NRF52_I2C1 is not set
+ # CONFIG_NRF52_DAC1 is not set
+ # CONFIG_NRF52_DAC2 is not set
+ # CONFIG_NRF52_OPAMP is not set
+@@ -286,11 +291,6 @@ CONFIG_NRF52_FIREWALL=y
+ # CONFIG_NRF52_UART1 is not set
+ # CONFIG_NRF52_COMP is not set
+ # CONFIG_NRF52_DFSDM is not set
+-CONFIG_NRF52_PWM=y
+-
+-#
+-# Other Peripherals
+-#
+ # CONFIG_NRF52_BKPSRAM is not set
+ CONFIG_NRF52_WDG=y
+ # CONFIG_NRF52_QDECODER is not set
+@@ -303,23 +303,6 @@ CONFIG_NRF52_DISABLE_IDLE_SLEEP_DURING_DEBUG=y
+ #
+ # CONFIG_NRF52_ONESHOT is not set
+ # CONFIG_NRF52_FREERUN is not set
+-CONFIG_NRF52_PWM_MULTICHAN=y
+-
+-#
+-# PWM Configuration
+-#
+-CONFIG_NRF52_PWM_M0=y
+-CONFIG_NRF52_PWM_M0_CLK_FREQUENCY=16000000
+-CONFIG_NRF52_PWM_M0_CHANNEL1=y
+-CONFIG_NRF52_PWM_M0_CHANNEL1_GPIO_PIN=17
+-CONFIG_NRF52_PWM_M0_CHANNEL2=y
+-CONFIG_NRF52_PWM_M0_CHANNEL2_GPIO_PIN=18
+-CONFIG_NRF52_PWM_M0_CHANNEL3=y
+-CONFIG_NRF52_PWM_M0_CHANNEL3_GPIO_PIN=19
+-CONFIG_NRF52_PWM_M0_CHANNEL4=y
+-CONFIG_NRF52_PWM_M0_CHANNEL4_GPIO_PIN=20
+-# CONFIG_NRF52_PWM_M1 is not set
+-# CONFIG_NRF52_PWM_M2 is not set
+ CONFIG_NRF52_HAVE_UART1=y
+ 
+ #
+@@ -576,7 +559,7 @@ CONFIG_DISABLE_POLL=y
+ CONFIG_DEV_NULL=y
+ CONFIG_DEV_ZERO=y
+ CONFIG_ARCH_HAVE_RNG=y
+-# CONFIG_DEV_RANDOM is not set
++CONFIG_DEV_RANDOM=y
+ # CONFIG_DEV_URANDOM is not set
+ CONFIG_DEV_LOOP=y
+ 
+@@ -588,10 +571,8 @@ CONFIG_DEV_LOOP=y
+ # CONFIG_RAMDISK is not set
+ # CONFIG_CAN is not set
+ # CONFIG_ARCH_HAVE_PWM_PULSECOUNT is not set
+-CONFIG_ARCH_HAVE_PWM_MULTICHAN=y
++# CONFIG_ARCH_HAVE_PWM_MULTICHAN is not set
+ CONFIG_PWM=y
+-CONFIG_PWM_MULTICHAN=y
+-CONFIG_PWM_NCHANNELS=4
+ CONFIG_ARCH_HAVE_I2CRESET=y
+ CONFIG_I2C=y
+ # CONFIG_I2C_SLAVE is not set
+@@ -832,6 +813,7 @@ CONFIG_SYSLOG_CONSOLE=y
+ # CONFIG_PSEUDOFS_SOFTLINKS is not set
+ CONFIG_FS_READABLE=y
+ CONFIG_FS_WRITABLE=y
++# CONFIG_FS_AIO is not set
+ # CONFIG_FS_NAMED_SEMAPHORES is not set
+ CONFIG_FS_MQUEUE_MPATH="/var/mqueue"
+ # CONFIG_FS_RAMMAP is not set
+@@ -864,7 +846,6 @@ CONFIG_FS_PROCFS_REGISTER=y
+ # CONFIG_FS_PROCFS_EXCLUDE_MOUNTS is not set
+ # CONFIG_FS_PROCFS_EXCLUDE_MTD is not set
+ # CONFIG_FS_PROCFS_EXCLUDE_PARTITIONS is not set
+-# CONFIG_FS_PROCFS_EXCLUDE_SMARTFS is not set
+ # CONFIG_FS_UNIONFS is not set
+ 
+ #
+@@ -1061,8 +1042,15 @@ CONFIG_EXAMPLES_ADC_SWTRIG=y
+ # CONFIG_EXAMPLES_MEDIA is not set
+ # CONFIG_EXAMPLES_MM is not set
+ # CONFIG_EXAMPLES_MODBUS is not set
++##  <<<<<<< HEAD
+ # CONFIG_EXAMPLES_MOUNT is not set
+ CONFIG_EXAMPLES_MTDBLOCKRW=y
++##  =======
++##  CONFIG_EXAMPLES_MOUNT=y
++##  CONFIG_EXAMPLES_MOUNT_BLOCKDEVICE=y
++##  CONFIG_EXAMPLES_MOUNT_DEVNAME="/dev/mtdblock1"
++# CONFIG_EXAMPLES_MTDBLOCKRW is not set
++##  >>>>>>>     Nordic NRF52 RNG stuff
+ # CONFIG_EXAMPLES_MTDPART is not set
+ CONFIG_EXAMPLES_NSH=y
+ # CONFIG_EXAMPLES_NULL is not set
+@@ -1091,14 +1079,8 @@ CONFIG_EXAMPLES_PWM=y
+ CONFIG_EXAMPLES_PWM_DEVPATH="/dev/pwm0"
+ CONFIG_EXAMPLES_PWM_FREQUENCY=500
+ CONFIG_EXAMPLES_PWM_DURATION=30
+-CONFIG_EXAMPLES_PWM_DUTYPCT1=50
+-CONFIG_EXAMPLES_PWM_CHANNEL1=1
+-CONFIG_EXAMPLES_PWM_DUTYPCT2=40
+-CONFIG_EXAMPLES_PWM_CHANNEL2=2
+-CONFIG_EXAMPLES_PWM_DUTYPCT3=30
+-CONFIG_EXAMPLES_PWM_CHANNEL3=3
+-CONFIG_EXAMPLES_PWM_DUTYPCT4=20
+-CONFIG_EXAMPLES_PWM_CHANNEL4=4
++CONFIG_EXAMPLES_PWM_DUTYPCT=50
++# CONFIG_EXAMPLES_RANDOM is not set
+ # CONFIG_EXAMPLES_RFID_READUID is not set
+ # CONFIG_EXAMPLES_RGBLED is not set
+ # CONFIG_EXAMPLES_ROMFS is not set
+@@ -1219,7 +1201,6 @@ CONFIG_NSH_DISABLE_LOSMART=y
+ # CONFIG_NSH_DISABLE_MKDIR is not set
+ # CONFIG_NSH_DISABLE_MKFATFS is not set
+ # CONFIG_NSH_DISABLE_MKRD is not set
+-# CONFIG_NSH_DISABLE_MKSMARTFS is not set
+ # CONFIG_NSH_DISABLE_MH is not set
+ # CONFIG_NSH_DISABLE_MOUNT is not set
+ # CONFIG_NSH_DISABLE_MV is not set
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index 6dc2c875a8..7aa3f00e5b 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -30,17 +30,17 @@ config DEV_RANDOM
+ 	default y
+ 	depends on ARCH_HAVE_RNG
+ 	---help---
+-		Enable support for /dev/urandom provided by a hardware TRNG.
++		Enable support for /dev/random provided by a hardware TRNG.
+ 
+ config DEV_URANDOM
+ 	bool "Enable /dev/urandom"
+ 	default n
+ 	---help---
+-		Enable support for /dev/urandom provided by either a hardware TRNG or
+-		by a software PRNG implementation.
++		Enable support for /dev/urandom provided by either a hardware
++                TRNG or by a software PRNG implementation.
+ 
+-		NOTE:  This option may not be cryptographially secure and should not
+-		be enabled if you are concerned about cyptographically secure
++		NOTE:  This option may not be cryptographially secure and should
++                not be enabled if you are concerned about cyptographically secure
+ 		pseudo-random numbers (CPRNG) and do not know the characteristics
+ 		of the software PRNG impelementation!
+ 
+-- 
+2.11.0
+
