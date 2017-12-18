@@ -1,15 +1,15 @@
-#!/bin/bash
+#!/bin/bash -x
 
 
 strip_srcs()
 {
-while read file ; do
-        if [ ${file%%.c} == $file -a ${file%%.h} == $file ] ; then
-                echo "Skipping $file"
-                continue
-        fi
-        sed -i -e 's/  *$//' $file
-done
+        for file in "$@" ; do
+                if [ ${file%%.c} == $file -a ${file%%.h} == $file ] ; then
+                        echo "Skipping $file"
+                        continue
+                fi
+                sed -i -e 's/[ 	]\+$//' $file
+        done
 }
 
 strip_ascii()
@@ -23,4 +23,5 @@ strip_ascii()
         done
 }
 
-strip_ascii
+# strip_ascii
+strip_srcs "$@"
