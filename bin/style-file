@@ -1,11 +1,21 @@
 #!/bin/bash
 
+
+#
+# Wrapping 'echo' with '/bin/echo' so invoking this
+# file manually ala "sh $0" won't barf on 'echo -e'.
+#
+Echo()
+{
+        /bin/echo -e "$@"
+}
+
 #
 # Shortcut to send output to stderr by default.
 #
 echo_err()
 {
-        /bin/echo -e "$@" >&2
+        Echo  "$@" >&2
 }
 
 #
@@ -13,21 +23,20 @@ echo_err()
 #
 echo_dbg()
 {
+        [ -z "$DEBUG" ] && return
+
         local i=
         local tmp=
-
-        [ -z "$DEBUG" ] && return
 
         #
         # If the first arg has no dereferenced value it is probably a string.
         #
-#       [  "${1:0:1}" == ":" ] && shift  && echo_err "$@" && return
-        tmp="$(echo $file | sed -n -e '/^:/p')"
+        tmp="$(echo $1 | sed -n -e '/^:/p')"
         [ -n "$tmp" ] && shift  && echo_err "$@" && return
 
         for i in $@ ; do
                 /bin/echo -n -e "    ::  $i\t\t" >&2
-                /bin/echo -e "(${!i})" >&2
+                Echo  "(${!i})" >&2
         done
 }
 
@@ -296,7 +305,7 @@ git_committed()
         local Filter1=
         local Filter2=
 
-        [ "$1" == "unstaged" ] && IFS=" " && echo_dbg "Setting IFS to a space"
+        [ "$1" = "unstaged" ] && IFS=" " && echo_dbg "Setting IFS to a space"
         Filter1="'/^${IFS}[AMC]/p'"
         Filter2="'/^${IFS}[R]/p'"
         git status -uno --porcelain=v1 | eval sed -n -e $Filter1 -e $Filter2 | \
@@ -410,7 +419,7 @@ fi
 #
 # If there are no files to process there weren't any style errors!
 #
-[ -z "$FILES" ] && /bin/echo -e "${GREEN}\tFound no files to process.${RESET}" && exit 0
+[ -z "$FILES" ] && Echo  "${GREEN}\tFound no files to process.${RESET}" && exit 0
 
 [ -n "$REPOROOT" ] && cd $REPOROOT && REPOROOT=$(pwd) && cd $(ORIGIN)
 #
@@ -422,7 +431,7 @@ REPOROOT=$(find_repo $FILES)
 # If there are no SRCS to format then by default there are no style errors.
 #
 SRCS=$(strip_files $FILES)
-[ -z "$SRCS" ] && /bin/echo -e "${GREEN}\tNo files, no style errors.${RESET}" && exit 0
+[ -z "$SRCS" ] && Echo  "${GREEN}\tNo files, no style errors.${RESET}" && exit 0
 echo_dbg SRCS REPOROOT ORIGIN
 
 if ! filter_files $REPOROOT $SRCS ; then
@@ -437,5 +446,5 @@ if ! filter_files $REPOROOT $SRCS ; then
         echo_err "${RED}\tSee style.errs in the root of this repo ($REPOROOT)."
         exit 2
 fi
-/bin/echo -e "${GREEN}\tNo style errors found.${RESET}"
+Echo  "${GREEN}\tNo style errors found.${RESET}"
 

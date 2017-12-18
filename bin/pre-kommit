@@ -1,4 +1,5 @@
-#!/bin/bash -x
+#!/bin/bash
+
 
 #
 # Wrapping 'echo' with '/bin/echo' so invoking this
@@ -23,15 +24,15 @@ echo_err()
 echo_dbg()
 {
         [ -z "$DEBUG" ] && return
-        local TT=
+
         local i=
+        local tmp=
 
         #
         # If the first arg has no dereferenced value it is probably a string.
         #
-#       [  "${1:0:1}" == ":" ] && shift  && echo_err "$@" && return
-        TT="$(echo $1 | sed -n -e '/^:/p')"
-        [  -n "$TT" ] && shift  && echo_err "$@" && return
+        tmp="$(echo $1 | sed -n -e '/^:/p')"
+        [  -n "$tmp" ] && shift  && echo_err "$@" && return
 
         for i in $@ ; do
                 /bin/echo -n -e "    ::  $i\t\t" >&2
@@ -408,10 +409,10 @@ BLUE='\033[1;34m'
 RESET='\033[39;49m'
 # FUNC="echo_err \"--> ${FUNCNAME[0]}\""
 
-if [ "$(basename $0)" = "style_file" ] ; then
+if [ "$(basename $0)" != "pre-commit" ] ; then
         set_env $@
 elif [ "$#" -ne 0 ] ; then
-        echo_err "Ignoring command line arguments"
+        echo_dbg "Ignoring command line arguments"
 fi
 
 [ -z "$FILES" ] && FILES=$(set_files $ALT)

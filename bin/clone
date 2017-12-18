@@ -4,7 +4,7 @@
 GERRIT_HOST=101.132.142.37
 GERRIT_SSH_PORT=30149
 GERRIT_HTTP_PORT=14586
-ZGLUE_BILL_HOST=zglue-bill@github.com
+ZGLUE_BILL_HOST=git@github.com/zglue-bill
 GIT_UNAME=bill
 SDK_13="SDK_13.0.0-1"
 SDK_13_1="SDK_13.1.0"
@@ -14,12 +14,18 @@ DIALOG_SDK=dialog_585_sdk_dev
 declare -A Repo2Host
 declare -A RepoRename
 
+RepoRename["riot"]=RIOT
 RepoRename["apps"]=nuttx_apps
 RepoRename["dialog"]=dialog_585_sdk_dev@3rd_Party_SDK
 RepoRename["nordic"]=SDK_13.0.0-1@3rd_Party_SDK
 RepoRename["sdk_13_1"]=SDK_13.1.0@3rd_Party_SDK
 RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
 
+# Repo2Host["mynewt-tools"]master@https://github.com/apache/mynewt-newt.git
+# Repo2Host["mynewt"]=master@https://github.com/apache/mynewt-core.git
+Repo2Host["zephyr"]=master@github.com/zephyrproject-rtos/zephyr.git
+Repo2Host["RIOT"]=master@github.com/RIOT-OS
+Repo2Host["bknuttx"]=master@bitbucket.org/nuttx
 Repo2Host["sdk_13"]=$SDK_13@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
 Repo2Host["sdk_14"]=$SDK_14@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
 Repo2Host["nordic"]=$SDK_13_1@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
@@ -39,19 +45,21 @@ Repo2Host["home-env"]=master@$ZGLUE_BILL_HOST
 function clone()
 {
         local CMD=
+        local Proto=
         local Branch=
         local Uri=
         local RepoName=
 
         [ -z "$1" ] && return 1
         RepoName=${1%%.git}
-        [ -n "${RepoRename[$RepoName]}" ] && RepoName=${RepoRename[$RepoName]}
+        [ -n "${RepoRename[${RepoName,,}]}" ] && RepoName=${RepoRename[${RepoName,,}]}
         if [ "${RepoName%%@*}" != "${RepoName}" ] ; then
                 Branch=${RepoName##@*}
                 RepoName=${RepoName##*@}
         else
                 Branch=${Repo2Host[$RepoName]}
         fi
+        Proto=ssh
         Branch=${Branch%%@*}
         Uri=${Repo2Host[$RepoName]}
         Uri=${Uri#*@}
