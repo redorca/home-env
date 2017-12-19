@@ -29,11 +29,13 @@ echo_dbg()
         local tmp=
 
         #
-        # If the first arg has no dereferenced value it is probably a string.
+        # If the first character in $@ is a ':' then treat $@ as a string.
         #
-        tmp="$(echo $1 | sed -n -e '/^:/p')"
-        [ -n "$tmp" ] && shift  && echo_err "$@" && return
+        tmp="$@"
+        [ "${tmp#:}" != "$tmp" ]  && echo "${tmp#:}" && return
 
+        # Else, treat all of the args as undereferenced variables.
+        #
         for i in $@ ; do
                 /bin/echo -n -e "    ::  $i\t\t" >&2
                 Echo  "(${!i})" >&2
@@ -52,7 +54,7 @@ echo_wbg()
 setup_flip_hashmark()
 {
         if [ -z "$1" ] ; then
-                echo_err ": Is this a file? ($1)?"
+                echo_err "Is this a file? ($1)?"
                 return -1
         fi
         cat >$1 <<"EOF"
@@ -208,7 +210,7 @@ filter_whitespace()
         Results="$1"; shift
         for file in "$@" ; do
                 if [ ${file%%.c} == $file -a ${file%%.h} == $file ] ; then
-                        echo_dbg "Skipping $file"
+                        echo_dbg ":Skipping $file"
                         continue
                 fi
                 sed -i -e 's/[ 	]\+$//' $file
@@ -339,7 +341,7 @@ git_committed()
         local Filter1=
         local Filter2=
 
-        [ "$1" = "unstaged" ] && IFS=" " && echo_dbg "Setting IFS to a space"
+        [ "$1" = "unstaged" ] && IFS=" " && echo_dbg ":Setting IFS to a space"
         Filter1="'/^${IFS}[AMC]/p'"
         Filter2="'/^${IFS}[R]/p'"
         git status -uno --porcelain=v1 | eval sed -n -e $Filter1 -e $Filter2 | \
@@ -446,7 +448,7 @@ RESET='\033[39;49m'
 if [ "$(basename $0)" != "pre-commit" ] ; then
         set_env $@
 elif [ "$#" -ne 0 ] ; then
-        echo_dbg "Ignoring command line arguments"
+        echo_dbg ":Ignoring command line arguments"
 fi
 
 [ -z "$FILES" ] && FILES=$(set_files $ALT)
