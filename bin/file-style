@@ -124,7 +124,7 @@ fi
 if ! in_managed_repo $ACTIVELY_MANAGED_REPOS ; then
         echo_dbg ":This working tree is not from an actively managed repo."
         echo_dbg ":Do nothing."
-        echo exit 0
+        exit 0
 fi
 echo_dbg ":This repo is actively managed."
 
