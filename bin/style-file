@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 #
 # Wrapping 'echo' with '/bin/echo' so invoking this
 # file manually ala "sh $0" won't barf on 'echo -e'.
@@ -32,7 +31,7 @@ echo_dbg()
         # If the first character in $@ is a ':' then treat $@ as a string.
         #
         tmp="$@"
-        [ "${tmp#:}" != "$tmp" ]  && echo "${tmp#:}" && return
+        [ "${tmp#:}" != "$tmp" ]  && echo_err "${tmp#:}" && return
 
         # Else, treat all of the args as undereferenced variables.
         #
@@ -40,11 +39,6 @@ echo_dbg()
                 /bin/echo -n -e "    ::  $i\t\t" >&2
                 Echo  "(${!i})" >&2
         done
-}
-
-echo_wbg()
-{
-        [ -n "$DEBUG" ] && echo_err "$@" && return
 }
 
 #
@@ -82,7 +76,18 @@ EOF
         chmod +x $1
 }
 
-
+#
+# This is called if no files are passed in via the command line.
+# Create a set of files to process for styling.  First, look for
+# staged files ready to commit.  If found, those # become the set
+# of files returned.
+#
+# If no files are staged, then look for unstaged but tracked/modified
+# files.
+#
+# If nothing is found so far then assume this is a commit --amend
+# and use the set of files for the current top most commit.
+#
 set_files()
 {
         local AGAINST=
@@ -119,38 +124,16 @@ set_files()
 #
 find_repo()
 {
-        cd $(dirname $1) && git rev-parse --show-toplevel 2>/dev/null
-}
+        local Here=
+        local File=
+        local Cmd=
 
-
-#
-# Given a file path find the repo covering that file.
-#
-Find_repo()
-{
-        local TDIR=
-        TDIR=$(dirname "$1")
-
-        CMD="TDIR=$(dirname \$TDIR)"
-        PRE="$(echo $TDIR | sed -e 's/^\/.*//')"
-        if [ "$PRE" != '/' ] ; then
-                TDIR="."
-                CMD='TDIR="../$TDIR"'
-                RECMD='$(cd $TDIR && pwd)'
-        fi
-
-        echo_dbg TDIR CMD
-        while [ ! -d $TDIR/.git ] && [ ! -d $TDIR/boot/grub ] ; do
-                eval $CMD
-                [ -n "$DEBUG" ] && sleep 1
-        done
-        [ -n "$RECMD" ] && eval TDIR=$RECMD
-        #
-        # Send the results back through stdout.
-        #
-        [ -d $TDIR/.git ] && echo $TDIR || return 1
-
-        return 0
+        File="$1"
+        Cmd="git rev-parse --show-toplevel"
+        [ "${File#/}" != "$File" ] && Here=$(pwd) && cd $(dirname "$File")
+        echo_dbg Here File
+        $Cmd 2>/dev/null
+        [ -n "$Here" ] && cd $Here
 }
 
 #
@@ -202,7 +185,27 @@ filter_style()
         find . -type f -name "*.orig" -exec rm {} \;
 }
 
-filter_whitespace()
+#
+# Filter for files in the zglue NRF domain. Primarily files
+# containing /nrf* in their repo path.
+#
+filter_files_for()
+{
+        local file=
+        local dir=
+
+        for file in "$@" ; do
+                dir=$(basename $file)
+                if [ "${dir#/nrf*}" != "$dir" ] ; then
+                        echo -n "$file "
+                fi
+        done
+}
+
+#
+# Strip out excess white space at the end of lines
+#
+filter_out_whitespace()
 {
         local file=
         local Results=
@@ -237,9 +240,31 @@ filter_if_0()
 }
 
 #
+# Filter for files in the zglue NRF domain. Primarily files
+# containing /nrf* in their repo path.
+#
+filter_for_nrf52()
+{
+        local file=
+        local dir=
+        local Filter=
+
+        for file in "$@" ; do
+                dir=$(dirname $file)/
+                for Filter in $FILTERS_NRF ; do
+                       #echo "Filter: $Filter:  ${dir%${FILTER_DIR}*}"
+                        if [ "${dir%${Filter}*}" != "$dir" ] ; then
+                                echo "$file "
+                                break
+                        fi
+                done
+        done
+}
+
+#
 # Look for externs lurking in header files.
 #
-filter_externs()
+filter_for_externs()
 {
         local Files=
         local Results=
@@ -253,7 +278,6 @@ filter_externs()
         done
 }
 
-FILTER_FUNCTIONS="filter_whitespace filter_if_0 filter_externs"
 #
 # Run all filters on the files finishing with the astyle formatting last.
 #
@@ -291,7 +315,9 @@ filter_files()
 
         [ -n "$RepoRoot" ] && cd $RepoRoot
         for Func in $FILTER_FUNCTIONS ; do
+                echo_dbg ":Filter  $Func"
                 $Func $RESULTS $Files
+                RV=$(( RV + $? ))
         done
 #       filter_whitespace $RESULTS $Files
 #       filter_if_0 $RESULTS $Files
@@ -314,9 +340,30 @@ filter_files()
 }
 
 #
+# From a list of repo@remote tuples see if the currently local
+# repo maps back to any in the list.  If it does then the local
+# repo is a valid managed repo.
+#
+in_managed_repo()
+{
+        local RemoteTuple=
+
+        RemoteName=$(git remote)
+        [ -z "$RemoteName" ] && dbg "No remote backing for this repo." && return 1
+        RemoteTuple=( $(git remote get-url origin | sed -e 's/^.*@//' | awk -F'/' '{print $1, $2}') )
+
+        VerifyTuple=${RemoteTuple[1]%%.git}@${RemoteTuple[0]%%:*}
+        for tuple in $@ ; do
+                [ $tuple == $VerifyTuple ] && echo "$VerifyTuple Matched!" && return 0
+        done
+
+        return 1
+}
+
+#
 # Return the file list containing only *.[ch] files
 #
-strip_files()
+filter_for_srcfiles()
 {
         local file=
         local tmp=
@@ -347,6 +394,7 @@ git_committed()
         git status -uno --porcelain=v1 | eval sed -n -e $Filter1 -e $Filter2 | \
                 awk '{print $NF}'
 }
+##### Script personality goes below
 
 #
 # Help nessage describing the command line options
@@ -436,14 +484,18 @@ set_env()
 }
 
 ORIGIN=$(pwd)/
+FILTERS_NRF="/nrf52/ /nrf52832_dk/"
+FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
 export GIT_ADD=
 export FILES=
 RED='\033[1;31m'
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[1;34m'
-RESET='\033[39;49m'
+RESET='\033[0;39;49m'
 # FUNC="echo_err \"--> ${FUNCNAME[0]}\""
+REPO_HOST="101.132.142.37"
+ACTIVELY_MANAGED_REPOS="nuttx@$REPO_HOST nuttx_apps@$REPO_HOST auto_test@$REPO_HOST"
 
 if [ "$(basename $0)" != "pre-commit" ] ; then
         set_env $@
@@ -451,11 +503,20 @@ elif [ "$#" -ne 0 ] ; then
         echo_dbg ":Ignoring command line arguments"
 fi
 
+#
+# At this point if no files have been provided over the command line
+# make sure we are running within a repo else there will be no way
+# to discover any potential files for processing.
+#
+if ! find_repo "$FILES" ; then
+        echo_err "${RED}No repo available${RESET}. Nothing to process."
+        exit 1
+fi
 [ -z "$FILES" ] && FILES=$(set_files $ALT)
 #
 # If there are no files to process there weren't any style errors!
 #
-[ -z "$FILES" ] && Echo  "${GREEN}\tFound no files to process.${RESET}" && exit 0
+[ -z "$FILES" ] && Echo  "${GREEN}\tNo files to process.${RESET}" && exit 0
 
 #
 # Assume the first file is representative of the location of the repo
@@ -466,11 +527,21 @@ if [ $? -ne 0 -a "$(basename $0)" = "pre-commit" ] ; then
         exit 1
 fi
 [ -n "$REPOROOT" ] && REPOROOT="$REPOROOT"/
+echo_dbg REPOROOT
+
+#
+# Check whether this repo is to be styled.
+#
+if ! in_managed_repo $ACTIVELY_MANAGED_REPOS ; then
+        echo_dbg ":This working tree is not from an actively managed repo."
+        exit 0
+fi
+echo_dbg ":This repo is actively managed."
 
 #
 # If there are no SRCS to format then by default there are no style errors.
 #
-SRCS=$(strip_files $FILES)
+SRCS=$(filter_for_srcfiles $FILES)
 [ -z "$SRCS" ] && Echo  "${GREEN}\tNo files, no style errors.${RESET}" && exit 0
 echo_dbg SRCS REPOROOT ORIGIN
 
