@@ -63,7 +63,7 @@ verified_active()
 #
 # From a list of repo@remote tuples see if the currently local
 # repo maps back to any in the list.  If it does then the local
-# repo is valid.
+# repo is a valid managed repo.
 #
 in_managed_repo()
 {
@@ -82,19 +82,9 @@ in_managed_repo()
 }
 
 REPO_HOST="101.132.142.37"
-REPO_PORT="30149"
 ACTIVELY_MANAGED_REPOS="nuttx@$REPO_HOST nuttx_apps@$REPO_HOST auto_test@$REPO_HOST"
 if ! in_managed_repo $ACTIVELY_MANAGED_REPOS ; then
         echo "This working tree is not from an actively managed repo." >&2
         exit 0
 fi
 echo "This repo is actively managed."
-exit
-
-if ! verified_active $ACTIVELY_MANAGED ; then
-        dbg "This branch is not acively managed."
-        exit 1
-fi
-dbg "This branch  is acively managed."
-exit 0
-
