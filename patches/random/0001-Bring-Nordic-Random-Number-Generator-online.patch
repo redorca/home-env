@@ -1,0 +1,300 @@
+From 6349929ee6983f0d760780738f5b2d09c5b6fd53 Mon Sep 17 00:00:00 2001
+From: Bill Rees <bill@zglue.com>
+Date: Tue, 5 Dec 2017 18:23:25 -0800
+Subject:     Bring Nordic Random Number Generator online.
+
+    Have Makefile create a list of app targets on
+    the fly by looking for all directories containing
+    a defconfig file.
+
+Change-Id: I325e220234d5e8e5d41e88098dbc14ba2a11177c
+---
+ arch/arm/src/nrf52/Make.defs        |  2 +-
+ arch/arm/src/nrf52/chip/nrf52_rng.h | 20 +++++------
+ arch/arm/src/nrf52/nrf52_rng.c      | 68 ++++++++++++++++++-------------------
+ configs/nrf52832_dk/Makefile        |  2 +-
+ 4 files changed, 46 insertions(+), 46 deletions(-)
+
+diff --git a/arch/arm/src/nrf52/Make.defs b/arch/arm/src/nrf52/Make.defs
+index ef1a709fab..f218ce55b2 100644
+--- a/arch/arm/src/nrf52/Make.defs
++++ b/arch/arm/src/nrf52/Make.defs
+@@ -240,7 +240,7 @@ endif
+ #endif
+ 
+ #ifeq ($(CONFIG_NRF52_RNG),y)
+-#CHIP_CSRCS += nrf52_rng.c
++CHIP_CSRCS += nrf52_rng.c
+ #endif
+ 
+ #ifeq ($(CONFIG_NRF52_SAI),y)
+diff --git a/arch/arm/src/nrf52/chip/nrf52_rng.h b/arch/arm/src/nrf52/chip/nrf52_rng.h
+index 7812110b62..8692566d13 100644
+--- a/arch/arm/src/nrf52/chip/nrf52_rng.h
++++ b/arch/arm/src/nrf52/chip/nrf52_rng.h
+@@ -1,5 +1,5 @@
+ /************************************************************************************
+- * arch/arm/src/stm32/chip/stm32l4_rng.h
++ * arch/arm/src/nrf52/chip/nrf52_rng.h
+  *
+  *   Copyright (C) 2012 Max Holtzberg. All rights reserved.
+  *   Author: Max Holtzberg <mh@uvc.de>
+@@ -33,8 +33,8 @@
+  *
+  ************************************************************************************/
+ 
+-#ifndef __ARCH_ARM_STC_STM32L4_CHIP_STM32L4_RNG_H
+-#define __ARCH_ARM_STC_STM32L4_CHIP_STM32L4_RNG_H
++#ifndef __ARCH_ARM_STC_NRF52_CHIP_NRF52_RNG_H
++#define __ARCH_ARM_STC_NRF52_CHIP_NRF52_RNG_H
+ 
+ /************************************************************************************
+  * Included Files
+@@ -49,15 +49,15 @@
+ 
+ /* Register Offsets *****************************************************************/
+ 
+-#define STM32L4_RNG_CR_OFFSET     0x0000  /* RNG Control Register */
+-#define STM32L4_RNG_SR_OFFSET     0x0004  /* RNG Status Register */
+-#define STM32L4_RNG_DR_OFFSET     0x0008  /* RNG Data Register */
++#define NRF52_XXX__RNG_CR_OFFSET     0x0000  /* RNG Control Register */
++#define NRF52_XXX__RNG_SR_OFFSET     0x0004  /* RNG Status Register */
++#define NRF52_XXX__RNG_DR_OFFSET     0x0008  /* RNG Data Register */
+ 
+ /* Register Addresses ***************************************************************/
+ 
+-#define STM32L4_RNG_CR            (STM32L4_RNG_BASE+STM32L4_RNG_CR_OFFSET)
+-#define STM32L4_RNG_SR            (STM32L4_RNG_BASE+STM32L4_RNG_SR_OFFSET)
+-#define STM32L4_RNG_DR            (STM32L4_RNG_BASE+STM32L4_RNG_DR_OFFSET)
++#define NRF52_XXX__RNG_CR            (NRF52_XXX_RNG_BASE+NRF52_XXX_RNG_CR_OFFSET)
++#define NRF52_XXX__RNG_SR            (NRF52_XXX_RNG_BASE+NRF52_XXX_RNG_SR_OFFSET)
++#define NRF52_XXX__RNG_DR            (NRF52_XXX_RNG_BASE+NRF52_XXX_RNG_DR_OFFSET)
+ 
+ /* Register Bitfield Definitions ****************************************************/
+ 
+@@ -74,4 +74,4 @@
+ #define RNG_SR_CEIS               (1 << 5) /* Bit 5: Clock error interrupt status */
+ #define RNG_SR_SEIS               (1 << 6) /* Bit 6: Seed error interrupt status */
+ 
+-#endif /* __ARCH_ARM_STC_STM32L4_CHIP_STM32L4_RNG_H */
++#endif /* __ARCH_ARM_STC_NRF52_CHIP_NRF52_RNG_H */
+diff --git a/arch/arm/src/nrf52/nrf52_rng.c b/arch/arm/src/nrf52/nrf52_rng.c
+index dd0f782f2d..39047a704e 100644
+--- a/arch/arm/src/nrf52/nrf52_rng.c
++++ b/arch/arm/src/nrf52/nrf52_rng.c
+@@ -1,5 +1,5 @@
+ /****************************************************************************
+- * arch/arm/src/stm32/stm32l4_rng.c
++ * arch/arm/src/nrf52/nrf52_rng.c
+  *
+  *   Copyright (C) 2012 Max Holtzberg. All rights reserved.
+  *   Author: Max Holtzberg <mh@uvc.de>
+@@ -52,21 +52,21 @@
+ #include <nuttx/drivers/drivers.h>
+ 
+ #include "up_arch.h"
+-#include "chip/stm32l4_rng.h"
++#include "chip/nrf52_rng.h"
+ #include "up_internal.h"
+ 
+-#if defined(CONFIG_STM32L4_RNG)
++#if defined(CONFIG_NRF52_RNG)
+ #if defined(CONFIG_DEV_RANDOM) || defined(CONFIG_DEV_URANDOM_ARCH)
+ 
+ /****************************************************************************
+  * Private Function Prototypes
+  ****************************************************************************/
+ 
+-static int stm32l4_rng_initialize(void);
+-static int stm32l4_rnginterrupt(int irq, void *context, FAR void *arg);
+-static void stm32l4_rngenable(void);
+-static void stm32l4_rngdisable(void);
+-static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t);
++static int nrf52_rng_initialize(void);
++static int nrf52_rnginterrupt(int irq, void *context, FAR void *arg);
++static void nrf52_rngenable(void);
++static void nrf52_rngdisable(void);
++static ssize_t nrf52_rngread(struct file *filep, char *buffer, size_t);
+ 
+ /****************************************************************************
+  * Private Types
+@@ -92,7 +92,7 @@ static const struct file_operations g_rngops =
+ {
+   0,               /* open */
+   0,               /* close */
+-  stm32l4_rngread, /* read */
++  nrf52_rngread, /* read */
+   0,               /* write */
+   0,               /* seek */
+   0                /* ioctl */
+@@ -109,7 +109,7 @@ static const struct file_operations g_rngops =
+  * Private functions
+  ****************************************************************************/
+ 
+-static int stm32l4_rng_initialize(void)
++static int nrf52_rng_initialize(void)
+ {
+   _info("Initializing RNG\n");
+ 
+@@ -117,7 +117,7 @@ static int stm32l4_rng_initialize(void)
+ 
+   sem_init(&g_rngdev.rd_devsem, 0, 1);
+ 
+-  if (irq_attach(STM32L4_IRQ_RNG, stm32l4_rnginterrupt, NULL))
++  if (irq_attach(NRF52_IRQ_RNG, nrf52_rnginterrupt, NULL))
+     {
+       /* We could not attach the ISR to the interrupt */
+ 
+@@ -129,7 +129,7 @@ static int stm32l4_rng_initialize(void)
+   return OK;
+ }
+ 
+-static void stm32l4_rngenable(void)
++static void nrf52_rngenable(void)
+ {
+   uint32_t regval;
+ 
+@@ -137,37 +137,37 @@ static void stm32l4_rngenable(void)
+ 
+   /* Enable generation and interrupts */
+ 
+-  regval  = getreg32(STM32L4_RNG_CR);
++  regval  = getreg32(NRF52_RNG_CR);
+   regval |= RNG_CR_RNGEN;
+   regval |= RNG_CR_IE;
+-  putreg32(regval, STM32L4_RNG_CR);
++  putreg32(regval, NRF52_RNG_CR);
+ 
+-  up_enable_irq(STM32L4_IRQ_RNG);
++  up_enable_irq(NRF52_IRQ_RNG);
+ }
+ 
+-static void stm32l4_rngdisable()
++static void nrf52_rngdisable()
+ {
+   uint32_t regval;
+ 
+-  up_disable_irq(STM32L4_IRQ_RNG);
++  up_disable_irq(NRF52_IRQ_RNG);
+ 
+-  regval  =  getreg32(STM32L4_RNG_CR);
++  regval  =  getreg32(NRF52_RNG_CR);
+   regval &= ~RNG_CR_IE;
+   regval &= ~RNG_CR_RNGEN;
+-  putreg32(regval, STM32L4_RNG_CR);
++  putreg32(regval, NRF52_RNG_CR);
+ }
+ 
+-static int stm32l4_rnginterrupt(int irq, void *context, FAR void *arg)
++static int nrf52_rnginterrupt(int irq, void *context, FAR void *arg)
+ {
+   uint32_t rngsr;
+   uint32_t data;
+ 
+-  rngsr = getreg32(STM32L4_RNG_SR);
++  rngsr = getreg32(NRF52_RNG_SR);
+   if (rngsr & RNG_SR_CEIS) /* Check for clock error int stat */
+     {
+       /* Clear it, we will try again. */
+ 
+-      putreg32(rngsr & ~RNG_SR_CEIS, STM32L4_RNG_SR);
++      putreg32(rngsr & ~RNG_SR_CEIS, NRF52_RNG_SR);
+       return OK;
+     }
+ 
+@@ -177,12 +177,12 @@ static int stm32l4_rnginterrupt(int irq, void *context, FAR void *arg)
+ 
+       /* Clear seed error, then disable/enable the rng and try again. */
+ 
+-      putreg32(rngsr & ~RNG_SR_SEIS, STM32L4_RNG_SR);
+-      crval = getreg32(STM32L4_RNG_CR);
++      putreg32(rngsr & ~RNG_SR_SEIS, NRF52_RNG_SR);
++      crval = getreg32(NRF52_RNG_CR);
+       crval &= ~RNG_CR_RNGEN;
+-      putreg32(crval, STM32L4_RNG_CR);
++      putreg32(crval, NRF52_RNG_CR);
+       crval |= RNG_CR_RNGEN;
+-      putreg32(crval, STM32L4_RNG_CR);
++      putreg32(crval, NRF52_RNG_CR);
+       return OK;
+     }
+ 
+@@ -193,7 +193,7 @@ static int stm32l4_rnginterrupt(int irq, void *context, FAR void *arg)
+       return OK;
+     }
+ 
+-  data = getreg32(STM32L4_RNG_DR);
++  data = getreg32(NRF52_RNG_DR);
+ 
+   /* As required by the FIPS PUB (Federal Information Processing Standard
+    * Publication) 140-2, the first random number generated after setting the
+@@ -239,7 +239,7 @@ static int stm32l4_rnginterrupt(int irq, void *context, FAR void *arg)
+     {
+       /* Buffer filled, stop further interrupts. */
+ 
+-      stm32l4_rngdisable();
++      nrf52_rngdisable();
+       sem_post(&g_rngdev.rd_readsem);
+     }
+ 
+@@ -247,10 +247,10 @@ static int stm32l4_rnginterrupt(int irq, void *context, FAR void *arg)
+ }
+ 
+ /****************************************************************************
+- * Name: stm32l4_rngread
++ * Name: nrf52_rngread
+  ****************************************************************************/
+ 
+-static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t buflen)
++static ssize_t nrf52_rngread(struct file *filep, char *buffer, size_t buflen)
+ {
+   if (sem_wait(&g_rngdev.rd_devsem) != OK)
+     {
+@@ -274,7 +274,7 @@ static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t buflen)
+ 
+       /* Enable RNG with interrupts */
+ 
+-      stm32l4_rngenable();
++      nrf52_rngenable();
+ 
+       /* Wait until the buffer is filled */
+ 
+@@ -314,7 +314,7 @@ static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t buflen)
+ #ifdef CONFIG_DEV_RANDOM
+ void devrandom_register(void)
+ {
+-  stm32l4_rng_initialize();
++  nrf52_rng_initialize();
+   (void)register_driver("/dev/random", &g_rngops, 0444, NULL);
+ }
+ #endif
+@@ -337,11 +337,11 @@ void devrandom_register(void)
+ void devurandom_register(void)
+ {
+ #ifndef CONFIG_DEV_RANDOM
+-  stm32l4_rng_initialize();
++  nrf52_rng_initialize();
+ #endif
+   (void)register_driver("/dev/urandom", &g_rngops, 0444, NULL);
+ }
+ #endif
+ 
+ #endif /* CONFIG_DEV_RANDOM || CONFIG_DEV_URANDOM_ARCH */
+-#endif /* CONFIG_STM32L4_RNG */
++#endif /* CONFIG_NRF52_RNG */
+diff --git a/configs/nrf52832_dk/Makefile b/configs/nrf52832_dk/Makefile
+index 4a205ac1df..fc08a4851e 100644
+--- a/configs/nrf52832_dk/Makefile
++++ b/configs/nrf52832_dk/Makefile
+@@ -16,7 +16,7 @@ PLATFORM ?= nrf52832_dk
+ DEPTH = ../..
+ CHIP_SRC = arch/arm/src/nrf52
+ CHIP_SRC_DEPTH=../../../..
+-APPS = nsh hello ble_hello ble_app_uart rtc
++APPS = $(shell ls */defconfig | sed -e 's/\/.*//')
+ CD = cd
+ LN = ln -sf
+ CP = cp
+-- 
+2.11.0
+

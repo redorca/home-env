@@ -1,0 +1,114 @@
+From 6a75d941e1f28789899d5eed461532bf5082eadc Mon Sep 17 00:00:00 2001
+From: Levin Li <zhiqiang@zglue.com>
+Date: Tue, 28 Nov 2017 16:42:02 +0800
+Subject: [PATCH] fixed warning for flag  -Werror fixed a including error, this
+ will cause __KERNEL__ is not defined Change-Id:
+ Idf63f903c5961b33ffe035b705f47daa7442890c
+
+---
+ configs/nrf52832_dk/defaults.mk         |  2 +-
+ configs/nrf52832_dk/src/nrf52_appinit.c | 40 +++++++++++++++++++++------------
+ 2 files changed, 27 insertions(+), 15 deletions(-)
+
+diff --git a/configs/nrf52832_dk/defaults.mk b/configs/nrf52832_dk/defaults.mk
+index 93353cead5..6fe8ba7535 100755
+--- a/configs/nrf52832_dk/defaults.mk
++++ b/configs/nrf52832_dk/defaults.mk
+@@ -85,7 +85,7 @@ ifeq ($(CONFIG_NRF52_BLUETOOTH),y)
+ 		  -I$(SD_HANDLER) \
+ 		  -I$(LIB_FDS) -I$(LIB_FSTORE) -I$(LIB_EXPRMTL) \
+ 		  -I$(LIB_BSP) -I$(BOARDS) -I$(BUTTON) -I$(LIB_TIMR) \
+-		  -I$(DRV_DELAY) -I$(GPIOTE)
++		  -I$(DRV_DELAY)
+ endif
+ 
+   ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/include/cxx
+diff --git a/configs/nrf52832_dk/src/nrf52_appinit.c b/configs/nrf52832_dk/src/nrf52_appinit.c
+index 10fdd8f21b..700bfbf600 100644
+--- a/configs/nrf52832_dk/src/nrf52_appinit.c
++++ b/configs/nrf52832_dk/src/nrf52_appinit.c
+@@ -145,19 +145,9 @@ static void nrf52_i2ctool(void)
+ #  define nrf52_i2ctool()
+ #endif
+ 
+-int nrf52_fs_initialize(void)
++int nrf52_proc_fs_initialize(void)
+ {
+-  FAR struct mtd_dev_s *mtd;
+-  FAR struct mtd_geometry_s geo;
+-  FAR struct mtd_dev_s *mtd_partiton;
+-  char blockdev[18];
+-  char chardev[12];
+   int ret = OK;
+-  uint32_t flash_size;
+-  uint32_t start_address;
+-  uint32_t end_address;
+-  uint32_t data_size;
+-  uint32_t first_block = 0;
+ 
+ #ifdef CONFIG_FS_PROCFS
+   /* Mount the procfs file system */
+@@ -166,12 +156,30 @@ int nrf52_fs_initialize(void)
+   if (ret < 0)
+     {
+       syslog(LOG_ERR, "ERROR: Failed to mount procfs at  %s: %d\n",
+-             PROCFS_MOUNT, ret);
++            PROCFS_MOUNT, ret);
+     }
+ #endif
+ 
++  return ret;
++}
++
++int nrf52_internal_flash_fs_initialize(void)
++{
++  int ret = OK;
++
+ #ifdef CONFIG_MTD_PROGMEM
+ 
++  FAR struct mtd_dev_s *mtd;
++  FAR struct mtd_geometry_s geo;
++  FAR struct mtd_dev_s *mtd_partiton;
++  char blockdev[18];
++  char chardev[12];
++  uint32_t flash_size;
++  uint32_t start_address;
++  uint32_t end_address;
++  uint32_t data_size;
++  uint32_t first_block = 0;
++
+   /* Create an instance of the NRF52 FLASH program memory device driver */
+ 
+   flash_size = nrf_nvmc_get_flash_size();
+@@ -253,6 +261,7 @@ int nrf52_fs_initialize(void)
+     {
+       syslog(LOG_ERR, "ERROR: mtd_partition failed. offset=%lu nblocks=%lu\n",
+              (unsigned long)first_block, (unsigned long)geo.neraseblocks - first_block);
++      return -ENODEV;
+     }
+ 
+   /* Initialize to provide an FTL block driver on the MTD FLASH interface */
+@@ -280,7 +289,7 @@ int nrf52_fs_initialize(void)
+ 
+ #endif
+ 
+-  return 0;
++  return ret;
+ }
+ 
+ /****************************************************************************
+@@ -578,7 +587,10 @@ int board_app_initialize(uintptr_t arg)
+ #endif
+ #endif
+ 
+-  nrf52_fs_initialize();
++  nrf52_proc_fs_initialize();
++
++  nrf52_internal_flash_fs_initialize();
++
+   return OK;
+ }
+ #endif /* CONFIG_LIB_BOARDCTL */
+-- 
+2.11.0
+

@@ -1,0 +1,330 @@
+From 756d023d823fe98c8510011f3b17f82fb3a62d3f Mon Sep 17 00:00:00 2001
+From: Bill Rees <bill@zglue.com>
+Date: Tue, 2 Jan 2018 19:37:38 -0800
+Subject:     Move circle q funcs into c file, remove static notation.
+
+Change-Id: I3781462ea7212b5d92d1b9387f4a6b38e665c208
+---
+ arch/arm/src/nrf52/Kconfig          |  1 +
+ arch/arm/src/nrf52/Make.defs        |  2 +-
+ arch/arm/src/nrf52/chip/nrf52_rng.h |  8 ++++
+ arch/arm/src/nrf52/nrf52.h          |  1 +
+ arch/arm/src/nrf52/nrf52_queue.c    | 86 ++++++++++++++++++++++++++++++++++
+ arch/arm/src/nrf52/nrf52_rng.c      |  1 -
+ arch/arm/src/nrf52/nrf_drv_rng.c    | 10 ++--
+ arch/arm/src/nrf52/nrf_queue.h      | 92 +++++++++++++++++++++++++++++++++++++
+ 8 files changed, 194 insertions(+), 7 deletions(-)
+ create mode 100644 arch/arm/src/nrf52/nrf52_queue.c
+ create mode 100644 arch/arm/src/nrf52/nrf_queue.h
+
+diff --git a/arch/arm/src/nrf52/Kconfig b/arch/arm/src/nrf52/Kconfig
+index 86733ea831..017c2fda03 100644
+--- a/arch/arm/src/nrf52/Kconfig
++++ b/arch/arm/src/nrf52/Kconfig
+@@ -307,6 +307,7 @@ config NRF52_RNG
+                 an even distribution of '1's versus '0's.
+ 
+                 Don't forget to select the random or urandom device.
++
+ choice
+         prompt "Run I2S on a low or high priority work queue?"
+         default NRF52_I2S_LOWPRIO
+diff --git a/arch/arm/src/nrf52/Make.defs b/arch/arm/src/nrf52/Make.defs
+index cfeb2e423d..989f13f803 100644
+--- a/arch/arm/src/nrf52/Make.defs
++++ b/arch/arm/src/nrf52/Make.defs
+@@ -240,7 +240,7 @@ endif
+ #endif
+ 
+ #ifeq ($(CONFIG_NRF52_RNG),y)
+-CHIP_CSRCS += nrf_drv_rng.c nrf52_rng.c
++CHIP_CSRCS += nrf52_queue.c nrf_drv_rng.c nrf52_rng.c
+ #endif
+ 
+ #ifeq ($(CONFIG_NRF52_SAI),y)
+diff --git a/arch/arm/src/nrf52/chip/nrf52_rng.h b/arch/arm/src/nrf52/chip/nrf52_rng.h
+index 2fe64dedad..b095cfcb0c 100644
+--- a/arch/arm/src/nrf52/chip/nrf52_rng.h
++++ b/arch/arm/src/nrf52/chip/nrf52_rng.h
+@@ -49,6 +49,10 @@
+ extern "C" {
+ #endif
+ 
++/* =============================================================================== *
++ * ===================                  RNG                    =================== *
++ * ===================        (Random Number Generator)        =================== *
++ * =============================================================================== */
+ 
+ /************************************************************************************
+  * Pre-processor Definitions
+@@ -77,6 +81,10 @@ typedef enum
+   NRF_RNG_EVENT_VALRDY = offsetof(NRF_RNG_Type, EVENTS_VALRDY) /**< New random number generated event. */
+ } nrf_rng_event_t;
+ 
++/************************************************************************************
++ * Public Type Definitions
++ ************************************************************************************/
++
+ /**
+  * @enum nrf_rng_int_mask_t
+  * @brief RNG interrupts.
+diff --git a/arch/arm/src/nrf52/nrf52.h b/arch/arm/src/nrf52/nrf52.h
+index 26e96fa131..47a8d18538 100644
+--- a/arch/arm/src/nrf52/nrf52.h
++++ b/arch/arm/src/nrf52/nrf52.h
+@@ -2086,6 +2086,7 @@ typedef struct                          /* GPIO Structure                */
+ #define NRF_I2S                  ((NRF_I2S_Type     *) NRF_I2S_BASE)
+ #define NRF_FPU                  ((NRF_FPU_Type     *) NRF_FPU_BASE)
+ #define NRF_P0                   ((NRF_GPIO_Type    *) NRF_P0_BASE)
++#define NRF_P0                   ((NRF_GPIO_Type    *) NRF_P0_BASE)
+ 
+ #if defined(CONFIG_ARCH_CORTEXM4)
+ #define __CORTEX_M 0x04
+diff --git a/arch/arm/src/nrf52/nrf52_queue.c b/arch/arm/src/nrf52/nrf52_queue.c
+new file mode 100644
+index 0000000000..e2ca760889
+--- /dev/null
++++ b/arch/arm/src/nrf52/nrf52_queue.c
+@@ -0,0 +1,86 @@
++/*****************************************************************************
++ * @file     nrf52_queue.c
++ *
++ * @brief    zGlue created source file to contain queue handing routines
++ *           for which NuttX does not provide (namely circular queues)
++ *
++ * @version  V1
++ * @date     02. January 2018
++ *
++ * @note
++ *
++ * @par      Copyright (c) 2017,2018 zGlue Inc.
++ *           All rights reserved.
++ *
++ *           Redistribution and use in source and binary forms, with or without
++ *           modification, are permitted provided that the following conditions are met:
++ *
++ *           * Redistributions of source code must retain the above copyright notice, this
++ *           list of conditions and the following disclaimer.
++ *
++ *           * Redistributions in binary form must reproduce the above copyright notice,
++ *           this list of conditions and the following disclaimer in the documentation
++ *           and/or other materials provided with the distribution.
++ *
++ *           * Neither the name of Nordic Semiconductor ASA nor the names of its
++ *           contributors may be used to endorse or promote products derived from
++ *           this software without specific prior written permission.
++ *
++ *           THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ *           AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ *           IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *           DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
++ *           FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ *           DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++ *           SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
++ *           CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ *           OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *           OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ *
++ *****************************************************************************/
++
++#include <unistd.h>
++#include <stdint.h>
++#include <stdbool.h>
++#include "nrf_queue.h"
++
++/************************************************************************************
++ * Public Functions
++ ************************************************************************************/
++bool nrf_cirq_is_empty(nrf_circ_q_t *cirq)
++{
++  return cirq->trailing == cirq->leading;
++}
++
++bool nrf_cirq_is_full(nrf_circ_q_t *cirq)
++{
++  return (cirq->trailing + cirq->size - 1) == cirq->leading;
++}
++
++bool nrf_cirq_put(nrf_circ_q_t *cirq, uint8_t data)
++{
++  bool empty;
++
++  empty = nrf_cirq_is_full(cirq);
++  if (!empty)
++    {
++      cirq->buf[cirq->leading++ % cirq->size] = data;
++    }
++
++  return !empty;
++}
++
++bool nrf_cirq_get(nrf_circ_q_t *cirq, uint8_t *data)
++{
++  bool full;
++
++  full = nrf_cirq_is_empty(cirq);
++  if (!full)
++    {
++      *data = cirq->buf[cirq->trailing++ % cirq->size];
++    }
++
++  return !full;
++}
++
+diff --git a/arch/arm/src/nrf52/nrf52_rng.c b/arch/arm/src/nrf52/nrf52_rng.c
+index 1f273c9966..761b09f7b6 100644
+--- a/arch/arm/src/nrf52/nrf52_rng.c
++++ b/arch/arm/src/nrf52/nrf52_rng.c
+@@ -287,7 +287,6 @@ void nrf_drv_rng_block_rand(uint8_t *p_buff, uint32_t length)
+       length -= len;
+       p_buff += len;
+     }
+-
+ }
+ 
+ #endif  /* #if defined(NORDIC_CODE_ENABLE) */
+diff --git a/arch/arm/src/nrf52/nrf_drv_rng.c b/arch/arm/src/nrf52/nrf_drv_rng.c
+index b83a82446f..cfffc85a6a 100644
+--- a/arch/arm/src/nrf52/nrf_drv_rng.c
++++ b/arch/arm/src/nrf52/nrf_drv_rng.c
+@@ -38,7 +38,7 @@
+  *
+  */
+ #include "sdk_common.h"
+-// #if NRF_MODULE_ENABLED(RNG)
++#if NRF_MODULE_ENABLED(RNG)
+ 
+ #include "nrf_drv_rng.h"
+ #include "nrf_drv_common.h"
+@@ -48,12 +48,12 @@
+ #include "nrf_queue.h"
+ 
+ #ifdef SOFTDEVICE_PRESENT
+-#include "nrf_sdh.h"
++/* #include "nrf_sdh.h" */
+ #endif // SOFTDEVICE_PRESENT
+ 
+ #define NRF_LOG_MODULE_NAME rng
+ 
+-#if RNG_CONFIG_LOG_ENABLED
++#if NRF_MODULE_ENABLED(RNG_CONFIG_LOG)
+ #define NRF_LOG_LEVEL       RNG_CONFIG_LOG_LEVEL
+ #define NRF_LOG_INFO_COLOR  RNG_CONFIG_INFO_COLOR
+ #define NRF_LOG_DEBUG_COLOR RNG_CONFIG_DEBUG_COLOR
+@@ -231,7 +231,7 @@ ret_code_t nrf_drv_rng_rand(uint8_t *p_buff, uint8_t length)
+ #endif // SOFTDEVICE_PRESENT
+   ASSERT((err_code == NRF_SUCCESS) || (err_code == NRF_ERROR_NOT_FOUND));
+ 
+-#if defined(RNG_CONFIG_RANDOM_NUMBER_LOG_ENABLED) && (RNG_CONFIG_RANDOM_NUMBER_LOG_ENABLED != 0)
++#if NRF_MODULE_ENABLED(RNG_CONFIG_RANDOM_NUMBER_LOG)
+   NRF_LOG_DEBUG("Rand buffer data:");
+   NRF_LOG_HEXDUMP_DEBUG((uint8_t *)p_buff, length);
+ #endif // RNG_CONFIG_RANDOM_NUMBER_LOG_ENABLED
+@@ -320,4 +320,4 @@ void RNG_IRQHandler(void)
+   NRF_DRV_RNG_RELEASE();
+ }
+ 
+-// #endif // NRF_MODULE_ENABLED(RNG)
++#endif // NRF_MODULE_ENABLED(RNG)
+diff --git a/arch/arm/src/nrf52/nrf_queue.h b/arch/arm/src/nrf52/nrf_queue.h
+new file mode 100644
+index 0000000000..6e2a48c76c
+--- /dev/null
++++ b/arch/arm/src/nrf52/nrf_queue.h
+@@ -0,0 +1,92 @@
++/*****************************************************************************
++ * @file     nrf_queue.h
++ *
++ * @brief    zGlue created header file to contain queue handing macros and declarations
++ *           for which NuttX does not provide (namely circular queues)
++ *
++ * @version  V1
++ * @date     18. December 2017
++ *
++ * @note
++ *
++ * @par      Copyright (c) 2017, zGlue Inc.
++ *           All rights reserved.
++ *
++ *           Redistribution and use in source and binary forms, with or without
++ *           modification, are permitted provided that the following conditions are met:
++ *
++ *           * Redistributions of source code must retain the above copyright notice, this
++ *           list of conditions and the following disclaimer.
++ *
++ *           * Redistributions in binary form must reproduce the above copyright notice,
++ *           this list of conditions and the following disclaimer in the documentation
++ *           and/or other materials provided with the distribution.
++ *
++ *           * Neither the name of Nordic Semiconductor ASA nor the names of its
++ *           contributors may be used to endorse or promote products derived from
++ *           this software without specific prior written permission.
++ *
++ *           THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ *           AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ *           IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *           DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
++ *           FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ *           DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++ *           SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
++ *           CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ *           OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *           OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ *
++ *****************************************************************************/
++
++
++#ifndef __ARCH_ARM_SRC_NRF52_NRF_QUEUE_H
++#define __ARCH_ARM_SRC_NRF52_NRF_QUEUE_H
++
++#include <stdint.h>
++#include <stdbool.h>
++
++/************************************************************************************
++ * Public Types
++ ************************************************************************************/
++typedef struct
++{
++  size_t trailing;        /* Simple counter */
++  size_t leading;         /* Simple counter */
++  size_t size;            /* Ideally, should be a multiple of 2 */
++  size_t *buf;
++} nrf_circ_q_t;
++
++/************************************************************************************
++ * Public Functions Prototypes
++ ************************************************************************************/
++/**
++ * @brief Function for checking the full state of the given circular queue
++ *
++ * @param[in] *cirq  Pointer to the circular queue structure
++ */
++bool nrf_cirq_is_full(nrf_circ_q_t *cirq);
++
++/**
++ * @brief Function for checking the empty state of the given circular queue
++ *
++ * @param[in] *cirq  Pointer to the circular queue structure
++ */
++bool nrf_cirq_is_empty(nrf_circ_q_t *cirq);
++
++/**
++ * @brief Function for adding  an element to the circular queue
++ *
++ * @param[in] *cirq  Pointer to the circular queue structure
++ */
++bool nrf_cirq_put(nrf_circ_q_t *cirq, uint8_t data);
++
++/**
++ * @brief Function for removing an element of the circular queue
++ *
++ * @param[in] *cirq  Pointer to the circular queue structure
++ */
++bool nrf_cirq_get(nrf_circ_q_t *cirq, uint8_t *data);
++
++#endif /*  __ARCH_ARM_SRC_NRF52_NRF_QUEUE_H */
+-- 
+2.11.0
+

@@ -1,0 +1,2338 @@
+From 4575c562b0ad4ee3dbe0bedbc6a0337d2b0eef7d Mon Sep 17 00:00:00 2001
+From: Bill Rees <bill@zglue.com>
+Date: Sun, 10 Dec 2017 17:52:26 -0800
+Subject:     Merging Noric/NuttX behaviors
+
+Change-Id: I93c1c1f77e292e3f819c4fa8848b3b23758cf7da
+---
+ arch/arm/src/nrf52/Kconfig                 |   13 +
+ arch/arm/src/nrf52/chip/nrf52_rng.h        |  266 ++++++-
+ arch/arm/src/nrf52/nrf52.h                 |    7 +-
+ arch/arm/src/nrf52/nrf52_rng.c             |  320 +++++++--
+ configs/nrf52832_dk/ble_app_uart/defconfig |   72 +-
+ configs/nrf52832_dk/ble_hello/defconfig    |   99 ++-
+ configs/nrf52832_dk/include/board.h        |    2 +-
+ configs/nrf52832_dk/random/Make.defs       |   40 ++
+ configs/nrf52832_dk/random/defconfig       | 1034 ++++++++++++++++++++++++++++
+ 9 files changed, 1677 insertions(+), 176 deletions(-)
+ create mode 100644 configs/nrf52832_dk/random/Make.defs
+ create mode 100644 configs/nrf52832_dk/random/defconfig
+
+diff --git a/arch/arm/src/nrf52/Kconfig b/arch/arm/src/nrf52/Kconfig
+index f90ebd2e68..017c2fda03 100644
+--- a/arch/arm/src/nrf52/Kconfig
++++ b/arch/arm/src/nrf52/Kconfig
+@@ -43,6 +43,7 @@ config NRF52_NRF52832_HAVE_PERIPH
+ 	select NRF52_HAVE_COMP
+ 	select NRF52_HAVE_I2S
+ 	select NRF52_HAVE_BLUETOOTH
++	select NRF52_HAVE_RNG
+ 
+ config NRF52_NRF52840_HAVE_PERIPH
+ 	bool
+@@ -54,6 +55,7 @@ config NRF52_NRF52840_HAVE_PERIPH
+ 	select NRF52_HAVE_COMP
+ 	select NRF52_HAVE_I2S
+ 	select NRF52_HAVE_BLUETOOTH
++	select NRF52_HAVE_RNG
+ 
+ choice
+ 	prompt "Embedded FLASH size"
+@@ -109,6 +111,10 @@ config NRF52_HAVE_BLUETOOTH
+ 	bool
+ 	default n
+ 
++config NRF52_HAVE_RNG
++	bool
++	default n
++
+ config NRF52_BLUETOOTH
+ 	bool "Bluetooth"
+ 	default n
+@@ -293,7 +299,14 @@ config NRF52_AES
+ config NRF52_RNG
+ 	bool "RNG"
+ 	default n
++	depends on NRF52_HAVE_RNG
+ 	select ARCH_HAVE_RNG
++        ---help---
++                Random Number Generator: Generate random bytes, when enabled, until
++                disabled.  A bias correction may be applied to the data to ensure
++                an even distribution of '1's versus '0's.
++
++                Don't forget to select the random or urandom device.
+ 
+ choice
+         prompt "Run I2S on a low or high priority work queue?"
+diff --git a/arch/arm/src/nrf52/chip/nrf52_rng.h b/arch/arm/src/nrf52/chip/nrf52_rng.h
+index 8692566d13..f3a0247cd3 100644
+--- a/arch/arm/src/nrf52/chip/nrf52_rng.h
++++ b/arch/arm/src/nrf52/chip/nrf52_rng.h
+@@ -33,45 +33,269 @@
+  *
+  ************************************************************************************/
+ 
+-#ifndef __ARCH_ARM_STC_NRF52_CHIP_NRF52_RNG_H
+-#define __ARCH_ARM_STC_NRF52_CHIP_NRF52_RNG_H
++#ifndef __ARCH_ARM_SRC_NRF52_CHIP_NRF52_RNG_H
++#define __ARCH_ARM_SRC_NRF52_CHIP_NRF52_RNG_H
+ 
+ /************************************************************************************
+  * Included Files
+  ************************************************************************************/
+ 
++#ifdef CONFIG_NRF52_RNG
+ #include <nuttx/config.h>
+ #include "chip.h"
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
++
+ /************************************************************************************
+  * Pre-processor Definitions
+  ************************************************************************************/
++#define NRF52_IRQ_RNG   RNG_IRQn
++#define NRF_RNG_TASK_SET    (1UL)
++#define NRF_RNG_EVENT_CLEAR (0UL)
++#define NRF_RNG             ((NRF_RNG_Type  *) NRF_RNG_BASE)
++
++
++/* ========================================================================= */
++/* ================                  RNG                    ================ */
++/* ================        (Random Number Generator)        ================ */
++/* ========================================================================= */
++
++/************************************************************************************
++ * Public Type Definitions
++ ************************************************************************************/
++
++typedef struct                          /* Random Number Generator (RNG) Structure  */
++{
++  __O  uint32_t  TASKS_START;           /* Start RNG                    */
++  __O  uint32_t  TASKS_STOP;            /* Stop  RNG                    */
++  __I  uint32_t  RESERVED0[62];
++  __IO uint32_t  EVENTS_VALRDY;         /* Data ready event.            */
++  __I  uint32_t  RESERVED2[63];
++  __IO uint32_t  SHORTS;                /* Shortcut register            */
++  __I  uint32_t  RESERVED3[64];
++  __IO uint32_t  INTENSET;              /* Enable interrupt             */
++  __IO uint32_t  INTENCLR;              /* Disable interrupt            */
++  __I  uint32_t  RESERVED4[126];
++  __IO uint32_t  CONFIG;                /* Configure bias treatment of data. */
++  __IO uint32_t  VALUE;                 /* Data byte                    */
++} NRF_RNG_Type;
++
++typedef enum
++{
++  NRF_RNG_TASK_START    = offsetof(NRF_RNG_Type, TASKS_START),      /*   Task for starting the rng.    */
++  NRF_RNG_TASK_STOP     = offsetof(NRF_RNG_Type, TASKS_STOP),       /*   Task for stopping the rng.    */
++  NRF_RNG_EVENT_VALRDY  = offsetof(NRF_RNG_Type, EVENTS_VALRDY),    /*   Event from  data ready.       */
++  NRF_RNG_INTENSET      = offsetof(NRF_RNG_Type, INTENSET),         /*   Int set                       */
++  NRF_RNG_INTENCLR      = offsetof(NRF_RNG_Type, INTENCLR),         /*   Int clear                     */
++} nrf_rng_regs_t;
++
++/**
++ * @enum nrf_rng_int_mask_t
++ * @brief RNG interrupts.
++ */
++typedef enum
++{
++  NRF_RNG_INT_VALRDY_MASK = RNG_INTENSET_VALRDY_Msk /**< Mask for enabling or disabling an interrupt on VALRDY event.  */
++} nrf_rng_int_mask_t;
++
++/**
++ * @enum nrf_rng_short_mask_t
++ * @brief Types of RNG shortcuts.
++ */
++typedef enum
++{
++  NRF_RNG_SHORT_VALRDY_STOP_MASK = RNG_SHORTS_VALRDY_STOP_Msk /**<  Mask for setting shortcut between EVENT_VALRDY and TASK_STOP. */
++} nrf_rng_short_mask_t;
++
++
++
++/****************************************************************************
++ * Private Function Prototypes
++ ****************************************************************************/
++
++/**
++ * @brief Function for enabling interrupts.
++ *
++ * @param[in]  rng_int_mask              Mask of interrupts.
++ */
++__STATIC_INLINE void nrf_rng_int_enable(uint32_t rng_int_mask);
++
++/**
++ * @brief Function for disabling interrupts.
++ *
++ * @param[in]  rng_int_mask              Mask of interrupts.
++ */
++__STATIC_INLINE void nrf_rng_int_disable(uint32_t rng_int_mask);
++
++/**
++ * @brief Function for getting the state of a specific interrupt.
++ *
++ * @param[in]  rng_int_mask              Interrupt.
++ *
++ * @retval     true                   If the interrupt is not enabled.
++ * @retval     false                  If the interrupt is enabled.
++ */
++__STATIC_INLINE bool nrf_rng_int_get(nrf_rng_int_mask_t rng_int_mask);
++
++/**
++ * @brief Function for getting the address of a specific task.
++ *
++ * This function can be used by the PPI module.
++ *
++ * @param[in]  rng_task              Task.
++ */
++__STATIC_INLINE uint32_t *nrf_rng_task_address_get(nrf_rng_task_t rng_task);
++
++/**
++ * @brief Function for setting a specific task.
++ *
++ * @param[in]  rng_task              Task.
++ */
++__STATIC_INLINE void nrf_rng_task_trigger(nrf_rng_task_t rng_task);
++
++/**
++ * @brief Function for getting address of a specific event.
++ *
++ * This function can be used by the PPI module.
++ *
++ * @param[in]  rng_event              Event.
++ */
++__STATIC_INLINE uint32_t *nrf_rng_event_address_get(nrf_rng_event_t rng_event);
++
++/**
++ * @brief Function for clearing a specific event.
++ *
++ * @param[in]  rng_event              Event.
++ */
++__STATIC_INLINE void nrf_rng_event_clear(nrf_rng_event_t rng_event);
++
++/**
++ * @brief Function for getting the state of a specific event.
++ *
++ * @param[in]  rng_event              Event.
++ *
++ * @retval     true               If the event is not set.
++ * @retval     false              If the event is set.
++ */
++__STATIC_INLINE bool nrf_rng_event_get(nrf_rng_event_t rng_event);
++
++/**
++ * @brief Function for setting shortcuts.
++ *
++ * @param[in]  rng_short_mask              Mask of shortcuts.
++ *
++ */
++__STATIC_INLINE void nrf_rng_shorts_enable(uint32_t rng_short_mask);
++
++/**
++ * @brief Function for clearing shortcuts.
++ *
++ * @param[in]  rng_short_mask              Mask of shortcuts.
++ *
++ */
++__STATIC_INLINE void nrf_rng_shorts_disable(uint32_t rng_short_mask);
++
++/**
++ * @brief Function for getting the previously generated random value.
++ *
++ * @return     Previously generated random value.
++ */
++__STATIC_INLINE uint8_t nrf_rng_random_value_get(void);
++
++/**
++ * @brief Function for enabling digital error correction.
++ */
++__STATIC_INLINE void nrf_rng_error_correction_enable(void);
++
++/**
++ * @brief Function for disabling digital error correction.
++ */
++__STATIC_INLINE void nrf_rng_error_correction_disable(void);
++
++/**
++ *@}
++ **/
++
++#ifndef SUPPRESS_INLINE_IMPLEMENTATION
++
++__STATIC_INLINE void nrf_rng_int_enable(uint32_t rng_int_mask)
++{
++  NRF_RNG->INTENSET = rng_int_mask;
++}
++
++__STATIC_INLINE void nrf_rng_int_disable(uint32_t rng_int_mask)
++{
++  NRF_RNG->INTENCLR = rng_int_mask;
++}
++
++__STATIC_INLINE bool nrf_rng_int_get(nrf_rng_int_mask_t rng_int_mask)
++{
++  return (bool)(NRF_RNG->INTENCLR & rng_int_mask);
++}
++
++__STATIC_INLINE uint32_t *nrf_rng_task_address_get(nrf_rng_task_t rng_task)
++{
++  return (uint32_t *)((uint8_t *)NRF_RNG + rng_task);
++}
++
++__STATIC_INLINE void nrf_rng_task_trigger(nrf_rng_task_t rng_task)
++{
++  *((volatile uint32_t *)((uint8_t *)NRF_RNG + rng_task)) = NRF_RNG_TASK_SET;
++}
++
++__STATIC_INLINE uint32_t *nrf_rng_event_address_get(nrf_rng_event_t rng_event)
++{
++  return (uint32_t *)((uint8_t *)NRF_RNG + rng_event);
++}
+ 
+-/* Register Offsets *****************************************************************/
++__STATIC_INLINE void nrf_rng_event_clear(nrf_rng_event_t rng_event)
++{
++  *((volatile uint32_t *)((uint8_t *)NRF_RNG + rng_event)) = NRF_RNG_EVENT_CLEAR;
++#if __CORTEX_M == 0x04
++  volatile uint32_t dummy = *((volatile uint32_t *)((uint8_t *)NRF_RNG + rng_event));
++  (void)dummy;
++#else
++#error Just checking to see if this is working.
++#endif
++}
+ 
+-#define NRF52_XXX__RNG_CR_OFFSET     0x0000  /* RNG Control Register */
+-#define NRF52_XXX__RNG_SR_OFFSET     0x0004  /* RNG Status Register */
+-#define NRF52_XXX__RNG_DR_OFFSET     0x0008  /* RNG Data Register */
++__STATIC_INLINE bool nrf_rng_event_get(nrf_rng_event_t rng_event)
++{
++  return (bool) * ((volatile uint32_t *)((uint8_t *)NRF_RNG + rng_event));
++}
+ 
+-/* Register Addresses ***************************************************************/
++__STATIC_INLINE void nrf_rng_shorts_enable(uint32_t rng_short_mask)
++{
++  NRF_RNG->SHORTS |= rng_short_mask;
++}
+ 
+-#define NRF52_XXX__RNG_CR            (NRF52_XXX_RNG_BASE+NRF52_XXX_RNG_CR_OFFSET)
+-#define NRF52_XXX__RNG_SR            (NRF52_XXX_RNG_BASE+NRF52_XXX_RNG_SR_OFFSET)
+-#define NRF52_XXX__RNG_DR            (NRF52_XXX_RNG_BASE+NRF52_XXX_RNG_DR_OFFSET)
++__STATIC_INLINE void nrf_rng_shorts_disable(uint32_t rng_short_mask)
++{
++  NRF_RNG->SHORTS &= ~rng_short_mask;
++}
+ 
+-/* Register Bitfield Definitions ****************************************************/
++__STATIC_INLINE uint8_t nrf_rng_random_value_get(void)
++{
++  return (uint8_t)(NRF_RNG->VALUE & RNG_VALUE_VALUE_Msk);
++}
+ 
+-/* RNG Control Register */
++__STATIC_INLINE void nrf_rng_error_correction_enable(void)
++{
++  NRF_RNG->CONFIG |= RNG_CONFIG_DERCEN_Msk;
++}
+ 
+-#define RNG_CR_RNGEN              (1 << 2)  /* Bit 2: RNG enable */
+-#define RNG_CR_IE                 (1 << 3)  /* Bit 3: Interrupt enable */
++__STATIC_INLINE void nrf_rng_error_correction_disable(void)
++{
++  NRF_RNG->CONFIG &= ~RNG_CONFIG_DERCEN_Msk;
++}
+ 
+-/* RNG Status Register */
++#endif
+ 
+-#define RNG_SR_DRDY               (1 << 0) /* Bit 0: Data ready */
+-#define RNG_SR_CECS               (1 << 1) /* Bit 1: Clock error current status */
+-#define RNG_SR_SECS               (1 << 2) /* Bit 2: Seed error current status */
+-#define RNG_SR_CEIS               (1 << 5) /* Bit 5: Clock error interrupt status */
+-#define RNG_SR_SEIS               (1 << 6) /* Bit 6: Seed error interrupt status */
++#ifdef __cplusplus
++}
++#endif
+ 
+-#endif /* __ARCH_ARM_STC_NRF52_CHIP_NRF52_RNG_H */
++#endif /* CONFIG_NRF52_RNG */
++#endif /* __ARCH_ARM_SRC_NRF52_CHIP_NRF52_RNG_H */
+diff --git a/arch/arm/src/nrf52/nrf52.h b/arch/arm/src/nrf52/nrf52.h
+index 673bd70212..94d4a54ae1 100644
+--- a/arch/arm/src/nrf52/nrf52.h
++++ b/arch/arm/src/nrf52/nrf52.h
+@@ -109,6 +109,7 @@ typedef enum
+ #define BOARD_PCA10040 1
+ #endif
+ 
++#define NRF52
+ #if defined(CONFIG_NRF52_BLUETOOTH)
+ #define FREERTOS 1
+ #define S132 1
+@@ -1347,7 +1348,7 @@ typedef struct                          /*!< TEMP Structure               */
+   __IO uint32_t  T4;                    /*!< End point of 5th piece wise linear function           */
+ } NRF_TEMP_Type;
+ 
+-
++#if defined(GLOBAL_RNG_TYPE)
+ /* ========================================================================= */
+ /* ================           RNG                      ================ */
+ /* ========================================================================= */
+@@ -1373,7 +1374,7 @@ typedef struct                          /*!< RNG Structure                */
+   __IO uint32_t  CONFIG;                /*!< Configuration register       */
+   __I  uint32_t  VALUE;                 /*!< Output random number         */
+ } NRF_RNG_Type;
+-
++#endif
+ 
+ /* ========================================================================= */
+ /* ================           ECB                      ================ */
+@@ -2050,7 +2051,9 @@ typedef struct                          /* GPIO Structure                */
+ #define NRF_TIMER2               ((NRF_TIMER_Type   *) NRF_TIMER2_BASE)
+ #define NRF_RTC0                 ((NRF_RTC_Type     *) NRF_RTC0_BASE)
+ #define NRF_TEMP                 ((NRF_TEMP_Type    *) NRF_TEMP_BASE)
++#if defined(GLOBAL_RNG_TYPE)
+ #define NRF_RNG                  ((NRF_RNG_Type     *) NRF_RNG_BASE)
++#endif
+ #define NRF_ECB                  ((NRF_ECB_Type     *) NRF_ECB_BASE)
+ #define NRF_CCM                  ((NRF_CCM_Type     *) NRF_CCM_BASE)
+ #define NRF_AAR                  ((NRF_AAR_Type     *) NRF_AAR_BASE)
+diff --git a/arch/arm/src/nrf52/nrf52_rng.c b/arch/arm/src/nrf52/nrf52_rng.c
+index 39047a704e..11e9e5ad33 100644
+--- a/arch/arm/src/nrf52/nrf52_rng.c
++++ b/arch/arm/src/nrf52/nrf52_rng.c
+@@ -51,22 +51,44 @@
+ #include <nuttx/fs/fs.h>
+ #include <nuttx/drivers/drivers.h>
+ 
++#include <arch/board/board.h>
+ #include "up_arch.h"
+ #include "chip/nrf52_rng.h"
+ #include "up_internal.h"
++#include "nrf.h"
+ 
+ #if defined(CONFIG_NRF52_RNG)
+-#if defined(CONFIG_DEV_RANDOM) || defined(CONFIG_DEV_URANDOM_ARCH)
++
++#ifdef SOFTDEVICE_PRESENT
++#ifdef S132
++#define SD_RAND_POOL_SIZE           (64)
++#else
++#define SD_RAND_POOL_SIZE           (32)
++#endif
++ASSERT(RNG_CONFIG_POOL_SIZE == SD_RAND_POOL_SIZE);
++
++#define NRF_DRV_RNG_LOCK()          CRITICAL_REGION_ENTER()
++#define NRF_DRV_RNG_RELEASE()       CRITICAL_REGION_EXIT()
++#define NRF_DRV_RNG_SD_IS_ENABLED() nrf_sdh_is_enabled()
++#else
++#define NRF_DRV_RNG_LOCK()          do { } while (0)
++#define NRF_DRV_RNG_RELEASE()       do { } while (0)
++#define NRF_DRV_RNG_SD_IS_ENABLED() false
++#endif // SOFTDEVICE_PRESENT
+ 
+ /****************************************************************************
+  * Private Function Prototypes
+  ****************************************************************************/
+ 
+ static int nrf52_rng_initialize(void);
+-static int nrf52_rnginterrupt(int irq, void *context, FAR void *arg);
+-static void nrf52_rngenable(void);
+-static void nrf52_rngdisable(void);
+-static ssize_t nrf52_rngread(struct file *filep, char *buffer, size_t);
++static int nrf52_rng_interrupt(int irq, void *context, FAR void *arg);
++static void nrf52_rng_enable(void);
++static void nrf52_rng_disable(void);
++static ssize_t nrf52_rng_read(FAR struct file *filep, FAR char *buffer, size_t);
++static ssize_t nrf52_rng_write(FAR struct file *filep, FAR const char *buffer, size_t);
++static int nrf52_rng_open(FAR struct file *filep);
++static int nrf52_rng_close(FAR struct file *filep);
++static int nrf52_rng_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+ 
+ /****************************************************************************
+  * Private Types
+@@ -90,25 +112,183 @@ static struct rng_dev_s g_rngdev;
+ 
+ static const struct file_operations g_rngops =
+ {
+-  0,               /* open */
+-  0,               /* close */
+-  nrf52_rngread, /* read */
+-  0,               /* write */
+-  0,               /* seek */
+-  0                /* ioctl */
++  nrf52_rng_open,       /* open   */
++  nrf52_rng_close,      /* close  */
++  nrf52_rng_read,       /* read   */
++  nrf52_rng_write,      /* write  */
++  0,                   /* seek   */
++  nrf52_rng_ioctl,      /* ioctl  */
+ #ifndef CONFIG_DISABLE_POLL
+-  , 0              /* poll */
++  0,                   /* poll   */
+ #endif
+ #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
+-  , 0              /* unlink */
++  0,                   /* unlink */
+ #endif
+-
+ };
+ 
+ /****************************************************************************
+  * Private functions
+  ****************************************************************************/
++#if defined(NORDIC_CODE_ENABLE)
++/**
++ * @brief Function for starting generation.
++ */
++static void nrf_drv_rng_start(void)
++{
++  ASSERT(!NRF_DRV_RNG_SD_IS_ENABLED());
++
++  nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
++  nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
++  nrf_rng_task_trigger(NRF_RNG_TASK_START);
++}
++
++/**
++ * @brief Function for stoping generation.
++ */
++static void nrf_drv_rng_stop(void)
++{
++  ASSERT(!NRF_DRV_RNG_SD_IS_ENABLED());
++
++  nrf_rng_int_disable(NRF_RNG_INT_VALRDY_MASK);
++  nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
++}
++
++/**
++ * @brief Function for setting up RNG hardware.
++ */
++static void nrf_drv_rng_setup(void)
++{
++  ASSERT(!NRF_DRV_RNG_SD_IS_ENABLED());
++
++  if (m_rng_cb.config.error_correction)
++    {
++      nrf_rng_error_correction_enable();
++    }
++  nrf_rng_shorts_disable(NRF_RNG_SHORT_VALRDY_STOP_MASK);
++  nrf_drv_common_irq_enable(RNG_IRQn, m_rng_cb.config.interrupt_priority);
++}
++
++ret_code_t nrf_drv_rng_init(nrf_drv_rng_config_t const *p_config)
++{
++  if (m_rng_cb.state != NRF_DRV_STATE_UNINITIALIZED)
++    {
++      return NRF_ERROR_MODULE_ALREADY_INITIALIZED;
++    }
++
++  if (p_config == NULL)
++    {
++      p_config = &m_default_config;
++    }
++  m_rng_cb.config = *p_config;
++
++  NRF_DRV_RNG_LOCK();
++
++  if (!NRF_DRV_RNG_SD_IS_ENABLED())
++    {
++      nrf_drv_rng_setup();
++      nrf_drv_rng_start();
++    }
++
++  NRF_DRV_RNG_RELEASE();
++
++  m_rng_cb.state = NRF_DRV_STATE_INITIALIZED;
++
++  return NRF_SUCCESS;
++}
++
++void nrf_drv_rng_uninit(void)
++{
++  ASSERT(m_rng_cb.state == NRF_DRV_STATE_INITIALIZED);
++
++  NRF_DRV_RNG_LOCK();
++
++  if (!NRF_DRV_RNG_SD_IS_ENABLED())
++    {
++      nrf_drv_rng_stop();
++      nrf_drv_common_irq_disable(RNG_IRQn);
++    }
++
++  NRF_DRV_RNG_RELEASE();
++
++  nrf_queue_reset(&m_rand_pool);
++  m_rng_cb.state = NRF_DRV_STATE_UNINITIALIZED;
++}
++
++void nrf_drv_rng_bytes_available(uint8_t *p_bytes_available)
++{
++  ASSERT(m_rng_cb.state == NRF_DRV_STATE_INITIALIZED);
++
++#ifdef SOFTDEVICE_PRESENT
++  if (NRF_DRV_RNG_SD_IS_ENABLED())
++    {
++      if (NRF_SUCCESS == sd_rand_application_bytes_available_get(p_bytes_available))
++        {
++          return;
++        }
++    }
++#endif // SOFTDEVICE_PRESENT
++
++  *p_bytes_available  = nrf_queue_utilization_get(&m_rand_pool);
++}
++
++ret_code_t nrf_drv_rng_rand(uint8_t *p_buff, uint8_t length)
++{
++  ret_code_t err_code = NRF_SUCCESS;
++  ASSERT(m_rng_cb.state == NRF_DRV_STATE_INITIALIZED);
++
++#ifdef SOFTDEVICE_PRESENT
++  do
++    {
++      bool sd_is_enabled;
++      NRF_DRV_RNG_LOCK();
++      sd_is_enabled = NRF_DRV_RNG_SD_IS_ENABLED();
++      if (!sd_is_enabled)
++#endif // SOFTDEVICE_PRESENT
++        {
++          err_code = nrf_queue_read(&m_rand_pool, p_buff, (uint32_t)length);
++          nrf_drv_rng_start();
++        }
++#ifdef SOFTDEVICE_PRESENT
++      NRF_DRV_RNG_RELEASE();
++
++      if (sd_is_enabled)
++        {
++          err_code = sd_rand_application_vector_get(p_buff, length);
++          if (err_code == NRF_ERROR_SOC_RAND_NOT_ENOUGH_VALUES)
++            {
++              err_code = NRF_ERROR_NOT_FOUND;
++            }
++        }
++    }
++  while (err_code == NRF_ERROR_SOFTDEVICE_NOT_ENABLED);
++#endif // SOFTDEVICE_PRESENT
++  ASSERT((err_code == NRF_SUCCESS) || (err_code == NRF_ERROR_NOT_FOUND));
++
++  return err_code;
++}
++
++void nrf_drv_rng_block_rand(uint8_t *p_buff, uint32_t length)
++{
++  ASSERT(m_rng_cb.state == NRF_DRV_STATE_INITIALIZED);
++
++  while (length)
++    {
++      uint32_t    len = MIN(length, RNG_CONFIG_POOL_SIZE);
++      ret_code_t  err_code;
++
++      do
++        {
++          err_code = nrf_drv_rng_rand(p_buff, len);
++        }
++      while (err_code != NRF_SUCCESS);
+ 
++      length -= len;
++      p_buff += len;
++    }
++
++}
++
++#endif  /* #if defined(NORDIC_CODE_ENABLE) */
+ static int nrf52_rng_initialize(void)
+ {
+   _info("Initializing RNG\n");
+@@ -117,11 +297,10 @@ static int nrf52_rng_initialize(void)
+ 
+   sem_init(&g_rngdev.rd_devsem, 0, 1);
+ 
+-  if (irq_attach(NRF52_IRQ_RNG, nrf52_rnginterrupt, NULL))
++  if (irq_attach(NRF52_IRQ_RNG, nrf52_rng_interrupt, NULL))
+     {
+       /* We could not attach the ISR to the interrupt */
+-
+-      _info("Could not attach IRQ.\n");
++      _warn("Could not attach IRQ.\n");
+ 
+       return -EAGAIN;
+     }
+@@ -129,7 +308,7 @@ static int nrf52_rng_initialize(void)
+   return OK;
+ }
+ 
+-static void nrf52_rngenable(void)
++static void nrf52_rng_enable(void)
+ {
+   uint32_t regval;
+ 
+@@ -145,7 +324,7 @@ static void nrf52_rngenable(void)
+   up_enable_irq(NRF52_IRQ_RNG);
+ }
+ 
+-static void nrf52_rngdisable()
++static void nrf52_rng_disable()
+ {
+   uint32_t regval;
+ 
+@@ -157,11 +336,30 @@ static void nrf52_rngdisable()
+   putreg32(regval, NRF52_RNG_CR);
+ }
+ 
+-static int nrf52_rnginterrupt(int irq, void *context, FAR void *arg)
++static int nrf52_rng_interrupt(int irq, FAR void *context, FAR void *arg)
+ {
+   uint32_t rngsr;
+   uint32_t data;
+ 
++  NRF_DRV_RNG_LOCK();
++  if (
++    !NRF_DRV_RNG_SD_IS_ENABLED()            &&
++    nrf_rng_event_get(NRF_RNG_EVENT_VALRDY) &&
++    nrf_rng_int_get(NRF_RNG_INT_VALRDY_MASK))
++    {
++      nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
++
++      uint8_t new_value = nrf_rng_random_value_get();
++      UNUSED_RETURN_VALUE(nrf_queue_push(&m_rand_pool, &new_value));
++
++      if (nrf_queue_is_full(&m_rand_pool))
++        {
++          nrf_drv_rng_stop();
++        }
++
++      NRF_LOG_DEBUG("Event: NRF_RNG_EVENT_VALRDY.");
++    }
++  NRF_DRV_RNG_RELEASE();
+   rngsr = getreg32(NRF52_RNG_SR);
+   if (rngsr & RNG_SR_CEIS) /* Check for clock error int stat */
+     {
+@@ -239,7 +437,7 @@ static int nrf52_rnginterrupt(int irq, void *context, FAR void *arg)
+     {
+       /* Buffer filled, stop further interrupts. */
+ 
+-      nrf52_rngdisable();
++      nrf52_rng_disable();
+       sem_post(&g_rngdev.rd_readsem);
+     }
+ 
+@@ -247,49 +445,80 @@ static int nrf52_rnginterrupt(int irq, void *context, FAR void *arg)
+ }
+ 
+ /****************************************************************************
+- * Name: nrf52_rngread
++ * Name: nrf52_rng_open
+  ****************************************************************************/
+ 
+-static ssize_t nrf52_rngread(struct file *filep, char *buffer, size_t buflen)
++static int nrf52_rng_open(FAR struct file *filep)
++{
++}
++
++/****************************************************************************
++ * Name: nrf52_rng_close
++ ****************************************************************************/
++
++static int nrf52_rng_close(FAR struct file *filep)
++{
++}
++
++
++/****************************************************************************
++ * Name: nrf52_rng_ioctl
++ ****************************************************************************/
++
++static int nrf52_rng_ioctl(FAR struct file *filep, )
++{
++}
++
++/****************************************************************************
++ * Name: nrf52_rng_write
++ ****************************************************************************/
++
++static ssize_t nrf52_rng_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
++{
++}
++
++/****************************************************************************
++ * Name: nrf52_rn_gread
++ ****************************************************************************/
++
++static ssize_t nrf52_rng_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
+ {
+   if (sem_wait(&g_rngdev.rd_devsem) != OK)
+     {
++      errno = EBUSY;
+       return -errno;
+     }
+-  else
+-    {
+-      /* We've got the device semaphore, proceed with reading */
++  /* We've got the device semaphore, proceed with reading */
+ 
+-      /* Initialize the operation semaphore with 0 for blocking until the
+-       * buffer is filled from interrupts.  The waitsem semaphore is used
+-       * for signaling and, hence, should not have priority inheritance
+-       * enabled.
+-       */
++  /* Initialize the operation semaphore with 0 for blocking until the
++   * buffer is filled from interrupts.  The waitsem semaphore is used
++   * for signaling and, hence, should not have priority inheritance
++   * enabled.
++   */
+ 
+-      sem_init(&g_rngdev.rd_readsem, 0, 0);
+-      sem_setprotocol(&g_rngdev.rd_readsem, SEM_PRIO_NONE);
++  sem_init(&g_rngdev.rd_readsem, 0, 0);
++  sem_setprotocol(&g_rngdev.rd_readsem, SEM_PRIO_NONE);
+ 
+-      g_rngdev.rd_buflen = buflen;
+-      g_rngdev.rd_buf = buffer;
++  g_rngdev.rd_buflen = buflen;
++  g_rngdev.rd_buf = buffer;
+ 
+-      /* Enable RNG with interrupts */
++  /* Enable RNG with interrupts */
+ 
+-      nrf52_rngenable();
++  nrf52_rng_enable();
+ 
+-      /* Wait until the buffer is filled */
++  /* Wait until the buffer is filled */
+ 
+-      sem_wait(&g_rngdev.rd_readsem);
++  sem_wait(&g_rngdev.rd_readsem);
+ 
+-      /* Done with the operation semaphore */
++  /* Done with the operation semaphore */
+ 
+-      sem_destroy(&g_rngdev.rd_readsem);
++  sem_destroy(&g_rngdev.rd_readsem);
+ 
+-      /* Free RNG via the device semaphore for next use */
++  /* Free RNG via the device semaphore for next use */
+ 
+-      sem_post(&g_rngdev.rd_devsem);
++  sem_post(&g_rngdev.rd_devsem);
+ 
+-      return buflen;
+-    }
++  return buflen;
+ }
+ 
+ /****************************************************************************
+@@ -343,5 +572,4 @@ void devurandom_register(void)
+ }
+ #endif
+ 
+-#endif /* CONFIG_DEV_RANDOM || CONFIG_DEV_URANDOM_ARCH */
+ #endif /* CONFIG_NRF52_RNG */
+diff --git a/configs/nrf52832_dk/ble_app_uart/defconfig b/configs/nrf52832_dk/ble_app_uart/defconfig
+index 3ef5d10728..117c7ffc4a 100644
+--- a/configs/nrf52832_dk/ble_app_uart/defconfig
++++ b/configs/nrf52832_dk/ble_app_uart/defconfig
+@@ -213,10 +213,10 @@ CONFIG_NRF52832_FLASH_512KB=y
+ CONFIG_NRF52_HAVE_LPTIM1=y
+ CONFIG_NRF52_HAVE_LPTIM2=y
+ CONFIG_NRF52_HAVE_COMP=y
+-CONFIG_NRF52_HAVE_SAI1=y
+-CONFIG_NRF52_HAVE_SAI2=y
++CONFIG_NRF52_HAVE_I2S=y
+ CONFIG_NRF52_HAVE_UART0=y
+ CONFIG_NRF52_HAVE_BLUETOOTH=y
++CONFIG_NRF52_HAVE_RNG=y
+ CONFIG_NRF52_BLUETOOTH=y
+ 
+ #
+@@ -234,48 +234,24 @@ CONFIG_FLASH_ORIGIN="0x20000"
+ CONFIG_FLASH_LENGTH="0x60000"
+ CONFIG_SRAM_ORIGIN="0x20002168"
+ CONFIG_SRAM_LENGTH="0xde98"
+-
+-
+ # CONFIG_NRF52_ADC is not set
+ # CONFIG_NRF52_DAC is not set
+-# CONFIG_NRF52_DMA is not set
+ CONFIG_NRF52_I2C=y
+ CONFIG_NRF52_GPIOTE=y
+-# CONFIG_NRF52_SAI is not set
+ # CONFIG_NRF52_SPI is not set
+ CONFIG_NRF52_UART=y
+ # CONFIG_NRF52_LPTIM is not set
+-
+-#
+-# AHB1 Peripherals
+-#
+-# CONFIG_NRF52_DMA1 is not set
+-# CONFIG_NRF52_DMA2 is not set
+ # CONFIG_NRF52_CRC is not set
+ # CONFIG_NRF52_TSC is not set
+-
+-#
+-# AHB2 Peripherals
+-#
+ # CONFIG_NRF52_OTGFS is not set
+ # CONFIG_NRF52_ADC1 is not set
++# CONFIG_NRF52_PPI is not set
+ # CONFIG_NRF52_ADC2 is not set
+ # CONFIG_NRF52_ADC3 is not set
+ CONFIG_NRF52_AES=y
+-CONFIG_NRF52_RNG=y
+-# CONFIG_NRF52_SAI1_A is not set
+-# CONFIG_NRF52_SAI1_B is not set
+-# CONFIG_NRF52_SAI2_A is not set
+-# CONFIG_NRF52_SAI2_B is not set
+-
+-#
+-# AHB3 Peripherals
+-#
++# CONFIG_NRF52_RNG is not set
++# CONFIG_NRF52_I2S is not set
+ # CONFIG_NRF52_FMC is not set
+-
+-#
+-# APB1 Peripherals
+-#
+ # CONFIG_NRF52_PWR is not set
+ # CONFIG_NRF52_TIM0 is not set
+ # CONFIG_NRF52_TIM1 is not set
+@@ -295,33 +271,18 @@ CONFIG_NRF52_I2C0=y
+ # CONFIG_NRF52_DAC2 is not set
+ # CONFIG_NRF52_OPAMP is not set
+ # CONFIG_NRF52_LPTIM1 is not set
+-# CONFIG_NRF52_LPUART1 is not set
+ # CONFIG_NRF52_SWPMI is not set
+ # CONFIG_NRF52_LPTIM2 is not set
+-
+-#
+-# APB2 Peripherals
+-#
+ # CONFIG_NRF52_SYSCFG is not set
+-# CONFIG_NRF52_SDMMC1 is not set
+ # CONFIG_NRF52_UART1 is not set
+ # CONFIG_NRF52_COMP is not set
+-# CONFIG_NRF52_SAI1 is not set
+-# CONFIG_NRF52_SAI2 is not set
+ # CONFIG_NRF52_DFSDM is not set
+-# CONFIG_NRF52_PWM is not set
+-
+-#
+-# Other Peripherals
+-#
+ # CONFIG_NRF52_BKPSRAM is not set
+ # CONFIG_NRF52_WDG is not set
+ # CONFIG_NRF52_QDECODER is not set
+ CONFIG_NRF52_FLASH_PREFETCH=y
+ CONFIG_NRF52_DISABLE_IDLE_SLEEP_DURING_DEBUG=y
+ # CONFIG_ARCH_BOARD_NRF52_CUSTOM_CLOCKCONFIG is not set
+-# CONFIG_NRF52_SAI1PLL is not set
+-# CONFIG_NRF52_SAI2PLL is not set
+ 
+ #
+ # Timer Configuration
+@@ -344,11 +305,6 @@ CONFIG_NRF52_I2C0_SCL_PIN=12
+ # CONFIG_NRF52_I2C0_100K is not set
+ # CONFIG_NRF52_I2C0_250K is not set
+ CONFIG_NRF52_I2C0_400K=y
+-CONFIG_NRF52_I2C1_SDA_PIN=31
+-CONFIG_NRF52_I2C1_SCL_PIN=31
+-# CONFIG_NRF52_I2C1_100K is not set
+-# CONFIG_NRF52_I2C1_250K is not set
+-CONFIG_NRF52_I2C1_400K=y
+ # CONFIG_NRF52_I2C_DYNTIMEO is not set
+ CONFIG_NRF52_I2CTIMEOSEC=0
+ CONFIG_NRF52_I2CTIMEOMS=500
+@@ -561,7 +517,6 @@ CONFIG_PTHREAD_STACK_DEFAULT=2048
+ CONFIG_DISABLE_POLL=y
+ CONFIG_DEV_NULL=y
+ CONFIG_DEV_ZERO=y
+-# CONFIG_DEV_RANDOM is not set
+ # CONFIG_DEV_URANDOM is not set
+ CONFIG_DEV_LOOP=y
+ 
+@@ -951,6 +906,7 @@ CONFIG_BUILTIN_PROXY_STACKSIZE=1024
+ CONFIG_EXAMPLES_BLE_APP_UART=y
+ CONFIG_EXAMPLES_BLE_APP_UART_PRIORITY=100
+ CONFIG_EXAMPLES_BLE_APP_UART_STACKSIZE=2048
++# CONFIG_EXAMPLES_BLE_HELLO is not set
+ # CONFIG_EXAMPLES_BUTTONS is not set
+ # CONFIG_EXAMPLES_CCTYPE is not set
+ # CONFIG_EXAMPLES_CHAT is not set
+@@ -966,12 +922,11 @@ CONFIG_EXAMPLES_BLE_APP_UART_STACKSIZE=2048
+ # CONFIG_EXAMPLES_HIDKBD is not set
+ # CONFIG_EXAMPLES_IGMP is not set
+ # CONFIG_EXAMPLES_JSON is not set
+-# CONFIG_EXAMPLES_KEYPADTEST is not set
++# CONFIG_EXAMPLES_LEDS is not set
+ # CONFIG_EXAMPLES_MEDIA is not set
+ # CONFIG_EXAMPLES_MM is not set
+ # CONFIG_EXAMPLES_MODBUS is not set
+ # CONFIG_EXAMPLES_MOUNT is not set
+-# CONFIG_EXAMPLES_NRF24L01TERM is not set
+ # CONFIG_EXAMPLES_NSH is not set
+ # CONFIG_EXAMPLES_NULL is not set
+ # CONFIG_EXAMPLES_NXFFS is not set
+@@ -984,10 +939,12 @@ CONFIG_EXAMPLES_BLE_APP_UART_STACKSIZE=2048
+ # CONFIG_EXAMPLES_OSTEST is not set
+ # CONFIG_EXAMPLES_PCA9635 is not set
+ # CONFIG_EXAMPLES_POSIXSPAWN is not set
++# CONFIG_EXAMPLES_POWERMONITOR is not set
+ # CONFIG_EXAMPLES_PPPD is not set
+ # CONFIG_EXAMPLES_RFID_READUID is not set
+ # CONFIG_EXAMPLES_RGBLED is not set
+ # CONFIG_EXAMPLES_ROMFS is not set
++# CONFIG_EXAMPLES_RTC is not set
+ # CONFIG_EXAMPLES_SENDMAIL is not set
+ # CONFIG_EXAMPLES_SERIALBLASTER is not set
+ # CONFIG_EXAMPLES_SERIALRX is not set
+@@ -997,7 +954,6 @@ CONFIG_EXAMPLES_BLE_APP_UART_STACKSIZE=2048
+ # CONFIG_EXAMPLES_SMP is not set
+ # CONFIG_EXAMPLES_STAT is not set
+ # CONFIG_EXAMPLES_TCPECHO is not set
+-# CONFIG_EXAMPLES_TELNETD is not set
+ # CONFIG_EXAMPLES_THTTPD is not set
+ # CONFIG_EXAMPLES_TIFF is not set
+ # CONFIG_EXAMPLES_TOUCHSCREEN is not set
+@@ -1087,7 +1043,15 @@ CONFIG_READLINE_ECHO=y
+ #
+ # Wireless Libraries and NSH Add-Ons
+ #
+-CONFIG_WIRELESS_BT=y
++
++#
++# Bluetooth Application Stack
++#
++CONFIG_BT_LIBUTILS=y
++CONFIG_BT_MSG_Q_STACKSIZE=1024
++CONFIG_BT_MSG_Q_MAX_MSG_NUMBER=32
++CONFIG_BT_MSG_Q_PRIORITY=64
++CONFIG_BT_NRF=y
+ CONFIG_BLE_APP_ADV_DEVICE_NAME="ZG_BLE_APP"
+ CONFIG_BLE_APP_ADV_MANUFACTURER_NAME="ZGLUE"
+ CONFIG_BLE_APP_ADV_INTERVAL=100
+diff --git a/configs/nrf52832_dk/ble_hello/defconfig b/configs/nrf52832_dk/ble_hello/defconfig
+index ec5021bad9..5e2e0723b3 100644
+--- a/configs/nrf52832_dk/ble_hello/defconfig
++++ b/configs/nrf52832_dk/ble_hello/defconfig
+@@ -210,17 +210,17 @@ CONFIG_NRF52832_FLASH_512KB=y
+ CONFIG_NRF52_HAVE_LPTIM1=y
+ CONFIG_NRF52_HAVE_LPTIM2=y
+ CONFIG_NRF52_HAVE_COMP=y
+-CONFIG_NRF52_HAVE_SAI1=y
+-CONFIG_NRF52_HAVE_SAI2=y
++CONFIG_NRF52_HAVE_I2S=y
+ CONFIG_NRF52_HAVE_UART0=y
+ CONFIG_NRF52_HAVE_BLUETOOTH=y
++CONFIG_NRF52_HAVE_RNG=y
+ CONFIG_NRF52_BLUETOOTH=y
+ 
+ #
+ # Nordic Bluetooth Settings
+ #
+-# CONFIG_NRF_SOFTDEVICE_S132_V4_0_2=y
+-# CONFIG_NRF_SOFTDEVICE_S132_V5_0_0_1 is not set
++# CONFIG_NRF_SOFTDEVICE_S132_V4_0_2 is not set
++CONFIG_NRF_SOFTDEVICE_S132_V5_0_0_1=y
+ CONFIG_NRF_SOFTDEVICE="s132_nrf52_5.0.0-1.alpha"
+ CONFIG_BLE_GATT_MTU_SIZE_DEFAULT=23
+ CONFIG_NRF_SD_BLE_API_VERSION=5
+@@ -231,53 +231,33 @@ CONFIG_FLASH_ORIGIN="0x20000"
+ CONFIG_FLASH_LENGTH="0x60000"
+ CONFIG_SRAM_ORIGIN="0x20002168"
+ CONFIG_SRAM_LENGTH="0xde98"
+-
+-
+ # CONFIG_NRF52_ADC is not set
+ # CONFIG_NRF52_DAC is not set
+-# CONFIG_NRF52_DMA is not set
+ CONFIG_NRF52_I2C=y
+-# CONFIG_NRF52_SAI is not set
++CONFIG_NRF52_GPIOTE=y
+ # CONFIG_NRF52_SPI is not set
+ CONFIG_NRF52_UART=y
+ # CONFIG_NRF52_LPTIM is not set
+-
+-#
+-# AHB1 Peripherals
+-#
+-# CONFIG_NRF52_DMA1 is not set
+-# CONFIG_NRF52_DMA2 is not set
+ # CONFIG_NRF52_CRC is not set
+ # CONFIG_NRF52_TSC is not set
+-
+-#
+-# AHB2 Peripherals
+-#
+ # CONFIG_NRF52_OTGFS is not set
+ # CONFIG_NRF52_ADC1 is not set
++# CONFIG_NRF52_PPI is not set
+ # CONFIG_NRF52_ADC2 is not set
+ # CONFIG_NRF52_ADC3 is not set
+ CONFIG_NRF52_AES=y
+-CONFIG_NRF52_RNG=y
+-# CONFIG_NRF52_SAI1_A is not set
+-# CONFIG_NRF52_SAI1_B is not set
+-# CONFIG_NRF52_SAI2_A is not set
+-# CONFIG_NRF52_SAI2_B is not set
+-
+-#
+-# AHB3 Peripherals
+-#
++# CONFIG_NRF52_RNG is not set
++# CONFIG_NRF52_I2S is not set
+ # CONFIG_NRF52_FMC is not set
+-
+-#
+-# APB1 Peripherals
+-#
+ CONFIG_NRF52_PWR=y
+ # CONFIG_NRF52_TIM0 is not set
+ # CONFIG_NRF52_TIM1 is not set
+ # CONFIG_NRF52_TIM2 is not set
+ # CONFIG_NRF52_TIM3 is not set
+ # CONFIG_NRF52_TIM4 is not set
++# CONFIG_NRF52_RTC0 is not set
++# CONFIG_NRF52_RTC1 is not set
++# CONFIG_NRF52_RTC2 is not set
+ # CONFIG_NRF52_SPI0 is not set
+ # CONFIG_NRF52_SPI1 is not set
+ # CONFIG_NRF52_SPI2 is not set
+@@ -288,33 +268,19 @@ CONFIG_NRF52_I2C1=y
+ # CONFIG_NRF52_DAC2 is not set
+ # CONFIG_NRF52_OPAMP is not set
+ # CONFIG_NRF52_LPTIM1 is not set
+-# CONFIG_NRF52_LPUART1 is not set
+ # CONFIG_NRF52_SWPMI is not set
+ # CONFIG_NRF52_LPTIM2 is not set
+-
+-#
+-# APB2 Peripherals
+-#
+ CONFIG_NRF52_SYSCFG=y
+ CONFIG_NRF52_FIREWALL=y
+-# CONFIG_NRF52_SDMMC1 is not set
+ # CONFIG_NRF52_UART1 is not set
+ # CONFIG_NRF52_COMP is not set
+-# CONFIG_NRF52_SAI1 is not set
+-# CONFIG_NRF52_SAI2 is not set
+ # CONFIG_NRF52_DFSDM is not set
+-
+-#
+-# Other Peripherals
+-#
+ # CONFIG_NRF52_BKPSRAM is not set
+-# CONFIG_NRF52_IWDG is not set
+-# CONFIG_NRF52_WWDG is not set
++# CONFIG_NRF52_WDG is not set
++# CONFIG_NRF52_QDECODER is not set
+ CONFIG_NRF52_FLASH_PREFETCH=y
+ CONFIG_NRF52_DISABLE_IDLE_SLEEP_DURING_DEBUG=y
+ # CONFIG_ARCH_BOARD_NRF52_CUSTOM_CLOCKCONFIG is not set
+-# CONFIG_NRF52_SAI1PLL is not set
+-# CONFIG_NRF52_SAI2PLL is not set
+ 
+ #
+ # Timer Configuration
+@@ -548,8 +514,6 @@ CONFIG_PTHREAD_STACK_DEFAULT=2048
+ CONFIG_DISABLE_POLL=y
+ CONFIG_DEV_NULL=y
+ CONFIG_DEV_ZERO=y
+-CONFIG_ARCH_HAVE_RNG=y
+-# CONFIG_DEV_RANDOM is not set
+ # CONFIG_DEV_URANDOM is not set
+ CONFIG_DEV_LOOP=y
+ 
+@@ -590,6 +554,7 @@ CONFIG_SPI_EXCHANGE=y
+ #
+ CONFIG_TIMER=y
+ # CONFIG_ONESHOT is not set
++# CONFIG_COUNTER is not set
+ # CONFIG_RTC is not set
+ # CONFIG_WATCHDOG is not set
+ # CONFIG_TIMERS_CS2100CP is not set
+@@ -917,6 +882,7 @@ CONFIG_BUILTIN_PROXY_STACKSIZE=1024
+ #
+ # Examples
+ #
++# CONFIG_EXAMPLES_BLE_APP_UART is not set
+ CONFIG_EXAMPLES_BLE_HELLO=y
+ CONFIG_EXAMPLES_BLE_HELLO_PRIORITY=100
+ CONFIG_EXAMPLES_BLE_HELLO_STACKSIZE=2048
+@@ -935,12 +901,10 @@ CONFIG_EXAMPLES_BLE_HELLO_STACKSIZE=2048
+ # CONFIG_EXAMPLES_HIDKBD is not set
+ # CONFIG_EXAMPLES_IGMP is not set
+ # CONFIG_EXAMPLES_JSON is not set
+-# CONFIG_EXAMPLES_KEYPADTEST is not set
+ # CONFIG_EXAMPLES_MEDIA is not set
+ # CONFIG_EXAMPLES_MM is not set
+ # CONFIG_EXAMPLES_MODBUS is not set
+ # CONFIG_EXAMPLES_MOUNT is not set
+-# CONFIG_EXAMPLES_NRF24L01TERM is not set
+ # CONFIG_EXAMPLES_NSH is not set
+ # CONFIG_EXAMPLES_NULL is not set
+ # CONFIG_EXAMPLES_NXFFS is not set
+@@ -953,10 +917,12 @@ CONFIG_EXAMPLES_BLE_HELLO_STACKSIZE=2048
+ # CONFIG_EXAMPLES_OSTEST is not set
+ # CONFIG_EXAMPLES_PCA9635 is not set
+ # CONFIG_EXAMPLES_POSIXSPAWN is not set
++# CONFIG_EXAMPLES_POWERMONITOR is not set
+ # CONFIG_EXAMPLES_PPPD is not set
+ # CONFIG_EXAMPLES_RFID_READUID is not set
+ # CONFIG_EXAMPLES_RGBLED is not set
+ # CONFIG_EXAMPLES_ROMFS is not set
++# CONFIG_EXAMPLES_RTC is not set
+ # CONFIG_EXAMPLES_SENDMAIL is not set
+ # CONFIG_EXAMPLES_SERIALBLASTER is not set
+ # CONFIG_EXAMPLES_SERIALRX is not set
+@@ -966,7 +932,6 @@ CONFIG_EXAMPLES_BLE_HELLO_STACKSIZE=2048
+ # CONFIG_EXAMPLES_SMP is not set
+ # CONFIG_EXAMPLES_STAT is not set
+ # CONFIG_EXAMPLES_TCPECHO is not set
+-# CONFIG_EXAMPLES_TELNETD is not set
+ # CONFIG_EXAMPLES_THTTPD is not set
+ # CONFIG_EXAMPLES_TIFF is not set
+ # CONFIG_EXAMPLES_TIMER is not set
+@@ -1047,8 +1012,38 @@ CONFIG_SYSTEM_READLINE=y
+ CONFIG_READLINE_ECHO=y
+ # CONFIG_READLINE_TABCOMPLETION is not set
+ # CONFIG_READLINE_CMD_HISTORY is not set
++# CONFIG_SYSTEM_SENSOR is not set
+ # CONFIG_SYSTEM_SUDOKU is not set
+ # CONFIG_SYSTEM_TEE is not set
+ # CONFIG_SYSTEM_UBLOXMODEM is not set
+ # CONFIG_SYSTEM_VI is not set
+ # CONFIG_SYSTEM_ZMODEM is not set
++
++#
++# Wireless Libraries and NSH Add-Ons
++#
++
++#
++# Bluetooth Application Stack
++#
++CONFIG_BT_LIBUTILS=y
++CONFIG_BT_MSG_Q_STACKSIZE=1024
++CONFIG_BT_MSG_Q_MAX_MSG_NUMBER=32
++CONFIG_BT_MSG_Q_PRIORITY=64
++CONFIG_BT_NRF=y
++CONFIG_BLE_APP_ADV_DEVICE_NAME="ZG_BLE_APP"
++CONFIG_BLE_APP_ADV_MANUFACTURER_NAME="ZGLUE"
++CONFIG_BLE_APP_ADV_INTERVAL=100
++CONFIG_BLE_APP_ADV_TIMEOUT=0
++CONFIG_BLE_APP_ADV_TYPE=0
++CONFIG_BLE_APP_PPCP_MIN_INTERVAL=6
++CONFIG_BLE_APP_PPCP_MAX_INTERVAL=3200
++CONFIG_BLE_APP_PPCP_SLAVE_LATENCY=0
++CONFIG_BLE_APP_CONN_SUP_TIMEOUT=18000
++
++#
++# IEEE 802.15.4 applications
++#
++# CONFIG_IEEE802154_LIBMAC is not set
++# CONFIG_IEEE802154_LIBUTILS is not set
++# CONFIG_IEEE802154_I8SAK is not set
+diff --git a/configs/nrf52832_dk/include/board.h b/configs/nrf52832_dk/include/board.h
+index a6287410bd..6e51695acd 100644
+--- a/configs/nrf52832_dk/include/board.h
++++ b/configs/nrf52832_dk/include/board.h
+@@ -57,7 +57,7 @@
+ /*****************************************************************************
+  * Definitions
+  *****************************************************************************/
+-
++#define NRF52832_XXAA
+ #define NRF52832_DK_SYSCLK_FREQUENCY  64000000ul
+ #define NRF52_HCLK_FREQUENCY    NRF52832_DK_SYSCLK_FREQUENCY
+ 
+diff --git a/configs/nrf52832_dk/random/Make.defs b/configs/nrf52832_dk/random/Make.defs
+new file mode 100644
+index 0000000000..a4794310fd
+--- /dev/null
++++ b/configs/nrf52832_dk/random/Make.defs
+@@ -0,0 +1,40 @@
++############################################################################
++# configs/stm32l476-mdk/nsh/Make.defs
++#
++#   Copyright (C) 2016 Gregory Nutt. All rights reserved.
++#   Author: dev@ziggurat29.com
++#
++# Redistribution and use in source and binary forms, with or without
++# modification, are permitted provided that the following conditions
++# are met:
++#
++# 1. Redistributions of source code must retain the above copyright
++#    notice, this list of conditions and the following disclaimer.
++# 2. Redistributions in binary form must reproduce the above copyright
++#    notice, this list of conditions and the following disclaimer in
++#    the documentation and/or other materials provided with the
++#    distribution.
++# 3. Neither the name NuttX nor the names of its contributors may be
++#    used to endorse or promote products derived from this software
++#    without specific prior written permission.
++#
++# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++# POSSIBILITY OF SUCH DAMAGE.
++#
++############################################################################
++
++include ${TOPDIR}/.config
++include ${TOPDIR}/tools/Config.mk
++include ${TOPDIR}/arch/arm/src/armv7-m/Toolchain.defs
++include ${TOPDIR}/configs/$(CONFIG_ARCH_BOARD)/defaults.mk
++
+diff --git a/configs/nrf52832_dk/random/defconfig b/configs/nrf52832_dk/random/defconfig
+new file mode 100644
+index 0000000000..c82116d425
+--- /dev/null
++++ b/configs/nrf52832_dk/random/defconfig
+@@ -0,0 +1,1034 @@
++#
++# Automatically generated file; DO NOT EDIT.
++# Nuttx/ Configuration
++#
++
++#
++# Build Setup
++#
++# CONFIG_EXPERIMENTAL is not set
++# CONFIG_DEFAULT_SMALL is not set
++CONFIG_HOST_LINUX=y
++# CONFIG_HOST_OSX is not set
++# CONFIG_HOST_WINDOWS is not set
++# CONFIG_HOST_OTHER is not set
++
++#
++# Build Configuration
++#
++CONFIG_APPS_DIR="../apps"
++CONFIG_BUILD_FLAT=y
++# CONFIG_BUILD_PROTECTED is not set
++# CONFIG_BUILD_2PASS is not set
++
++#
++# Binary Output Formats
++#
++# CONFIG_RRLOAD_BINARY is not set
++CONFIG_INTELHEX_BINARY=y
++# CONFIG_MOTOROLA_SREC is not set
++CONFIG_RAW_BINARY=y
++# CONFIG_UBOOT_UIMAGE is not set
++
++#
++# Customize Header Files
++#
++# CONFIG_ARCH_STDINT_H is not set
++# CONFIG_ARCH_STDBOOL_H is not set
++# CONFIG_ARCH_MATH_H is not set
++# CONFIG_ARCH_FLOAT_H is not set
++# CONFIG_ARCH_STDARG_H is not set
++# CONFIG_ARCH_DEBUG_H is not set
++
++#
++# Debug Options
++#
++CONFIG_DEBUG_ALERT=y
++CONFIG_DEBUG_FEATURES=y
++
++#
++# Debug SYSLOG Output Controls
++#
++CONFIG_DEBUG_ERROR=y
++CONFIG_DEBUG_WARN=y
++CONFIG_DEBUG_INFO=y
++CONFIG_DEBUG_ASSERTIONS=y
++
++#
++# Subsystem Debug Options
++#
++# CONFIG_DEBUG_BINFMT is not set
++# CONFIG_DEBUG_FS is not set
++# CONFIG_DEBUG_GRAPHICS is not set
++# CONFIG_DEBUG_LIB is not set
++# CONFIG_DEBUG_MM is not set
++# CONFIG_DEBUG_SCHED is not set
++
++#
++# OS Function Debug Options
++#
++# CONFIG_DEBUG_IRQ is not set
++
++#
++# Driver Debug Options
++#
++# CONFIG_DEBUG_LEDS is not set
++# CONFIG_DEBUG_GPIO is not set
++# CONFIG_DEBUG_I2C is not set
++# CONFIG_DEBUG_SPI is not set
++# CONFIG_DEBUG_TIMER is not set
++# CONFIG_DEBUG_WATCHDOG is not set
++CONFIG_ARCH_HAVE_STACKCHECK=y
++# CONFIG_STACK_COLORATION is not set
++CONFIG_ARCH_HAVE_HEAPCHECK=y
++# CONFIG_HEAP_COLORATION is not set
++CONFIG_DEBUG_SYMBOLS=y
++CONFIG_ARCH_HAVE_CUSTOMOPT=y
++# CONFIG_DEBUG_NOOPT is not set
++# CONFIG_DEBUG_CUSTOMOPT is not set
++CONFIG_DEBUG_FULLOPT=y
++
++#
++# System Type
++#
++CONFIG_ARCH_ARM=y
++# CONFIG_ARCH_AVR is not set
++# CONFIG_ARCH_HC is not set
++# CONFIG_ARCH_MIPS is not set
++# CONFIG_ARCH_MISOC is not set
++# CONFIG_ARCH_RENESAS is not set
++# CONFIG_ARCH_RISCV is not set
++# CONFIG_ARCH_SIM is not set
++# CONFIG_ARCH_X86 is not set
++# CONFIG_ARCH_XTENSA is not set
++# CONFIG_ARCH_Z16 is not set
++# CONFIG_ARCH_Z80 is not set
++CONFIG_ARCH="arm"
++
++#
++# ARM Options
++#
++# CONFIG_ARCH_CHIP_A1X is not set
++# CONFIG_ARCH_CHIP_C5471 is not set
++# CONFIG_ARCH_CHIP_DM320 is not set
++# CONFIG_ARCH_CHIP_EFM32 is not set
++# CONFIG_ARCH_CHIP_IMX1 is not set
++# CONFIG_ARCH_CHIP_IMX6 is not set
++# CONFIG_ARCH_CHIP_KINETIS is not set
++# CONFIG_ARCH_CHIP_KL is not set
++# CONFIG_ARCH_CHIP_LM is not set
++# CONFIG_ARCH_CHIP_TIVA is not set
++# CONFIG_ARCH_CHIP_LPC11XX is not set
++# CONFIG_ARCH_CHIP_LPC17XX is not set
++# CONFIG_ARCH_CHIP_LPC214X is not set
++# CONFIG_ARCH_CHIP_LPC2378 is not set
++# CONFIG_ARCH_CHIP_LPC31XX is not set
++# CONFIG_ARCH_CHIP_LPC43XX is not set
++# CONFIG_ARCH_CHIP_MOXART is not set
++# CONFIG_ARCH_CHIP_NUC1XX is not set
++# CONFIG_ARCH_CHIP_SAMA5 is not set
++# CONFIG_ARCH_CHIP_SAMD is not set
++# CONFIG_ARCH_CHIP_SAML is not set
++# CONFIG_ARCH_CHIP_SAM34 is not set
++# CONFIG_ARCH_CHIP_SAMV7 is not set
++# CONFIG_ARCH_CHIP_STM32 is not set
++# CONFIG_ARCH_CHIP_STM32F7 is not set
++# CONFIG_ARCH_CHIP_STM32L4 is not set
++CONFIG_ARCH_CHIP_NRF52=y
++# CONFIG_ARCH_CHIP_STR71X is not set
++# CONFIG_ARCH_CHIP_TMS570 is not set
++# CONFIG_ARCH_ARM7TDMI is not set
++# CONFIG_ARCH_ARM926EJS is not set
++# CONFIG_ARCH_ARM920T is not set
++# CONFIG_ARCH_CORTEXM0 is not set
++# CONFIG_ARCH_CORTEXM23 is not set
++# CONFIG_ARCH_CORTEXM3 is not set
++# CONFIG_ARCH_CORTEXM33 is not set
++CONFIG_ARCH_CORTEXM4=y
++# CONFIG_ARCH_CORTEXM7 is not set
++# CONFIG_ARCH_CORTEXA5 is not set
++# CONFIG_ARCH_CORTEXA8 is not set
++# CONFIG_ARCH_CORTEXA9 is not set
++# CONFIG_ARCH_CORTEXR4 is not set
++# CONFIG_ARCH_CORTEXR4F is not set
++# CONFIG_ARCH_CORTEXR5 is not set
++# CONFIG_ARCH_CORTEX5F is not set
++# CONFIG_ARCH_CORTEXR7 is not set
++# CONFIG_ARCH_CORTEXR7F is not set
++CONFIG_ARCH_FAMILY="armv7-m"
++CONFIG_ARCH_CHIP="nrf52"
++# CONFIG_ARM_TOOLCHAIN_IAR is not set
++CONFIG_ARM_TOOLCHAIN_GNU=y
++# CONFIG_ARMV7M_USEBASEPRI is not set
++CONFIG_ARCH_HAVE_CMNVECTOR=y
++CONFIG_ARMV7M_CMNVECTOR=y
++# CONFIG_ARMV7M_LAZYFPU is not set
++CONFIG_ARCH_HAVE_FPU=y
++# CONFIG_ARCH_HAVE_DPFPU is not set
++CONFIG_ARCH_FPU=y
++# CONFIG_ARCH_HAVE_TRUSTZONE is not set
++CONFIG_ARM_HAVE_MPU_UNIFIED=y
++CONFIG_ARM_MPU=y
++CONFIG_ARM_MPU_NREGIONS=8
++# CONFIG_DEBUG_HARDFAULT is not set
++
++#
++# ARMV7M Configuration Options
++#
++# CONFIG_ARMV7M_HAVE_ICACHE is not set
++# CONFIG_ARMV7M_HAVE_DCACHE is not set
++# CONFIG_ARMV7M_HAVE_ITCM is not set
++# CONFIG_ARMV7M_HAVE_DTCM is not set
++# CONFIG_ARMV7M_TOOLCHAIN_IARL is not set
++# CONFIG_ARMV7M_TOOLCHAIN_BUILDROOT is not set
++# CONFIG_ARMV7M_TOOLCHAIN_CODEREDL is not set
++# CONFIG_ARMV7M_TOOLCHAIN_CODESOURCERYL is not set
++CONFIG_ARMV7M_TOOLCHAIN_GNU_EABIL=y
++CONFIG_ARMV7M_HAVE_STACKCHECK=y
++# CONFIG_ARMV7M_STACKCHECK is not set
++# CONFIG_ARMV7M_ITMSYSLOG is not set
++CONFIG_SERIAL_TERMIOS=y
++# CONFIG_SERIAL_DISABLE_REORDERING is not set
++
++#
++# NRF52 Configuration Options
++#
++CONFIG_ARCH_CHIP_NRF52832=y
++# CONFIG_ARCH_CHIP_NRF52840 is not set
++CONFIG_NRF52_NRF52832_HAVE_PERIPH=y
++# CONFIG_NRF52_NRF52840_HAVE_PERIPH is not set
++# CONFIG_NRF52832_FLASH_256KB is not set
++CONFIG_NRF52832_FLASH_512KB=y
++
++#
++# NRF52 Peripherals
++#
++
++#
++# NRF52 Peripheral Support
++#
++# CONFIG_NRF52_HAVE_LTDC is not set
++CONFIG_NRF52_HAVE_LPTIM1=y
++CONFIG_NRF52_HAVE_LPTIM2=y
++CONFIG_NRF52_HAVE_COMP=y
++CONFIG_NRF52_HAVE_I2S=y
++CONFIG_NRF52_HAVE_UART0=y
++CONFIG_NRF52_HAVE_BLUETOOTH=y
++# CONFIG_NRF52_BLUETOOTH is not set
++CONFIG_GPIO_AS_PINRESET=21
++CONFIG_FLASH_ORIGIN="0"
++CONFIG_FLASH_LENGTH="0x80000"
++CONFIG_SRAM_ORIGIN="0x20000000"
++CONFIG_SRAM_LENGTH="0x10000"
++# CONFIG_NRF52_ADC is not set
++# CONFIG_NRF52_DAC is not set
++CONFIG_NRF52_I2C=y
++# CONFIG_NRF52_GPIOTE is not set
++# CONFIG_NRF52_SPI is not set
++CONFIG_NRF52_UART=y
++# CONFIG_NRF52_LPTIM is not set
++# CONFIG_NRF52_CRC is not set
++# CONFIG_NRF52_TSC is not set
++# CONFIG_NRF52_OTGFS is not set
++# CONFIG_NRF52_ADC1 is not set
++# CONFIG_NRF52_PPI is not set
++# CONFIG_NRF52_ADC2 is not set
++# CONFIG_NRF52_ADC3 is not set
++CONFIG_NRF52_AES=y
++CONFIG_NRF52_RNG=y
++# CONFIG_NRF52_I2S is not set
++# CONFIG_NRF52_FMC is not set
++CONFIG_NRF52_PWR=y
++# CONFIG_NRF52_TIM0 is not set
++# CONFIG_NRF52_TIM1 is not set
++# CONFIG_NRF52_TIM2 is not set
++# CONFIG_NRF52_TIM3 is not set
++# CONFIG_NRF52_TIM4 is not set
++# CONFIG_NRF52_RTC0 is not set
++# CONFIG_NRF52_RTC1 is not set
++# CONFIG_NRF52_RTC2 is not set
++# CONFIG_NRF52_SPI0 is not set
++# CONFIG_NRF52_SPI1 is not set
++# CONFIG_NRF52_SPI2 is not set
++CONFIG_NRF52_UART0=y
++CONFIG_NRF52_I2C0=y
++CONFIG_NRF52_I2C1=y
++# CONFIG_NRF52_DAC1 is not set
++# CONFIG_NRF52_DAC2 is not set
++# CONFIG_NRF52_OPAMP is not set
++# CONFIG_NRF52_LPTIM1 is not set
++# CONFIG_NRF52_SWPMI is not set
++# CONFIG_NRF52_LPTIM2 is not set
++CONFIG_NRF52_SYSCFG=y
++CONFIG_NRF52_FIREWALL=y
++# CONFIG_NRF52_UART1 is not set
++# CONFIG_NRF52_COMP is not set
++# CONFIG_NRF52_DFSDM is not set
++# CONFIG_NRF52_BKPSRAM is not set
++CONFIG_NRF52_WDG=y
++# CONFIG_NRF52_QDECODER is not set
++CONFIG_NRF52_FLASH_PREFETCH=y
++CONFIG_NRF52_DISABLE_IDLE_SLEEP_DURING_DEBUG=y
++# CONFIG_ARCH_BOARD_NRF52_CUSTOM_CLOCKCONFIG is not set
++
++#
++# Timer Configuration
++#
++# CONFIG_NRF52_ONESHOT is not set
++# CONFIG_NRF52_FREERUN is not set
++CONFIG_NRF52_HAVE_UART1=y
++
++#
++# U[S]ART Configuration
++#
++# CONFIG_NRF52_FLOWCONTROL_BROKEN is not set
++# CONFIG_NRF52_UART_BREAKS is not set
++
++#
++# I2C Configuration
++#
++CONFIG_NRF52_I2C0_SDA_PIN=31
++CONFIG_NRF52_I2C0_SCL_PIN=31
++# CONFIG_NRF52_I2C0_100K is not set
++# CONFIG_NRF52_I2C0_250K is not set
++CONFIG_NRF52_I2C0_400K=y
++CONFIG_NRF52_I2C1_SDA_PIN=30
++CONFIG_NRF52_I2C1_SCL_PIN=29
++# CONFIG_NRF52_I2C1_100K is not set
++# CONFIG_NRF52_I2C1_250K is not set
++CONFIG_NRF52_I2C1_400K=y
++# CONFIG_NRF52_I2C_DYNTIMEO is not set
++CONFIG_NRF52_I2CTIMEOSEC=0
++CONFIG_NRF52_I2CTIMEOMS=500
++CONFIG_NRF52_I2CTIMEOTICKS=500
++# CONFIG_NRF52_I2C_DUTY16_9 is not set
++
++#
++# Architecture Options
++#
++# CONFIG_ARCH_NOINTC is not set
++# CONFIG_ARCH_VECNOTIRQ is not set
++# CONFIG_ARCH_DMA is not set
++CONFIG_ARCH_HAVE_IRQPRIO=y
++# CONFIG_ARCH_L2CACHE is not set
++# CONFIG_ARCH_HAVE_COHERENT_DCACHE is not set
++# CONFIG_ARCH_HAVE_ADDRENV is not set
++# CONFIG_ARCH_NEED_ADDRENV_MAPPING is not set
++# CONFIG_ARCH_HAVE_MULTICPU is not set
++CONFIG_ARCH_HAVE_VFORK=y
++# CONFIG_ARCH_HAVE_MMU is not set
++CONFIG_ARCH_HAVE_MPU=y
++# CONFIG_ARCH_NAND_HWECC is not set
++# CONFIG_ARCH_HAVE_EXTCLK is not set
++# CONFIG_ARCH_HAVE_POWEROFF is not set
++CONFIG_ARCH_HAVE_RESET=y
++CONFIG_ARCH_USE_MPU=y
++# CONFIG_ARCH_IRQPRIO is not set
++CONFIG_ARCH_STACKDUMP=y
++# CONFIG_ENDIAN_BIG is not set
++# CONFIG_ARCH_IDLE_CUSTOM is not set
++# CONFIG_ARCH_HAVE_RAMFUNCS is not set
++CONFIG_ARCH_HAVE_RAMVECTORS=y
++# CONFIG_ARCH_RAMVECTORS is not set
++# CONFIG_ARCH_MINIMAL_VECTORTABLE is not set
++
++#
++# Board Settings
++#
++CONFIG_BOARD_LOOPSPERMSEC=8499
++# CONFIG_ARCH_CALIBRATION is not set
++
++#
++# Interrupt options
++#
++CONFIG_ARCH_HAVE_INTERRUPTSTACK=y
++CONFIG_ARCH_INTERRUPTSTACK=2048
++CONFIG_ARCH_HAVE_HIPRI_INTERRUPT=y
++# CONFIG_ARCH_HIPRI_INTERRUPT is not set
++
++#
++# Boot options
++#
++# CONFIG_BOOT_RUNFROMEXTSRAM is not set
++CONFIG_BOOT_RUNFROMFLASH=y
++# CONFIG_BOOT_RUNFROMISRAM is not set
++# CONFIG_BOOT_RUNFROMSDRAM is not set
++# CONFIG_BOOT_COPYTORAM is not set
++
++#
++# Boot Memory Configuration
++#
++CONFIG_RAM_START=0x20000000
++CONFIG_RAM_SIZE=65536
++# CONFIG_ARCH_HAVE_SDRAM is not set
++
++#
++# Board Selection
++#
++CONFIG_ARCH_BOARD_NRF52832_DK=y
++# CONFIG_ARCH_BOARD_CUSTOM is not set
++CONFIG_ARCH_BOARD="nrf52832_dk"
++
++#
++# Common Board Options
++#
++CONFIG_ARCH_HAVE_LEDS=y
++CONFIG_ARCH_LEDS=y
++CONFIG_ARCH_HAVE_BUTTONS=y
++# CONFIG_ARCH_BUTTONS is not set
++CONFIG_ARCH_HAVE_IRQBUTTONS=y
++
++#
++# Board-Specific Options
++#
++# CONFIG_BOARD_CRASHDUMP is not set
++CONFIG_LIB_BOARDCTL=y
++# CONFIG_BOARDCTL_RESET is not set
++# CONFIG_BOARDCTL_UNIQUEID is not set
++# CONFIG_BOARDCTL_TSCTEST is not set
++# CONFIG_BOARDCTL_GRAPHICS is not set
++# CONFIG_BOARDCTL_IOCTL is not set
++
++#
++# RTOS Features
++#
++CONFIG_DISABLE_OS_API=y
++# CONFIG_DISABLE_POSIX_TIMERS is not set
++# CONFIG_DISABLE_PTHREAD is not set
++# CONFIG_DISABLE_SIGNALS is not set
++# CONFIG_DISABLE_MQUEUE is not set
++# CONFIG_DISABLE_ENVIRON is not set
++
++#
++# Clocks and Timers
++#
++CONFIG_ARCH_HAVE_TICKLESS=y
++# CONFIG_SCHED_TICKLESS is not set
++CONFIG_USEC_PER_TICK=10000
++# CONFIG_SYSTEM_TIME64 is not set
++# CONFIG_CLOCK_MONOTONIC is not set
++# CONFIG_ARCH_HAVE_TIMEKEEPING is not set
++# CONFIG_JULIAN_TIME is not set
++CONFIG_START_YEAR=2017
++CONFIG_START_MONTH=1
++CONFIG_START_DAY=1
++CONFIG_MAX_WDOGPARMS=2
++CONFIG_PREALLOC_WDOGS=8
++CONFIG_WDOG_INTRESERVE=1
++CONFIG_PREALLOC_TIMERS=4
++
++#
++# Tasks and Scheduling
++#
++# CONFIG_SPINLOCK is not set
++# CONFIG_INIT_NONE is not set
++CONFIG_INIT_ENTRYPOINT=y
++# CONFIG_INIT_FILEPATH is not set
++CONFIG_USER_ENTRYPOINT="hello_main"
++CONFIG_RR_INTERVAL=200
++# CONFIG_SCHED_SPORADIC is not set
++CONFIG_TASK_NAME_SIZE=0
++CONFIG_MAX_TASKS=16
++# CONFIG_SCHED_HAVE_PARENT is not set
++CONFIG_SCHED_WAITPID=y
++
++#
++# Pthread Options
++#
++# CONFIG_MUTEX_TYPES is not set
++CONFIG_NPTHREAD_KEYS=4
++# CONFIG_PTHREAD_CLEANUP is not set
++# CONFIG_CANCELLATION_POINTS is not set
++
++#
++# Performance Monitoring
++#
++# CONFIG_SCHED_CPULOAD is not set
++# CONFIG_SCHED_INSTRUMENTATION is not set
++
++#
++# Files and I/O
++#
++CONFIG_DEV_CONSOLE=y
++# CONFIG_FDCLONE_DISABLE is not set
++# CONFIG_FDCLONE_STDIO is not set
++CONFIG_SDCLONE_DISABLE=y
++CONFIG_NFILE_DESCRIPTORS=8
++CONFIG_NFILE_STREAMS=8
++CONFIG_NAME_MAX=32
++# CONFIG_PRIORITY_INHERITANCE is not set
++
++#
++# RTOS hooks
++#
++# CONFIG_BOARD_INITIALIZE is not set
++# CONFIG_SCHED_STARTHOOK is not set
++# CONFIG_SCHED_ATEXIT is not set
++# CONFIG_SCHED_ONEXIT is not set
++
++#
++# Signal Numbers
++#
++CONFIG_SIG_SIGUSR1=1
++CONFIG_SIG_SIGUSR2=2
++CONFIG_SIG_SIGALARM=3
++CONFIG_SIG_SIGCONDTIMEDOUT=16
++
++#
++# POSIX Message Queue Options
++#
++CONFIG_PREALLOC_MQ_MSGS=4
++CONFIG_MQ_MAXMSGSIZE=32
++# CONFIG_MODULE is not set
++
++#
++# Work queue support
++#
++# CONFIG_SCHED_WORKQUEUE is not set
++# CONFIG_SCHED_HPWORK is not set
++# CONFIG_SCHED_LPWORK is not set
++
++#
++# Stack and heap information
++#
++CONFIG_IDLETHREAD_STACKSIZE=1024
++CONFIG_USERMAIN_STACKSIZE=2048
++CONFIG_PTHREAD_STACK_MIN=256
++CONFIG_PTHREAD_STACK_DEFAULT=2048
++# CONFIG_LIB_SYSCALL is not set
++
++#
++# Device Drivers
++#
++CONFIG_DISABLE_POLL=y
++CONFIG_DEV_NULL=y
++CONFIG_DEV_ZERO=y
++CONFIG_ARCH_HAVE_RNG=y
++CONFIG_DEV_RANDOM=y
++CONFIG_DEV_URANDOM=y
++# CONFIG_DEV_URANDOM_XORSHIFT128 is not set
++# CONFIG_DEV_URANDOM_CONGRUENTIAL is not set
++CONFIG_DEV_URANDOM_ARCH=y
++CONFIG_DEV_LOOP=y
++
++#
++# Buffering
++#
++# CONFIG_DRVR_WRITEBUFFER is not set
++# CONFIG_DRVR_READAHEAD is not set
++# CONFIG_RAMDISK is not set
++# CONFIG_CAN is not set
++# CONFIG_ARCH_HAVE_PWM_PULSECOUNT is not set
++# CONFIG_ARCH_HAVE_PWM_MULTICHAN is not set
++# CONFIG_PWM is not set
++CONFIG_ARCH_HAVE_I2CRESET=y
++CONFIG_I2C=y
++# CONFIG_I2C_SLAVE is not set
++# CONFIG_I2C_POLLED is not set
++# CONFIG_I2C_RESET is not set
++# CONFIG_I2C_TRACE is not set
++# CONFIG_I2C_DRIVER is not set
++# CONFIG_ARCH_HAVE_SPI_CRCGENERATION is not set
++# CONFIG_ARCH_HAVE_SPI_CS_CONTROL is not set
++CONFIG_ARCH_HAVE_SPI_BITORDER=y
++CONFIG_SPI=y
++# CONFIG_SPI_SLAVE is not set
++CONFIG_SPI_EXCHANGE=y
++# CONFIG_SPI_CMDDATA is not set
++# CONFIG_SPI_CALLBACK is not set
++# CONFIG_SPI_HWFEATURES is not set
++# CONFIG_SPI_BITORDER is not set
++# CONFIG_SPI_CS_DELAY_CONTROL is not set
++# CONFIG_SPI_DRIVER is not set
++# CONFIG_SPI_BITBANG is not set
++# CONFIG_I2S is not set
++
++#
++# Timer Driver Support
++#
++# CONFIG_TIMER is not set
++# CONFIG_ONESHOT is not set
++# CONFIG_COUNTER is not set
++# CONFIG_RTC is not set
++CONFIG_WATCHDOG=y
++CONFIG_WATCHDOG_DEVPATH="/dev/watchdog0"
++# CONFIG_TIMERS_CS2100CP is not set
++# CONFIG_ANALOG is not set
++# CONFIG_AUDIO_DEVICES is not set
++# CONFIG_VIDEO_DEVICES is not set
++# CONFIG_BCH is not set
++# CONFIG_INPUT is not set
++
++#
++# IO Expander/GPIO Support
++#
++# CONFIG_IOEXPANDER is not set
++# CONFIG_DEV_GPIO is not set
++
++#
++# LCD Driver Support
++#
++# CONFIG_LCD is not set
++# CONFIG_SLCD is not set
++
++#
++# LED Support
++#
++# CONFIG_USERLED is not set
++# CONFIG_RGBLED is not set
++# CONFIG_PCA9635PW is not set
++# CONFIG_NCP5623C is not set
++# CONFIG_MMCSD is not set
++# CONFIG_MODEM is not set
++# CONFIG_MTD is not set
++# CONFIG_EEPROM is not set
++# CONFIG_PIPES is not set
++# CONFIG_PM is not set
++# CONFIG_POWER is not set
++# CONFIG_SENSORS is not set
++CONFIG_SERIAL=y
++# CONFIG_DEV_LOWCONSOLE is not set
++# CONFIG_SERIAL_REMOVABLE is not set
++CONFIG_SERIAL_CONSOLE=y
++# CONFIG_16550_UART is not set
++# CONFIG_UART_SERIALDRIVER is not set
++CONFIG_UART0_SERIALDRIVER=y
++# CONFIG_UART1_SERIALDRIVER is not set
++# CONFIG_UART2_SERIALDRIVER is not set
++# CONFIG_UART3_SERIALDRIVER is not set
++# CONFIG_UART4_SERIALDRIVER is not set
++# CONFIG_UART5_SERIALDRIVER is not set
++# CONFIG_UART6_SERIALDRIVER is not set
++# CONFIG_UART7_SERIALDRIVER is not set
++# CONFIG_UART8_SERIALDRIVER is not set
++# CONFIG_SCI0_SERIALDRIVER is not set
++# CONFIG_SCI1_SERIALDRIVER is not set
++# CONFIG_USART0_SERIALDRIVER is not set
++# CONFIG_USART1_SERIALDRIVER is not set
++# CONFIG_USART2_SERIALDRIVER is not set
++# CONFIG_USART3_SERIALDRIVER is not set
++# CONFIG_USART4_SERIALDRIVER is not set
++# CONFIG_USART5_SERIALDRIVER is not set
++# CONFIG_USART6_SERIALDRIVER is not set
++# CONFIG_USART7_SERIALDRIVER is not set
++# CONFIG_USART8_SERIALDRIVER is not set
++# CONFIG_OTHER_UART_SERIALDRIVER is not set
++CONFIG_MCU_SERIAL=y
++CONFIG_STANDARD_SERIAL=y
++# CONFIG_SERIAL_IFLOWCONTROL is not set
++# CONFIG_SERIAL_OFLOWCONTROL is not set
++# CONFIG_SERIAL_DMA is not set
++# CONFIG_SERIAL_TIOCSERGSTRUCT is not set
++CONFIG_ARCH_HAVE_SERIAL_TERMIOS=y
++CONFIG_UART0_SERIAL_CONSOLE=y
++# CONFIG_OTHER_SERIAL_CONSOLE is not set
++# CONFIG_NO_SERIAL_CONSOLE is not set
++
++#
++# UART0 Configuration
++#
++CONFIG_UART0_RXBUFSIZE=256
++CONFIG_UART0_TXBUFSIZE=256
++CONFIG_UART0_BAUD=115200
++CONFIG_UART0_BITS=8
++CONFIG_UART0_PARITY=0
++CONFIG_UART0_2STOP=0
++# CONFIG_UART0_IFLOWCONTROL is not set
++# CONFIG_UART0_OFLOWCONTROL is not set
++# CONFIG_UART0_DMA is not set
++# CONFIG_PSEUDOTERM is not set
++# CONFIG_USBDEV is not set
++# CONFIG_USBHOST is not set
++# CONFIG_HAVE_USBTRACE is not set
++# CONFIG_DRIVERS_WIRELESS is not set
++# CONFIG_DRIVERS_CONTACTLESS is not set
++
++#
++# System Logging
++#
++# CONFIG_ARCH_SYSLOG is not set
++# CONFIG_RAMLOG is not set
++# CONFIG_SYSLOG_INTBUFFER is not set
++# CONFIG_SYSLOG_TIMESTAMP is not set
++CONFIG_SYSLOG_SERIAL_CONSOLE=y
++# CONFIG_SYSLOG_CHAR is not set
++CONFIG_SYSLOG_CONSOLE=y
++# CONFIG_SYSLOG_NONE is not set
++# CONFIG_SYSLOG_FILE is not set
++# CONFIG_SYSLOG_CHARDEV is not set
++
++#
++# Networking Support
++#
++# CONFIG_ARCH_HAVE_NET is not set
++# CONFIG_ARCH_HAVE_PHY is not set
++# CONFIG_NET is not set
++
++#
++# Crypto API
++#
++# CONFIG_CRYPTO is not set
++
++#
++# File Systems
++#
++
++#
++# File system configuration
++#
++# CONFIG_DISABLE_MOUNTPOINT is not set
++# CONFIG_FS_AUTOMOUNTER is not set
++# CONFIG_DISABLE_PSEUDOFS_OPERATIONS is not set
++# CONFIG_PSEUDOFS_SOFTLINKS is not set
++CONFIG_FS_READABLE=y
++CONFIG_FS_WRITABLE=y
++# CONFIG_FS_NAMED_SEMAPHORES is not set
++CONFIG_FS_MQUEUE_MPATH="/var/mqueue"
++# CONFIG_FS_RAMMAP is not set
++# CONFIG_FS_FAT is not set
++# CONFIG_FS_NXFFS is not set
++CONFIG_FS_ROMFS=y
++CONFIG_FS_TMPFS=y
++CONFIG_FS_TMPFS_BLOCKSIZE=512
++CONFIG_FS_TMPFS_DIRECTORY_ALLOCGUARD=64
++CONFIG_FS_TMPFS_DIRECTORY_FREEGUARD=128
++CONFIG_FS_TMPFS_FILE_ALLOCGUARD=512
++CONFIG_FS_TMPFS_FILE_FREEGUARD=1024
++# CONFIG_FS_SMARTFS is not set
++# CONFIG_FS_BINFS is not set
++CONFIG_FS_PROCFS=y
++CONFIG_FS_PROCFS_REGISTER=y
++
++#
++# Exclude individual procfs entries
++#
++# CONFIG_FS_PROCFS_EXCLUDE_PROCESS is not set
++# CONFIG_FS_PROCFS_EXCLUDE_UPTIME is not set
++# CONFIG_FS_PROCFS_EXCLUDE_MOUNTS is not set
++# CONFIG_FS_UNIONFS is not set
++
++#
++# Graphics Support
++#
++# CONFIG_NX is not set
++
++#
++# Memory Management
++#
++# CONFIG_MM_SMALL is not set
++CONFIG_MM_REGIONS=1
++# CONFIG_ARCH_HAVE_HEAP2 is not set
++# CONFIG_GRAN is not set
++
++#
++# Audio Support
++#
++# CONFIG_AUDIO is not set
++
++#
++# Wireless Support
++#
++
++#
++# Binary Loader
++#
++# CONFIG_BINFMT_DISABLE is not set
++# CONFIG_BINFMT_EXEPATH is not set
++# CONFIG_NXFLAT is not set
++# CONFIG_ELF is not set
++CONFIG_BUILTIN=y
++# CONFIG_PIC is not set
++# CONFIG_SYMTAB_ORDEREDBYNAME is not set
++
++#
++# Library Routines
++#
++
++#
++# Standard C Library Options
++#
++
++#
++# Standard C I/O
++#
++# CONFIG_STDIO_DISABLE_BUFFERING is not set
++CONFIG_STDIO_BUFFER_SIZE=64
++CONFIG_STDIO_LINEBUFFER=y
++CONFIG_NUNGET_CHARS=2
++# CONFIG_NOPRINTF_FIELDWIDTH is not set
++# CONFIG_LIBC_FLOATINGPOINT is not set
++CONFIG_LIBC_LONG_LONG=y
++# CONFIG_LIBC_SCANSET is not set
++# CONFIG_EOL_IS_CR is not set
++# CONFIG_EOL_IS_LF is not set
++# CONFIG_EOL_IS_BOTH_CRLF is not set
++CONFIG_EOL_IS_EITHER_CRLF=y
++# CONFIG_MEMCPY_VIK is not set
++CONFIG_LIBM=y
++
++#
++# Architecture-Specific Support
++#
++CONFIG_ARCH_LOWPUTC=y
++# CONFIG_ARCH_ROMGETC is not set
++# CONFIG_LIBC_ARCH_MEMCPY is not set
++# CONFIG_LIBC_ARCH_MEMCMP is not set
++# CONFIG_LIBC_ARCH_MEMMOVE is not set
++# CONFIG_LIBC_ARCH_MEMSET is not set
++# CONFIG_LIBC_ARCH_STRCHR is not set
++# CONFIG_LIBC_ARCH_STRCMP is not set
++# CONFIG_LIBC_ARCH_STRCPY is not set
++# CONFIG_LIBC_ARCH_STRNCPY is not set
++# CONFIG_LIBC_ARCH_STRLEN is not set
++# CONFIG_LIBC_ARCH_STRNLEN is not set
++# CONFIG_LIBC_ARCH_ELF is not set
++# CONFIG_ARMV7M_MEMCPY is not set
++
++#
++# stdlib Options
++#
++CONFIG_LIB_RAND_ORDER=1
++CONFIG_LIB_HOMEDIR="/"
++CONFIG_LIBC_TMPDIR="/tmp"
++CONFIG_LIBC_MAX_TMPFILE=32
++
++#
++# Program Execution Options
++#
++# CONFIG_LIBC_EXECFUNCS is not set
++CONFIG_POSIX_SPAWN_PROXY_STACKSIZE=1024
++CONFIG_TASK_SPAWN_DEFAULT_STACKSIZE=2048
++
++#
++# errno Decode Support
++#
++# CONFIG_LIBC_STRERROR is not set
++# CONFIG_LIBC_PERROR_STDOUT is not set
++
++#
++# memcpy/memset Options
++#
++# CONFIG_MEMSET_OPTSPEED is not set
++# CONFIG_LIBC_DLLFCN is not set
++# CONFIG_LIBC_MODLIB is not set
++# CONFIG_LIBC_WCHAR is not set
++# CONFIG_LIBC_LOCALE is not set
++
++#
++# Time/Time Zone Support
++#
++# CONFIG_LIBC_LOCALTIME is not set
++# CONFIG_TIME_EXTENDED is not set
++CONFIG_ARCH_HAVE_TLS=y
++
++#
++# Thread Local Storage (TLS)
++#
++# CONFIG_TLS is not set
++
++#
++# Network-Related Options
++#
++# CONFIG_LIBC_IPv4_ADDRCONV is not set
++# CONFIG_LIBC_IPv6_ADDRCONV is not set
++# CONFIG_LIBC_NETDB is not set
++
++#
++# NETDB Support
++#
++# CONFIG_NETDB_HOSTFILE is not set
++# CONFIG_LIBC_IOCTL_VARIADIC is not set
++CONFIG_LIB_SENDFILE_BUFSIZE=512
++
++#
++# Non-standard Library Support
++#
++# CONFIG_LIB_CRC64_FAST is not set
++# CONFIG_LIB_KBDCODEC is not set
++# CONFIG_LIB_SLCDCODEC is not set
++# CONFIG_LIB_HEX2BIN is not set
++
++#
++# Basic CXX Support
++#
++# CONFIG_C99_BOOL8 is not set
++CONFIG_HAVE_CXX=y
++# CONFIG_HAVE_CXXINITIALIZE is not set
++# CONFIG_CXX_NEWLONG is not set
++
++#
++# uClibc++ Standard C++ Library
++#
++# CONFIG_UCLIBCXX is not set
++
++#
++# Application Configuration
++#
++
++#
++# Built-In Applications
++#
++CONFIG_BUILTIN_PROXY_STACKSIZE=1024
++
++#
++# CAN Utilities
++#
++
++#
++# Examples
++#
++# CONFIG_EXAMPLES_BUTTONS is not set
++# CONFIG_EXAMPLES_CCTYPE is not set
++# CONFIG_EXAMPLES_CHAT is not set
++# CONFIG_EXAMPLES_CONFIGDATA is not set
++# CONFIG_EXAMPLES_CXXTEST is not set
++# CONFIG_EXAMPLES_DHCPD is not set
++# CONFIG_EXAMPLES_ELF is not set
++# CONFIG_EXAMPLES_FSTEST is not set
++# CONFIG_EXAMPLES_FTPC is not set
++# CONFIG_EXAMPLES_FTPD is not set
++CONFIG_EXAMPLES_HELLO=y
++CONFIG_EXAMPLES_HELLO_PRIORITY=100
++CONFIG_EXAMPLES_HELLO_STACKSIZE=2048
++# CONFIG_EXAMPLES_HELLOXX is not set
++# CONFIG_EXAMPLES_HIDKBD is not set
++# CONFIG_EXAMPLES_IGMP is not set
++# CONFIG_EXAMPLES_JSON is not set
++# CONFIG_EXAMPLES_MEDIA is not set
++# CONFIG_EXAMPLES_MM is not set
++# CONFIG_EXAMPLES_MODBUS is not set
++# CONFIG_EXAMPLES_MOUNT is not set
++# CONFIG_EXAMPLES_NSH is not set
++# CONFIG_EXAMPLES_NULL is not set
++# CONFIG_EXAMPLES_NXFFS is not set
++# CONFIG_EXAMPLES_NXHELLO is not set
++# CONFIG_EXAMPLES_NXIMAGE is not set
++# CONFIG_EXAMPLES_NX is not set
++# CONFIG_EXAMPLES_NXLINES is not set
++# CONFIG_EXAMPLES_NXTERM is not set
++# CONFIG_EXAMPLES_NXTEXT is not set
++# CONFIG_EXAMPLES_OSTEST is not set
++# CONFIG_EXAMPLES_PCA9635 is not set
++# CONFIG_EXAMPLES_POSIXSPAWN is not set
++# CONFIG_EXAMPLES_POWERMONITOR is not set
++# CONFIG_EXAMPLES_PPPD is not set
++CONFIG_EXAMPLES_RANDOM=y
++CONFIG_EXAMPLES_MAXSAMPLES=64
++CONFIG_EXAMPLES_NSAMPLES=8
++# CONFIG_EXAMPLES_RFID_READUID is not set
++# CONFIG_EXAMPLES_RGBLED is not set
++# CONFIG_EXAMPLES_ROMFS is not set
++# CONFIG_EXAMPLES_RTC is not set
++# CONFIG_EXAMPLES_SENDMAIL is not set
++# CONFIG_EXAMPLES_SERIALBLASTER is not set
++# CONFIG_EXAMPLES_SERIALRX is not set
++# CONFIG_EXAMPLES_SERLOOP is not set
++# CONFIG_EXAMPLES_SLCD is not set
++# CONFIG_EXAMPLES_SMART is not set
++# CONFIG_EXAMPLES_SMP is not set
++# CONFIG_EXAMPLES_STAT is not set
++# CONFIG_EXAMPLES_TCPECHO is not set
++# CONFIG_EXAMPLES_THTTPD is not set
++# CONFIG_EXAMPLES_TIFF is not set
++# CONFIG_EXAMPLES_TOUCHSCREEN is not set
++# CONFIG_EXAMPLES_UNIONFS is not set
++# CONFIG_EXAMPLES_USBSERIAL is not set
++# CONFIG_EXAMPLES_WATCHDOG is not set
++# CONFIG_EXAMPLES_WEBSERVER is not set
++# CONFIG_EXAMPLES_XBC_TEST is not set
++
++#
++# File System Utilities
++#
++# CONFIG_FSUTILS_INIFILE is not set
++# CONFIG_FSUTILS_PASSWD is not set
++
++#
++# GPS Utilities
++#
++# CONFIG_GPSUTILS_MINMEA_LIB is not set
++
++#
++# Graphics Support
++#
++# CONFIG_TIFF is not set
++# CONFIG_GRAPHICS_TRAVELER is not set
++
++#
++# Interpreters
++#
++# CONFIG_INTERPRETERS_BAS is not set
++# CONFIG_INTERPRETERS_FICL is not set
++# CONFIG_INTERPRETERS_MICROPYTHON is not set
++# CONFIG_INTERPRETERS_MINIBASIC is not set
++# CONFIG_INTERPRETERS_PCODE is not set
++
++#
++# FreeModBus
++#
++# CONFIG_MODBUS is not set
++
++#
++# Network Utilities
++#
++# CONFIG_NETUTILS_CODECS is not set
++# CONFIG_NETUTILS_ESP8266 is not set
++# CONFIG_NETUTILS_FTPC is not set
++# CONFIG_NETUTILS_JSON is not set
++# CONFIG_NETUTILS_SMTP is not set
++
++#
++# NSH Library
++#
++# CONFIG_NSH_LIBRARY is not set
++
++#
++# NxWidgets/NxWM
++#
++
++#
++# Platform-specific Support
++#
++# CONFIG_PLATFORM_CONFIGDATA is not set
++
++#
++# System Libraries and NSH Add-Ons
++#
++# CONFIG_SYSTEM_CLE is not set
++# CONFIG_SYSTEM_CUTERM is not set
++# CONFIG_SYSTEM_FREE is not set
++# CONFIG_SYSTEM_HEX2BIN is not set
++# CONFIG_SYSTEM_HEXED is not set
++# CONFIG_SYSTEM_I2CTOOL is not set
++# CONFIG_SYSTEM_INSTALL is not set
++# CONFIG_SYSTEM_RAMTEST is not set
++# CONFIG_READLINE_HAVE_EXTMATCH is not set
++CONFIG_SYSTEM_READLINE=y
++CONFIG_READLINE_ECHO=y
++# CONFIG_READLINE_TABCOMPLETION is not set
++# CONFIG_READLINE_CMD_HISTORY is not set
++# CONFIG_SYSTEM_SENSOR is not set
++# CONFIG_SYSTEM_SUDOKU is not set
++# CONFIG_SYSTEM_TEE is not set
++# CONFIG_SYSTEM_UBLOXMODEM is not set
++# CONFIG_SYSTEM_VI is not set
++# CONFIG_SYSTEM_ZMODEM is not set
++
++#
++# Wireless Libraries and NSH Add-Ons
++#
++
++#
++# Bluetooth Application Stack
++#
++CONFIG_BT_LIBUTILS=y
++CONFIG_BT_MSG_Q_STACKSIZE=1024
++CONFIG_BT_MSG_Q_MAX_MSG_NUMBER=32
++CONFIG_BT_MSG_Q_PRIORITY=64
++
++#
++# IEEE 802.15.4 applications
++#
++# CONFIG_IEEE802154_LIBMAC is not set
++# CONFIG_IEEE802154_LIBUTILS is not set
++# CONFIG_IEEE802154_I8SAK is not set
+-- 
+2.11.0
+

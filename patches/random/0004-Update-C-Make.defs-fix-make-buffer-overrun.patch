@@ -1,0 +1,384 @@
+From 695a84207ae0ada3494edc86fb405dd00a60473c Mon Sep 17 00:00:00 2001
+From: Bill Rees <bill@zglue.com>
+Date: Tue, 19 Dec 2017 14:18:41 -0800
+Subject:     Update (C) Make.defs, fix make buffer overrun
+
+Change-Id: I89da5650ac4c8208c82fe8f5c8b8c9b131af7be2
+---
+ arch/arm/src/nrf52/Make.defs               |  2 +-
+ arch/arm/src/nrf52/chip/nrf52_rng.h        | 46 ++++++++++------------------
+ arch/arm/src/nrf52/nrf52.h                 |  4 ---
+ arch/arm/src/nrf52/nrf52_rng.c             |  6 ++++
+ configs/nrf52832_dk/Makefile               | 49 +++++++++++++++++++++++-------
+ configs/nrf52832_dk/ble_app_uart/Make.defs |  4 ++-
+ configs/nrf52832_dk/ble_hello/Make.defs    |  4 ++-
+ configs/nrf52832_dk/hello/Make.defs        |  4 ++-
+ configs/nrf52832_dk/nsh/Make.defs          |  4 ++-
+ configs/nrf52832_dk/random/Make.defs       |  4 ++-
+ 10 files changed, 76 insertions(+), 51 deletions(-)
+
+diff --git a/arch/arm/src/nrf52/Make.defs b/arch/arm/src/nrf52/Make.defs
+index f218ce55b2..cfeb2e423d 100644
+--- a/arch/arm/src/nrf52/Make.defs
++++ b/arch/arm/src/nrf52/Make.defs
+@@ -240,7 +240,7 @@ endif
+ #endif
+ 
+ #ifeq ($(CONFIG_NRF52_RNG),y)
+-CHIP_CSRCS += nrf52_rng.c
++CHIP_CSRCS += nrf_drv_rng.c nrf52_rng.c
+ #endif
+ 
+ #ifeq ($(CONFIG_NRF52_SAI),y)
+diff --git a/arch/arm/src/nrf52/chip/nrf52_rng.h b/arch/arm/src/nrf52/chip/nrf52_rng.h
+index f3a0247cd3..2fe64dedad 100644
+--- a/arch/arm/src/nrf52/chip/nrf52_rng.h
++++ b/arch/arm/src/nrf52/chip/nrf52_rng.h
+@@ -41,6 +41,7 @@
+  ************************************************************************************/
+ 
+ #ifdef CONFIG_NRF52_RNG
++#include <stddef.h>
+ #include <nuttx/config.h>
+ #include "chip.h"
+ 
+@@ -48,6 +49,7 @@
+ extern "C" {
+ #endif
+ 
++
+ /************************************************************************************
+  * Pre-processor Definitions
+  ************************************************************************************/
+@@ -56,40 +58,24 @@ extern "C" {
+ #define NRF_RNG_EVENT_CLEAR (0UL)
+ #define NRF_RNG             ((NRF_RNG_Type  *) NRF_RNG_BASE)
+ 
+-
+-/* ========================================================================= */
+-/* ================                  RNG                    ================ */
+-/* ================        (Random Number Generator)        ================ */
+-/* ========================================================================= */
+-
+-/************************************************************************************
+- * Public Type Definitions
+- ************************************************************************************/
+-
+-typedef struct                          /* Random Number Generator (RNG) Structure  */
++/**
++ * @enum nrf_rng_task_t
++ * @brief RNG tasks.
++ */
++typedef enum /*lint -save -e30 -esym(628,__INTADDR__) */
+ {
+-  __O  uint32_t  TASKS_START;           /* Start RNG                    */
+-  __O  uint32_t  TASKS_STOP;            /* Stop  RNG                    */
+-  __I  uint32_t  RESERVED0[62];
+-  __IO uint32_t  EVENTS_VALRDY;         /* Data ready event.            */
+-  __I  uint32_t  RESERVED2[63];
+-  __IO uint32_t  SHORTS;                /* Shortcut register            */
+-  __I  uint32_t  RESERVED3[64];
+-  __IO uint32_t  INTENSET;              /* Enable interrupt             */
+-  __IO uint32_t  INTENCLR;              /* Disable interrupt            */
+-  __I  uint32_t  RESERVED4[126];
+-  __IO uint32_t  CONFIG;                /* Configure bias treatment of data. */
+-  __IO uint32_t  VALUE;                 /* Data byte                    */
+-} NRF_RNG_Type;
++  NRF_RNG_TASK_START = offsetof(NRF_RNG_Type, TASKS_START), /**< Start the random number generator. */
++  NRF_RNG_TASK_STOP  = offsetof(NRF_RNG_Type, TASKS_STOP)   /**< Stop the random number generator. */
++} nrf_rng_task_t;                                             /*lint -restore */
+ 
++/**
++ * @enum nrf_rng_event_t
++ * @brief RNG events.
++ */
+ typedef enum
+ {
+-  NRF_RNG_TASK_START    = offsetof(NRF_RNG_Type, TASKS_START),      /*   Task for starting the rng.    */
+-  NRF_RNG_TASK_STOP     = offsetof(NRF_RNG_Type, TASKS_STOP),       /*   Task for stopping the rng.    */
+-  NRF_RNG_EVENT_VALRDY  = offsetof(NRF_RNG_Type, EVENTS_VALRDY),    /*   Event from  data ready.       */
+-  NRF_RNG_INTENSET      = offsetof(NRF_RNG_Type, INTENSET),         /*   Int set                       */
+-  NRF_RNG_INTENCLR      = offsetof(NRF_RNG_Type, INTENCLR),         /*   Int clear                     */
+-} nrf_rng_regs_t;
++  NRF_RNG_EVENT_VALRDY = offsetof(NRF_RNG_Type, EVENTS_VALRDY) /**< New random number generated event. */
++} nrf_rng_event_t;
+ 
+ /**
+  * @enum nrf_rng_int_mask_t
+diff --git a/arch/arm/src/nrf52/nrf52.h b/arch/arm/src/nrf52/nrf52.h
+index 94d4a54ae1..26e96fa131 100644
+--- a/arch/arm/src/nrf52/nrf52.h
++++ b/arch/arm/src/nrf52/nrf52.h
+@@ -1348,7 +1348,6 @@ typedef struct                          /*!< TEMP Structure               */
+   __IO uint32_t  T4;                    /*!< End point of 5th piece wise linear function           */
+ } NRF_TEMP_Type;
+ 
+-#if defined(GLOBAL_RNG_TYPE)
+ /* ========================================================================= */
+ /* ================           RNG                      ================ */
+ /* ========================================================================= */
+@@ -1374,7 +1373,6 @@ typedef struct                          /*!< RNG Structure                */
+   __IO uint32_t  CONFIG;                /*!< Configuration register       */
+   __I  uint32_t  VALUE;                 /*!< Output random number         */
+ } NRF_RNG_Type;
+-#endif
+ 
+ /* ========================================================================= */
+ /* ================           ECB                      ================ */
+@@ -2051,9 +2049,7 @@ typedef struct                          /* GPIO Structure                */
+ #define NRF_TIMER2               ((NRF_TIMER_Type   *) NRF_TIMER2_BASE)
+ #define NRF_RTC0                 ((NRF_RTC_Type     *) NRF_RTC0_BASE)
+ #define NRF_TEMP                 ((NRF_TEMP_Type    *) NRF_TEMP_BASE)
+-#if defined(GLOBAL_RNG_TYPE)
+ #define NRF_RNG                  ((NRF_RNG_Type     *) NRF_RNG_BASE)
+-#endif
+ #define NRF_ECB                  ((NRF_ECB_Type     *) NRF_ECB_BASE)
+ #define NRF_CCM                  ((NRF_CCM_Type     *) NRF_CCM_BASE)
+ #define NRF_AAR                  ((NRF_AAR_Type     *) NRF_AAR_BASE)
+diff --git a/arch/arm/src/nrf52/nrf52_rng.c b/arch/arm/src/nrf52/nrf52_rng.c
+index 11e9e5ad33..1f273c9966 100644
+--- a/arch/arm/src/nrf52/nrf52_rng.c
++++ b/arch/arm/src/nrf52/nrf52_rng.c
+@@ -53,6 +53,8 @@
+ 
+ #include <arch/board/board.h>
+ #include "up_arch.h"
++#include "nrf52.h"
++#include "chip/nrf52_bitfields.h"
+ #include "chip/nrf52_rng.h"
+ #include "up_internal.h"
+ #include "nrf.h"
+@@ -450,6 +452,7 @@ static int nrf52_rng_interrupt(int irq, FAR void *context, FAR void *arg)
+ 
+ static int nrf52_rng_open(FAR struct file *filep)
+ {
++  return 0;
+ }
+ 
+ /****************************************************************************
+@@ -458,6 +461,7 @@ static int nrf52_rng_open(FAR struct file *filep)
+ 
+ static int nrf52_rng_close(FAR struct file *filep)
+ {
++  return 0;
+ }
+ 
+ 
+@@ -467,6 +471,7 @@ static int nrf52_rng_close(FAR struct file *filep)
+ 
+ static int nrf52_rng_ioctl(FAR struct file *filep, )
+ {
++  return 0;
+ }
+ 
+ /****************************************************************************
+@@ -475,6 +480,7 @@ static int nrf52_rng_ioctl(FAR struct file *filep, )
+ 
+ static ssize_t nrf52_rng_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
+ {
++  return 0;
+ }
+ 
+ /****************************************************************************
+diff --git a/configs/nrf52832_dk/Makefile b/configs/nrf52832_dk/Makefile
+index fc08a4851e..b05743ee36 100644
+--- a/configs/nrf52832_dk/Makefile
++++ b/configs/nrf52832_dk/Makefile
+@@ -1,13 +1,13 @@
+ ##############################################################################
+ #                                                                            #
+-# Copyright (C) 2017, zGlue inc.  All rights reserved.                       #
++#   Copyright (C) 2017, zGlue inc.  All rights reserved.                     #
+ #                                                                            #
+ ##############################################################################
+ 
+ ##############################################################################
+ #                                                                            #
+-# This makefile is meant to setup and build Nuttx using the Nordic 52832     #
+-# specific config, providing shortcuts for this.                             #
++#   This makefile is meant to setup and build Nuttx for the Nordic 52832     #
++#   specific config, providing shortcuts for management, builds, mods        #
+ #                                                                            #
+ ##############################################################################
+ V ?= 0
+@@ -21,6 +21,15 @@ CD = cd
+ LN = ln -sf
+ CP = cp
+ LD_SCRIPTS = ld.standard.script ld.softd.script tmp
++BUILD_ROOT = $(DEPTH)
++TMPDIR = /tmp
++ifneq ($(TOP),)
++BUILD_ROOT = $(TMPDIR)/nuttx
++BUILD_SYMLINKS = $(TMPDIR)/nuttx $(TMPDIR)/apps
++$(shell There=$$(pwd)/$(DEPTH) && cd $(TMPDIR) && ln -sf $${There})
++$(shell There=$$(pwd)/$(DEPTH) && cd $(TMPDIR) && ln -sf $${There}_apps apps)
++# FF = $(shell $(MAKE) SWD=$(pwd) )
++endif
+ 
+ .PHONY: $(APPS)
+ 
+@@ -34,6 +43,13 @@ help:
+ 	@echo "\t _BUILD_VERSION_ is for custimizing build version"
+ 	@echo "\t example: make nsh _MAJOR_=7 _MINOR_=21 _BUILD_VERSION_=201711111111_12345"
+ 	@echo "if build for ZEUS2 , please export ZEUS2_BOARD=1"
++	@echo ""
++	@echo "Parameter: NO_ERRORS, TOP"
++	@echo "\t NO_ERRORS is for building without -Werror.  Pass NO_ERRORS=1"
++	@echo "\t TOP is for relocating, temporarily, the build path to '/tmp'"
++	@echo "\t so that the paths for the include directives are shorter and"
++	@echo "\t won't overfill the compiler's command buffer. Pass TOP=1"
++	@echo ""
+ 
+ menuconfig config:
+ 	$(CD) $(DEPTH) && $(MAKE) menuconfig
+@@ -46,7 +62,7 @@ menuconfig config:
+ # of the defconfig.
+ #
+ defconfig:
+-	@if [ -f $(DEPTH)/.config ] ; then \
++	$(Q) if [ -f $(DEPTH)/.config ] ; then \
+ 		APP=$$(grep ^C.*AMPLES_.*=y $(DEPTH)/.config); \
+ 		if [ -n "$$APP" ] ; then MOD=$$(echo $$APP | \
+ 			sed -e s'/^C.*AMPLES_//' -e 's/=.*//' | tr A-Z a-z); \
+@@ -59,20 +75,24 @@ defconfig:
+ #
+ nsh: V=2
+ 
++top:
++	$(Q) cd /tmp && ln -sf $(SWD)/$(DEPTH)/nuttx nuttx
++	$(Q) cd /tmp && ln -sf $(SWD)/$(DEPTH)/apps apps
++
+ #
+ # This test is the opposite for the defconfig: target above.  If the
+ # specified modules differ between the .config and defconfig then
+ # a distclean is run and the appropriate defconfig is copied to .config.
+ #
+ $(APPS):
+-	@if [ ! -f $(DEPTH)/.config ] || \
++	$(Q) if [ ! -f $(DEPTH)/.config ] || \
+ 		[ "$$(grep ^C.*XAMPLES_.*=y $(DEPTH)/.config)" != \
+ 			"$$(grep ^C.*XAMPLES_.*=y $(@)/defconfig)" ] ; then \
+-			$(MAKE) -C $(DEPTH) distclean;   \
++			cd $(DEPTH) && $(MAKE) distclean;   \
+ 		\
+ 	fi
+ 	$(Q) $(MAKE) Q=$(Q) MODULE=$(@) $(DEPTH)/.config $(DEPTH)/Make.defs
+-	$(Q) $(MAKE) Q=$(Q) V=$(V) -C $(DEPTH)
++	$(Q) cd $(BUILD_ROOT) && $(MAKE) Q=$(Q) V=$(V)
+ 
+ #
+ # These two targets are meant to be called indirectly through the APPS target,
+@@ -89,12 +109,14 @@ cscope:
+ 	cd $(DEPTH)/configs/$(PLATFORM) && cscope -R -k -b -s $(DEPTH)
+ 
+ clean:
+-	@if [ "$(MAKECMDGOALS)" = "clean" ] ; then \
++	$(Q) if [ "$(MAKECMDGOALS)" = "clean" ] ; then \
+ 		$(MAKE) -C $(DEPTH) $@ ; \
+ 	fi
+-	@ $(RM) $(LD_SCRIPTS:%=scripts/%)
++	$(Q) $(RM) $(LD_SCRIPTS:%=scripts/%)
++	$(Q) $(RM) out.*
+ 
+ clobber: distclean
++
+ distclean: clean
+ 	$(Q) cd $(DEPTH) && find . -path ./.git -prune -o              \
+ 			-type f -name  "*.orig"  -exec rm {} \; -o     \
+@@ -104,6 +126,11 @@ distclean: clean
+ 			-type f -name  "diffs.*" -exec rm {} \; -o     \
+ 			-type f -iname "[a-h][a-h]" -exec rm {} \; -o  \
+ 			-type f -iname "[a-h][a-h][a-h]" -exec rm {} \;
+-	@ $(MAKE) -C $(DEPTH) $@
+-	@ $(RM) cscope.out $(DEPTH)/cscope.out $(DEPTH)/$(CHIP_SRC)/cscope.out
++#	$(Q) $(MAKE) -C $(DEPTH) $@
++#	$(Q) cd $(BUILD_ROOT) && $(MAKE) Q=$(Q) V=$(V) $@
++	$(Q) $(RM) cscope.out $(DEPTH)/cscope.out $(DEPTH)/$(CHIP_SRC)/cscope.out
++	$(Q) for symlink in $(BUILD_SYMLINKS) ; do \
++		[ ! -L $$symlink ] && continue ; \
++		$(RM) $$symlink; \
++	     done
+ 
+diff --git a/configs/nrf52832_dk/ble_app_uart/Make.defs b/configs/nrf52832_dk/ble_app_uart/Make.defs
+index a4794310fd..d2d6bafad7 100644
+--- a/configs/nrf52832_dk/ble_app_uart/Make.defs
++++ b/configs/nrf52832_dk/ble_app_uart/Make.defs
+@@ -1,8 +1,10 @@
+ ############################################################################
+-# configs/stm32l476-mdk/nsh/Make.defs
++# configs/nrf52832_dk/ble_app_uart/Make.defs
+ #
+ #   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+ #   Author: dev@ziggurat29.com
++#   Copyright (C) 2017 zGlue Inc.
++#   Author: bill@zglue.com
+ #
+ # Redistribution and use in source and binary forms, with or without
+ # modification, are permitted provided that the following conditions
+diff --git a/configs/nrf52832_dk/ble_hello/Make.defs b/configs/nrf52832_dk/ble_hello/Make.defs
+index a4794310fd..2f31c79d4e 100644
+--- a/configs/nrf52832_dk/ble_hello/Make.defs
++++ b/configs/nrf52832_dk/ble_hello/Make.defs
+@@ -1,8 +1,10 @@
+ ############################################################################
+-# configs/stm32l476-mdk/nsh/Make.defs
++# configs/nrf52832_dk/ble_hello/Make.defs
+ #
+ #   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+ #   Author: dev@ziggurat29.com
++#   Copyright (C) 2017 zGlue Inc.
++#   Author: bill@zglue.com
+ #
+ # Redistribution and use in source and binary forms, with or without
+ # modification, are permitted provided that the following conditions
+diff --git a/configs/nrf52832_dk/hello/Make.defs b/configs/nrf52832_dk/hello/Make.defs
+index a4794310fd..e9ce363f74 100644
+--- a/configs/nrf52832_dk/hello/Make.defs
++++ b/configs/nrf52832_dk/hello/Make.defs
+@@ -1,8 +1,10 @@
+ ############################################################################
+-# configs/stm32l476-mdk/nsh/Make.defs
++# configs/nrf52832_dk/hello/Make.defs
+ #
+ #   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+ #   Author: dev@ziggurat29.com
++#   Copyright (C) 2017 zGlue Inc.
++#   Author: bill@zglue.com
+ #
+ # Redistribution and use in source and binary forms, with or without
+ # modification, are permitted provided that the following conditions
+diff --git a/configs/nrf52832_dk/nsh/Make.defs b/configs/nrf52832_dk/nsh/Make.defs
+index a4794310fd..4799318107 100644
+--- a/configs/nrf52832_dk/nsh/Make.defs
++++ b/configs/nrf52832_dk/nsh/Make.defs
+@@ -1,8 +1,10 @@
+ ############################################################################
+-# configs/stm32l476-mdk/nsh/Make.defs
++# configs/nrf52832_dk/nsh/Make.defs
+ #
+ #   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+ #   Author: dev@ziggurat29.com
++#   Copyright (C) 2017 zGlue Inc.
++#   Author: bill@zglue.com
+ #
+ # Redistribution and use in source and binary forms, with or without
+ # modification, are permitted provided that the following conditions
+diff --git a/configs/nrf52832_dk/random/Make.defs b/configs/nrf52832_dk/random/Make.defs
+index a4794310fd..afdc4e72b8 100644
+--- a/configs/nrf52832_dk/random/Make.defs
++++ b/configs/nrf52832_dk/random/Make.defs
+@@ -1,8 +1,10 @@
+ ############################################################################
+-# configs/stm32l476-mdk/nsh/Make.defs
++# configs/nrf52832_dk/random/Make.defs
+ #
+ #   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+ #   Author: dev@ziggurat29.com
++#   Copyright (C) 2017 zGlue Inc.
++#   Author: bill@zglue.com
+ #
+ # Redistribution and use in source and binary forms, with or without
+ # modification, are permitted provided that the following conditions
+-- 
+2.11.0
+

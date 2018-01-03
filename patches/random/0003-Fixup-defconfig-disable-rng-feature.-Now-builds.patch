@@ -1,0 +1,301 @@
+From 2ba4ee700de7449493c1b21a0767ca450b0a3cae Mon Sep 17 00:00:00 2001
+From: Bill Rees <bill@zglue.com>
+Date: Tue, 12 Dec 2017 14:57:05 -0800
+Subject:     Fixup defconfig: disable rng feature.  Now builds.
+
+Change-Id: I6e677837ca324f4b14ee55b839d94a7c50d087db
+---
+ arch/arm/src/nrf52/Kconfig          |   1 -
+ configs/nrf52832_dk/hello/defconfig | 110 +++++++++++++++++-------------------
+ configs/nrf52832_dk/nsh/defconfig   |   9 +--
+ 3 files changed, 56 insertions(+), 64 deletions(-)
+
+diff --git a/arch/arm/src/nrf52/Kconfig b/arch/arm/src/nrf52/Kconfig
+index 017c2fda03..86733ea831 100644
+--- a/arch/arm/src/nrf52/Kconfig
++++ b/arch/arm/src/nrf52/Kconfig
+@@ -307,7 +307,6 @@ config NRF52_RNG
+                 an even distribution of '1's versus '0's.
+ 
+                 Don't forget to select the random or urandom device.
+-
+ choice
+         prompt "Run I2S on a low or high priority work queue?"
+         default NRF52_I2S_LOWPRIO
+diff --git a/configs/nrf52832_dk/hello/defconfig b/configs/nrf52832_dk/hello/defconfig
+index 1438de0235..7a7d138114 100644
+--- a/configs/nrf52832_dk/hello/defconfig
++++ b/configs/nrf52832_dk/hello/defconfig
+@@ -74,9 +74,9 @@ CONFIG_DEBUG_ASSERTIONS=y
+ #
+ # CONFIG_DEBUG_LEDS is not set
+ # CONFIG_DEBUG_GPIO is not set
+-# CONFIG_DEBUG_I2C is not set
+ # CONFIG_DEBUG_SPI is not set
+ # CONFIG_DEBUG_TIMER is not set
++# CONFIG_DEBUG_WATCHDOG is not set
+ CONFIG_ARCH_HAVE_STACKCHECK=y
+ # CONFIG_STACK_COLORATION is not set
+ CONFIG_ARCH_HAVE_HEAPCHECK=y
+@@ -210,60 +210,44 @@ CONFIG_NRF52832_FLASH_512KB=y
+ CONFIG_NRF52_HAVE_LPTIM1=y
+ CONFIG_NRF52_HAVE_LPTIM2=y
+ CONFIG_NRF52_HAVE_COMP=y
+-CONFIG_NRF52_HAVE_SAI1=y
+-CONFIG_NRF52_HAVE_SAI2=y
++CONFIG_NRF52_HAVE_I2S=y
+ CONFIG_NRF52_HAVE_UART0=y
+ CONFIG_NRF52_HAVE_BLUETOOTH=y
++CONFIG_NRF52_HAVE_RNG=y
+ # CONFIG_NRF52_BLUETOOTH is not set
++# CONFIG_NRF_SOFTDEVICE_S132_V4_0_2 is not set
++# CONFIG_NRF_SOFTDEVICE_S132_V5_0_0_1 is not set
++CONFIG_GPIO_AS_PINRESET=21
+ CONFIG_FLASH_ORIGIN="0"
+ CONFIG_FLASH_LENGTH="0x80000"
+ CONFIG_SRAM_ORIGIN="0x20000000"
+ CONFIG_SRAM_LENGTH="0x10000"
+-# CONFIG_NRF52_ADC is not set
+ # CONFIG_NRF52_DAC is not set
+-# CONFIG_NRF52_DMA is not set
+ CONFIG_NRF52_I2C=y
+-# CONFIG_NRF52_SAI is not set
++# CONFIG_NRF52_GPIOTE is not set
+ # CONFIG_NRF52_SPI is not set
+ CONFIG_NRF52_UART=y
+ # CONFIG_NRF52_LPTIM is not set
+-
+-#
+-# AHB1 Peripherals
+-#
+-# CONFIG_NRF52_DMA1 is not set
+-# CONFIG_NRF52_DMA2 is not set
++# CONFIG_NRF52_ADC is not set
+ # CONFIG_NRF52_CRC is not set
+ # CONFIG_NRF52_TSC is not set
+-
+-#
+-# AHB2 Peripherals
+-#
+ # CONFIG_NRF52_OTGFS is not set
+-# CONFIG_NRF52_ADC1 is not set
+-# CONFIG_NRF52_ADC2 is not set
+-# CONFIG_NRF52_ADC3 is not set
++# CONFIG_NRF52_PPI is not set
+ CONFIG_NRF52_AES=y
+-CONFIG_NRF52_RNG=y
+-# CONFIG_NRF52_SAI1_A is not set
+-# CONFIG_NRF52_SAI1_B is not set
+-# CONFIG_NRF52_SAI2_A is not set
+-# CONFIG_NRF52_SAI2_B is not set
+-
+-#
+-# AHB3 Peripherals
+-#
++# CONFIG_NRF52_RNG is not set
++CONFIG_NRF52_I2S_LOWPRIO=y
++# CONFIG_NRF52_I2S_HIGHPRIO is not set
++# CONFIG_NRF52_I2S is not set
+ # CONFIG_NRF52_FMC is not set
+-
+-#
+-# APB1 Peripherals
+-#
+ CONFIG_NRF52_PWR=y
+ # CONFIG_NRF52_TIM0 is not set
+ # CONFIG_NRF52_TIM1 is not set
+ # CONFIG_NRF52_TIM2 is not set
+ # CONFIG_NRF52_TIM3 is not set
+ # CONFIG_NRF52_TIM4 is not set
++# CONFIG_NRF52_RTC0 is not set
++# CONFIG_NRF52_RTC1 is not set
++# CONFIG_NRF52_RTC2 is not set
+ # CONFIG_NRF52_SPI0 is not set
+ # CONFIG_NRF52_SPI1 is not set
+ # CONFIG_NRF52_SPI2 is not set
+@@ -274,33 +258,20 @@ CONFIG_NRF52_I2C1=y
+ # CONFIG_NRF52_DAC2 is not set
+ # CONFIG_NRF52_OPAMP is not set
+ # CONFIG_NRF52_LPTIM1 is not set
+-# CONFIG_NRF52_LPUART1 is not set
+ # CONFIG_NRF52_SWPMI is not set
+ # CONFIG_NRF52_LPTIM2 is not set
+-
+-#
+-# APB2 Peripherals
+-#
+ CONFIG_NRF52_SYSCFG=y
+ CONFIG_NRF52_FIREWALL=y
+ # CONFIG_NRF52_SDMMC1 is not set
+ # CONFIG_NRF52_UART1 is not set
+ # CONFIG_NRF52_COMP is not set
+-# CONFIG_NRF52_SAI1 is not set
+-# CONFIG_NRF52_SAI2 is not set
+ # CONFIG_NRF52_DFSDM is not set
+-
+-#
+-# Other Peripherals
+-#
+ # CONFIG_NRF52_BKPSRAM is not set
+ CONFIG_NRF52_WDG=y
+-# CONFIG_NRF52_WWDG is not set
++# CONFIG_NRF52_QDECODER is not set
+ CONFIG_NRF52_FLASH_PREFETCH=y
+ CONFIG_NRF52_DISABLE_IDLE_SLEEP_DURING_DEBUG=y
+ # CONFIG_ARCH_BOARD_NRF52_CUSTOM_CLOCKCONFIG is not set
+-# CONFIG_NRF52_SAI1PLL is not set
+-# CONFIG_NRF52_SAI2PLL is not set
+ 
+ #
+ # Timer Configuration
+@@ -534,8 +505,6 @@ CONFIG_PTHREAD_STACK_DEFAULT=2048
+ CONFIG_DISABLE_POLL=y
+ CONFIG_DEV_NULL=y
+ CONFIG_DEV_ZERO=y
+-CONFIG_ARCH_HAVE_RNG=y
+-# CONFIG_DEV_RANDOM is not set
+ # CONFIG_DEV_URANDOM is not set
+ CONFIG_DEV_LOOP=y
+ 
+@@ -551,11 +520,6 @@ CONFIG_DEV_LOOP=y
+ # CONFIG_PWM is not set
+ CONFIG_ARCH_HAVE_I2CRESET=y
+ # CONFIG_I2C is not set
+-# CONFIG_I2C_SLAVE is not set
+-# CONFIG_I2C_POLLED is not set
+-# CONFIG_I2C_RESET is not set
+-# CONFIG_I2C_TRACE is not set
+-# CONFIG_I2C_DRIVER is not set
+ # CONFIG_ARCH_HAVE_SPI_CRCGENERATION is not set
+ # CONFIG_ARCH_HAVE_SPI_CS_CONTROL is not set
+ CONFIG_ARCH_HAVE_SPI_BITORDER=y
+@@ -576,9 +540,10 @@ CONFIG_SPI_EXCHANGE=y
+ #
+ # CONFIG_TIMER is not set
+ # CONFIG_ONESHOT is not set
++# CONFIG_COUNTER is not set
+ # CONFIG_RTC is not set
+-# CONFIG_WATCHDOG is not set
+-# CONFIG_TIMERS_CS2100CP is not set
++CONFIG_WATCHDOG=y
++CONFIG_WATCHDOG_DEVPATH="/dev/watchdog0"
+ # CONFIG_ANALOG is not set
+ # CONFIG_AUDIO_DEVICES is not set
+ # CONFIG_VIDEO_DEVICES is not set
+@@ -920,12 +885,10 @@ CONFIG_EXAMPLES_HELLO_STACKSIZE=2048
+ # CONFIG_EXAMPLES_HIDKBD is not set
+ # CONFIG_EXAMPLES_IGMP is not set
+ # CONFIG_EXAMPLES_JSON is not set
+-# CONFIG_EXAMPLES_KEYPADTEST is not set
+ # CONFIG_EXAMPLES_MEDIA is not set
+ # CONFIG_EXAMPLES_MM is not set
+ # CONFIG_EXAMPLES_MODBUS is not set
+ # CONFIG_EXAMPLES_MOUNT is not set
+-# CONFIG_EXAMPLES_NRF24L01TERM is not set
+ # CONFIG_EXAMPLES_NSH is not set
+ # CONFIG_EXAMPLES_NULL is not set
+ # CONFIG_EXAMPLES_NXFFS is not set
+@@ -938,10 +901,12 @@ CONFIG_EXAMPLES_HELLO_STACKSIZE=2048
+ # CONFIG_EXAMPLES_OSTEST is not set
+ # CONFIG_EXAMPLES_PCA9635 is not set
+ # CONFIG_EXAMPLES_POSIXSPAWN is not set
++# CONFIG_EXAMPLES_POWERMONITOR is not set
+ # CONFIG_EXAMPLES_PPPD is not set
+ # CONFIG_EXAMPLES_RFID_READUID is not set
+ # CONFIG_EXAMPLES_RGBLED is not set
+ # CONFIG_EXAMPLES_ROMFS is not set
++# CONFIG_EXAMPLES_RTC is not set
+ # CONFIG_EXAMPLES_SENDMAIL is not set
+ # CONFIG_EXAMPLES_SERIALBLASTER is not set
+ # CONFIG_EXAMPLES_SERIALRX is not set
+@@ -951,7 +916,6 @@ CONFIG_EXAMPLES_HELLO_STACKSIZE=2048
+ # CONFIG_EXAMPLES_SMP is not set
+ # CONFIG_EXAMPLES_STAT is not set
+ # CONFIG_EXAMPLES_TCPECHO is not set
+-# CONFIG_EXAMPLES_TELNETD is not set
+ # CONFIG_EXAMPLES_THTTPD is not set
+ # CONFIG_EXAMPLES_TIFF is not set
+ # CONFIG_EXAMPLES_TOUCHSCREEN is not set
+@@ -1023,7 +987,6 @@ CONFIG_EXAMPLES_HELLO_STACKSIZE=2048
+ # CONFIG_SYSTEM_FREE is not set
+ # CONFIG_SYSTEM_HEX2BIN is not set
+ # CONFIG_SYSTEM_HEXED is not set
+-# CONFIG_SYSTEM_I2CTOOL is not set
+ # CONFIG_SYSTEM_INSTALL is not set
+ # CONFIG_SYSTEM_RAMTEST is not set
+ # CONFIG_READLINE_HAVE_EXTMATCH is not set
+@@ -1031,8 +994,37 @@ CONFIG_SYSTEM_READLINE=y
+ CONFIG_READLINE_ECHO=y
+ # CONFIG_READLINE_TABCOMPLETION is not set
+ # CONFIG_READLINE_CMD_HISTORY is not set
++# CONFIG_SYSTEM_SENSOR is not set
+ # CONFIG_SYSTEM_SUDOKU is not set
+ # CONFIG_SYSTEM_TEE is not set
+ # CONFIG_SYSTEM_UBLOXMODEM is not set
+ # CONFIG_SYSTEM_VI is not set
+ # CONFIG_SYSTEM_ZMODEM is not set
++
++#
++# Wireless Libraries and NSH Add-Ons
++#
++
++#
++# Bluetooth Application Stack
++#
++CONFIG_BT_LIBUTILS=y
++CONFIG_BT_MSG_Q_STACKSIZE=1024
++CONFIG_BT_MSG_Q_MAX_MSG_NUMBER=32
++CONFIG_BT_MSG_Q_PRIORITY=64
++CONFIG_BLE_APP_ADV_DEVICE_NAME="ZG_BLE_APP"
++CONFIG_BLE_APP_ADV_MANUFACTURER_NAME="ZGLUE"
++CONFIG_BLE_APP_ADV_INTERVAL=100
++CONFIG_BLE_APP_ADV_TIMEOUT=0
++CONFIG_BLE_APP_ADV_TYPE=0
++CONFIG_BLE_APP_PPCP_MIN_INTERVAL=6
++CONFIG_BLE_APP_PPCP_MAX_INTERVAL=3200
++CONFIG_BLE_APP_PPCP_SLAVE_LATENCY=0
++CONFIG_BLE_APP_CONN_SUP_TIMEOUT=18000
++
++#
++# IEEE 802.15.4 applications
++#
++# CONFIG_IEEE802154_LIBMAC is not set
++# CONFIG_IEEE802154_LIBUTILS is not set
++# CONFIG_IEEE802154_I8SAK is not set
+diff --git a/configs/nrf52832_dk/nsh/defconfig b/configs/nrf52832_dk/nsh/defconfig
+index e1a81e65d8..1c3a19c826 100644
+--- a/configs/nrf52832_dk/nsh/defconfig
++++ b/configs/nrf52832_dk/nsh/defconfig
+@@ -234,6 +234,7 @@ CONFIG_NRF52_HAVE_COMP=y
+ CONFIG_NRF52_HAVE_I2S=y
+ CONFIG_NRF52_HAVE_UART0=y
+ CONFIG_NRF52_HAVE_BLUETOOTH=y
++CONFIG_NRF52_HAVE_RNG=y
+ # CONFIG_NRF52_BLUETOOTH is not set
+ CONFIG_GPIO_AS_PINRESET=21
+ CONFIG_FLASH_ORIGIN="0"
+@@ -254,8 +255,10 @@ CONFIG_NRF52_ADC_CHANNEL=1
+ # CONFIG_NRF52_OTGFS is not set
+ # CONFIG_NRF52_PPI is not set
+ CONFIG_NRF52_AES=y
+-CONFIG_NRF52_RNG=y
+-# CONFIG_NRF52_I2S is not set
++# CONFIG_NRF52_RNG is not set
++CONFIG_NRF52_I2S_LOWPRIO=y
++# CONFIG_NRF52_I2S_HIGHPRIO is not set
++CONFIG_NRF52_I2S=y
+ # CONFIG_NRF52_FMC is not set
+ CONFIG_NRF52_PWR=y
+ # CONFIG_NRF52_TIM0 is not set
+@@ -575,8 +578,6 @@ CONFIG_PTHREAD_STACK_DEFAULT=2048
+ CONFIG_DISABLE_POLL=y
+ CONFIG_DEV_NULL=y
+ CONFIG_DEV_ZERO=y
+-CONFIG_ARCH_HAVE_RNG=y
+-# CONFIG_DEV_RANDOM is not set
+ # CONFIG_DEV_URANDOM is not set
+ CONFIG_DEV_LOOP=y
+ 
+-- 
+2.11.0
+
