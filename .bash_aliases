@@ -33,6 +33,7 @@ export GOPATH=$HOME/src/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
 
+add_path ~/.cabal/bin
 add_path ~/bin
 
 # alias z1="$SSH -o ServerAliveInterval=30 -p 12110 bill@192.168.168.145"

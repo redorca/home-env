@@ -44,14 +44,14 @@ while [ $# -ne 0 ] ; do
                 ;;
         -Q) Q="";                          # Expose the raw commands make issues.
                 ;;
-        -t) TARGET_DIRS="$TARGET_DIRS $2"; shift   # Specify build target. May specify multiple times.
+        -t) TARGET_DIRS="$TARGET_DIRS ${2%/}"; shift   # Specify build target. May specify multiple times.
                 ;;
         -v) VERBOSE="${VERBOSE}V"          # Print info beyond success/failure. May specify multiple times.
                 ;;
         -V) V=2                            # Essentially a dup of -Q 
                 ;;
         *) [ ! -d "$1" ] && echo "Unexpected argument. ($1)" >&2 && exit 1 #
-           TARGET_DIRS="$TARGET_DIRS $1";  # Specify build target. May specify multiple times.
+           TARGET_DIRS="$TARGET_DIRS ${1%/}";  # Specify build target. May specify multiple times.
                 ;;
         esac
         shift
@@ -97,11 +97,15 @@ if [ ! -d "$RELOCATE" ] ; then
 fi
 pushd $RELOCATE >/dev/null
 for build in $TARGET_DIRS ; do
-        CMD="make V=\"$V\"  $NO_ERRORS distclean $build"
-        [ "${VERBOSE:0:2}" = "VV" ] && echo "$CMD"
+        CMD="make distclean"
+        $CMD >/dev/null 2>&1
+
+        CMD="make V=\"$V\"  $NO_ERRORS $build"
+        [ "${VERBOSE:0:2}" = "VV" ] && echo "==: $CMD > out.$build 2>&1"
         echo -n "Building for $build: ... "
-        if ! $CMD > out.$build 2>&1 ; then
-                echo "Failed."
+        $CMD > out.$build 2>&1
+        if [ $? -ne 0 ] ; then
+                echo -e "Failed."
                 continue
         fi
         echo "Succeeded."

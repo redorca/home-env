@@ -23,6 +23,7 @@ RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
 
 # Repo2Host["mynewt-tools"]master@https://github.com/apache/mynewt-newt.git
 # Repo2Host["mynewt"]=master@https://github.com/apache/mynewt-core.git
+# https://github.com/koalaman/shellcheck.git
 Repo2Host["zephyr"]=master@github.com/zephyrproject-rtos/zephyr.git
 Repo2Host["RIOT"]=master@github.com/RIOT-OS
 Repo2Host["bknuttx"]=master@bitbucket.org/nuttx
