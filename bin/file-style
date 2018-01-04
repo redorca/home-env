@@ -1,13 +1,18 @@
-#!/bin/bash
+#!/bin/bash -x
 
+Red='\033[1;31m'
+Reset='\033[0;39;49m'
 ##### Script personality goes below
 ZGLUE_SCRIPTS_DIR=/usr/share/zglue/scripts
+ZGLUE_SCRIPTS_DIR=/home/zglue/bin
 LIB_SCRIPT=lib_body.sh
-if [ ! -f $ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT ] ; then
-        echo "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT not found." >&2
+if [ ! -f "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT" ] ; then
+        echo "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT ${Red}not found.${Reset}" >&2
         exit 1
 fi
-. $ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT
+# shellcheck source=/usr/share/zglue/scripts/lib_body.sh
+# shellcheck disable=1091
+. "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT"
 
 #
 # Help nessage describing the command line options
@@ -16,19 +21,19 @@ help()
 {
         cat <<"EOF"
 
-        style-file: [-h] [--git] [--add] [--file|-f] [<file 1> <file2> ... ]
+        file-style: [-h] [--git] [--add] [--file|-f] [<file 1> <file2> ... ]
                 style_file examines the local environment for c source files to
                 apply formatting rules to.  For every file listed on the command
                 line style_file will format only the *.c *.h files and generate
                 a diff file, style.errs, where you are running the program from.
 
-                A list of files may also be provided as a file containing a list
-                of files.  Use the '-f <file name>' flag.
+                A list of files may also be provided as a file containing a
+                list of files.  Use the '-f <file name>' flag.
 
-                If no files are provided on the command line then style_file will
-                first examine the files staged.  If there are no files found then
-                style_file examines the set of files in the moxt recent commit
-                and format the source files in that check-in.
+                If no files are provided on the command line then style_file
+                will first examine the files staged.  If there are no files
+                found then style_file examines the set of files in the moxt
+                recent commit and format the source files in that check-in.
 
         -h           Display this message
 
@@ -46,9 +51,6 @@ help()
         mutually exclusive
 
 EOF
-#       -w           Target the files in the working directory not in the index. 
-#
-#
 }
 
 #
@@ -59,14 +61,14 @@ EOF
 set_env()
 {
         while [ $# -ne 0 ] ; do
-                case $1 in
+                case "$1" in
                 --add) GIT_ADD=yes;
                         ;;
                 -f|--file) [ ! -f "$2" ] && echo_err "No file? [$2]" && exit 1
-                        [ -f "$2" ] && FILES=$(cat $2 | sed -e 's/^[ 	]*//') && shift
-                        echo_dbg ":" "From containing file, list of files is \n($FILES)"
+                        [ -f "$2" ] && FILES="$(sed -e 's/^[ 	]*//' "$2")" && shift
+                        echo_dbg ":" "From containing file, list of files is \\n($FILES)"
                         if [ -z "$FILES" ] ; then
-                                echo_err "Failed to read files from "$2""
+                                echo_err "Failed to read files from $2"
                                 exit 1
                         fi
                         [ -n "$FILES" ] && echo_dbg ":" "Found files."
@@ -84,7 +86,7 @@ set_env()
                 *) if [ -f "$1" ] ; then
                         FILES="$FILES $1"
                    elif [ ! -f "$1" ]  ; then
-                        echo "No such file: ($1)" && exit 1
+                        echo "${Red}No such file: ($1)${Reset}" && exit 1
                    elif [ "$FILE_ARGS" != "1" ] ; then
                         echo_err "Unknown or unexpected arg ($1)."
                         [ -f "$1" ] && \
@@ -96,15 +98,15 @@ set_env()
         done
 }
 
-FILTERS_NRF="/nrf52/ /nrf52832_dk/"
-FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
+export FILTERS_NRF="/nrf52/ /nrf52832_dk/"
+export FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
 export GIT_ADD=
 export FILES=
 REPO_HOST="101.132.142.37"
 ACTIVELY_MANAGED_REPOS="nuttx@$REPO_HOST nuttx_apps@$REPO_HOST auto_test@$REPO_HOST"
 
-if [ "$(basename $0)" != "pre-commit" ] ; then
-        set_env $@
+if [ "$(basename "$0")" != "pre-commit" ] ; then
+        set_env "$@"
 elif [ "$#" -ne 0 ] ; then
         echo_dbg ":Ignoring command line arguments"
 fi
@@ -114,7 +116,8 @@ fi
 # make sure we are running within a repo else there will be no way
 # to discover any potential files for processing.
 #
-if ! REPOROOT=$(find_repo $FILES) ; then
+if ! REPOROOT="$(find_repo "$FILES")" ; then
+        # shellcheck disable=2153
         echo_err "${RED}Error looking for a repo root directory.${RESET}"
         exit 1
 fi
@@ -129,18 +132,20 @@ fi
 echo_dbg ":This repo is actively managed."
 
 
-[ -z "$FILES" ] && FILES=$(set_files $ALT)
+[ -z "$FILES" ] && FILES="$(set_files "$ALT")"
 
 #
 # If there are no files to process there weren't any style errors!
 #
-[ -z "$FILES" ] && echo_dbg  ":${GREEN}\tNo files to process.${RESET}" && exit 0
+[ -z "$FILES" ] && echo_dbg  ":${GREEN}\\tNo files to process.${RESET}" && exit 0
 
 #
 # Assume the first file is representative of the location of the repo
 #
-[ "$REPOROOT" != "$(find_repo $FILES)" ] && echo_err "Yikes!" && exit 1
-if [ $? -ne 0 -a "$(basename $0)" = "pre-commit" ] ; then
+if [ "$REPOROOT" != "$(find_repo "$FILES")" ] ; then
+        echo_err "Yikes!" && exit 1
+fi
+if [ "$(basename "$0")" = "pre-commit" ] ; then
         echo_err "No repo found."
         exit 1
 fi
@@ -150,21 +155,22 @@ echo_dbg REPOROOT
 #
 # If there are no SRCS to format then by default there are no style errors.
 #
-SRCS=$(filter_for_srcfiles $FILES)
-[ -z "$SRCS" ] && Echo  "${GREEN}\tNo files, no style errors.${RESET}" && exit 0
+SRCS="$(filter_for_srcfiles "$FILES")"
+([ -z "$SRCS" ] && echo_dbg  "${GREEN}\\tNo files, no style errors.${RESET}") \
+   && exit 0
 echo_dbg SRCS REPOROOT ORIGIN
 
-if ! filter_files "$REPOROOT" $SRCS ; then
+if ! filter_files "$REPOROOT" "$SRCS" ; then
         [ -n "$DEBUG" ] && VERBOSE=--verbose
-        MAIN_PHRASE="${RED}\tNuttx style errors found,"
+        MAIN_PHRASE="${RED}\\tNuttx style errors found,"
         PHRASEX="left unstaged."
         if [ -n "$GIT_ADD" ] ; then
-                git add $VERBOSE $SRCS
+                git add "$VERBOSE" "$SRCS"
                 PHRASEX="${GREEN}corrected, and  staged.${RESET}"
         fi
         echo_err "$MAIN_PHRASE $PHRASEX"
-        echo_err "${RED}\tSee style.errs in the root of this repo ($REPOROOT)."
+        echo_err "${RED}\\tSee style.errs in the root of this repo ($REPOROOT)."
         exit 2
 fi
-Echo  "${GREEN}\tNo style errors found.${RESET}"
+echo_dbg  "${GREEN}\\tNo style errors found.${RESET}"
 

@@ -17,6 +17,7 @@ declare -A RepoRename
 RepoRename["riot"]=RIOT
 RepoRename["apps"]=nuttx_apps
 RepoRename["dialog"]=dialog_585_sdk_dev@3rd_Party_SDK
+RepoRename["dallas"]=dialog_585_sdk_dev@3rd_Party_SDK
 RepoRename["nordic"]=SDK_13.0.0-1@3rd_Party_SDK
 RepoRename["sdk_13_1"]=SDK_13.1.0@3rd_Party_SDK
 RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
@@ -38,6 +39,27 @@ Repo2Host["auto_test"]=master@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
 Repo2Host["3rd_Party_SDK"]=master@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
 Repo2Host["fw_devtools"]=master@$ZGLUE_BILL_HOST
 Repo2Host["home-env"]=master@$ZGLUE_BILL_HOST
+
+#
+# Quick writeup of what keywords map to what repos.
+#
+info()
+{
+        echo -e "\tKeyword\t\tRepo\t\tBranch"
+        echo -e "\t3rd_Party_SDK\t3rd_Party_SDK :: master"
+        echo -e "\tnordic\t\t3rd_Party_SDK :: SDK_13.1.0"
+        echo -e "\tsdk_13_1\t3rd_Party_SDK :: SDK_13.1.0"
+        echo -e "\tsdk_13\t\t3rd_Party_SDK :: SDK_13.0.0-1"
+        echo -e "\tsdk_14\t\t3rd_Party_SDK :: SDK_14.0.0"
+        echo ""
+        echo -e "\tdallas\t\t3rd_Party_SDK :: dialog_585_sdk_dev"
+        echo ""
+        echo -e "\tapps\t\tnuttx_apps :: zdk"
+        echo -e "\tnuttx_apps\tnuttx_apps :: zdk"
+        echo -e "\tnuttx\t\tnuttx :: zdk"
+        echo -e "\tbknuttx\t\toffcial nuttx :: master"
+        echo -e "\tauto_test\tauto_test :: master"
+}
 
 #
 # Given a keyword or hint from the user find the branch,
@@ -69,5 +91,9 @@ function clone()
         $CMD
 }
 
+if [ $# -eq 0 ] ; then
+        info
+        exit
+fi
 clone $1
 
