@@ -11,7 +11,7 @@ function add_path()
                return
         fi
         if [ ! -d "$1" ] ; then
-                echo "No such path exists: ($1)" >&2
+                [ "$BASH_DBG" = "1" ] && echo "No such path exists: ($1)" >&2
                 return
         fi
         PATH=$1:$PATH
