@@ -1,8 +1,18 @@
 
 ORIGIN=$(pwd)/
 RED='\033[1;31m'
+REDBLK='\033[1;31;40m'
+REDYLW='\033[1;31;43m'
+REDBLU='\033[1;31;46m'
 GREEN='\033[1;32m'
+GRNBLK='\033[1;32;40m'
+GRNGRN='\033[1;32;42m'
 YELLOW='\033[1;33m'
+YLWBLK='\033[1;33;40m'
+YLWRED='\033[1;33;41m'
+YLWGRN='\033[1;33;42m'
+YLWBLU='\033[1;33;44m'
+YLWltBLU='\033[1;33;46m'
 BLUE='\033[1;34m'
 RESET='\033[0;39;49m'
 
@@ -28,7 +38,7 @@ echo_err()
 #
 echo_dbg()
 {
-        [ -z "$DEBUG" ] && return
+        [ "$DEBUG" != "1" ] && return
 
         local i=
         local tmp=
@@ -181,7 +191,7 @@ filter_style()
         ZGLUE_OPTS_DIR=/usr/share/zglue/styles
         [ ! -f $STYLE_OPTIONS ] && STYLE_OPTIONS=$ZGLUE_OPTS_DIR/${ASTYLE_OPTS}
 
-        [ -z "$DEBUG" ]  && QUIET='-q'
+        [ "$DEBUG" != "1" ]  && QUIET='-q'
         echo_dbg ASTYLE STYLE_OPTIONS
 
         [ -f "$STYLE_OPTIONS" ] || echo_err "Missing [$STYLE_OPTIONS]" || return 1
@@ -205,10 +215,10 @@ filter_style()
 }
 
 #
-# Filter for files in the zglue NRF domain. Primarily files
+# Find files for the zglue NRF domain. Primarily files
 # containing /nrf* in their repo path.
 #
-filter_files_for()
+find_files_for()
 {
         local file=
         local dir=
@@ -368,14 +378,17 @@ in_managed_repo()
         local RemoteTuple=
         local VerifyTuple=
         local RemoteName=
+        local ManagedTuples=
 
         RemoteName=$(git remote)
-        [ -z "$RemoteName" ] && echo_dbg "No remote for this repo." && return 1
+        [ -z "$RemoteName" ] && echo_dbg ":No remote for this repo." && return 1
+        ManagedTuples=( "$@" )
         RemoteTuple=( $(git remote get-url origin | awk -F'/' '{print $3, $4}') )
+        RemoteTuple[0]=${RemoteTuple[0]#*@}
         VerifyTuple=${RemoteTuple[1]%%.git}@${RemoteTuple[0]%%:*}
-        for tuple in $@ ; do
+        for tuple in "${ManagedTuples[@]}" ; do
                 if [ $tuple == $VerifyTuple ] ; then
-                        echo_dbg "$VerifyTuple Matched!"
+                        echo_dbg ":$VerifyTuple Matched!"
                         return 0
                 fi
         done

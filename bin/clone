@@ -1,11 +1,11 @@
 #!/bin/bash
 
-
+ZGLUE_BILL_HOST=git@github.com/zglue-bill
+GIT_UNAME=bill
 GERRIT_HOST=101.132.142.37
 GERRIT_SSH_PORT=30149
 GERRIT_HTTP_PORT=14586
-ZGLUE_BILL_HOST=git@github.com/zglue-bill
-GIT_UNAME=bill
+GERRIT_HOST_URL="$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT"
 SDK_13="SDK_13.0.0-1"
 SDK_13_1="SDK_13.1.0"
 SDK_14="SDK_14.0.0"
@@ -21,24 +21,57 @@ RepoRename["nordic"]=SDK_13.0.0-1@3rd_Party_SDK
 RepoRename["sdk_13_1"]=SDK_13.1.0@3rd_Party_SDK
 RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
 
-# Repo2Host["mynewt-tools"]master@https://github.com/apache/mynewt-newt.git
-# Repo2Host["mynewt"]=master@https://github.com/apache/mynewt-core.git
-# https://github.com/koalaman/shellcheck.git
 Repo2Host["zephyr"]=master@github.com/zephyrproject-rtos/zephyr.git
 Repo2Host["RIOT"]=master@github.com/RIOT-OS
 Repo2Host["bknuttx"]=master@bitbucket.org/nuttx
-Repo2Host["sdk_13"]=$SDK_13@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
-Repo2Host["sdk_14"]=$SDK_14@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
-Repo2Host["nordic"]=$SDK_13_1@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
-Repo2Host["dialog"]=$DIALOG_SDK@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
-Repo2Host["nuttx"]=zdk@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
-Repo2Host["nuttx_apps"]=zdk@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
-Repo2Host["apps"]=zdk@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
-Repo2Host["auto_test"]=master@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
-Repo2Host["3rd_Party_SDK"]=master@$GIT_UNAME@$GERRIT_HOST:$GERRIT_SSH_PORT
 Repo2Host["fw_devtools"]=master@$ZGLUE_BILL_HOST
 Repo2Host["home-env"]=master@$ZGLUE_BILL_HOST
 
+# Repo2Host["mynewt-tools"]master@https://github.com/apache/mynewt-newt.git
+# Repo2Host["mynewt"]=master@https://github.com/apache/mynewt-core.git
+# https://github.com/koalaman/shellcheck.git
+
+function help()
+{
+        sed -n -e '/^#Help/,/^#Help/p' "$0" | grep ')'
+}
+
+#
+# Setup the repo table with a repo host url
+#
+function init_repo_table()
+{
+        local repo_host_url=
+
+        [ -z "$1" ] && return 1
+        repo_host_url="$1"; shift
+        [ -n "$DEBUG" ] && echo "repo_host_url ($repo_host_url)" >&2
+	Repo2Host["sdk_13"]=$SDK_13@$repo_host_url
+	Repo2Host["sdk_14"]=$SDK_14@$repo_host_url
+	Repo2Host["nordic"]=$SDK_13_1@$repo_host_url
+	Repo2Host["dialog"]=$DIALOG_SDK@$repo_host_url
+	Repo2Host["nuttx"]=zdk@$repo_host_url
+	Repo2Host["nuttx_apps"]=zdk@$repo_host_url
+	Repo2Host["apps"]=zdk@$repo_host_url
+	Repo2Host["auto_test"]=master@$repo_host_url
+	Repo2Host["3rd_Party_SDK"]=master@$repo_host_url
+}
+
+#
+#
+#
+dump_Repo2Host()
+{
+        if ! init_repo_table "$1"   ; then
+                echo "Failed to init repo table." >&2
+                exit 1
+        fi
+        for key in ${!Repo2Host[@]} ; do
+                echo "key: $key   ${Repo2Host[$key]}"
+        done
+}
+
+KEYS="sdk_13 sdk_14 nordic dialog nuttx nuttx_apps apps auto_test 3rd_Party_SDK"
 #
 # Given a keyword or hint from the user find the branch,
 # repo, and URI associated and clone.
@@ -69,5 +102,25 @@ function clone()
         $CMD
 }
 
-clone $1
+SRC_REPO_URL="$GERRIT_HOST_URL"
+#Help
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        -p | --print) dump_Repo2Host "$SRC_REPO_URL" ; exit
+                ;;
+        -h | --help) help; exit
+                ;;
+        -R | --repo ) SRC_REPO_URL="$2"; shift
+                ;;
+        *) TARGET="$1";
+                ;;
+        esac
+        shift
+done
+#Help
+
+if init_repo_table $SRC_REPO_URL ; then
+        clone $TARGET
+fi
+
 

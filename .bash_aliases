@@ -33,6 +33,7 @@ export GOPATH=$HOME/src/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
 
+add_path /usr/share/doc/git/contrib/git-jump
 add_path ~/.cabal/bin
 add_path ~/bin
 
@@ -60,6 +61,7 @@ alias  asize="arm-none-eabi-size"
 alias   relf="arm-none-eabi-readelf"
 alias status="git status | sed -n -e '1,/^Untracked/p'"
 alias   mods="git status | grep modified:"
+alias  shlvl='echo "Shell Depth:   $SHLVL"'
 alias resource="source ~/.bashrc"
 
 PS1='${debian_chroot:+($debian_chroot)}\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
