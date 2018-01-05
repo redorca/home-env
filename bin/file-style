@@ -11,6 +11,7 @@ if [ ! -f $ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT ] ; then
         exit 1
 fi
 source $ZGLUE_LIBSTYLE
+echo_dbg ":ZGLUE_LIBSTYLE : ($ZGLUE_LIBSTYLE)" >&2
 
 #
 # Help nessage describing the command line options

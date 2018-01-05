@@ -1,8 +1,12 @@
-
 # shellcheck disable=2148
+
+# shellcheck disable=2034
 ORIGIN=$(pwd)/
+# shellcheck disable=2034
 RED='\033[1;31m'
+# shellcheck disable=2034
 REDBLK='\033[1;31;40m'
+# shellcheck disable=2034
 REDYLW='\033[1;31;43m'
 REDBLU='\033[1;31;46m'
 GREEN='\033[1;32m'
@@ -33,13 +37,13 @@ echo_dbg()
         [ "$DEBUG" != "1" ] && return
 
         local i=
-        local tmp=
+        declare -a tmp=
 
         #
         # If the first character in $@ is a ':' then treat $@ as a string.
         #
-        tmp="$@"
-        [ "${tmp#:}" != "$tmp" ]  && echo_err "${tmp#:}" && return
+        tmp=( "$@" )
+        [ "${tmp[0]#:}" != "${tmp[0]}" ]  && echo_err "${tmp[0]#:}" && return
 
         # Else, treat all of the args as undereferenced variables.
         #
@@ -57,7 +61,7 @@ setup_flip_hashmark()
 {
         if [ -z "$1" ] ; then
                 echo_err "Is this a file? ($1)?"
-                return -1
+                return 1
         fi
         cat >"$1" <<"EOF"
 #!/bin/bash
@@ -115,8 +119,8 @@ set_files()
         #
         # See if there are any staged files to check:
         #
-        Files="$(eval "$GIT_CMD")" || return 1
-        [ -n "$Files" ] && echo "$Files" && return 0
+        Files=( "$(eval "$GIT_CMD")" ) || return 1
+        [ -n "${Files[@]}" ] && echo "${Files[@]}" && return 0
 
         #
         # Finding a lack of files to process turn to the most recent
@@ -130,8 +134,8 @@ set_files()
                 return 1
         fi
 
-        Files="$(eval "$GIT_CMD")" || return 1
-        [ -n "$Files" ] && echo "$Files" && return 0
+        Files=( "$(eval "$GIT_CMD")" ) || return 1
+        [ -n "${Files[@]}" ] && echo "${Files[@]}" && return 0
 
         return 1
 }
@@ -148,7 +152,7 @@ find_repo()
 
         File="$1"
         Cmd="git rev-parse --show-toplevel"
-        [ "${File#/}" != "$File" ] && Here=$(pwd) && cd "$(dirname "$File")"
+        [ "${File#/}" != "$File" ] && Here=$(pwd) && cd "$(dirname "${File[0]}")"
         $Cmd 2>/dev/null
         Rv=$?
 
@@ -316,7 +320,6 @@ filter_files()
         local TMPFILE=
         local RESULTS=
         local ZGLUE_OPTS_DIR=
-        local CMD=
         local RV=
 
         RV=1
@@ -398,14 +401,15 @@ in_managed_repo()
 filter_for_srcfiles()
 {
         local file=
-        local tmp=
+        local tmpo=
 
-        for file in "$@" ; do
-                tmp=${file%%*.[ch]}
-                [ -n "$tmp" ] && continue
+        for file in "${@[@]}" ; do
+                tmpo=${file%%*.[ch]}
+                [ -n "$tmpo" ] && continue
 
-                tmp="$(echo "$file" | sed -n -e '/^\//p')"
-                [ -n "$tmp" ] && file=${REPOROOT}$file
+                tmpo="$(echo "$file" | sed -n -e '/^\//p')"
+                # shellcheck disable=2153
+                [ -n "$tmpo" ] && file=${REPOROOT}$file
                 echo -n "$file "
                 echo_dbg file
         done
