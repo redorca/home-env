@@ -71,6 +71,7 @@ usr/
 !bin/.gitignore
 examples.desktop
 gerrit/
+zglue-bill/
 git-repo/
 pkgs.list.centos
 src/
