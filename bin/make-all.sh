@@ -69,8 +69,9 @@ while [ $# -ne 0 ] ; do
         unset FF
 done
 if [ -n "$ARGS_UNXP" ] ; then
-        echo "Unexpected args were encountered. Stop." >&2
-        echo "== $ARGS_UNXP"
+        echo -n "Unexpected args were encountered. Stop.  " >&2
+        echo "$ARGS_UNXP"
+        echo "Perhaps you need to prefix this with '-t'. See help (-h)" >&2
         exit 1
 fi
 ### HELP message end
