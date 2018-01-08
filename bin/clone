@@ -95,6 +95,15 @@ info()
 }
 
 #
+# Fill in the GERRIT_* variables using the current repo's info.
+#
+setup_GERRIT_vars()
+{
+        GERRIT_UNAME="$(git config --local gitreview.username)"
+        GERRIT_HOST="$(git config --local gitreview.host)"
+}
+
+#
 # Given a keyword or hint from the user find the branch,
 # repo, and URI associated and clone.
 #

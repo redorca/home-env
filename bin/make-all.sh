@@ -18,8 +18,20 @@ RESET='\033[0;39;49m'
 #
 on_exit()
 {
-        [ $? -ne 0 ] && echo -e "${RED}=============== Error exit: ${RESET}"
+        [ $? -ne 0 ] && echo_e "${RED}=============== Error exit: ${RESET}"
         exit $?
+}
+
+#
+# Wrap echo with echo_e() and use /bin/echo instead.  This allows invoking
+# this script using sh as in "sh $(basename $0)"
+#
+echo_e()
+{
+        local Bin=
+
+        Bin="/bin/echo -e"
+        $Bin "$@"
 }
 
 #
@@ -38,7 +50,7 @@ help_msg()
 print_vars()
 {
         for var in $ARG_LIST ; do
-                echo -e "$var\t(${!var})"
+                echo_e "$var\t(${!var})"
         done
 }
 
@@ -91,34 +103,36 @@ set_app_list()
 
         [ ! -d "$1" ] && echo "No directory specified: ($1)" >&2 && return 1
         Dir="$1"
-        echo $(ls */defconfig | sed -e 's/\/.*//')
+        echo_e $(ls */defconfig | sed -e 's/\/.*//')
 }
 
 V=${V:-0}
 Q=${Q:-@}
 trap on_exit EXIT
 
-# DEFAULT_APPS="nsh hello ble_hello ble_app_uart"
 RELOCATE="$(find_repo_root)/configs/$BOARD"
 [ ! -d "$RELOCATE" ] && echo "Can't find ($RELOCATE)" >&2 && exit 1
 (
     cd $RELOCATE >/dev/null || exit 1
+    declare -a OUT_FILE=
 
     DEFAULT_APPS=$(ls */defconfig | sed -e 's/\/.*//')
     TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
-    [ "${VERBOSE:0:1}" == "V" ] && print_vars
+    [ "${VERBOSE:0:1}" = "V" ] && print_vars
 
     for build in $TARGET_DIRS ; do
             CMD="make distclean"
-            echo -n -e "Make distclean ...\r"
+            echo_e -n "Make distclean ...\r"
             $CMD >/dev/null 2>&1
 
+            [ "${build,,}" != "help" -a "${build,,}" != "cscope" ] && OUT_FILE=( ">" out.$build "2>&1"  ) && _N="-n"
+
             CMD="make V=\"$V\"  $NO_ERRORS $build"
-            [ "${VERBOSE:0:2}" = "VV" ] && echo "==: $CMD > out.$build 2>&1"
-            echo -n "Building for $build: ... "
-            $CMD > out.$build 2>&1
+
+            echo_e "$_N"  "Building for $build: ... "
+            eval $CMD "${OUT_FILE[*]}"
             if [ $? -ne 0 ] ; then
-                    echo -e "Failed."
+                    echo_e "Failed."
                     continue
             fi
             echo "Succeeded."

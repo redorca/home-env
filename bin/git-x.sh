@@ -1,5 +1,6 @@
 #!/bin/bash
 
+DO_COMMIT="no"
 DRY_RUN=0
 DEBUG=0
 VAR_LIST="LOOP_SET_COUNT count"
@@ -98,8 +99,9 @@ var_sanity_check()
 # ARGS_Begin"
 while [ $# -ne 0 ] ; do
         case $1 in
-        -e) dump_env; exit 0;;
+        -c) DO_COMMIT="yes";;
         -d) DEBUG=1; echo "DEBUG = $DEBUG";;
+        -e) dump_env; exit 0;;
         -h) Help; exit 0;;
         -n) DRY_RUN=1; echo "DRY_RUN = $DRY_RUN";;
         -p) page_size=$2; echo "page size: $page_size";;
@@ -133,6 +135,10 @@ git status --porcelain=v1 \
                 fi
                 page_break count page_size "\t=================="
         done
+
+        if [ "${DO_COMMIT,,}" = "yes" ] ; then
+                git commit
+        fi
 )
 echo_dbg "Back @ $(pwd)"
 
