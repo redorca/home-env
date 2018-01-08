@@ -49,7 +49,7 @@ translate_line()
                 base=${tmp[1]}
                 part=${base%%/*}
                 if [ ! -d "$part" ] ; then
-                        echo ":: $part"
+                        [ "$DEBUG" = "1" ] && echo ":: $part" >&2
                         return 1
                 fi
         fi
@@ -77,7 +77,7 @@ done
 git status | sed -e '/^Untracked/,/^nothing/d' |
     while read line ; do
         if ! translate_line Dir $line ; then
-                echo "Did not translate [$line]"
+                [ "$DEBUG" = "1" ] && echo "Did not translate [$line]" >&2
                 continue
         fi
         if [ "$count" -eq 0 ] ; then
