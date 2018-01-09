@@ -3,18 +3,21 @@
 DEBUG=1
 declare -A git_review
 
-if  xtest="$(git rev-parse --is-inside-git-dir 2>/dev/null)" 2>/dev/null && [ "$xtest" = "true" ] ; then
-        #
-        # Take our path and strip off everything from .git on down.
-        Here="$(pwd)"
-        cd "${Here%.git/*}"
-elif xtest="$(git rev-parse --is-inside-work-tree 2>/dev/null)" 2>/dev/null && [ "$xtest" = "false" ] ; then
-        echo "==== A::a"
-        exit
-else
-        echo "I have no idea where I am." >&2
-        exit 1
-fi
+am_I_lost()
+{
+        if  xtest="$(git rev-parse --is-inside-git-dir 2>/dev/null)" 2>/dev/null && [ "$xtest" = "true" ] ; then
+                #
+                # Take our path and strip off everything from .git on down.
+                Here="$(pwd)"
+                cd "${Here%.git/*}"
+        elif xtest="$(git rev-parse --is-inside-work-tree 2>/dev/null)" 2>/dev/null && [ "$xtest" = "false" ] ; then
+                echo "==== A::a"
+                exit
+        else
+                echo "I have no idea where I am." >&2
+                exit 1
+        fi
+}
 
 GERRIT_HOST_IP="${GERRIT_HOST_IP:-"101.132.142.37"}"
 GERRIT_HOST_PORT="${GERRIT_HOST_PORT:-"30149"}"
