@@ -1,0 +1,17 @@
+out.*
+tar.*
+patch.*
+diffs.*
+files.*
+config[.-]*
+*.configs
+*.patch
+*.old
+aa
+bb
+cc
+dd
+ee
+ff
+*.tmp
+tmp/
