@@ -12,7 +12,7 @@ GIT_MODE_CODE["M"]="add"
 GIT_MODE_CODE["A"]="add"
 GIT_MODE_CODE["D"]="rm"
 GIT_MODE_CODE["C"]="add"
-GIT_MODE_CODE["U"]="jump"
+GIT_MODE_CODE["U"]="add"
 
 Help()
 {
