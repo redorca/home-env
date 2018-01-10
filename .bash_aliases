@@ -1,3 +1,10 @@
+
+#
+#  If this script is called then we know for sure we're in 
+#  an interactive (login?) environment.  So, any code added
+#  to ths fil will only ever see an interactive environment.
+#
+
 declare -A dir_to_flag
 dir_to_flag["dir"]="d"
 dir_to_flag["file"]="f"
@@ -102,7 +109,8 @@ alias     mods="git status | grep modified:"
 alias    shlvl='echo "Shell Depth:   $SHLVL"'
 alias resource="source ~/.bashrc"
 alias   launch="xdg-open"
-alias diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
+alias     diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
+alias      cls="clear_console"
 
 
 PS1='${debian_chroot:+($debian_chroot)}\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
