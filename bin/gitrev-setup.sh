@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEBUG=1
+DEBUG=${DEBUG:-0}
 declare -A git_review
 
 am_I_lost()
