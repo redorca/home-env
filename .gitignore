@@ -93,5 +93,6 @@ mergehex
 # restyle
 /*.txt
 /patch.*
+!patches/
 /fw_devtools
 
