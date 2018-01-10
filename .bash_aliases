@@ -1,3 +1,9 @@
+declare -A dir_to_flag
+dir_to_flag["dir"]="d"
+dir_to_flag["file"]="f"
+ZERO="0"
+DBG_LVL="${DBG_LVL:-$ZERO}"
+
 
 function pd()
 {
@@ -25,6 +31,37 @@ function del_path()
         FOO=$(echo $PATH | sed -e 's/:/ /g' | eval sed -e "'s:$1::'")
         if [ $? -eq 0 -a -n "$FOO" ] ; then
                 PATH=$(echo $FOO | sed -e 's/^ //' -e 's/  */:/g')
+        fi
+}
+
+#
+# Find all files of type ARG2 and remove them. E.G to get rid of all
+# .rej files resulting from patch call fu .rej. ARG1 specifies what
+# kind of things to remove such as "<file|dir>"
+#
+function fu()
+{
+        ([ -z "$1" ] || [ -z "$2" ]) && echo "Missing an arg or two." >&2 && return 1
+        local find_key=
+        local Flag=
+        local regex=
+        local ACTION_ARG=
+        find_key="${1,,}"
+        Flag="${dir_to_flag["$find_key"]}"; shift
+        regex="$1"; shift
+        [ "$Flag" == "d" ] && OPTS="r"
+        ACTION_ARG="-exec rm -${OPTS}f {} \;"
+        [ "$DEBUG_FU" == "$DBG_LVL" ] && ACTION_ARG="-print"
+
+        [ "$DEBUG_FU" == "$DBG_LVL" ] && echo -ne "find_key: ($find_key), " \
+                && echo -n  "Flag: ($Flag),""regex: ($regex); OPTS: ($OPTS)," \
+                && echo     " ACTION_ARG: ($ACTION_ARG)"
+
+        [ "$DEBUG_FU" == "$DBG_LVL" ] && echo -ne "find . -type $Flag " \
+                && echo     " -name \"${regex}\" $ACTION_ARG"
+        CMD='find . -type $Flag -name \"${regex}\" "$ACTION_ARG"'
+        if ! eval $CMD ; then
+                eval echo "== $CMD" >&2
         fi
 }
 
@@ -64,6 +101,9 @@ alias   status="git status | sed -n -e '1,/^Untracked/p'"
 alias     mods="git status | grep modified:"
 alias    shlvl='echo "Shell Depth:   $SHLVL"'
 alias resource="source ~/.bashrc"
+alias   launch="xdg-open"
+alias diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
+
 
 PS1='${debian_chroot:+($debian_chroot)}\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
 LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
