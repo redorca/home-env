@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -k
 
 DO_COMMIT="no"
 DRY_RUN=0
@@ -7,12 +7,16 @@ VAR_LIST="LOOP_SET_COUNT count"
 page_size=10
 count=$page_size
 declare -A GIT_MODE_CODE
-GIT_MODE_CODE["R"]="mv"
-GIT_MODE_CODE["M"]="add"
-GIT_MODE_CODE["A"]="add"
-GIT_MODE_CODE["D"]="rm"
-GIT_MODE_CODE["C"]="add"
-GIT_MODE_CODE["U"]="add"
+
+setup_mode_code()
+{
+        GIT_MODE_CODE["R"]="git mv"
+        GIT_MODE_CODE["M"]="git add"
+        GIT_MODE_CODE["A"]="git add"
+        GIT_MODE_CODE["D"]="git rm"
+        GIT_MODE_CODE["C"]="git add"
+        GIT_MODE_CODE["U"]="$EDIT_WITH"
+}
 
 Help()
 {
@@ -58,11 +62,23 @@ dump_env()
 stage_line()
 {
         local tmp=
+        local Key=
 
+        #
+        # Strip off the first character '( "${tmp[0]#?}" )',
+        # which represents whether the file is staged or
+        # not, and use the second character to see the
+        # state of any un staged files.
+        #
         tmp=( $1 )
         Key="${tmp[0]#?}"
         echo_dbg "Raw Key: ${tmp[0]}  Key: $Key"
-        Exec git ${GIT_MODE_CODE[$Key]} "${tmp[1]}"
+
+        #
+        # This will run the command if $DEBUG != 1, else
+        # it will print the command string through stderr.
+        #
+        Exec ${GIT_MODE_CODE[$Key]} "${tmp[1]}"
 }
 
 page_break()
@@ -96,7 +112,44 @@ var_sanity_check()
         return 0
 }
 
-# ARGS_Begin"
+wait_rm_tmpfile()
+{
+        local File=
+
+        [ -z "$1" ] && return 1
+
+        File="$1"
+        while [ ! -f "$File" ] ; do
+                sleep 1
+        done
+        rm $File
+return
+}
+
+
+get_files()
+{
+        echo "/home/zglue/bin/astyle-nuttx"
+}
+
+set_helper()
+{
+        [ -z "$1" ] && return 1
+
+        cat > $1 <<"EOF"
+#!/bin/bash
+
+exec 1>&-
+exec 2>&-
+exec 0<&-
+exec setsid $@
+EOF
+        [ -f "$1" ] && chmod +x "$1"
+}
+
+TMPFILE=$(mktemp -p /tmp .helper-XXXX)
+
+# ARGS_Begin
 while [ $# -ne 0 ] ; do
         case $1 in
         -c) DO_COMMIT="yes";;
@@ -105,6 +158,11 @@ while [ $# -ne 0 ] ; do
         -h) Help; exit 0;;
         -n) DRY_RUN=1; echo "DRY_RUN = $DRY_RUN";;
         -p) page_size=$2; echo "page size: $page_size";;
+        -v) EDIT_WITH="$TMPFILE nvim-qt";
+            set_helper $TMPFILE
+            echo_dbg ${GIT_MODE_CODE["U"]} $(get_files)
+            EDIT_WITH="${GIT_MODE_CODE["U"]} $(get_files)&"
+           ;;
         *) echo "Unknown argument: $1"; Help; exit 0;;
         esac
         shift
@@ -116,11 +174,8 @@ if ! var_sanity_check page_size ; then
         exit 1
 fi
 
-# cat /tmp/status.out | while read line ; do
-# git status | sed -e '/^Untracked/,/^nothing/d' |
-# git status | sed -e '/^Untracked/,$d' -e '1,/^Changes.*not.*staged/d' | \
-# git status --porcelain=v1 | grep -v "^..[A-Z]\." | awk '{print $2 "  " $NF}' |
-echo ""
+setup_mode_code
+
 (
 Dir="$(git rev-parse --show-toplevel)" || exit 1
 echo_dbg "cd to $Dir"
@@ -130,7 +185,7 @@ git status --porcelain=v1 \
         | grep "^[A-Z_][A-Z]" \
         | awk '{print $1 "  " $NF}' \
         | while read line ; do
-                if ! stage_line "$line" ; then
+                if ! RESULTS="$(stage_line "$line") $RESULTS" ; then
                         echo "Did not stage: [$line]"
                 fi
                 page_break count page_size "\t=================="
