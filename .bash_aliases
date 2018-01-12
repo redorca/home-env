@@ -111,7 +111,7 @@ alias resource="source ~/.bashrc"
 alias   launch="xdg-open"
 alias     diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
 alias      cls="clear_console"
-
+alias     grep="grep --exclude=.git --exclude=cscope.out"
 
 PS1='${debian_chroot:+($debian_chroot)}\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
 LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls

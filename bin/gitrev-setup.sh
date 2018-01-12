@@ -136,7 +136,7 @@ setup_gitreview
 [ "$PRINT_VARS" = "yes" ] && print_section && exit
 
 
-
+[ "$DEBUG" = "1" ] && echo "DEBUG is on: ($DEBUG)" >&2
 #
 # Set a config section for git to setup git-review
 #
