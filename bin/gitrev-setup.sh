@@ -2,6 +2,8 @@
 
 DEBUG=${DEBUG:-0}
 declare -A git_review
+[ -f ~/bin/colors ] && source ~/bin/colors
+[ -z "${RED}" ] && echo "No color support"
 
 am_I_lost()
 {
@@ -61,7 +63,7 @@ print_section()
 
         echo ""
         for Key in ${!git_review[@]} ; do
-                echo -e "Key: $Key,\t${git_review[$Key]}"
+                echo -e "Key: ${GREEN}$Key,\t${YELLOW}${git_review[$Key]}${RESET}"
         done
         echo ""
 }
