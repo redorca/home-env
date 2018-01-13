@@ -1,6 +1,7 @@
 #!/bin/bash -k
 
-DO_COMMIT="no"
+DO_COMMIT=
+DO_AMMEND=
 DRY_RUN=0
 DEBUG=0
 VAR_LIST="LOOP_SET_COUNT count"
@@ -152,12 +153,15 @@ TMPFILE=$(mktemp -p /tmp .helper-XXXX)
 # ARGS_Begin
 while [ $# -ne 0 ] ; do
         case $1 in
-        -c) DO_COMMIT="yes";;
+        -a) DO_AMMEND="--amend"
+            DO_COMMIT="git commit";;
+        -c) DO_COMMIT="git commit";;
         -d) DEBUG=1; echo "DEBUG = $DEBUG";;
         -e) dump_env; exit 0;;
         -h) Help; exit 0;;
         -n) DRY_RUN=1; echo "DRY_RUN = $DRY_RUN";;
         -p) page_size=$2; echo "page size: $page_size";;
+        -u) UNTRACKED=1;;
         -v) EDIT_WITH="$TMPFILE nvim-qt";
             set_helper $TMPFILE
             echo_dbg ${GIT_MODE_CODE["U"]} $(get_files)
@@ -191,9 +195,7 @@ git status --porcelain=v1 \
                 page_break count page_size "\t=================="
         done
 
-        if [ "${DO_COMMIT,,}" = "yes" ] ; then
-                git commit
-        fi
+        $DO_COMMIT $DO_AMMEND
 )
 echo_dbg "Back @ $(pwd)"
 
