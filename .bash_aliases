@@ -130,4 +130,9 @@ PS1='${debian_chroot:+($debian_chroot)}\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[0
 LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
 [ -f $LS_COLOR_DATA_FILE ] && eval $(dircolors -b $LS_COLOR_DATA_FILE)
 
+#
+# To satisfy .vimrc's need for a file to source until I know
+# more .vimrc coding and can check for its existence first.
+#
+touch .vimrc_color
 

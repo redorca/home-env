@@ -146,6 +146,12 @@ function clone()
         $CMD
 }
 
+dual_source_repos()
+{
+        git remote rename origin gerrit
+        git remote add github ssh://git@github.com/zglue-bill
+}
+
 SRC_REPO_URL="$GERRIT_HOST_URL"
 #Help
 while [ $# -ne 0 ] ; do
@@ -156,6 +162,9 @@ while [ $# -ne 0 ] ; do
                 ;;
         -R | --repo ) SRC_REPO_URL="$2"; shift
                 ;;
+        -O | --no-origin)
+                     CONFIG_TWO_REPOS="dual_source_repo"
+                ;;
         *) TARGET="$1";
                 ;;
         esac
@@ -165,5 +174,6 @@ done
 
 if init_repo_table $SRC_REPO_URL ; then
         clone $TARGET
+        $CONFIG_TWO_REPOS
 fi
 
