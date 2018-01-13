@@ -12,6 +12,19 @@ ZERO="0"
 DBG_LVL="${DBG_LVL:-$ZERO}"
 
 
+function vim_color_setup()
+{
+        local new_color=
+
+        [ -z "$1" ] && return 1
+
+        new_color="$1"
+        last=$(sed -n -e '/^[^#]*color /s/.*color *//p' ~/.vimrc | tail -1)
+        [ "$last" == "$new_color" ] && return
+        sed -i -e '/^[#]*color.*${last}/s/color.*${last}/color $new_color/' ~/.vimrc
+        echo "Color will go from $last to $new_color"
+}
+
 function pd()
 {
 	pushd $1 >/dev/null

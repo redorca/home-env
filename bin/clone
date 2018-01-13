@@ -28,6 +28,8 @@ Repo2Host["RIOT"]=master@github.com/RIOT-OS
 Repo2Host["bknuttx"]=master@bitbucket.org/nuttx
 Repo2Host["fw_devtools"]=master@$ZGLUE_BILL_HOST
 Repo2Host["home-env"]=master@$ZGLUE_BILL_HOST
+Repo2Host["nuttx-local"]=zdk@$ZGLUE_BILL_HOST/nuttx-local.git
+Repo2Host["apps-local"]=zdk@$ZGLUE_BILL_HOST/apps-local.git
 
 # Repo2Host["mynewt-tools"]master@https://github.com/apache/mynewt-newt.git
 # Repo2Host["mynewt"]=master@https://github.com/apache/mynewt-core.git
@@ -102,6 +104,16 @@ setup_GERRIT_vars()
 {
         GERRIT_UNAME="$(git config --local gitreview.username)"
         GERRIT_HOST="$(git config --local gitreview.host)"
+}
+
+#
+# Setup remotes so that one points to gerrit and the other
+# points to git-hub.  The idea is to develop with git-hub
+# updating along the way from gerrit, and then push to gerrit
+# when ready.
+#
+reset_remotes()
+{
 }
 
 #
