@@ -13,6 +13,16 @@ ARG_LIST="BOARD TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE"
 RED='\033[1;31m'
 RESET='\033[0;39;49m'
 
+
+find_repo_root()
+{
+        if ! git rev-parse >/dev/null 2>&1 ; then
+                echo "Not running within a git repo.  Please relocate." >&2
+                exit 1
+        fi
+        git rev-parse --show-toplevel
+}
+
 #
 # Setup targets that are not actual apps but
 # are still directives to make.
@@ -25,6 +35,15 @@ pseudo_targets["clean"]=1
 pseudo_targets["distclean"]=1
 pseudo_targets["clean_scope"]=1
 pseudo_targets["clean_out"]=1
+
+RELOCATE="$(find_repo_root)/configs/$BOARD"
+[ ! -d "$RELOCATE" ] && echo "Can't find ($RELOCATE)" >&2 && exit 1
+
+declare -A make_targets
+fa=( $(cd $RELOCATE && make list_apps) )
+for i in "${fa[@]}" ; do
+        make_targets["$i"]=1
+done
 
 #
 # Trap all exits.
@@ -89,6 +108,8 @@ while [ $# -ne 0 ] ; do
                 ;;
         *) tmpvar=${pseudo_targets["$1"]}
            [ -n "$tmpvar" ] && TARGET_DIRS="$TARGET_DIRS ${1%/}" && FF=1;  # Specify build target. May specify multiple times.
+           tmpvar=${make_targets["$1"]}
+           [ -n "$tmpvar" ] && TARGET_DIRS="$TARGET_DIRS ${1%/}" && FF=1;  # Specify build target. May specify multiple times.
            [ -z "$FF" ] && ARGS_UNXP="$ARGS_UNXP \"$1\"" #
                 ;;
         esac
@@ -102,15 +123,6 @@ if [ -n "$ARGS_UNXP" ] ; then
         exit 1
 fi
 ### HELP message end
-
-find_repo_root()
-{
-        if ! git rev-parse >/dev/null 2>&1 ; then
-                echo "Not running within a git repo.  Please relocate." >&2
-                exit 1
-        fi
-        git rev-parse --show-toplevel
-}
 
 set_app_list()
 {
@@ -126,8 +138,6 @@ V=${V:-0}
 Q=${Q:-@}
 trap on_exit EXIT
 
-RELOCATE="$(find_repo_root)/configs/$BOARD"
-[ ! -d "$RELOCATE" ] && echo "Can't find ($RELOCATE)" >&2 && exit 1
 (
     cd $RELOCATE >/dev/null || exit 1
     declare -a OUT_FILE=
@@ -143,13 +153,12 @@ RELOCATE="$(find_repo_root)/configs/$BOARD"
                    echo_e -n "Make distclean ...\r"
                    $CMD > out.distclean 2>&1
             fi
-
-            [ -z "${pseudo_targets[$build]}" ] &&  OUT_FILE=( ">" out.$build "2>&1"  ) && _N="-n"
+            [ -z "$ftmp" ] &&  OUT_FILE=( ">" out.$build "2>&1"  ) && _N="-n"
 
             CMD="make V=\"$V\"  $NO_ERRORS $build"
 
             echo_e "$_N"  "Building for $build: ... "
-            eval $CMD "${OUT_FILE[*]}"
+            eval $CMD ${OUT_FILE[*]}
             if [ $? -ne 0 ] ; then
                     echo_e "Failed."
                     continue
