@@ -18,8 +18,9 @@ RESET='\033[0;39;49m'
 #
 on_exit()
 {
-        [ $? -ne 0 ] && echo_e "${RED}=============== Error exit: ${RESET}"
-        exit $?
+        RV=$?
+        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit: ${RESET}"
+        exit $RV
 }
 
 #
@@ -106,6 +107,17 @@ set_app_list()
         echo_e $(ls */defconfig | sed -e 's/\/.*//')
 }
 
+#
+# Setup targets that are not actual apps but
+# are still directives to make.
+#
+declare -A pseudo_targets
+pseudo_targets["cscope"]=1
+pseudo_targets["help"]=1
+pseudo_targets["config"]=1
+pseudo_targets["clean"]=1
+pseudo_targets["distclean"]=1
+
 V=${V:-0}
 Q=${Q:-@}
 trap on_exit EXIT
@@ -122,10 +134,14 @@ RELOCATE="$(find_repo_root)/configs/$BOARD"
 
     for build in $TARGET_DIRS ; do
             CMD="make distclean"
-            echo_e -n "Make distclean ...\r"
-            $CMD >/dev/null 2>&1
+            ftmp="${pseudo_targets[$build]}"
+            if [ -z "$ftmp" ] ; then
+                   echo_e -n "Make distclean ...\r"
+#                  $CMD >/dev/null 2>&1
+                   $CMD >/tmp/out.distclean 2>&1
+            fi
 
-            [ "${build,,}" != "help" -a "${build,,}" != "cscope" ] && OUT_FILE=( ">" out.$build "2>&1"  ) && _N="-n"
+            OUT_FILE=( ">" out.$build "2>&1"  ) && _N="-n"
 
             CMD="make V=\"$V\"  $NO_ERRORS $build"
 
