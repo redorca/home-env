@@ -14,6 +14,19 @@ RED='\033[1;31m'
 RESET='\033[0;39;49m'
 
 #
+# Setup targets that are not actual apps but
+# are still directives to make.
+#
+declare -A pseudo_targets
+pseudo_targets["cscope"]=1
+pseudo_targets["help"]=1
+pseudo_targets["config"]=1
+pseudo_targets["clean"]=1
+pseudo_targets["distclean"]=1
+pseudo_targets["clean_scope"]=1
+pseudo_targets["clean_out"]=1
+
+#
 # Trap all exits.
 #
 on_exit()
@@ -74,7 +87,8 @@ while [ $# -ne 0 ] ; do
                 ;;
         -V) V=2                            # More info on make processing
                 ;;
-        *) [ -d "$1" ] && TARGET_DIRS="$TARGET_DIRS ${1%/}" && FF=1;  # Specify build target. May specify multiple times.
+        *) tmpvar=${pseudo_targets["$1"]}
+           [ -n "$tmpvar" ] && TARGET_DIRS="$TARGET_DIRS ${1%/}" && FF=1;  # Specify build target. May specify multiple times.
            [ -z "$FF" ] && ARGS_UNXP="$ARGS_UNXP \"$1\"" #
                 ;;
         esac
@@ -107,16 +121,6 @@ set_app_list()
         echo_e $(ls */defconfig | sed -e 's/\/.*//')
 }
 
-#
-# Setup targets that are not actual apps but
-# are still directives to make.
-#
-declare -A pseudo_targets
-pseudo_targets["cscope"]=1
-pseudo_targets["help"]=1
-pseudo_targets["config"]=1
-pseudo_targets["clean"]=1
-pseudo_targets["distclean"]=1
 
 V=${V:-0}
 Q=${Q:-@}
@@ -137,11 +141,10 @@ RELOCATE="$(find_repo_root)/configs/$BOARD"
             ftmp="${pseudo_targets[$build]}"
             if [ -z "$ftmp" ] ; then
                    echo_e -n "Make distclean ...\r"
-#                  $CMD >/dev/null 2>&1
-                   $CMD >/tmp/out.distclean 2>&1
+                   $CMD > out.distclean 2>&1
             fi
 
-            OUT_FILE=( ">" out.$build "2>&1"  ) && _N="-n"
+            [ -z "${pseudo_targets[$build]}" ] &&  OUT_FILE=( ">" out.$build "2>&1"  ) && _N="-n"
 
             CMD="make V=\"$V\"  $NO_ERRORS $build"
 
