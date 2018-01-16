@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# shellcheck disable=2034
+YLWBLU='\033[1;33;44m'
+# shellcheck disable=2034
+YLWltBLU='\033[1;33;46m'
+# shellcheck disable=2034
+YLWGRN='\033[1;33;42m'
+# shellcheck disable=2034
+RESET='\033[0;39;49m'
 DEBUG=${DEBUG:-0}
 declare -A git_review
 [ -f ~/bin/colors ] && source ~/bin/colors
@@ -123,13 +131,24 @@ extract_environs()
         print_array URL "${URL[@]}"
 }
 
+help()
+{
+        sed -n -e '/^#Help/,/^#Help/p' $0 | grep -v ^#Help
+}
+
 while [ $# -ne 0 ] ; do
         case "$1" in
+#Help Start
+        -e | --edit) git config --local --edit ; exit 0
+        ;;
+        -h | --help) help && exit 0
+        ;;
         -l | --list) PRINT_VARS=yes
         ;;
         *) echo "I have no idea what that argument ($1) means.";
             exit 1
         ;;
+#Help End
         esac
         shift
 done
@@ -138,13 +157,15 @@ setup_gitreview
 [ "$PRINT_VARS" = "yes" ] && print_section && exit
 
 
-[ "$DEBUG" = "1" ] && echo "DEBUG is on: ($DEBUG)" >&2
+[ "$DEBUG" = "1" ] && \
+        msg="${YLWBLU}DEBUG mode: ($DEBUG), no changes  will be made.${RESET}"
+        echo -e "$msg" >&2
 #
 # Set a config section for git to setup git-review
 #
 Section="${git_review["section"]}"
 for Key in "${!git_review[@]}" ; do
         Cmd="git config --local "$Section"."$Key" ${git_review["$Key"]}"
-        [ "$DEBUG" = "1" ] && echo "Cmd: $Cmd"
-        [ "$DEBUG" != "1" ] && $Cmd
+        [ "$DEBUG" = "1" ] && echo "  $Cmd" && continue
+        $Cmd
 done
