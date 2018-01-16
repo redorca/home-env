@@ -62,6 +62,7 @@ dkms.conf
 /.??*
 !/.bash_aliases
 !/.vimrc
+!/.vim/
 Documents/
 Downloads/
 Music/
