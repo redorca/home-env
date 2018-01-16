@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 ZGLUE_BILL_HOST=git@github.com/zglue-bill
 GIT_UNAME=bill
@@ -22,7 +22,9 @@ RepoRename["dialog"]=dialog_585_sdk_dev@3rd_Party_SDK
 RepoRename["dallas"]=dialog_585_sdk_dev@3rd_Party_SDK
 RepoRename["nordic"]=SDK_13.0.0-1@3rd_Party_SDK
 RepoRename["sdk_13_1"]=SDK_13.1.0@3rd_Party_SDK
-RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
+RepoRename["sdk_14"]=
+SDK_14.0.0
+@3rd_Party_SDK
 
 Repo2Host["zephyr"]=master@github.com/zephyrproject-rtos/zephyr.git
 Repo2Host["RIOT"]=master@github.com/RIOT-OS
@@ -100,15 +102,15 @@ function init_repo_table()
         [ -z "$1" ] && return 1
         repo_host_url="$1"; shift
         [ -n "$DEBUG" ] && echo "repo_host_url ($repo_host_url)" >&2
-	Repo2Host["sdk_13"]=$SDK_13@$repo_host_url
-	Repo2Host["sdk_14"]=$SDK_14@$repo_host_url
-	Repo2Host["nordic"]=$SDK_13_1@$repo_host_url
-	Repo2Host["dialog"]=$DIALOG_SDK@$repo_host_url
-	Repo2Host["nuttx"]=zdk@$repo_host_url
-	Repo2Host["nuttx_apps"]=zdk@$repo_host_url
-	Repo2Host["apps"]=zdk@$repo_host_url
-	Repo2Host["auto_test"]=master@$repo_host_url
-	Repo2Host["3rd_Party_SDK"]=master@$repo_host_url
+	Repo2Host["sdk_13"]=$SDK_13@$repo_host_url/3rd_Party_SDK
+	Repo2Host["sdk_14"]=$SDK_14@$repo_host_url/3rd_Party_SDK
+	Repo2Host["nordic"]=$SDK_13_1@$repo_host_url/3rd_Party_SDK
+	Repo2Host["dialog"]=$DIALOG_SDK@$repo_host_url/3rd_Party_SDK
+	Repo2Host["nuttx"]=zdk@$repo_host_url/nuttx.git
+	Repo2Host["nuttx_apps"]=zdk@$repo_host_url/nuttx_apps.git
+	Repo2Host["apps"]=zdk@$repo_host_url/nuttx_apps.git
+	Repo2Host["auto_test"]=master@$repo_host_url/auto_test.git
+	Repo2Host["3rd_Party_SDK"]=master@$repo_host_url/3rd_Party_SDK.git
 }
 
 #
@@ -201,8 +203,8 @@ function clone()
         Branch=${Branch%%@*}
         Uri=${Repo2Host[$Key]}
         Uri=${Uri#*@}
-        Proto="${Uri#*://}"
-        [ "$Proto" != "${Uri}" ] && Proto="${Uri%://*}"
+        tmp="${Uri#*://}"
+        [ "$tmp" != "${Uri}" ] && Proto="${Uri%://*}"
         Uri="${Uri#*://}"
         [ -z "$Proto" ] && Proto=ssh
         CMD="git clone -b $Branch $Proto://$Uri"

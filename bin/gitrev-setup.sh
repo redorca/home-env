@@ -1,17 +1,17 @@
 #!/bin/bash
 
 # shellcheck disable=2034
-YLWBLU='\033[1;33;44m'
+# YLWBLU='\033[1;33;44m'
 # shellcheck disable=2034
-YLWltBLU='\033[1;33;46m'
+# YLWltBLU='\033[1;33;46m'
 # shellcheck disable=2034
-YLWGRN='\033[1;33;42m'
+# YLWGRN='\033[1;33;42m'
 # shellcheck disable=2034
-RESET='\033[0;39;49m'
-DEBUG=${DEBUG:-0}
+# RESET='\033[0;39;49m'
+# DEBUG=${DEBUG:-0}
 declare -A git_review
-[ -f ~/bin/colors ] && source ~/bin/colors
-[ -z "${RED}" ] && echo "No color support"
+# [ -f ~/bin/colors ] && source ~/bin/colors
+# [ -z "${RED}" ] && echo "No color support"
 
 am_I_lost()
 {
@@ -65,7 +65,7 @@ print_gitrev_config()
         echo -e "=====        ========="
 }
 
-print_section()
+print_section_defaults()
 {
         local Key=
 
@@ -74,6 +74,11 @@ print_section()
                 echo -e "Key: ${GREEN}$Key,\t${YELLOW}${git_review[$Key]}${RESET}"
         done
         echo ""
+}
+
+print_section_config()
+{
+        git config --local --get-regexp "gitreview.*"
 }
 
 print_array()
@@ -139,11 +144,13 @@ help()
 while [ $# -ne 0 ] ; do
         case "$1" in
 #Help Start
+             --env) PRINT_ENV="yes" # Print the internal default environment to use.
+        ;;
         -e | --edit) git config --local --edit ; exit 0
         ;;
         -h | --help) help && exit 0
         ;;
-        -l | --list) PRINT_VARS=yes
+        -l | --list) PRINT_CURRENT_CONFIG=yes     # Print current settings for the repo.
         ;;
         *) echo "I have no idea what that argument ($1) means.";
             exit 1
@@ -154,7 +161,8 @@ while [ $# -ne 0 ] ; do
 done
 
 setup_gitreview
-[ "$PRINT_VARS" = "yes" ] && print_section && exit
+[ "$PRINT_CURRENT_CONFIG" = "yes" ] && print_section_config && exit
+[ "$PRINT_ENV" = "yes" ] && print_section_defaults && exit
 
 
 [ "$DEBUG" = "1" ] && \
