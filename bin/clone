@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 ZGLUE_BILL_HOST=git@github.com/zglue-bill
 GIT_UNAME=bill
