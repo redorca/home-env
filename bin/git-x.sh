@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 DO_COMMIT=
 DO_AMMEND=
