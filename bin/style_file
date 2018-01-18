@@ -83,7 +83,7 @@ set_env()
                         ALT=unstaged
                         ;;
                 *) if [ -f "$1" ] ; then
-                        FILES="$(echo $FILES $1)"
+                        FILES="$FILES $1"
                    elif [ ! -f "$1" ]  ; then
                         echo "${Red}No such file: ($1)${Reset}" && exit 1
                    elif [ "$FILE_ARGS" != "1" ] ; then
@@ -120,7 +120,7 @@ fi
 # make sure we are running within a repo else there will be no way
 # to discover any potential files for processing.
 #
-if ! REPOROOT="$(find_repo "$FILES")" ; then
+if ! REPOROOT="$(find_repo $FILES)" ; then
         # shellcheck disable=2153
         echo_err "${REDYLW}Error looking for a repo root directory.${RESET}"
         exit 1
@@ -146,12 +146,12 @@ echo_dbg ":This repo is actively managed."
 #
 # Assume the first file is representative of the location of the repo
 #
-if [ "$REPOROOT" != "$(find_repo "$FILES")" ] ; then
-        echo_err "Yikes!" && exit 1
-fi
-if [ "$(basename "$0")" = "pre-commit" ] ; then
-        echo_err "No repo found."
-        exit 1
+if [ "$REPOROOT" != "$(find_repo $FILES)" ] ; then
+        echo_err "Yikes!"
+        if [ "$(basename "$0")" = "pre-commit" ] ; then
+                echo_err "No repo found."
+                exit 1
+        fi
 fi
 [ -n "$REPOROOT" ] && REPOROOT="$REPOROOT"/
 echo_dbg REPOROOT
@@ -159,7 +159,7 @@ echo_dbg REPOROOT
 #
 # If there are no SRCS to format then by default there are no style errors.
 #
-SRCS="$(filter_for_srcfiles $FILES)"
+SRCS="$(filter_for_srcfiles "$FILES")"
 ([ -z "$SRCS" ] && echo_dbg  ":${GRNGRN}\\tNo files, no style errors.${RESET}") \
    && exit 0
 echo_dbg SRCS REPOROOT ORIGIN
