@@ -1,10 +1,12 @@
-#!/bin/bash -x
+#!/bin/bash
 
-
+# DEBUG=1
 # ROOT=~
+ROOT=${ROOT:-}
 HASH=sha256sum
-HOOKS_DIR=/usr/share/git-core/templates/hooks
-STYLES_DIR=/usr/share/zglue/styles
+HOOKS_DIR=${ROOT}/usr/share/git-core/templates/hooks
+STYLES_DIR=${ROOT}/usr/share/zglue/styles
+ZGLUE_LIBDIR=${ROOT}/usr/share/zglue/scripts
 HOOKS="pre-commit commit-msg"
 RED='\033[1;31m'
 GREEN='\033[1;32m'
@@ -12,22 +14,45 @@ YELLOW='\033[1;33m'
 BLUE='\033[1;34m'
 RESET='\033[0;39;49m'
 
-
+declare -a BINS
+declare -A DIFFER
 #
 # List of files required to provide style checking
 # and pre-commit hook support to git repos.
 #
 set_bins()
 {
-    BINS="
+    BINS=(
         ${ROOT}/usr/bin/style_file
         ${ROOT}/usr/bin/astyle
         ${ROOT}/usr/bin/hookup
         ${ROOT}${HOOKS_DIR}/pre-commit
         ${ROOT}${HOOKS_DIR}/commit-msg
         ${ROOT}${STYLES_DIR}/astyle-nuttx
-"
+        ${ROOT}${ZGLUE_LIBDIR}/lib_body.sh
+ )
 }
+
+#
+# See if the two files passed in are the same.
+#
+diff_check()
+{
+        local File_1=
+        local File_2=
+        local Sum_1=
+        local Sum_2=
+
+        File_1="$1" ; shift
+        File_2="$1" ; shift
+
+        [ -f "$File_1" ] && Sum_1="$(sha256sum $File_1 | awk '{print $1}')"
+        [ -f "$File_2" ] && Sum_2="$(sha256sum $File_2 | awk '{print $1}')"
+
+       [ "$Sum_1" = "$Sum_2" ] && return
+       return 1
+}
+
 
 #
 #
@@ -73,24 +98,64 @@ refresh_hooks()
 {
         local FA=
         local CMD=
-        local Here=
         local hook=
         local RepoRoot=
         FA=0
 
         RepoRoot=$(git rev-parse --show-toplevel)
-        Here=$(pwd)
 
+  (
         cd $RepoRoot
         for hook in $HOOKS ; do
                 [ ! -f $HOOKS_DIR/$hook ] && echo "Missing $HOOKS_DIR/$hook." >&2 && FA=1 && continue
+                # See if the two files are the same and skip if they are.
+                diff_check $HOOKS_DIR/$hook .git/hooks/$hook && continue
+                echo "$hook is different, replacing." >&2
                 CMD="cp $HOOKS_DIR/$hook .git/hooks/"
-                echo "$CMD && chmod +x .git/hooks/$hook"
                 $CMD && chmod +x .git/hooks/$hook
         done
-        cd $Here
+  )
 
+        echo "The hooks are verified as current."
         return $FA
+}
+
+#
+#  Given a list of files or anything cycle through the list
+#  printing each element in turn.  TODO: add ability to format
+#  the page as in more than one column.
+#
+list_files()
+{
+        local Msg=
+        local fff=
+        declare -a Files=
+
+        Msg="$1" ; shift
+        Files=( "$@" )
+
+        echo -e "${Msg}"
+        for fff in "${Files[@]}" ; do
+                echo -e "\t$fff"
+        done
+}
+
+#
+#  Given a bare variable (File versus $File), dereference
+#  it and print out the name of the variable and its value.
+#
+list_vars()
+{
+        local Msg=
+        local Vars=
+        local vvv=
+
+        Msg="$1" ; shift
+        Vars=( "$@" )
+        echo -e "${Msg}"
+        for vvv in "${Vars[@]}" ; do
+                echo -e "\t$vvv:\t\t${!vvv}"
+        done
 }
 
 #
@@ -100,16 +165,32 @@ validate_horde()
 {
         local FA=
         local bin=
-        local Found=
-        local NotFound=
+        local local_bin=
+        declare -a msgs=
+        declare -a Found=
+        declare -a NotFound=
+        declare -a DIFFERS=
+
         FA=0
-# DEBUG=1
-	for bin in $BINS ; do
-                [   -f $(basename $bin) ] && Found="$Found $(basename $bin)"
-                [ ! -f $(basename $bin) ] && FA=1 && NotFound="$NotFound $(basename $bin)"
+        msgs=( "${RED}Differs:${RESET}" "${BLUE}Found${RESET}" "${RED}NotFound:${RESET}" )
+
+        echo "Making sure all of the files are here ... "
+	for bin in "${BINS[@]}" ; do
+                local_bin=$(basename $bin)
+                if [ -f $local_bin ] ; then
+                        if ! diff_check "$local_bin"  "$bin"  ; then
+                                DIFFERS=( "$local_bin" "${DIFFERS[@]}" )
+                                DIFFER["$local_bin"]="$bin"
+                        fi
+                        Found=( "$local_bin" "${Found[@]}" )
+                        continue
+                fi
+                NotFound=( "$local_bin ${NotFound[@]}" )
+                FA=1
 	done
-        [ -n "$Found" ] && echo -e "\tFound: $Found." >&2
-        [ -n "$NotFound" ] && echo -e "\t${RED}Not found: $NotFound.${RESET}" >&2
+        [ -n "${Found[*]}" ] && list_files "${msgs[1]}" "${Found[@]}"
+        [ -n "${DIFFERS[*]}" ] && list_files "${msgs[0]}" "${DIFFERS[@]}"
+        [ -n "${NotFound[*]}" ] && list_files "${msgs[2]}" "${NotFound[@]}"
 
         return $FA
 }
@@ -122,22 +203,34 @@ place_files()
         local CMD=
         local bin=
 
-        if [ $(id -u) -ne 0 -a -z "$ROOT" ] ; then
+        if [ $(id -u) -ne 0 ] && [ -z "$ROOT" ] ; then
                 echo "Placing the files needs root privileges, please retry." >&2
                 exit 1
         fi
+
         if ! validate_horde ; then
-                echo "Not all of the required files are available in this local directory." >&2
+                echo "" >&2
+                echo "Not all of the required files are available." >&2
+                echo "Please place the files not found into this local directory." >&2
                 return 1
         fi
-	for bin in $BINS ; do
-	        this_bin=$(basename $bin)
-	        echo -n -e "Placing $this_bin:\t\t"
-	        [ ! -d $(dirname $bin) ] && CMD="mkdir -p $(dirname $bin)"
+        if [ "${#DIFFER[@]}" -eq 0 ] ; then
+                echo "No files differ, nothing to copy." >&2
+#               return
+        fi
+	for bin in "${BINS[@]}" ; do
+	        this_bin="$(basename $bin)"
+	        this_dir="$(dirname $bin)"
+                if [ ! -f "${DIFFER["$this_bin"]}" ] ; then
+                        continue
+                fi
+	        echo -n -e "Placing $this_bin:\\t\\t"
+	        [ ! -d $this_dir ] && CMD="mkdir -p $this_dir"
 	        [ -n "$CMD" ] && echo "$CMD" && $CMD && unset CMD
-                CMD="cp $(basename $bin) $bin"
+                # See if the two files are the same and skip if they are.
+                CMD="cp $this_bin $bin"
 	        [ -n "$CMD" ] && echo "$CMD" && $CMD && unset CMD
-	        [ "$(dirname $bin)" == "${ROOT}${STYLES_DIR}" ] || chmod +x $bin
+	        [ "$this_dir" == "${ROOT}${STYLES_DIR}" ] || chmod +x $bin
 	        sleep 1
 	done
 }
@@ -151,6 +244,11 @@ while [ $# -ne 0 ] ; do
         -h|--help) CMD="help && exit 0"
           ;;
         -i) CMD="instructions && exit 0"
+          ;;
+        -l) list_vars "Variables and their values" ROOT HOOKS HOOKS_DIR STYLES_DIR ZGLUE_LIBDIR
+            exit 0
+          ;;
+        -P|--place) CMD=place_files $MKDIR
           ;;
         -p|--place) CMD=place_files
           ;;
@@ -166,5 +264,7 @@ while [ $# -ne 0 ] ; do
         shift
 done
 set_bins
-$CMD
+[ "$DEBUG" = "1" ] && list_vars ZGLUE_LIBDIR HOOKS_DIR STYLES_DIR 
+[ "$DEBUG" = "1" ] && echo "$CMD"
+[ "$DEBUG" != "1" ] && $CMD
 
