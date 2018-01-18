@@ -12,7 +12,7 @@ BOARD=nrf52832_dk
 ARG_LIST="BOARD TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE"
 RED='\033[1;31m'
 RESET='\033[0;39;49m'
-
+OUT=/tmp/out
 
 find_repo_root()
 {
@@ -151,9 +151,9 @@ trap on_exit EXIT
             ftmp="${pseudo_targets[$build]}"
             if [ -z "$ftmp" ] ; then
                    echo_e -n "Make distclean ...\r"
-                   $CMD > out.distclean 2>&1
+                   $CMD > ${OUT}.distclean 2>&1
             fi
-            [ -z "$ftmp" ] &&  OUT_FILE=( ">" out.$build "2>&1"  ) && _N="-n"
+            [ -z "$ftmp" ] &&  OUT_FILE=( ">" ${OUT}.$build "2>&1"  ) && _N="-n"
 
             CMD="make V=\"$V\"  $NO_ERRORS $build"
 

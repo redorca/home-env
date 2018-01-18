@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 Red='\033[1;31m'
 Reset='\033[0;39;49m'
@@ -83,7 +83,7 @@ set_env()
                         ALT=unstaged
                         ;;
                 *) if [ -f "$1" ] ; then
-                        FILES="$FILES $1"
+                        FILES="$(echo $FILES $1)"
                    elif [ ! -f "$1" ]  ; then
                         echo "${Red}No such file: ($1)${Reset}" && exit 1
                    elif [ "$FILE_ARGS" != "1" ] ; then
@@ -159,12 +159,12 @@ echo_dbg REPOROOT
 #
 # If there are no SRCS to format then by default there are no style errors.
 #
-SRCS="$(filter_for_srcfiles "$FILES")"
+SRCS="$(filter_for_srcfiles $FILES)"
 ([ -z "$SRCS" ] && echo_dbg  ":${GRNGRN}\\tNo files, no style errors.${RESET}") \
    && exit 0
 echo_dbg SRCS REPOROOT ORIGIN
 
-if ! filter_files "$REPOROOT" "$SRCS" ; then
+if ! filter_files "$REPOROOT" $SRCS ; then
         [ "$DEBUG" = "1" ] && VERBOSE=--verbose
         MAIN_PHRASE="${REDYLW}\\tNuttx style errors found,"
         PHRASEX="left unstaged."

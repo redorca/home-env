@@ -191,7 +191,7 @@ filter_style()
         ZGLUE_OPTS_DIR=/usr/share/zglue/styles
         [ ! -f "$STYLE_OPTIONS" ] && STYLE_OPTIONS=$ZGLUE_OPTS_DIR/${ASTYLE_OPTS}
 
-        [ "$DEBUG" != "1" ]  && QUIET='-q'
+        [ "$DEBUG" != "1" ]  && QUIET='-v'
         echo_dbg ASTYLE STYLE_OPTIONS
 
         [ -f "$STYLE_OPTIONS" ] || echo_err "Missing [$STYLE_OPTIONS]" || return 1
@@ -199,7 +199,7 @@ filter_style()
         #
         # style check the files to commit, quietly unless DEBUG is set.
         #
-        CMD=( "$ASTYLE" "--options=$STYLE_OPTIONS" "$QUIET" "${Files[@]}" )
+        CMD=( "$ASTYLE" "--options=$STYLE_OPTIONS" $QUIET "${Files[@]}" )
         echo_dbg CMD
         "${CMD[@]}"
 
@@ -376,20 +376,22 @@ in_managed_repo()
 {
         local RemoteTuple=
         local VerifyTuple=
-        local RemoteName=
+        declare -a RemoteNames=
         local ManagedTuples=
 
-        RemoteName=$(git remote)
-        [ -z "$RemoteName" ] && echo_dbg ":No remote for this repo." && return 1
+        RemoteNames=( $(git remote) )
+        [ -z "${RemoteNames[*]}" ] && echo_dbg ":No remote for this repo." && return 1
         ManagedTuples=( "$@" )
-        RemoteTuple=( $(git remote get-url origin | awk -F'/' '{print $3, $4}') )
-        RemoteTuple[0]=${RemoteTuple[0]#*@}
-        VerifyTuple=${RemoteTuple[1]%%.git}@${RemoteTuple[0]%%:*}
-        for tuple in "${ManagedTuples[@]}" ; do
-                if [ $tuple == $VerifyTuple ] ; then
-                        echo_dbg ":$VerifyTuple Matched!"
-                        return 0
-                fi
+        for name in "${RemoteNames[@]}" ; do
+                RemoteTuple=( $(git remote get-url "$name" | awk -F'/' '{print $3, $4}') )
+                RemoteTuple[0]=${RemoteTuple[0]#*@}
+                VerifyTuple=${RemoteTuple[1]%%.git}@${RemoteTuple[0]%%:*}
+                for tuple in "${ManagedTuples[@]}" ; do
+                        if [ $tuple == $VerifyTuple ] ; then
+                                echo_dbg ":$VerifyTuple Matched!"
+                                return 0
+                        fi
+                done
         done
 
         return 1
@@ -402,16 +404,22 @@ filter_for_srcfiles()
 {
         local file=
         local tmpo=
+        local tmpe=
 
-        for file in "${@[@]}" ; do
+        tmpe="$@"
+        for file in $tmpe ; do
                 tmpo=${file%%*.[ch]}
                 [ -n "$tmpo" ] && continue
 
-                tmpo="$(echo "$file" | sed -n -e '/^\//p')"
+#               tmpo=${tmpo%%/*}
+                echo "========= file $file:  tmpo (${tmpo#/*})" >&2
+#               tmpo="$(echo "$file" | sed -n -e '/^\//p')"
                 # shellcheck disable=2153
-                [ -n "$tmpo" ] && file=${REPOROOT}$file
+#               [ -n "$tmpo" ] && file=${REPOROOT}$file
+                [ -n "${tmpo%%/*}" ] && file=${REPOROOT}$file
                 echo -n "$file "
                 echo_dbg file
+                
         done
 }
 
