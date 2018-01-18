@@ -191,7 +191,8 @@ filter_style()
         ZGLUE_OPTS_DIR=/usr/share/zglue/styles
         [ ! -f "$STYLE_OPTIONS" ] && STYLE_OPTIONS=$ZGLUE_OPTS_DIR/${ASTYLE_OPTS}
 
-        [ "$DEBUG" != "1" ]  && QUIET='-v'
+        [ "$DEBUG" != "1" ]  && QUIET='-q'
+        [ "$DEBUG"  = "1" ]  && QUIET='-v'
         echo_dbg ASTYLE STYLE_OPTIONS
 
         [ -f "$STYLE_OPTIONS" ] || echo_err "Missing [$STYLE_OPTIONS]" || return 1
@@ -411,11 +412,7 @@ filter_for_srcfiles()
                 tmpo=${file%%*.[ch]}
                 [ -n "$tmpo" ] && continue
 
-#               tmpo=${tmpo%%/*}
-                echo "========= file $file:  tmpo (${tmpo#/*})" >&2
-#               tmpo="$(echo "$file" | sed -n -e '/^\//p')"
                 # shellcheck disable=2153
-#               [ -n "$tmpo" ] && file=${REPOROOT}$file
                 [ -n "${tmpo%%/*}" ] && file=${REPOROOT}$file
                 echo -n "$file "
                 echo_dbg file
