@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 Red='\033[1;31m'
 Reset='\033[0;39;49m'
@@ -120,7 +120,7 @@ fi
 # make sure we are running within a repo else there will be no way
 # to discover any potential files for processing.
 #
-if ! REPOROOT="$(find_repo "$FILES")" ; then
+if ! REPOROOT="$(find_repo $FILES)" ; then
         # shellcheck disable=2153
         echo_err "${REDYLW}Error looking for a repo root directory.${RESET}"
         exit 1
@@ -146,12 +146,12 @@ echo_dbg ":This repo is actively managed."
 #
 # Assume the first file is representative of the location of the repo
 #
-if [ "$REPOROOT" != "$(find_repo "$FILES")" ] ; then
-        echo_err "Yikes!" && exit 1
-fi
-if [ "$(basename "$0")" = "pre-commit" ] ; then
-        echo_err "No repo found."
-        exit 1
+if [ "$REPOROOT" != "$(find_repo $FILES)" ] ; then
+        echo_err "Yikes!"
+        if [ "$(basename "$0")" = "pre-commit" ] ; then
+                echo_err "No repo found."
+                exit 1
+        fi
 fi
 [ -n "$REPOROOT" ] && REPOROOT="$REPOROOT"/
 echo_dbg REPOROOT
@@ -164,7 +164,7 @@ SRCS="$(filter_for_srcfiles "$FILES")"
    && exit 0
 echo_dbg SRCS REPOROOT ORIGIN
 
-if ! filter_files "$REPOROOT" "$SRCS" ; then
+if ! filter_files "$REPOROOT" $SRCS ; then
         [ "$DEBUG" = "1" ] && VERBOSE=--verbose
         MAIN_PHRASE="${REDYLW}\\tNuttx style errors found,"
         PHRASEX="left unstaged."
