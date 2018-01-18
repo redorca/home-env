@@ -355,7 +355,7 @@ filter_files()
         #
         # Run filter_style last as it will gather all of the diffs into one file.
         #
-        filter_style "$RESULTS" "${Files[0]}"
+        filter_style "$RESULTS" "${Files[@]}"
         grep "^XXX" "$RESULTS" && unset GIT_ADD
         cd "$ORIGIN" || return 1
 
