@@ -267,7 +267,7 @@ filter_if_0()
         Msg="XXX Please remove or rename \'if 0\'"
         for i in "${Files[@]}" ; do
                 if grep "$Key" "$i" >/dev/null  2>&1 ; then
-                        sed -i -e \'/"$Key"/i"$Msg"\' "$i"
+                        eval sed -i -e \'/"$Key"/i"$Msg"\' "$i"
                 fi
         done
 }
