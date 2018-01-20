@@ -4,9 +4,9 @@
 # ROOT=~
 ROOT=${ROOT:-}
 HASH=sha256sum
-HOOKS_DIR=${ROOT}/usr/share/git-core/templates/hooks
-STYLES_DIR=${ROOT}/usr/share/zglue/styles
-ZGLUE_LIBDIR=${ROOT}/usr/share/zglue/scripts
+HOOKS_DIR=/usr/share/git-core/templates/hooks
+STYLES_DIR=/usr/share/zglue/styles
+ZGLUE_LIBDIR=/usr/share/zglue/scripts
 HOOKS="pre-commit commit-msg"
 RED='\033[1;31m'
 GREEN='\033[1;32m'
@@ -22,6 +22,7 @@ declare -A DIFFER
 #
 set_bins()
 {
+    [ -n "$ROOT" ] && echo "Rebasing on root $ROOT"
     BINS=(
         ${ROOT}/usr/bin/style_file
         ${ROOT}/usr/bin/astyle
@@ -228,6 +229,7 @@ place_files()
 	        [ ! -d $this_dir ] && CMD="mkdir -p $this_dir"
 	        [ -n "$CMD" ] && echo "$CMD" && $CMD && unset CMD
                 # See if the two files are the same and skip if they are.
+                diff_check "$this_bin"  "$bin" && continue
                 CMD="cp $this_bin $bin"
 	        [ -n "$CMD" ] && echo "$CMD" && $CMD && unset CMD
 	        [ "$this_dir" == "${ROOT}${STYLES_DIR}" ] || chmod +x $bin

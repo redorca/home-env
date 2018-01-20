@@ -22,9 +22,7 @@ RepoRename["dialog"]=dialog_585_sdk_dev@3rd_Party_SDK
 RepoRename["dallas"]=dialog_585_sdk_dev@3rd_Party_SDK
 RepoRename["nordic"]=SDK_13.0.0-1@3rd_Party_SDK
 RepoRename["sdk_13_1"]=SDK_13.1.0@3rd_Party_SDK
-RepoRename["sdk_14"]=
-SDK_14.0.0
-@3rd_Party_SDK
+RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
 
 Repo2Host["zephyr"]=master@github.com/zephyrproject-rtos/zephyr.git
 Repo2Host["RIOT"]=master@github.com/RIOT-OS

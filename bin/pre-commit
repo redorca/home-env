@@ -6,11 +6,11 @@ Reset='\033[0;39;49m'
 ZGLUE_SCRIPTS_DIR=${ZGLUE_SCRIPTS_DIR:-/usr/share/zglue/scripts}
 LIB_SCRIPT=${LIB_SCRIPT:-lib_body.sh}
 ZGLUE_LIBSTYLE=${ZGLUE_LIBSTYLE:-$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT}
-if [ ! -f $ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT ] ; then
+if [ ! -f "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT" ] ; then
         echo "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT not found." >&2
         exit 1
 fi
-source $ZGLUE_LIBSTYLE
+source "$ZGLUE_LIBSTYLE"
 echo_dbg ":ZGLUE_LIBSTYLE : ($ZGLUE_LIBSTYLE)" >&2
 
 #
@@ -95,14 +95,17 @@ set_env()
                 esac
                 shift
         done
+
 }
+# In case any leading and/or trailing white space exists
+[ -n "$FILES" ] && strip_edge_ws FILES
 
 export FILTERS_NRF="/nrf52/ /nrf52832_dk/"
 export FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
 export GIT_ADD=
 export FILES=
 REPO_HOST="101.132.142.37"
-ACTIVELY_MANAGED_REPOS=( nuttx@$REPO_HOST nuttx_apps@$REPO_HOST auto_test@$REPO_HOST 3rd_Party_SDK@$REPO_HOST )
+ACTIVELY_MANAGED_REPOS=( "nuttx@$REPO_HOST" "nuttx_apps@$REPO_HOST" "auto_test@$REPO_HOST" "3rd_Party_SDK@$REPO_HOST" )
 declare -A REPO_FILTERS
 REPO_FILTERS[nuttx@$REPO_HOST]="filter_if_0 filter_out_whitespace filter_for_externs"
 REPO_FILTERS[nuttx_apps@$REPO_HOST]="filter_if_0 filter_out_whitespace filter_for_externs"
@@ -137,11 +140,15 @@ echo_dbg ":This repo is actively managed."
 
 
 [ -z "$FILES" ] && FILES="$(set_files "$ALT")"
+# In case any leading and/or trailing white space exists
+strip_edge_ws FILES
 
 #
 # If there are no files to process there weren't any style errors!
 #
-[ -z "$FILES" ] && echo_dbg  ":${GRNGRN}\tNo files to process.${RESET}" && exit 0
+[ -z "$FILES" ] && \
+        echo_dbg  ":${GRNGRN}\\tNo files to process.${RESET}" && \
+        exit 0
 
 #
 # Assume the first file is representative of the location of the repo
@@ -160,9 +167,10 @@ echo_dbg REPOROOT
 # If there are no SRCS to format then by default there are no style errors.
 #
 SRCS="$(filter_for_srcfiles "$FILES")"
-([ -z "$SRCS" ] && echo_dbg  ":${GRNGRN}\\tNo files, no style errors.${RESET}") \
+([ -z "$SRCS" ] && echo_dbg  ":${GRNGRN}\\tNo files, no style errors.${RESET}")\
    && exit 0
 echo_dbg SRCS REPOROOT ORIGIN
+strip_edge_ws SRCS
 
 if ! filter_files "$REPOROOT" $SRCS ; then
         [ "$DEBUG" = "1" ] && VERBOSE=--verbose
