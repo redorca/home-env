@@ -7,22 +7,25 @@
 # Standard practice is to peform a distclean, <example app>, > out.<example>, and to cycle
 # through each of the possible examples.
 #
-
-BOARD=nrf52832_dk
-ARG_LIST="BOARD TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE"
+COLOR="${COLOR:-0}"
+DEBUG="${DEBUG:-0}"
+V=${V:-0}
+Q=${Q:-@}
+BOARD="${BOARD:-nrf52832_dk}"
+FILE_KEY=defconfig
+ARG_LIST=( DEBUG BOARD FILE_KEY TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE )
 RED='\033[1;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[1;32m'
+BLUE='\033[1;34m'
+PURPLE='\033[1;35m'
+LT_BLUE='\033[1;36m'
+
+HELP_COLOR='\033[3;36m'
+
 RESET='\033[0;39;49m'
 OUT=/tmp/out
-
-find_repo_root()
-{
-        if ! git rev-parse >/dev/null 2>&1 ; then
-                echo "Not running within a git repo.  Please relocate." >&2
-                exit 1
-        fi
-        git rev-parse --show-toplevel
-}
-
+declare -A make_targets
 #
 # Setup targets that are not actual apps but
 # are still directives to make.
@@ -36,14 +39,10 @@ pseudo_targets["distclean"]=1
 pseudo_targets["clean_scope"]=1
 pseudo_targets["clean_out"]=1
 
-RELOCATE="$(find_repo_root)/configs/$BOARD"
-[ ! -d "$RELOCATE" ] && echo "Can't find ($RELOCATE)" >&2 && exit 1
-
-declare -A make_targets
-fa=( $(cd $RELOCATE && make list_apps) )
-for i in "${fa[@]}" ; do
-        make_targets["$i"]=1
-done
+# fa=( $(cd $RELOCATE && make list_apps) )
+# for i in "${fa[@]}" ; do
+#         make_targets["$i"]=1
+# done
 
 #
 # Trap all exits.
@@ -64,7 +63,17 @@ echo_e()
         local Bin=
 
         Bin="/bin/echo -e"
-        $Bin "$@"
+        $Bin "$@" >&2
+}
+
+#
+# Debug prints.  Print if DEBUG==1
+#
+echo_dbg()
+{
+        [ "$DEBUG" != "1" ] && return 1
+
+        echo_e "$@"
 }
 
 #
@@ -74,75 +83,139 @@ echo_e()
 #
 help_msg()
 {
-        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" | sed -n -e '/)/p'
+        [ "$COLOR" = "1" ] && echo -e "${HELP_COLOR}"
+        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" | 
+                sed -n -e '/) /p' -e '/  #/p'
+        echo -e "${RESET}"
 }
 
 #
-# Output var and contents
+# Output var and contents and
+# do some modest alignment by
+# adding a space at the beginning
+# and an extra tab for shorter
+# vars.
 #
-print_vars()
+print_keyval()
 {
-        for var in $ARG_LIST ; do
-                echo_e "$var\t(${!var})"
+        declare -a Arg_List=
+        local CLR0=
+        local CLR1=
+        local RST=
+
+        Arg_List=( "$@" )
+        [ "$COLOR" = "1" ] && CLR0="${LT_BLUE}" \
+                           && CLR1="${GREEN}" \
+                               RST="${RESET}"
+        for var in "${Arg_List[@]}" ; do
+                echo_e -n " ${CLR0}$var${RST}\t"
+                [ "${#var}" -lt 7 ]  && echo_e -n "\t"
+                echo_e "(${CLR1}${!var}${RST})"
         done
 }
+
+find_repo_root()
+{
+        if ! git rev-parse >/dev/null 2>&1 ; then
+                echo_e "Not running within a git repo.  Please relocate."
+                exit 1
+        fi
+        git rev-parse --show-toplevel
+}
+
+set_app_list()
+{
+        local Board_Cfg=
+        local File_Key=
+        local count=
+        local fresults=
+        declare -a pieces=
+
+        [ "$#" -ne 2 ] && return 1
+        Board_Cfg="$1" ; shift
+        File_Key="$1" ; shift
+
+        fresults="$(find . -type d -name $Board_Cfg)"
+        [ -z "$fresults" ] && return 1
+
+        pieces=( $(echo $fresults | sed -e 's/\// /g') )
+        count=$(( "${#pieces[@]}" + 1 ))
+        [ "$DEBUG" = "1" ] && echo_e "== fresults: ($fresults), count: $count"
+
+        pieces=( $(ls $fresults/*/$File_Key | cut --delim='/' -f $count) )
+        echo "${pieces[@]}"
+}
+
+    for target in $(set_app_list $BOARD $FILE_KEY) ; do
+        make_targets["$target"]=1
+    done
+    DEFAULT_APPS="${make_targets[*]}"
 
 ### HELP message start
 while [ $# -ne 0 ] ; do
         case "$1" in
-        -b) BOARD="$2"; shift              # Specify the directory to build from
+        #
+        # Specify the directory to build from
+        -b) BOARD="$2"; shift
                 ;;
-        -e) NO_ERRORS="NO_ERRORS=1"        # Disable -Werror (warnings are errors)
+        #
+        # Specify the use of color for the print_vars message
+        # Must occur on the command line before -p.
+        -c) COLOR=1
+                ;;
+        #
+        # Disable -Werror (warnings are errors)
+        -e) NO_ERRORS="NO_ERRORS=1"
+        #
                 ;;
         -h) help_msg && exit 0
                 ;;
-        -p) print_vars && exit 0
+        -p) print_keyval "${ARG_LIST[@]}" && exit 0
                 ;;
-        -Q) Q="";                          # Expose the raw commands that make issues.
+        #
+        # Expose the raw commands that make issues.
+        -Q) Q="";
                 ;;
-        -t) TARGET_DIRS="$TARGET_DIRS ${2%/}"; shift   # Specify build target. May specify multiple times.
+        #
+        # Specify build target. May specify multiple times.
+        -t) TARGET_DIRS="$TARGET_DIRS ${2%/}"; shift
                 ;;
-        -v) VERBOSE="${VERBOSE}V"          # Print info beyond success/failure. May specify multiple times.
+        #
+        # Print info beyond success/failure. May specify multiple times.
+        -v) VERBOSE="${VERBOSE}V"
                 ;;
-        -V) V=2                            # More info on make processing
+        #
+        # More info on make processing
+        -V) V=2
                 ;;
-        *) tmpvar=${pseudo_targets["$1"]}
-           [ -n "$tmpvar" ] && TARGET_DIRS="$TARGET_DIRS ${1%/}" && FF=1;  # Specify build target. May specify multiple times.
-           tmpvar=${make_targets["$1"]}
-           [ -n "$tmpvar" ] && TARGET_DIRS="$TARGET_DIRS ${1%/}" && FF=1;  # Specify build target. May specify multiple times.
-           [ -z "$FF" ] && ARGS_UNXP="$ARGS_UNXP \"$1\"" #
+        #
+        # Specify build target. May specify multiple times.
+        *) if [ -n "${pseudo_targets["$1"]}" ] ; then
+                TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
+           elif [ -n "${make_targets["$1"]}" ] ; then
+                TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
+           else
+                ARGS_UNXP="$ARGS_UNXP \"$1\""
+           fi
                 ;;
         esac
         shift
-        unset FF
 done
 if [ -n "$ARGS_UNXP" ] ; then
-        echo -n "Unexpected args were encountered. Stop.  " >&2
-        echo "$ARGS_UNXP"
-        echo "Perhaps you need to prefix this with '-t'. See help (-h)" >&2
+        echo_e -n "Unexpected args were encountered. Stop.  "
+        echo_e "$ARGS_UNXP"
+        echo_e "Perhaps you need to prefix this with '-t'. See help (-h)"
         exit 1
 fi
 ### HELP message end
 
-set_app_list()
-{
-        local Dir=
 
-        [ ! -d "$1" ] && echo "No directory specified: ($1)" >&2 && return 1
-        Dir="$1"
-        echo_e $(ls */defconfig | sed -e 's/\/.*//')
-}
-
-
-V=${V:-0}
-Q=${Q:-@}
 trap on_exit EXIT
 
 (
     cd $RELOCATE >/dev/null || exit 1
     declare -a OUT_FILE=
 
-    DEFAULT_APPS=$(ls */defconfig | sed -e 's/\/.*//')
     TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
     [ "${VERBOSE:0:1}" = "V" ] && print_vars
 
@@ -163,7 +236,7 @@ trap on_exit EXIT
                     echo_e "Failed."
                     continue
             fi
-            echo "Succeeded."
+            echo_e "Succeeded."
     done
 )
 

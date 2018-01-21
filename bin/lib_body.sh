@@ -3,6 +3,8 @@
 # shellcheck disable=2034
 ORIGIN=$(pwd)/
 # shellcheck disable=2034
+COLOR="${COLOR:-0}"
+# shellcheck disable=2034
 RED='\033[1;31m'
 # shellcheck disable=2034
 REDBLK='\033[1;31;40m'
@@ -37,6 +39,7 @@ echo_dbg()
         [ "$DEBUG" != "1" ] && return
 
         local i=
+        local tmpe=
         declare -a tmp=
 
         #
@@ -49,9 +52,39 @@ echo_dbg()
         #
         for i in "$@" ; do
                 echo_err -n "    ::  $i\t\t"
+                tmpe="${!i}"
+                if [ "${#tmpe}" -lt 8 ] ; then
+                        echo_err -n "\t"
+                fi
                 echo_err  "(${!i})"
         done
 }
+
+#
+# Output var and contents and
+# do some modest alignment by
+# adding a space at the beginning
+# and an extra tab for shorter
+# vars.
+#
+print_keyval()
+{
+        declare -a Arg_List=
+        local CLR0=
+        local CLR1=
+        local RST=
+
+        Arg_List=( "$@" )
+        [ "$COLOR" = "1" ] && CLR0="${LT_BLUE}" \
+                           && CLR1="${GREEN}" \
+                               RST="${RESET}"
+        for var in "${Arg_List[@]}" ; do
+                echo_e -n " ${CLR0}$var${RST}\t"
+                [ "${#var}" -lt 7 ]  && echo_e -n "\t"
+                echo_e "(${CLR1}${!var}${RST})"
+        done
+}
+
 
 #
 # Create a tmp file to be used by a 'find' call to

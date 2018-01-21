@@ -96,4 +96,14 @@ mergehex
 /patch.*
 !patches/
 /fw_devtools
-
+aa
+bb
+cc
+dd
+ff
+foo*
+boo*
+goo*
+hoo*
+git-hub/
+warnings/
