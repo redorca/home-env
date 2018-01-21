@@ -22,7 +22,6 @@ PURPLE='\033[1;35m'
 LT_BLUE='\033[1;36m'
 
 HELP_COLOR='\033[3;36m'
-
 RESET='\033[0;39;49m'
 OUT=/tmp/out
 declare -A make_targets
@@ -131,6 +130,8 @@ set_app_list()
         local fresults=
         declare -a pieces=
 
+   (
+        cd $(git rev-parse --show-toplevel) || return 1
         [ "$#" -ne 2 ] && return 1
         Board_Cfg="$1" ; shift
         File_Key="$1" ; shift
@@ -144,12 +145,13 @@ set_app_list()
 
         pieces=( $(ls $fresults/*/$File_Key | cut --delim='/' -f $count) )
         echo "${pieces[@]}"
+   )
 }
 
-    for target in $(set_app_list $BOARD $FILE_KEY) ; do
+for target in $(set_app_list $BOARD $FILE_KEY) ; do
         make_targets["$target"]=1
-    done
-    DEFAULT_APPS="${make_targets[*]}"
+done
+DEFAULT_APPS="${!make_targets[@]}"
 
 ### HELP message start
 while [ $# -ne 0 ] ; do
@@ -213,6 +215,7 @@ fi
 trap on_exit EXIT
 
 (
+    RELOCATE="$(find_repo_root)/configs/$BOARD"
     cd $RELOCATE >/dev/null || exit 1
     declare -a OUT_FILE=
 
