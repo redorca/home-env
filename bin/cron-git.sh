@@ -23,13 +23,17 @@ if ! Root="$(git rev-parse --show-toplevel)" ; then
         echo "Not in a valid repo or tree." >&2
         exit 1
 fi
+if [ "${#fa[@]}" -eq 0 ] ; then
+        echo "Nothing to do."
+        exit
+fi
 for file in "${fa[@]}" ; do
         git add $Root/$file
 done
 
 WAIT=30
 while ! git checkout -b $Branch >/dev/null 2>&1 ; do
-        echo "Not yet: sleep $WAIT"
+        echo "Not yet: sleep $WAIT -"
         sleep $WAIT
 done
 git commit -m "$Log_Msg"
