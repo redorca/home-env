@@ -216,7 +216,9 @@ trap on_exit EXIT
 
 (
     RELOCATE="$(find_repo_root)/configs/$BOARD"
-    cd $RELOCATE >/dev/null || exit 1
+    [ ! -d "$RELOCATE" ] && exit 1
+
+    cd $RELOCATE >/dev/null
     declare -a OUT_FILE=
 
     TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
