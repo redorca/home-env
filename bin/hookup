@@ -184,9 +184,12 @@ validate_horde()
         declare -a DIFFERS=
 
         FA=0
-        msgs=( "${RED}Differs:${RESET}" "${BLUE}Found${RESET}" "${RED}NotFound:${RESET}" )
+        msgs=( "${YELLOW}Newer pkg files:${RESET}"
+               "${BLUE}Identical pkg files:${RESET}"
+               "${RED}Missing pkg files:${RESET}" )
 
-        echo "Making sure all of the files are here ... "
+        echo -e "Checking availability for all of the package files ... "
+        echo -e "Checking the package files against the installed:\n"
 	for bin in "${BINS[@]}" ; do
                 local_bin=$(basename $bin)
                 if [ -f $local_bin ] ; then
@@ -203,7 +206,9 @@ validate_horde()
         [ -n "${Found[*]}" ] && list_files "${msgs[1]}" "${Found[@]}"
         [ -n "${DIFFERS[*]}" ] && list_files "${msgs[0]}" "${DIFFERS[@]}"
         [ -n "${NotFound[*]}" ] && list_files "${msgs[2]}" "${NotFound[@]}"
-        [ -z "${DIFFERS[*]}" ] && echo "All files are current." >&2
+        [ "${#DIFFER[@]}" -eq 0 ] && echo "All installed files are current." >&2
+        echo "" >&2
+
         return $FA
 }
 
@@ -225,10 +230,6 @@ place_files()
                 echo "Not all of the required files are available." >&2
                 echo "Please place the files not found into this local directory." >&2
                 return 1
-        fi
-        if [ "${#DIFFER[@]}" -eq 0 ] ; then
-                echo "No files differ, nothing to copy." >&2
-#               return
         fi
 	for bin in "${BINS[@]}" ; do
 	        this_bin="$(basename $bin)"
