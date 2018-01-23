@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 #
 # This script will run make from the configs/nrf52832_dk
@@ -122,9 +122,10 @@ print_keyval()
         local CLR0=
         local CLR1=
 
-        Arg_List=( "$@" )
         CLR0="${!1}" ; shift
         CLR1="${!1}" ; shift
+
+        Arg_List=( "$@" )
 
         for var in "${Arg_List[@]}" ; do
                 echo_e -n " ${CLR0}$var${RESET}\t"
@@ -143,7 +144,7 @@ print_colors()
         local Fore=
 
         Fore="$1"; shift
-#       for key in $COLORS_LIST ; do
+
         for key in RED BLUE LTBLUE YELLOW GREEN PURPLE; do
                 aKey="${!key}"
                 [ "$Fore" = "0" ] && aKey="$(echo $aKey | sed -e 's/;3/;37;4/')"
@@ -237,7 +238,7 @@ while [ $# -ne 0 ] ; do
         # following arg determines whether the coloring is in the
         # background (0), or anything else for the foreground.
         #
-        --colors) print_colors "$2"; exit 0
+        --colors*) print_colors "${1#*=}"; exit 0
                 ;;
         #
         # The arg paired with --bg and --fg is the
@@ -298,8 +299,8 @@ fi
 if [ "$RUN_HELP" = "yes" ] || [ "$PRINT_KV" = "yes" ] ; then
         ARG1=
         ARG2=
-        [ "$COLORS" = "1" ] && [ "$CONTRAST" = "0" ] && ARG1="LT_BLUE" && ARG2="GREEN"
-        [ "$COLORS" = "1" ] && [ "$CONTRAST" = "1" ] && ARG1="BLUE" && ARG2="PURPLE"
+        [ "$COLOR" = "1" ] && [ "$CONTRAST" = "0" ] && ARG1="LT_BLUE" && ARG2="GREEN"
+        [ "$COLOR" = "1" ] && [ "$CONTRAST" = "1" ] && ARG1="BLUE" && ARG2="PURPLE"
         run_output  "$ARG1"  "$ARG2"
         exit 0
 fi
