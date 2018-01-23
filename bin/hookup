@@ -64,9 +64,10 @@ help()
         This file will install style_file, astyle, pre-commit, commit-msg
         and astyle-nuttx to provide style checking for git commits.
 
-        -p : Place all of these files in the proper locations. Must run as root!
+        -p : Place all of these files in the proper locations. Must run as root
+             unless "export ROOT=<location>"  is set in the environment.
         -u : Refresh .git/hooks with the latest pre-commit and commit-msg.
-             Must be run from the root of the repo.
+             Must be run from somewhere within the repo.
         -v : Validate that the necessary files are all present locally and
              how the compare with currently installed versions of these files.
 
@@ -119,16 +120,15 @@ refresh_hooks()
                 [ ! -f $HOOKS_DIR/$hook ] && echo "Missing $HOOKS_DIR/$hook." >&2 && FA=1 && continue
                 # See if the two files are the same and skip if they are.
                 diff_check $HOOKS_DIR/$hook .git/hooks/$hook && continue
-                echo "$hook is different, replacing." >&2
+                echo "$HOOKS_DIR/$hook differs, replacing." >&2
                 CMD="cp $HOOKS_DIR/$hook .git/hooks/"
                 $CMD && chmod +x .git/hooks/$hook
                 rv=1
         done
-        return $rv
-  )
-       [ $? -ne 0 ] && msg_now="now "
-
+        [ $rv -ne 0 ] && msg_now="now "
         echo -e "All hooks are ${msg_now}current.\n"
+
+  )
         return $FA
 }
 
@@ -150,6 +150,7 @@ list_files()
         for fff in "${Files[@]}" ; do
                 echo -e "\t$fff"
         done
+        echo ""
 }
 
 #
@@ -184,12 +185,9 @@ validate_horde()
         declare -a DIFFERS=
 
         FA=0
-        msgs=( "${YELLOW}Newer pkg files:${RESET}"
-               "${BLUE}Identical pkg files:${RESET}"
-               "${RED}Missing pkg files:${RESET}" )
+        msgs=( "${RED}Differs:${RESET}" "${BLUE}Found${RESET}" "${RED}NotFound:${RESET}" )
 
-        echo -e "Checking availability for all of the package files ... "
-        echo -e "Checking the package files against the installed:\n"
+        echo "Making sure all of the files are here ... "
 	for bin in "${BINS[@]}" ; do
                 local_bin=$(basename $bin)
                 if [ -f $local_bin ] ; then
@@ -206,8 +204,7 @@ validate_horde()
         [ -n "${Found[*]}" ] && list_files "${msgs[1]}" "${Found[@]}"
         [ -n "${DIFFERS[*]}" ] && list_files "${msgs[0]}" "${DIFFERS[@]}"
         [ -n "${NotFound[*]}" ] && list_files "${msgs[2]}" "${NotFound[@]}"
-        [ "${#DIFFER[@]}" -eq 0 ] && echo "All installed files are current." >&2
-        echo "" >&2
+        [ -z "${DIFFERS[*]}" ] && [ -z "${NotFound[@]}" ] && echo "All installed files are current." >&2
 
         return $FA
 }
@@ -230,6 +227,10 @@ place_files()
                 echo "Not all of the required files are available." >&2
                 echo "Please place the files not found into this local directory." >&2
                 return 1
+        fi
+        if [ "${#DIFFER[@]}" -eq 0 ] ; then
+                echo "No files differ, nothing to copy." >&2
+#               return
         fi
 	for bin in "${BINS[@]}" ; do
 	        this_bin="$(basename $bin)"

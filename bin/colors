@@ -54,3 +54,98 @@ BLACK="\033[1;30m"
 ## # shellcheck disable=2034
 ## YLWLTBLU="\033[1;33;46m"
 #
+
+BLACK="0"
+RED="1"
+GREEN="2"
+YELLOW="3"
+BLUE="4"
+PURPLE="5"
+LTBLUE="6"
+WHITE="7"
+DEF=""
+
+declare -A clrs_seq
+declare -A clrs_id
+declare -a clr_names
+declare -a test_it
+
+test_it["a"]=0
+test_it["b"]=1
+test_it["c"]=2
+test_it["d"]=3
+
+clr_names=( BLACK RED GREEN YELLOW BLUE LTBLUE PURPLE WHITE DEF )
+attr_names=( BRIGHT DIM UNDERSCORE BLINK REVERSE HIDDEN )
+
+print_hash_entries()
+{
+        local key=
+        local cname=
+        declare -a Hash=
+
+        Hash=( "$@" )
+#       echo "Hash has ${#Hash[@]} elements"
+
+        for key in ${!Hash[@]} ; do
+                echo "key: $key, val: ${Hash[$key]}"
+        done
+
+        return
+}
+
+#
+# Setup the hash of colors which assembles the escape sequence to
+# use for each including any background color settings.
+#
+setup_colors()
+{
+        local BG=
+        local FG=
+        local ESC=
+
+        setup_one_color_sequence RED "" 1
+}
+
+#
+# Add an entry to the colors[] hash.  Args may vary from 1 to 3
+# 
+# Arg1 : Forground Color
+# <opt> Arg2 : Background Color
+# <opt> Arg3 : Text Attribute.
+#
+# Arg3 defaults to 2 and Arg2 defaults to NULL
+#
+setup_one_color_sequence()
+{
+        local NAME=
+        local NAME_FG=
+        local NAME_BG=
+        local COLOR_FG=
+        local COLOR_BG=
+        local TEXT_ATTR=
+
+        #default
+        TEXT_ATTR=1
+
+        if [ $# -gt 1 ] ; then
+                NAME_FG="$1"
+                NAME="${NAME_FG}"_DEF
+                COLOR_FG=";3${!NAME_FG}"
+        elif [ $# -gt 2 ] ; then
+                NAME_BG="$2"
+                [ -z "$2" ] && NAME2="DEF"
+                NAME="${NAME%_*}_${NAME_BG}"
+                COLOR_BG=";4${!2}"
+        elif [ $# -eq 3 ] ; then
+                TEXT_ATTR="$3"
+        elif [ $# -ft 1 ] && [ $# -gt 3 ] ; then
+                echo "The number of args provided is unexpected." >&2
+        fi
+ 
+        clrs_seq["$NAME"]="${ESC}${TEXT_ATTR}${COLOR_FG}${$COLOR_BG}m"
+}
+
+# print_hash_entries "${clr_names[@]}"
+# print_hash_entries "${attr_names[@]}"
+print_hash_entries "${test_it[@]}"

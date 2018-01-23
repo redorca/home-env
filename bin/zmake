@@ -11,11 +11,12 @@
 #
 
 CONTRAST="${CONTRAST:-0}"
-COLOR="${COLOR:-0}"
+COLOR="${COLOR:-1}"
 DEBUG="${DEBUG:-0}"
 V="${V:-0}"
 Q="${Q:-@}"
 BOARD="${BOARD:-nrf52832_dk}"
+ESC="\033[;"
 #
 # The filename key searched for when determing
 # which directories in configs/$BOARD/*/$FILE_KEY
@@ -25,6 +26,24 @@ FILE_KEY=defconfig
 
 ARG_LIST=( DEBUG BOARD FILE_KEY TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE )
 ### COLORS Begin
+RESET="\033[0;39;49m"
+BLACK="\033[1;30m"
+RED="\033[1;31m"
+GREEN="\033[2;32m"
+YELLOW="\033[2;33m"
+BLUE="\033[1;34m"
+LTBLUE="\033[2;36m"
+PURPLE="\033[2;35m"
+REDBLK="\033[2;31;40m"
+REDYLW="\033[2;31;43m"
+REDBLU="\033[2;31;46m"
+GRNBLK="\033[2;32;40m"
+GRNGRN="\033[2;32;42m"
+YLWBLK="\033[2;33;40m"
+YLWRED="\033[2;33;41m"
+YLWGRN="\033[2;33;42m"
+YLWBLU="\033[2;33;44m"
+YLWLTBLU="\033[2;33;46m"
 ### COLORS End
 OUT=/tmp/out
 declare -A make_targets
@@ -47,9 +66,12 @@ pseudo_targets["clean_out"]=1
 on_exit()
 {
         RV=$?
-        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit: ${RESET}"
+
+        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit [$RV]: ${RESET}"
         exit $RV
 }
+
+trap on_exit EXIT
 
 #
 # Wrap echo with echo_e() and use /bin/echo instead.  This allows invoking
@@ -201,18 +223,10 @@ while [ $# -ne 0 ] ; do
         -b) BOARD="$2"; shift
                 ;;
         #
-        # Specify the use of color for the print_vars message
-        # Must occur on the command line before -p.
-        -c) COLOR=1
-            CONTRAST=0
-                ;;
-        +c) COLOR=1
-            CONTRAST=1
-                ;;
         ## Enhanced background suitable for screens with
         ## light backgrounds
-        -C) COLOR=1
-            CONTRAST=1
+        #
+        -c) CONTRAST=1
                 ;;
         #
         # Demonstrate the list of colors available to this script. Any
@@ -277,13 +291,11 @@ fi
 if [ "$RUN_HELP" = "yes" ] || [ "$PRINT_KV" = "yes" ] ; then
         ARG1=
         ARG2=
-        [ "$COLOR" = "1" ] && [ "$CONTRAST" = "0" ] && ARG1="LT_BLUE" && ARG2="GREEN"
+        [ "$COLOR" = "1" ] && [ "$CONTRAST" = "0" ] && ARG1="LTBLUE" && ARG2="GREEN"
         [ "$COLOR" = "1" ] && [ "$CONTRAST" = "1" ] && ARG1="BLUE" && ARG2="PURPLE"
         run_output  "$ARG1"  "$ARG2"
-        exit 0
+        exit
 fi
-
-trap on_exit EXIT
 
 #
 # Main()
