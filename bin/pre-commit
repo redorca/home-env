@@ -96,7 +96,10 @@ set_env()
                 shift
         done
 
+        # In case any leading and/or trailing white space exists
+        strip_edge_ws FILES
 }
+
 # In case any leading and/or trailing white space exists
 [ -n "$FILES" ] && strip_edge_ws FILES
 
@@ -167,7 +170,8 @@ echo_dbg REPOROOT
 # If there are no SRCS to format then by default there are no style errors.
 #
 SRCS="$(filter_for_srcfiles "$FILES")"
-([ -z "$SRCS" ] && echo_dbg  ":${GRNGRN}\\tNo files, no style errors.${RESET}")\
+strip_edge_ws SRCS
+([ -z "$SRCS" ] && echo_dbg  ":${GRNGRN}\\tNo files, no style errors.${RESET}") \
    && exit 0
 echo_dbg SRCS REPOROOT ORIGIN
 strip_edge_ws SRCS

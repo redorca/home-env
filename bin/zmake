@@ -210,7 +210,8 @@ while [ $# -ne 0 ] ; do
             CONTRAST=1
                 ;;
         ## Enhanced background suitable for screens with
-        ## light backgrounds -C) COLOR=1
+        ## light backgrounds
+        -C) COLOR=1
             CONTRAST=1
                 ;;
         #
