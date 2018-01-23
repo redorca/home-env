@@ -1,10 +1,12 @@
-#!/bin/bash
+#!/bin/bash -x
 
 #
-# This script will run make from the configs/nrf52832_dk directory against every
-# example directory contiaining the file defconfig.
+# This script will run make from the configs/nrf52832_dk
+# directory against every example directory contiaining
+# the file defconfig.
 #
-# Standard practice is to peform a distclean, <example app>, > out.<example>, and to cycle
+# Standard practice is to peform a distclean,
+# <example app> > out.<example>, and to cycle
 # through each of the possible examples.
 #
 COLOR="${COLOR:-0}"
@@ -14,16 +16,35 @@ Q=${Q:-@}
 BOARD="${BOARD:-nrf52832_dk}"
 FILE_KEY=defconfig
 ARG_LIST=( DEBUG BOARD FILE_KEY TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE )
-RED='\033[1;31m'
-YELLOW='\033[1;33m'
-GREEN='\033[1;32m'
-BLUE='\033[1;34m'
-PURPLE='\033[1;35m'
+# RED='\033[1;31m'
+# YELLOW='\033[1;33m'
+# GREEN='\033[1;32m'
+# BLUE='\033[1;34m'
+# PURPLE='\033[1;35m'
 LT_BLUE='\033[1;36m'
 
 HELP_COLOR='\033[3;36m'
 RESET='\033[0;39;49m'
 ### COLORS Begin
+COLORS_LIST="RED REDBLK REDYLW REDBLU GREEN GRNBLK GRNGRN YELLOW
+             YLWRED YLWGRN YLWBLU YLWLTBLU BLUE LTBLUE PURPLE"
+RED="\033[1;31m"
+REDBLK="\033[1;31;40m"
+REDYLW="\033[1;31;43m"
+REDBLU="\033[1;31;46m"
+GREEN="\033[1;32m"
+GRNBLK="\033[1;32;40m"
+GRNGRN="\033[1;32;42m"
+YELLOW="\033[1;33m"
+YLWBLK="\033[1;33;40m"
+YLWRED="\033[1;33;41m"
+YLWGRN="\033[1;33;42m"
+YLWBLU="\033[1;33;44m"
+YLWLTBLU="\033[1;33;46m"
+BLUE="\033[1;34m"
+LTBLUE="\033[1;36m"
+PURPLE="\033[1;35m"
+RESET="\033[0;39;49m"
 ### COLORS End
 OUT=/tmp/out
 declare -A make_targets
@@ -39,11 +60,6 @@ pseudo_targets["clean"]=1
 pseudo_targets["distclean"]=1
 pseudo_targets["clean_scope"]=1
 pseudo_targets["clean_out"]=1
-
-# fa=( $(cd $RELOCATE && make list_apps) )
-# for i in "${fa[@]}" ; do
-#         make_targets["$i"]=1
-# done
 
 #
 # Trap all exits.
@@ -117,6 +133,26 @@ print_keyval()
         done
 }
 
+#
+# Print the list of colors available along with illustrative text.
+#
+print_colors()
+{
+        local key=
+        local akey=
+        local Fore=
+
+        Fore="$1"; shift
+#       for key in $COLORS_LIST ; do
+        for key in RED BLUE LTBLUE YELLOW GREEN PURPLE; do
+                aKey="${!key}"
+                [ "$Fore" = "0" ] && aKey="$(echo $aKey | sed -e 's/;3/;37;4/')"
+                echo -n -e "$key:\t"
+                [ "${#key}" -lt 8 ] && echo -n -e "\t"
+                echo -e "${aKey}Some sample text.${RESET}"
+        done
+}
+
 find_repo_root()
 {
         if ! git rev-parse >/dev/null 2>&1 ; then
@@ -160,8 +196,8 @@ run_output()
         local COLOR0=
         local COLOR1=
 
-        COLOR0="${!1}" ; shift
-        COLOR1="${!1}" ; shift
+        [ -n "$1" ] && COLOR0="${!1}" ; shift
+        [ -n "$1" ] && COLOR1="${!1}" ; shift
 
         if [ "$RUN_HELP" = "yes" ] ; then
                 help_msg COLOR0
@@ -171,9 +207,6 @@ run_output()
         fi
 }
 
-for target in $(set_app_list $BOARD $FILE_KEY) ; do
-        make_targets["$target"]=1
-done
 DEFAULT_APPS="${!make_targets[@]}"
 
 CONTRAST=0
@@ -195,17 +228,32 @@ while [ $# -ne 0 ] ; do
         +c) COLOR=1
             CONTRAST=1
                 ;;
-        -C) COLOR=1     ## Enhanced background suitable for screens with light backgrounds
+        ## Enhanced background suitable for screens with light backgrounds
+        -C) COLOR=1
             CONTRAST=1
+                ;;
+        #
+        # Demonstrate the list of colors available to this script. Any
+        # following arg determines whether the coloring is in the
+        # background (0), or anything else for the foreground.
+        #
+        --colors) print_colors "$2"; exit 0
+                ;;
+        #
+        # The arg paired with --bg and --fg is the
+        # name of the color as shown by --colors
+        --bg) BACKGROUND="$1"
+                ;;
+        --fg) FOREGROUND="$1"
                 ;;
         #
         # Disable -Werror (warnings are errors)
         -e) NO_ERRORS="NO_ERRORS=1"
         #
                 ;;
-        -h) RUN_HELP="yes";# help_msg && exit 0
+        -h) RUN_HELP="yes";
                 ;;
-        -p) PRINT_KV="yes";# print_keyval "${ARG_LIST[@]}" && exit 0
+        -p) PRINT_KV="yes";
                 ;;
         #
         # Expose the raw commands that make issues.
@@ -225,7 +273,10 @@ while [ $# -ne 0 ] ; do
                 ;;
         #
         # Specify build target. May specify multiple times.
-        *) if [ -n "${pseudo_targets["$1"]}" ] ; then
+        *) for target in $(set_app_list $BOARD $FILE_KEY) ; do
+                   make_targets["$target"]=1
+           done
+           if [ -n "${pseudo_targets["$1"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
            elif [ -n "${make_targets["$1"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
@@ -245,11 +296,13 @@ if [ -n "$ARGS_UNXP" ] ; then
 fi
 
 if [ "$RUN_HELP" = "yes" ] || [ "$PRINT_KV" = "yes" ] ; then
-        [ "$CONTRAST" = "0" ] && run_output LT_BLUE GREEN
-        [ "$CONTRAST" = "1" ] && run_output BLUE PURPLE
+        ARG1=
+        ARG2=
+        [ "$COLORS" = "1" ] && [ "$CONTRAST" = "0" ] && ARG1="LT_BLUE" && ARG2="GREEN"
+        [ "$COLORS" = "1" ] && [ "$CONTRAST" = "1" ] && ARG1="BLUE" && ARG2="PURPLE"
+        run_output  "$ARG1"  "$ARG2"
         exit 0
 fi
-
 
 trap on_exit EXIT
 
@@ -273,7 +326,7 @@ trap on_exit EXIT
                    echo_e -n "Make distclean ...\r"
                    $CMD > ${OUT}.distclean 2>&1
             fi
-            [ -z "$ftmp" ] &&  OUT_FILE=( ">" ${OUT}.$build "2>&1"  ) && _N="-n"
+            [ -z "$ftmp" ] && OUT_FILE=( ">" ${OUT}.$build "2>&1"  ) && _N="-n"
 
             CMD="make V=\"$V\"  $NO_ERRORS $build"
 
