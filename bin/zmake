@@ -9,42 +9,22 @@
 # <example app> > out.<example>, and to cycle
 # through each of the possible examples.
 #
+
+CONTRAST="${CONTRAST:-0}"
 COLOR="${COLOR:-0}"
 DEBUG="${DEBUG:-0}"
-V=${V:-0}
-Q=${Q:-@}
+V="${V:-0}"
+Q="${Q:-@}"
 BOARD="${BOARD:-nrf52832_dk}"
+#
+# The filename key searched for when determing
+# which directories in configs/$BOARD/*/$FILE_KEY
+# will server as the set of make targets.
+#
 FILE_KEY=defconfig
-ARG_LIST=( DEBUG BOARD FILE_KEY TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE )
-# RED='\033[1;31m'
-# YELLOW='\033[1;33m'
-# GREEN='\033[1;32m'
-# BLUE='\033[1;34m'
-# PURPLE='\033[1;35m'
-LT_BLUE='\033[1;36m'
 
-HELP_COLOR='\033[3;36m'
-RESET='\033[0;39;49m'
+ARG_LIST=( DEBUG BOARD FILE_KEY TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE )
 ### COLORS Begin
-COLORS_LIST="RED REDBLK REDYLW REDBLU GREEN GRNBLK GRNGRN YELLOW
-             YLWRED YLWGRN YLWBLU YLWLTBLU BLUE LTBLUE PURPLE"
-RED="\033[1;31m"
-REDBLK="\033[1;31;40m"
-REDYLW="\033[1;31;43m"
-REDBLU="\033[1;31;46m"
-GREEN="\033[1;32m"
-GRNBLK="\033[1;32;40m"
-GRNGRN="\033[1;32;42m"
-YELLOW="\033[1;33m"
-YLWBLK="\033[1;33;40m"
-YLWRED="\033[1;33;41m"
-YLWGRN="\033[1;33;42m"
-YLWBLU="\033[1;33;44m"
-YLWLTBLU="\033[1;33;46m"
-BLUE="\033[1;34m"
-LTBLUE="\033[1;36m"
-PURPLE="\033[1;35m"
-RESET="\033[0;39;49m"
 ### COLORS End
 OUT=/tmp/out
 declare -A make_targets
@@ -208,10 +188,10 @@ run_output()
         fi
 }
 
+for target in $(set_app_list $BOARD $FILE_KEY) ; do
+        make_targets["$target"]=1
+done
 DEFAULT_APPS="${!make_targets[@]}"
-
-CONTRAST=0
-COLOR=0
 
 ### HELP message start
 while [ $# -ne 0 ] ; do
@@ -229,8 +209,8 @@ while [ $# -ne 0 ] ; do
         +c) COLOR=1
             CONTRAST=1
                 ;;
-        ## Enhanced background suitable for screens with light backgrounds
-        -C) COLOR=1
+        ## Enhanced background suitable for screens with
+        ## light backgrounds -C) COLOR=1
             CONTRAST=1
                 ;;
         #
@@ -274,10 +254,7 @@ while [ $# -ne 0 ] ; do
                 ;;
         #
         # Specify build target. May specify multiple times.
-        *) for target in $(set_app_list $BOARD $FILE_KEY) ; do
-                   make_targets["$target"]=1
-           done
-           if [ -n "${pseudo_targets["$1"]}" ] ; then
+        *) if [ -n "${pseudo_targets["$1"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
            elif [ -n "${make_targets["$1"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
