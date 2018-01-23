@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Table of color codes for vt100.  To be imported
 # into any shell script wanting to display color
@@ -40,9 +42,13 @@ YLWGRN='\033[1;33;42m'
 # shellcheck disable=2034
 YLWBLU='\033[1;33;44m'
 # shellcheck disable=2034
-YLWltBLU='\033[1;33;46m'
+YLWLTBLU='\033[1;33;46m'
 # shellcheck disable=2034
 BLUE='\033[1;34m'
+# shellcheck disable=2034
+LTBLUE='\033[1;36m'
+# shellcheck disable=2034
+PURPLE='\033[1;35m'
 # shellcheck disable=2034
 RESET='\033[0;39;49m'
 

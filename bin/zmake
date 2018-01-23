@@ -23,6 +23,8 @@ LT_BLUE='\033[1;36m'
 
 HELP_COLOR='\033[3;36m'
 RESET='\033[0;39;49m'
+### COLORS Begin
+### COLORS End
 OUT=/tmp/out
 declare -A make_targets
 #
@@ -82,9 +84,12 @@ echo_dbg()
 #
 help_msg()
 {
-        [ "$COLOR" = "1" ] && echo -e "${HELP_COLOR}"
-        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" | 
-                sed -n -e '/) /p' -e '/  #/p'
+        local CLR0=
+
+        CLR0="${!1}" ; shift
+        echo -e "${CLR0}"
+        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" |
+               sed -e '/^### HELP/,/case/d' -e '/esac/,/^### HELP/d' -e '/;;/d'
         echo -e "${RESET}"
 }
 
@@ -100,16 +105,15 @@ print_keyval()
         declare -a Arg_List=
         local CLR0=
         local CLR1=
-        local RST=
 
         Arg_List=( "$@" )
-        [ "$COLOR" = "1" ] && CLR0="${LT_BLUE}" \
-                           && CLR1="${GREEN}" \
-                               RST="${RESET}"
+        CLR0="${!1}" ; shift
+        CLR1="${!1}" ; shift
+
         for var in "${Arg_List[@]}" ; do
-                echo_e -n " ${CLR0}$var${RST}\t"
+                echo_e -n " ${CLR0}$var${RESET}\t"
                 [ "${#var}" -lt 7 ]  && echo_e -n "\t"
-                echo_e "(${CLR1}${!var}${RST})"
+                echo_e "(${CLR1}${!var}${RESET})"
         done
 }
 
@@ -148,10 +152,32 @@ set_app_list()
    )
 }
 
+#
+# Take care of generating the requested output.
+#
+run_output()
+{
+        local COLOR0=
+        local COLOR1=
+
+        COLOR0="${!1}" ; shift
+        COLOR1="${!1}" ; shift
+
+        if [ "$RUN_HELP" = "yes" ] ; then
+                help_msg COLOR0
+        fi
+        if [ "$PRINT_KV" = "yes" ] ; then
+                print_keyval  COLOR0 COLOR1 "${ARG_LIST[@]}"
+        fi
+}
+
 for target in $(set_app_list $BOARD $FILE_KEY) ; do
         make_targets["$target"]=1
 done
 DEFAULT_APPS="${!make_targets[@]}"
+
+CONTRAST=0
+COLOR=0
 
 ### HELP message start
 while [ $# -ne 0 ] ; do
@@ -164,15 +190,22 @@ while [ $# -ne 0 ] ; do
         # Specify the use of color for the print_vars message
         # Must occur on the command line before -p.
         -c) COLOR=1
+            CONTRAST=0
+                ;;
+        +c) COLOR=1
+            CONTRAST=1
+                ;;
+        -C) COLOR=1     ## Enhanced background suitable for screens with light backgrounds
+            CONTRAST=1
                 ;;
         #
         # Disable -Werror (warnings are errors)
         -e) NO_ERRORS="NO_ERRORS=1"
         #
                 ;;
-        -h) help_msg && exit 0
+        -h) RUN_HELP="yes";# help_msg && exit 0
                 ;;
-        -p) print_keyval "${ARG_LIST[@]}" && exit 0
+        -p) PRINT_KV="yes";# print_keyval "${ARG_LIST[@]}" && exit 0
                 ;;
         #
         # Expose the raw commands that make issues.
@@ -203,17 +236,26 @@ while [ $# -ne 0 ] ; do
         esac
         shift
 done
+### HELP message end
 if [ -n "$ARGS_UNXP" ] ; then
         echo_e -n "Unexpected args were encountered. Stop.  "
         echo_e "$ARGS_UNXP"
         echo_e "Perhaps you need to prefix this with '-t'. See help (-h)"
         exit 1
 fi
-### HELP message end
+
+if [ "$RUN_HELP" = "yes" ] || [ "$PRINT_KV" = "yes" ] ; then
+        [ "$CONTRAST" = "0" ] && run_output LT_BLUE GREEN
+        [ "$CONTRAST" = "1" ] && run_output BLUE PURPLE
+        exit 0
+fi
 
 
 trap on_exit EXIT
 
+#
+# Main()
+#
 (
     RELOCATE="$(find_repo_root)/configs/$BOARD"
     [ ! -d "$RELOCATE" ] && exit 1
