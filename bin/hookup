@@ -67,6 +67,11 @@ help()
         -p : Place all of these files in the proper locations. Must run as root!
         -u : Refresh .git/hooks with the latest pre-commit and commit-msg.
              Must be run from the root of the repo.
+        -v : Validate that the necessary files are all present locally and
+             how the compare with currently installed versions of these files.
+
+             Any files that differ from the currently installed versions are
+             shown and will be updated when directed to with the "-p" option.
 
 
 EOF
@@ -101,11 +106,14 @@ refresh_hooks()
         local CMD=
         local hook=
         local RepoRoot=
+        local msg_now=
+
         FA=0
 
         RepoRoot=$(git rev-parse --show-toplevel)
 
   (
+        rv=0
         cd $RepoRoot
         for hook in $HOOKS ; do
                 [ ! -f $HOOKS_DIR/$hook ] && echo "Missing $HOOKS_DIR/$hook." >&2 && FA=1 && continue
@@ -114,10 +122,13 @@ refresh_hooks()
                 echo "$hook is different, replacing." >&2
                 CMD="cp $HOOKS_DIR/$hook .git/hooks/"
                 $CMD && chmod +x .git/hooks/$hook
+                rv=1
         done
+        return $rv
   )
+       [ $? -ne 0 ] && msg_now="now "
 
-        echo "The hooks are verified as current."
+        echo -e "All hooks are ${msg_now}current.\n"
         return $FA
 }
 
@@ -192,7 +203,7 @@ validate_horde()
         [ -n "${Found[*]}" ] && list_files "${msgs[1]}" "${Found[@]}"
         [ -n "${DIFFERS[*]}" ] && list_files "${msgs[0]}" "${DIFFERS[@]}"
         [ -n "${NotFound[*]}" ] && list_files "${msgs[2]}" "${NotFound[@]}"
-
+        [ -z "${DIFFERS[*]}" ] && echo "All files are current." >&2
         return $FA
 }
 
