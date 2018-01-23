@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROGRAM=arm-none-eabi-gdb
-COMMAND_FILE=configs/nrf52832_dk/scripts/arm-gdb.init
+COMMAND_FILE=${COMMAND_FILE:-configs/nrf52832_dk/scripts/arm-gdb.init}
 IMAGE=nuttx
 
 #

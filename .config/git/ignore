@@ -1,6 +1,9 @@
 out.*
 tar.*
 patch.*
+patches.*
+diff.*
+diff-w.*
 diffs.*
 files.*
 config[.-]*
@@ -16,3 +19,5 @@ ff
 *.tmp
 tmp/
 boo.*
+foo.*
+[0-9][0-9][0-9]*
