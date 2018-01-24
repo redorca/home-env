@@ -112,6 +112,17 @@ help_msg()
 }
 
 #
+# Print the list of default apps.
+#
+list_apps()
+{
+        for i in "$@" ; do
+                echo -e "\t$i"
+        done
+        echo ""
+}
+
+#
 # Output var and contents and
 # do some modest alignment by
 # adding a space at the beginning
@@ -249,6 +260,9 @@ while [ $# -ne 0 ] ; do
                 ;;
         -h) RUN_HELP="yes";
                 ;;
+        --list=*) [ "${1#*=}" = "make" ] && list_apps $DEFAULT_APPS && exit 0
+                  echo "Misunderstood: ($1), (${1#*=})" && exit 1
+                ;;
         -p) PRINT_KV="yes";
                 ;;
         #
@@ -308,7 +322,7 @@ fi
     declare -a OUT_FILE=
 
     TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
-    [ "${VERBOSE:0:1}" = "V" ] && print_vars
+    [ "${VERBOSE:0:1}" = "V" ] && print_keyval
 
     for build in $TARGET_DIRS ; do
             CMD="make distclean"

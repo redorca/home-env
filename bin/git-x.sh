@@ -3,7 +3,7 @@
 DO_COMMIT=
 DO_AMMEND=
 DRY_RUN=0
-DEBUG=0
+DEBUG=1
 VAR_LIST="LOOP_SET_COUNT count"
 page_size=10
 count=$page_size
@@ -33,7 +33,7 @@ Exec()
 
         CMD=( "$@" )
         [ "$DRY_RUN"  = "1" ] && echo "${CMD[*]}"
-        [ "$DRY_RUN" != "1" ] && eval "${CMD[*]}"
+        [ "$DRY_RUN" != "1" ] && echo "=== ${CMD[*]}" && eval "${CMD[*]}"
 
         return 0
 }
@@ -165,8 +165,9 @@ while [ $# -ne 0 ] ; do
         -u) UNTRACKED=1;;
         -v) EDIT_WITH="$TMPFILE nvim-qt";
             set_helper $TMPFILE
+            Exec "$EDIT_WITH $(get_files)"
             echo_dbg ${GIT_MODE_CODE["U"]} $(get_files)
-            EDIT_WITH="${GIT_MODE_CODE["U"]} $(get_files)&"
+            EDIT_WITH="${GIT_MODE_CODE["U"]} $(get_files)"
            ;;
         *) echo "Unknown argument: $1"; Help; exit 0;;
         esac
