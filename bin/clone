@@ -217,6 +217,7 @@ dual_source_repos()
 }
 
 SRC_REPO_URL="$GERRIT_HOST_URL"
+[ "$#" -eq 0 ] && help && exit 1
 #Help
 while [ $# -ne 0 ] ; do
         case "$1" in
