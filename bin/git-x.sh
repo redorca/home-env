@@ -17,7 +17,8 @@ setup_mode_code()
         GIT_MODE_CODE["D"]="git rm"
         GIT_MODE_CODE["C"]="git add"
         GIT_MODE_CODE["?"]="rm -f"
-        GIT_MODE_CODE["U"]="$EDIT_WITH"
+        GIT_MODE_CODE["U"]="git add"
+#       GIT_MODE_CODE["U"]="$EDIT_WITH"
 }
 
 Help()
