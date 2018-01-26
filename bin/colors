@@ -139,13 +139,11 @@ setup_one_color_sequence()
                 COLOR_BG=";4${!2}"
         elif [ $# -eq 3 ] ; then
                 TEXT_ATTR="$3"
-        elif [ $# -ft 1 ] && [ $# -gt 3 ] ; then
+        elif [ $# -lt 1 ] && [ $# -gt 3 ] ; then
                 echo "The number of args provided is unexpected." >&2
+                return $EINVAL
         fi
  
         clrs_seq["$NAME"]="${ESC}${TEXT_ATTR}${COLOR_FG}${$COLOR_BG}m"
 }
 
-# print_hash_entries "${clr_names[@]}"
-# print_hash_entries "${attr_names[@]}"
-print_hash_entries "${test_it[@]}"
