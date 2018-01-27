@@ -338,7 +338,8 @@ fi
             echo_e "$_N"  "Building for $build: ... "
             eval $CMD ${OUT_FILE[*]}
             if [ $? -ne 0 ] ; then
-                    echo_e "Failed."
+                    echo_e "Failed.\n"
+                    tail -15 ${OUT}.$build
                     continue
             fi
             echo_e "Succeeded."

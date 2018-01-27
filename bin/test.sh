@@ -3,10 +3,10 @@
 ERR_FILE="/home/zglue/bin/errno.sh"
 
 DESTFILE=$(mktemp -p /tmp .err_src_XXXX)
-sed -n -e '2,/^## ===/p' $ERR_FILE > $DESTFILE
+sed -n -e '2,/^## ===/p' "$ERR_FILE" > "$DESTFILE"
 source "$DESTFILE"
 
-echo rm $DESTFILE
+rm "$DESTFILE"
 
 setup_error_codes
 list_err_map
