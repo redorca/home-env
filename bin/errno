@@ -61,7 +61,7 @@ print_name_to_code()
         local err="$1"
 
         [ -z "$err" ] && echo "No error specified." >&2 && return 1
-        echo "${errno[$err]}"
+        echo "$err:  ${errno[$err]}"
 }
 
 print_code_to_name()
@@ -69,7 +69,7 @@ print_code_to_name()
         local err="$1"
 
         [ -z "$err" ] && echo "No error specified." >&2 && return 1
-        echo "${err_codes_to_text[$err]}"
+        echo "$err:  ${err_codes_to_text[$err]}"
 }
 
 list_err_map()
@@ -85,11 +85,15 @@ list_err_map()
 
 help_errno()
 {
+        echo -e "\tGiven a number less than 33 or an E code output the other."
+        echo -e "\te.g.  'errno 21' ==> 'EINVAL'"
+        echo -e "\te.g.  'errno EIO' ==> '4'"
+        echo ""
         sed -n -e '/^### Begin/,/^### End/p' $0 | grep ')'
 }
 ## === End of error functions ###
 
-[ -z "$1" ] && help && exit 1
+[ -z "$1" ] &&  help_$(basename ${0%.sh}) && exit 1
 setup_error_codes
 
 ### Begin help
@@ -99,12 +103,20 @@ while [ $# -gt 0 ] ; do
         ;;
         -l) list_err_map && exit
         ;;
-        *)
+        *) ARG="${1^^}"
         ;;
         esac
+        shift
 done
 ### End help
 
-# print_code_to_name $1
-print_name_to_code ${1^^}
+if [ -z "$(echo "$ARG" | tr -d [:digit:])" ] ; then
+        print_code_to_name "$ARG"
+elif [ -z "$(echo $ARG | tr -d [:alpha:])" ] ; then
+        print_name_to_code "$ARG"
+else
+        echo "The argument passed in contained numbers and letters." >&2
+        echo "Don't do that!  Only numbers or only letters please!" >&2
+        exit 1
+fi
 
