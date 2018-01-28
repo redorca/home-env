@@ -64,10 +64,9 @@ help()
         This file will install style_file, astyle, pre-commit, commit-msg
         and astyle-nuttx to provide style checking for git commits.
 
-        -p : Place all of these files in the proper locations. Must run as root
-             unless "export ROOT=<location>"  is set in the environment.
+        -p : Place all of these files in the proper locations. Must run as root!
         -u : Refresh .git/hooks with the latest pre-commit and commit-msg.
-             Must be run from somewhere within the repo.
+             Must be run from the root of the repo.
         -v : Validate that the necessary files are all present locally and
              how the compare with currently installed versions of these files.
 
@@ -120,15 +119,16 @@ refresh_hooks()
                 [ ! -f $HOOKS_DIR/$hook ] && echo "Missing $HOOKS_DIR/$hook." >&2 && FA=1 && continue
                 # See if the two files are the same and skip if they are.
                 diff_check $HOOKS_DIR/$hook .git/hooks/$hook && continue
-                echo "$HOOKS_DIR/$hook differs, replacing." >&2
+                echo "$hook is different, replacing." >&2
                 CMD="cp $HOOKS_DIR/$hook .git/hooks/"
                 $CMD && chmod +x .git/hooks/$hook
                 rv=1
         done
-        [ $rv -ne 0 ] && msg_now="now "
-        echo -e "All hooks are ${msg_now}current.\n"
-
+        return $rv
   )
+       [ $? -ne 0 ] && msg_now="now "
+
+        echo -e "All hooks are ${msg_now}current.\n"
         return $FA
 }
 
@@ -150,7 +150,6 @@ list_files()
         for fff in "${Files[@]}" ; do
                 echo -e "\t$fff"
         done
-        echo ""
 }
 
 #
@@ -182,7 +181,7 @@ validate_horde()
         declare -a msgs=
         declare -a Found=
         declare -a NotFound=
-        declare -a DIFFERS=
+        declare -a Differs=
 
         FA=0
         msgs=( "${RED}Differs:${RESET}" "${BLUE}Found${RESET}" "${RED}NotFound:${RESET}" )
@@ -192,20 +191,19 @@ validate_horde()
                 local_bin=$(basename $bin)
                 if [ -f $local_bin ] ; then
                         if ! diff_check "$local_bin"  "$bin"  ; then
-                                DIFFERS=( "$local_bin" "${DIFFERS[@]}" )
+                                Differs=( "$local_bin" "${Differs[@]}" )
                                 DIFFER["$local_bin"]="$bin"
                         fi
                         Found=( "$local_bin" "${Found[@]}" )
                         continue
                 fi
-                NotFound=( "$local_bin ${NotFound[@]}" )
+                NotFound=( "$local_bin" "${NotFound[@]}" )
                 FA=1
 	done
         [ -n "${Found[*]}" ] && list_files "${msgs[1]}" "${Found[@]}"
-        [ -n "${DIFFERS[*]}" ] && list_files "${msgs[0]}" "${DIFFERS[@]}"
+        [ -n "${Differs[*]}" ] && list_files "${msgs[0]}" "${Differs[@]}"
         [ -n "${NotFound[*]}" ] && list_files "${msgs[2]}" "${NotFound[@]}"
-        [ -z "${DIFFERS[*]}" ] && [ -z "${NotFound[@]}" ] && echo "All installed files are current." >&2
-
+#       [ -z "${Differs[*]}" ] && echo "All files are current." >&2
         return $FA
 }
 
@@ -281,5 +279,5 @@ done
 set_bins
 [ "$DEBUG" = "1" ] && list_vars "Environs" ZGLUE_LIBDIR HOOKS_DIR STYLES_DIR
 [ "$DEBUG" = "1" ] && echo "$CMD"
-[ "$DEBUG" != "1" ] && $CMD
+$CMD
 
