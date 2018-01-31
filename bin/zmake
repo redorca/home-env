@@ -55,6 +55,7 @@ declare -A pseudo_targets
 pseudo_targets["cscope"]=1
 pseudo_targets["help"]=1
 pseudo_targets["config"]=1
+pseudo_targets["download"]=1
 pseudo_targets["clean"]=1
 pseudo_targets["distclean"]=1
 pseudo_targets["clean_scope"]=1

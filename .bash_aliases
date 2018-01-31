@@ -56,10 +56,10 @@ function del_path()
 
 #
 # Find all files of type ARG2 and remove them. E.G to get rid of all
-# .rej files resulting from patch call fu .rej. ARG1 specifies what
+# .rej files resulting from patch call rm-fu .rej. ARG1 specifies what
 # kind of things to remove such as "<file|dir>"
 #
-function fu()
+function rm-fu()
 {
         ([ -z "$1" ] || [ -z "$2" ]) && echo "Missing an arg or two." >&2 && return 1
         local find_key=

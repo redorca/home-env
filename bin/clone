@@ -16,6 +16,10 @@ DIALOG_SDK=dialog_585_sdk_dev
 declare -A Repo2Host
 declare -A RepoRename
 
+RepoRename["fast"]=fast_api
+RepoRename["NuttX"]=bknuttx
+RepoRename["AppsX"]=bkapps
+RepoRename["tools"]=bktools
 RepoRename["riot"]=RIOT
 RepoRename["apps"]=nuttx_apps
 RepoRename["dialog"]=dialog_585_sdk_dev@3rd_Party_SDK
@@ -27,7 +31,8 @@ RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
 Repo2Host["zephyr"]=master@github.com/zephyrproject-rtos/zephyr.git
 Repo2Host["RIOT"]=master@github.com/RIOT-OS
 Repo2Host["bknuttx"]=master@${BITBUCKET_URL}/nuttx/nuttx.git
-Repo2Host["bknuttools"]=master@${BITBUCKET_URL}/nuttx/tools.git
+Repo2Host["bktools"]=master@${BITBUCKET_URL}/nuttx/tools.git
+Repo2Host["bkapps"]=master@${BITBUCKET_URL}/nuttx/apps.git
 Repo2Host["fw_devtools"]=master@$ZGLUE_BILL_HOST/fw_devtools.git
 Repo2Host["home-env"]=master@$ZGLUE_BILL_HOST/home-env.git
 Repo2Host["nuttx-local"]=zdk@$ZGLUE_BILL_HOST/nuttx-local.git
@@ -100,6 +105,7 @@ function init_repo_table()
         [ -z "$1" ] && return 1
         repo_host_url="$1"; shift
         [ -n "$DEBUG" ] && echo "repo_host_url ($repo_host_url)" >&2
+	Repo2Host["fast_api"]=master@$repo_host_url/fast_api
 	Repo2Host["sdk_13"]=$SDK_13@$repo_host_url/3rd_Party_SDK
 	Repo2Host["sdk_14"]=$SDK_14@$repo_host_url/3rd_Party_SDK
 	Repo2Host["nordic"]=$SDK_13_1@$repo_host_url/3rd_Party_SDK
