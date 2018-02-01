@@ -58,8 +58,9 @@ pseudo_targets["config"]=1
 pseudo_targets["download"]=1
 pseudo_targets["clean"]=1
 pseudo_targets["distclean"]=1
-pseudo_targets["clean_scope"]=1
-pseudo_targets["clean_out"]=1
+pseudo_targets["clean_cscope"]=1
+pseudo_targets["clean_cruft"]=1
+pseudo_targets["clean_env"]=1
 
 #
 # Trap all exits.
