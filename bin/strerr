@@ -61,7 +61,7 @@ print_name_to_code()
         local err="$1"
 
         [ -z "$err" ] && echo "No error specified." >&2 && return 1
-        echo "$err:  ${errno[$err]}"
+        echo "${errno[$err]}"
 }
 
 print_code_to_name()
@@ -69,7 +69,7 @@ print_code_to_name()
         local err="$1"
 
         [ -z "$err" ] && echo "No error specified." >&2 && return 1
-        echo "$err:  ${err_codes_to_text[$err]}"
+        echo "${err_codes_to_text[$err]}"
 }
 
 list_err_map()
@@ -83,17 +83,28 @@ list_err_map()
         done
 }
 
-help_errno()
+arg_to_cmd()
 {
-        echo -e "\tGiven a number less than 33 or an E code output the other."
-        echo -e "\te.g.  'errno 21' ==> 'EINVAL'"
-        echo -e "\te.g.  'errno EIO' ==> '4'"
-        echo ""
+        local Arg=
+
+        Arg="$1"
+        if [ -z "$(echo $Arg | tr -d [:digit:])" ] ; then
+                echo "print_code_to_name"
+        elif [ -z "$(echo $Arg | tr -d [:alpha:])" ] ; then
+                echo "print_name_to_code"
+        else
+                echo "Mixed letters and numbers in the argument." >&2
+                return 1
+        fi
+}
+
+help_strerr()
+{
         sed -n -e '/^### Begin/,/^### End/p' $0 | grep ')'
 }
-## === End of errno functions ###
+## === End of error functions ###
 
-[ -z "$1" ] &&  help_$(basename ${0%.sh}) && exit 1
+[ -z "$1" ] && help_$(basename ${0%.sh}) && exit 1
 setup_error_codes
 
 ### Begin help
@@ -103,20 +114,19 @@ while [ $# -gt 0 ] ; do
         ;;
         -l) list_err_map && exit
         ;;
-        *) ARG="${1^^}"
+        #
+        # In the case where multiple values are passed
+        # in then the last value will be used.
+        *) ARG="$1"
         ;;
         esac
         shift
 done
 ### End help
-
-if [ -z "$(echo "$ARG" | tr -d [:digit:])" ] ; then
-        print_code_to_name "$ARG"
-elif [ -z "$(echo $ARG | tr -d [:alpha:])" ] ; then
-        print_name_to_code "$ARG"
-else
-        echo "The argument passed in contained numbers and letters." >&2
-        echo "Don't do that!  Only numbers or only letters please!" >&2
+if ! Func=$(arg_to_cmd $ARG) ; then
+        echo -n "The value passed in to $(basename $0) must be ">&2
+        echo "digits only or letters only." >&2
         exit 1
 fi
+$Func $ARG
 
