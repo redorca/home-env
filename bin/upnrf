@@ -15,7 +15,8 @@ nRF52_Vars["HEX_FILE"]="nuttx.hex"
 nRF52_Vars["FLASHER"]="nrfjprog"
 nRF52_Vars["FLASH_RESET"]="-r"
 nRF52_Vars["FLASH_ERASE"]="-e"
-nRF52_Vars["FLASH_FLASH"]="-p"
+nRF52_Vars["FLASH_FLASH"]="--program"
+nRF52_Vars["FLASH_VERIFY"]="--verify"
 
 set_programmer_values()
 {
@@ -64,13 +65,15 @@ echo_dbg "REPO_ROOT ($REPO_ROOT)"
                 exit -1
         fi
 
-        Exec nrfjprog -e
-        Exec nrfjprog --program "${nRF52_Vars["HEX_FILE"]}"
+#       Exec nrfjprog -e
+#       Exec nrfjprog --program "${nRF52_Vars["HEX_FILE"]}"
 
+        Exec "${nRF52_Vars["FLASHER"]}" "${nRF52_Vars["FLASH_ERASE"]}"
+        Exec "${nRF52_Vars["FLASHER"]}" "${nRF52_Vars["FLASH_FLASH"]}" "${nRF52_Vars["HEX_FILE"]}"
+        Exec "${nRF52_Vars["FLASHER"]}" "${nRF52_Vars["FLASH_RESET"]}"
         if grep softdevice System.map >/dev/null ; then
                 echo_dbg "Programmig the softdevice ($SOFTDEVICE)"
                 Exec nrfjprog --program $SOFTDEVICE_DIR/$SOFTDEVICE
         fi
-        Exec "${nRF52_Vars["FLASHER"]}" "${nRF52_Vars["FLASH_FLASH"]}"
   )
 
