@@ -55,7 +55,7 @@ declare -A pseudo_targets
 pseudo_targets["cscope"]=1
 pseudo_targets["help"]=1
 pseudo_targets["config"]=1
-pseudo_targets["download"]=1
+# pseudo_targets["download"]=1
 pseudo_targets["clean"]=1
 pseudo_targets["distclean"]=1
 pseudo_targets["clean_cscope"]=1
@@ -223,7 +223,7 @@ run_output()
         fi
 }
 
-for target in $(set_app_list $BOARD $FILE_KEY) ; do
+for target in $(set_app_list $BOARD $FILE_KEY) download ; do
         make_targets["$target"]=1
 done
 DEFAULT_APPS="${!make_targets[@]}"
@@ -264,6 +264,8 @@ while [ $# -ne 0 ] ; do
                 ;;
         --list=*) [ "${1#*=}" = "make" ] && list_apps $DEFAULT_APPS && exit 0
                   echo "Misunderstood: ($1), (${1#*=})" && exit 1
+                ;;
+        -i) INCREMENTAL_BUILD="yes"; # Don't do a distclean first.  Start from last stop.
                 ;;
         -p) PRINT_KV="yes";
                 ;;
@@ -329,7 +331,7 @@ fi
     for build in $TARGET_DIRS ; do
             CMD="make distclean"
             ftmp="${pseudo_targets[$build]}"
-            if [ -z "$ftmp" ] ; then
+            if [ -z "$ftmp" ] && [ "$INCREMENTAL_BUILD" != "yes" ] ; then
                    echo_e -n "Make distclean ...\r"
                    $CMD > ${OUT}.distclean 2>&1
             fi
