@@ -55,7 +55,7 @@ declare -A pseudo_targets
 pseudo_targets["cscope"]=1
 pseudo_targets["help"]=1
 pseudo_targets["config"]=1
-# pseudo_targets["download"]=1
+pseudo_targets["download"]=1
 pseudo_targets["clean"]=1
 pseudo_targets["distclean"]=1
 pseudo_targets["clean_cscope"]=1
@@ -223,7 +223,7 @@ run_output()
         fi
 }
 
-for target in $(set_app_list $BOARD $FILE_KEY) download ; do
+for target in $(set_app_list $BOARD $FILE_KEY); do
         make_targets["$target"]=1
 done
 DEFAULT_APPS="${!make_targets[@]}"

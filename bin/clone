@@ -195,7 +195,7 @@ function clone()
         [ -z "$1" ] && return 1
         Key=${1%%.git}
         echo -n "Key: (${Key})"
-        [ -n "${RepoRename[${Key,,}]}" ] && Key=${RepoRename[${Key,,}]}
+        [ -n "${RepoRename[$Key]}" ] && Key=${RepoRename[$Key]}
         if [ "${Key%%@*}" != "${Key}" ] ; then
                 Branch=${Key##@*}
                 RepoName=${Key##*@}
