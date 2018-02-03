@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 
 strip_srcs()
@@ -14,14 +14,12 @@ strip_srcs()
 
 strip_ascii()
 {
-        while read file ; do
+        for file in $@ ; do
                 [ ! -f $file ] && continue
-                file $file | grep -i elf >/dev/null 2>&1 && continue
-                file $file | grep -i text >/dev/null || continue
                 [ "$(basename $0)" == "$(basename $file)" ] && echo ======== && continue
-        sed -i -e 's/[ ]\+$//' -e 's/^[ ]\+	/	/' $file && echo "Process: $file"
+        sed -i -e 's/[ ]\+$//' -e 's/^[ ]\+	/	/' $file && echo "Processed: $file"
         done
 }
 
-# strip_ascii
-strip_srcs "$@"
+strip_ascii "$@"
+# strip_srcs "$@"
