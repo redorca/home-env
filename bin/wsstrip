@@ -3,7 +3,7 @@
 
 strip_srcs()
 {
-        for file in "$@" ; do
+        for file in $@ ; do
                 if [ ${file%%.c} == $file -a ${file%%.h} == $file ] ; then
                         echo "Skipping $file"
                         continue
@@ -17,7 +17,7 @@ strip_ascii()
         for file in $@ ; do
                 [ ! -f $file ] && continue
                 [ "$(basename $0)" == "$(basename $file)" ] && echo ======== && continue
-        sed -i -e 's/[ ]\+$//' -e 's/^[ ]\+	/	/' $file && echo "Processed: $file"
+        sed -i -e 's/[ ]\+$//' -e 's/^[ ]\+	/	/' -e 's/$//' $file && echo "Processed: $file"
         done
 }
 

@@ -1,10 +1,15 @@
 #!/bin/bash
 
+[ "$DEBUG" = "2" ] && set -x
+
 DO_COMMIT=
-DO_AMMEND=
-DRY_RUN=0
-DEBUG=0
+DRY_RUN=${DRY_RUN:-0}
+DEBUG=${DEBUG:-0}
 VAR_LIST="LOOP_SET_COUNT count"
+#
+# How many lines to output before issuing a page break.
+# May be altered with the '-p <#>' argument.
+#
 page_size=10
 count=$page_size
 declare -A GIT_MODE_CODE
@@ -16,7 +21,7 @@ setup_mode_code()
         GIT_MODE_CODE["A"]="git add"
         GIT_MODE_CODE["D"]="git rm"
         GIT_MODE_CODE["C"]="git add"
-        GIT_MODE_CODE["?"]="rm -f"
+        GIT_MODE_CODE["?"]="echo Untracked: "
         GIT_MODE_CODE["U"]="git add"
 #       GIT_MODE_CODE["U"]="$EDIT_WITH"
 }
@@ -155,21 +160,29 @@ TMPFILE=$(mktemp -p /tmp .helper-XXXX)
 # ARGS_Begin
 while [ $# -ne 0 ] ; do
         case $1 in
-        -a) DO_AMMEND="--amend"
-            DO_COMMIT="git commit";;
-        -c) DO_COMMIT="git commit";;
-        -d) DEBUG=1; echo "DEBUG = $DEBUG";;
-        -e) dump_env; exit 0;;
-        -h) Help; exit 0;;
-        -n) DRY_RUN=1; echo "DRY_RUN = $DRY_RUN";;
-        -p) page_size=$2; echo "page size: $page_size";;
-        -u) UNTRACKED=1;;
+        -a) DO_COMMIT="git commit --amend"
+           ;;
+        -c) DO_COMMIT="git commit"
+           ;;
+        -d) DEBUG=1; echo "DEBUG = $DEBUG"
+           ;;
+        -e) dump_env; exit 0
+           ;;
+        -h) Help; exit 0
+           ;;
+        -n) DRY_RUN=1; echo "DRY_RUN = $DRY_RUN"
+           ;;
+        -p) page_size=$2; echo "page size: $page_size"
+           ;;
+        -u) UNTRACK=1
+           ;;
         -v) EDIT_WITH="$TMPFILE nvim-qt";
             set_helper $TMPFILE
             echo_dbg ${GIT_MODE_CODE["U"]} $(get_files)
             EDIT_WITH="${GIT_MODE_CODE["U"]} $(get_files)&"
            ;;
-        *) echo "Unknown argument: $1"; Help; exit 0;;
+        *) echo "Unknown argument: $1"; Help; exit 0
+           ;;
         esac
         shift
 done
@@ -180,7 +193,12 @@ if ! var_sanity_check page_size ; then
         exit 1
 fi
 
+FILTER="^[A-Z_][A-Z]"
 setup_mode_code
+if [ -n "$UNTRACK" ] && [ "$UNTRACK" -eq 1 ] ; then
+        GIT_MODE_CODE["?"]="git add"
+        FILTER="^[A-Z_?][A-Z?]"
+fi
 
 (
 Dir="$(git rev-parse --show-toplevel)" || exit 1
@@ -188,7 +206,7 @@ echo_dbg "cd to $Dir"
 cd "$Dir" || exit 1
 git status --porcelain=v1 \
         | sed -e 's/^ /_/' \
-        | grep "^[A-Z_][A-Z]" \
+        | grep "$FILTER" \
         | awk '{print $1 "  " $NF}' \
         | while read line ; do
                 if ! RESULTS="$(stage_line "$line") $RESULTS" ; then
@@ -197,7 +215,7 @@ git status --porcelain=v1 \
                 page_break count page_size "\t=================="
         done
 
-        $DO_COMMIT $DO_AMMEND
+        $DO_COMMIT
 )
 echo_dbg "Back @ $(pwd)"
 

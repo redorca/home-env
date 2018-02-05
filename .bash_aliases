@@ -85,6 +85,31 @@ function rm-fu()
         fi
 }
 
+#
+# ssh into one of the z servers: 1 - 6.
+#
+zee()
+{
+        local ZSERVER=
+        local Msg=
+
+        Msg="Please pass only a single digit between 1 and 6."
+        if [ -z "$1" ] || [ "${#1}" -gt 1 ] || [ -z "$(echo $1 | tr -d [:alpha:])" ] ; then
+                echo "$Msg" >&2
+                return 1
+        fi
+        [ -z "$(echo "$1" | tr -d [:alpha:])" ] && echo "$Msg" >&2 && return 1
+        ZSERVER="${1: -1:1}"
+        if [ "$ZSERVER" -lt 1 ] || [ "$ZSERVER" -gt 6 ] ; then
+                echo "Trailing digit does not represent any Z server id ["$ZSERVER"]" >&2
+                echo "$Msg" >&2
+                return 1
+        fi
+
+        CMD="ssh bill@192.168.168.14${ZSERVER}"
+        echo $CMD && $CMD
+}
+
 export EDITOR=vim
 export GOPATH=$HOME/src/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
@@ -111,6 +136,7 @@ alias     dirs="dirs -v"
 alias        j="jobs -l"
 alias     jobs="jobs -l"
 alias     home="pushd ~ >/dev/null && dirs -v"
+alias      bin="pushd ~/bin >/dev/null && dirs -v"
 alias       vi=vim
 alias   valias="vim ~/.bash_aliases"
 alias  vignore="vim ~/.config/git/ignore"
@@ -134,5 +160,5 @@ LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
 # To satisfy .vimrc's need for a file to source until I know
 # more .vimrc coding and can check for its existence first.
 #
-touch .vimrc_color
+touch ~/.vimrc_color
 
