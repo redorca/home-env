@@ -1,6 +1,6 @@
 
 #
-#  If this script is called then we know for sure we're in 
+#  If this script is called then we know for sure we're in
 #  an interactive (login?) environment.  So, any code added
 #  to ths fil will only ever see an interactive environment.
 #
@@ -125,12 +125,12 @@ add_path ~/bin
 # alias z4="$SSH -o ServerAliveInterval=30 -p 12110 bill@192.168.168.148"
 # alias z5="$SSH -o ServerAliveInterval=30 -p 12110 bill@192.168.168.149"
 # alias z6="$SSH -o ServerAliveInterval=30 -p 12110 bill@192.168.168.150"
-alias       z1="$SSH bill@192.168.168.145"
-alias       z2="$SSH bill@192.168.168.146"
-alias       z3="$SSH bill@192.168.168.147"
-alias       z4="$SSH bill@192.168.168.148"
-alias       z5="$SSH bill@192.168.168.149"
-alias       z6="$SSH bill@192.168.168.150"
+# alias       z1="$SSH bill@192.168.168.145"
+# alias       z2="$SSH bill@192.168.168.146"
+# alias       z3="$SSH bill@192.168.168.147"
+# alias       z4="$SSH bill@192.168.168.148"
+# alias       z5="$SSH bill@192.168.168.149"
+# alias       z6="$SSH bill@192.168.168.150"
 alias       po="popd >/dev/null && dirs -v"
 alias     dirs="dirs -v"
 alias        j="jobs -l"
@@ -152,7 +152,20 @@ alias     diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\
 alias      cls="clear_console"
 alias     grep="grep --exclude=.git --exclude=cscope.out"
 
-PS1='${debian_chroot:+($debian_chroot)}\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+if which apt-get >/dev/null 2>&1 ; then
+        echo "Set prompt for Debian sys-arch"
+        PS1='${debian_chroot:+($debian_chroot)}\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+else
+        #
+        #  Aliases found in my Ubuntu bash environment by default.
+        #
+        alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+        alias egrep='egrep --color=auto'
+        alias fgrep='fgrep --color=auto'
+        alias ls='ls --color=auto'
+        echo "Set prompt for Redhat sys-arch"
+        PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+fi
 LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
 [ -f $LS_COLOR_DATA_FILE ] && eval $(dircolors -b $LS_COLOR_DATA_FILE)
 
