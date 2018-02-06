@@ -2,10 +2,10 @@
 
 declare -A gitconf
 
-CONFIG_KEYS="user.name user.email"
+CONFIG_KEYS="user.name user.email push.default"
 gitconf["user.name"]="Bill Rees"
 gitconf["user.email"]="bill@zglue.com <bill rees>"
-
+gitconf["push.default"]="simple"
 #
 # Set some git config variables needed for git to function as intended.
 #
