@@ -1,0 +1,7 @@
+#
+# List of mods to consider in the future.
+#
+
+combine gitset and gitrev-seutp.sh
+mod gitrev-setup.sh to figure out the right remote repo name in refs/remotes
+
