@@ -204,7 +204,7 @@ fi
 Dir="$(git rev-parse --show-toplevel)" || exit 1
 echo_dbg "cd to $Dir"
 cd "$Dir" || exit 1
-git status --porcelain=v1 \
+git status --porcelain \
         | sed -e 's/^ /_/' \
         | grep "$FILTER" \
         | awk '{print $1 "  " $NF}' \

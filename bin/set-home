@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 if [ ! -d  ~/bin/home-env/bin ] ; then
 	echo "The repo may not be placed correctly. Please make sure" >&2
@@ -8,5 +8,11 @@ fi
 pushd ~ >/dev/null
 ln -sf bin/home-env/.git
 git checkout .
+BASHRC=~/.bashrc
 
+if ! grep bash_aliases ~/.bashrc >/dev/null ; then
+        echo -e "\nif [ -f ~/.bash_aliases ] ; then" >> $BASHRC
+        echo -e "\tsource ~/.bash_aliases" >> $BASHRC
+        echo -e "fi\n" >> $BASHRC
+fi
 popd >/dev/null

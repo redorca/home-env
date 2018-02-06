@@ -1,5 +1,6 @@
 #!/bin/bash
 
+ASTYLE_CO="svn checkout https://svn.code.sf.net/p/astyle/code/trunk astyle-code"
 ZGLUE_BILL_HOST=git@github.com/zglue-bill
 GIT_UNAME=bill
 GERRIT_HOST=101.132.142.37
@@ -85,10 +86,6 @@ YLWltBLU='\033[1;33;46m'
 BLUE='\033[1;34m'
 # shellcheck disable=2034
 RESET='\033[0;39;49m'
-
-# Repo2Host["mynewt-tools"]master@https://github.com/apache/mynewt-newt.git
-# Repo2Host["mynewt"]=master@https://github.com/apache/mynewt-core.git
-# https://github.com/koalaman/shellcheck.git
 
 function help()
 {
@@ -195,6 +192,10 @@ function clone()
         [ -z "$1" ] && return 1
         Key=${1%%.git}
         echo -n "Key: (${Key})"
+        if [ "${Key}" = "astyle" ] ; then
+                $ASTYLE_CO
+                return
+        fi
         [ -n "${RepoRename[$Key]}" ] && Key=${RepoRename[$Key]}
         if [ "${Key%%@*}" != "${Key}" ] ; then
                 Branch=${Key##@*}
