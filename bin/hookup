@@ -6,9 +6,13 @@
 
 ROOT=${ROOT:-}
 HASH=sha256sum
-HOOKS_DIR=/usr/share/git-core/templates/hooks
-STYLES_DIR=/usr/share/zglue/styles
-ZGLUE_LIBDIR=/usr/share/zglue/scripts
+BIN_DIR=/usr/bin
+GIT_SHARE_DIR=/usr/share/git-core/templates/hooks
+# HOOKS_DIR=/usr/share/git-core/templates/hooks
+ZGLUE_SHARE_DIR=/usr/share/zglue
+# STYLES_DIR=/usr/share/zglue/styles
+# ZGLUE_LIBDIR=/usr/share/zglue/scripts
+VARS="ROOT BIN_DIR ZGLUE_SHARE_DIR GIT_SHARE_DIR HOOKS SIDE_FILE"
 HOOKS="pre-commit commit-msg"
 RED='\033[1;31m'
 GREEN='\033[1;32m'
@@ -27,13 +31,13 @@ set_bins()
 {
     [ -n "$ROOT" ] && echo "Rebasing on root $ROOT"
     BINS=(
-        ${ROOT}/usr/bin/style_file
-        ${ROOT}/usr/bin/astyle
-        ${ROOT}/usr/bin/hookup
-        ${ROOT}${HOOKS_DIR}/pre-commit
-        ${ROOT}${HOOKS_DIR}/commit-msg
-        ${ROOT}${STYLES_DIR}/astyle-nuttx
-        ${ROOT}${ZGLUE_LIBDIR}/lib_body.sh
+        ${ROOT}${BIN_DIR}/usr/bin/style_file
+        ${ROOT}${BIN_DIR}/usr/bin/astyle
+        ${ROOT}${BIN_DIR}/usr/bin/hookup
+        ${ROOT}${GIT_SHARE_DIR}/pre-commit
+        ${ROOT}${GIT_SHARE_DIR}/commit-msg
+        ${ROOT}${ZGLUE_SHARE_DIR}/styles/astyle-nuttx
+        ${ROOT}${ZGLUE_SHARE_DIR}/scripts/lib_body.sh
  )
 }
 
@@ -186,6 +190,28 @@ list_files()
 }
 
 #
+#  Dump the keys and values in "${BIN[@]}"
+#
+list_bins()
+{
+        local Msg=
+        local Vars=
+        local vvv=
+
+        Msg="$1" ; shift
+        Vars=( "$@" )
+        echo -e "${Msg}"
+        for key in "${BINS[@]}" ; do
+                short_key=${key##*/}
+                echo -n -e "\\t$key:\\t"
+                [ "${#BINS[$key]}" -lt 8 ] && echo -n -e "\\t"
+                echo -e "${BINS[$key]}"
+        done
+
+        echo ""
+}
+
+#
 #  Given a bare variable (File versus $File), dereference
 #  it and print out the name of the variable and its value.
 #
@@ -308,7 +334,7 @@ while [ $# -ne 0 ] ; do
           ;;
         -i) CMD="instructions && exit 0"
           ;;
-        -l) list_vars "Variables and their values" ROOT HOOKS HOOKS_DIR STYLES_DIR ZGLUE_LIBDIR SIDE_FILE
+        -l) set_bins && list_bins && list_vars "Variables and their values" $VARS
             exit 0
           ;;
         -P|--place) CMD=place_files $MKDIR
@@ -327,7 +353,8 @@ while [ $# -ne 0 ] ; do
         shift
 done
 set_bins
-[ "$DEBUG" = "1" ] && list_vars ":: Debug Environs" ZGLUE_LIBDIR HOOKS_DIR STYLES_DIR
+[ "$DEBUG" = "1" ] && list_bins ":: Files location"
+[ "$DEBUG" = "1" ] && list_vars ":: Debug Environs" $VARS
 [ "$DEBUG" = "1" ] && echo ":: $CMD"
 $CMD
 
