@@ -156,6 +156,8 @@ if which apt-get >/dev/null 2>&1 ; then
         echo "Set prompt for Debian sys-arch"
         PS1='${debian_chroot:+($debian_chroot)}\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
 else
+        # disable gnome-ssh-askpass
+        unset SSH_ASKPASS
         #
         #  Aliases found in my Ubuntu bash environment by default.
         #
