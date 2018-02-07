@@ -59,6 +59,39 @@ function del_path()
 # .rej files resulting from patch call rm-fu .rej. ARG1 specifies what
 # kind of things to remove such as "<file|dir>"
 #
+function find-fu()
+{
+        ([ -z "$1" ] || [ -z "$2" ]) && echo "Missing an arg or two." >&2 && return 1
+        local find_key=
+        local Flag=
+        local regex=
+        local ACTION_ARG=
+        find_key="${1,,}"
+        Flag="${dir_to_flag["$find_key"]}"; shift
+        regex="$1"; shift
+        [ "$Flag" == "d" ] && OPTS="r"
+#       ACTION_ARG="-exec rm -${OPTS}f {} \;"
+        ACTION_ARG=
+        [ "$DEBUG_FU" == "$DBG_LVL" ] && ACTION_ARG="-print"
+
+        [ "$DEBUG_FU" == "$DBG_LVL" ] && echo -ne "find_key: ($find_key), " \
+                && echo -n  "Flag: ($Flag),""regex: ($regex); OPTS: ($OPTS)," \
+                && echo     " ACTION_ARG: ($ACTION_ARG)"
+
+        [ "$DEBUG_FU" == "$DBG_LVL" ] && echo -ne "find . -type $Flag " \
+                && echo     " -name \"${regex}\" $ACTION_ARG"
+        CMD='find . -type $Flag -name \"${regex}\" "$ACTION_ARG"'
+        if ! eval $CMD ; then
+                eval echo "== $CMD" >&2
+        fi
+}
+
+
+#
+# Find all files of type ARG2 and remove them. E.G to get rid of all
+# .rej files resulting from patch call rm-fu .rej. ARG1 specifies what
+# kind of things to remove such as "<file|dir>"
+#
 function rm-fu()
 {
         ([ -z "$1" ] || [ -z "$2" ]) && echo "Missing an arg or two." >&2 && return 1
