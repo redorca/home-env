@@ -1,15 +1,15 @@
-#!/bin/bash
+#!/bin/bash -x
 
 DEBUG=${DEBUG:-0}
-
+TMPFILE_EXEC=/tmp/.setup
 #
 # Relocate so when we do a git checkout we don't overwrite ourselvves.
 #
 if [ "$(basename "$0")" = "set-home" ] ; then
+        cat $0 >  $TMPFILE_EXEC
         cd /tmp
-        cat $0 > .setup
-        chmod +x .setup
-        exec /tmp/.setup
+        chmod +x  $TMPFILE_EXEC
+        exec  $TMPFILE_EXEC
 fi
 
 VIM_SHARE_DIR=/usr/share/vim
