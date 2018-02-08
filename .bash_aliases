@@ -133,13 +133,14 @@ zee()
         fi
         [ -z "$(echo "$1" | tr -d [:alpha:])" ] && echo "$Msg" >&2 && return 1
         ZSERVER="${1: -1:1}"
-        if [ "$ZSERVER" -lt 1 ] || [ "$ZSERVER" -gt 6 ] ; then
+        ZSERVER=$(( ZSERVER + 144 ))
+        if [ "$ZSERVER" -lt 145 ] || [ "$ZSERVER" -gt 150 ] ; then
                 echo "Trailing digit does not represent any Z server id ["$ZSERVER"]" >&2
                 echo "$Msg" >&2
                 return 1
         fi
 
-        CMD="ssh bill@192.168.168.14${ZSERVER}"
+        CMD="$SSH bill@192.168.168.${ZSERVER}"
         echo $CMD && $CMD
 }
 

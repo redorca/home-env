@@ -108,7 +108,13 @@ export FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
 export GIT_ADD=
 export FILES=
 REPO_HOST="101.132.142.37"
-ACTIVELY_MANAGED_REPOS=( "nuttx@$REPO_HOST" "nuttx_apps@$REPO_HOST" "auto_test@$REPO_HOST" "3rd_Party_SDK@$REPO_HOST" )
+ACTIVELY_MANAGED_REPOS=( \
+        "nuttx@$REPO_HOST" \
+        "nuttx_apps@$REPO_HOST" \
+        "auto_test@$REPO_HOST" \
+        "3rd_Party_SDK@$REPO_HOST" \
+        "fast_api@$REPO_HOST" \
+        )
 declare -A REPO_FILTERS
 REPO_FILTERS[nuttx@$REPO_HOST]="filter_if_0 filter_out_whitespace filter_for_externs"
 REPO_FILTERS[nuttx_apps@$REPO_HOST]="filter_if_0 filter_out_whitespace filter_for_externs"
@@ -169,14 +175,13 @@ echo_dbg REPOROOT
 #
 # If there are no SRCS to format then by default there are no style errors.
 #
-SRCS="$(filter_for_srcfiles "$FILES")"
-strip_edge_ws SRCS
-([ -z "$SRCS" ] && echo_dbg  ":${GRNGRN}\\tNo files, no style errors.${RESET}") \
-   && exit 0
+# SRCS="$FILES"
 echo_dbg SRCS REPOROOT ORIGIN
-strip_edge_ws SRCS
+# strip_edge_ws SRCS
+strip_edge_ws FILES
 
-if ! filter_files "$REPOROOT" $SRCS ; then
+# if ! filter_files "$REPOROOT" $SRCS ; then
+if ! filter_files "$REPOROOT" $FILES ; then
         [ "$DEBUG" = "1" ] && VERBOSE=--verbose
         MAIN_PHRASE="${REDYLW}\\tNuttx style errors found,"
         PHRASEX="left unstaged."
