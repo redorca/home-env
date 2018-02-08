@@ -2,24 +2,26 @@
 
 # DEBUG=1
 # ROOT=~
+
+#
+# Set shell mode to trace each function call
 [ "$DEBUG" = "2" ] && set -x
 
 ROOT=${ROOT:-}
+# shellcheck disable=2034
 HASH=sha256sum
-BIN_DIR=/usr/bin
-GIT_SHARE_DIR=/usr/share/git-core/templates/hooks
-# HOOKS_DIR=/usr/share/git-core/templates/hooks
-ZGLUE_SHARE_DIR=/usr/share/zglue
-# STYLES_DIR=/usr/share/zglue/styles
-# ZGLUE_LIBDIR=/usr/share/zglue/scripts
-VARS="ROOT BIN_DIR ZGLUE_SHARE_DIR GIT_SHARE_DIR HOOKS SIDE_FILE"
+HOOKS_DIR=/usr/share/git-core/templates/hooks
+STYLES_DIR=/usr/share/zglue/styles
+ZGLUE_LIBDIR=/usr/share/zglue/scripts
 HOOKS="pre-commit commit-msg"
 RED='\033[1;31m'
+# shellcheck disable=2034
 GREEN='\033[1;32m'
+# shellcheck disable=2034
 YELLOW='\033[1;33m'
 BLUE='\033[1;34m'
 RESET='\033[0;39;49m'
-SIDE_FILE="$(dirname $0)/s$(basename $0)"
+SIDE_FILE="$(dirname "$0")/s$(basename "$0")"
 
 declare -a BINS
 declare -A DIFFER
@@ -31,13 +33,13 @@ set_bins()
 {
     [ -n "$ROOT" ] && echo "Rebasing on root $ROOT"
     BINS=(
-        ${ROOT}${BIN_DIR}/usr/bin/style_file
-        ${ROOT}${BIN_DIR}/usr/bin/astyle
-        ${ROOT}${BIN_DIR}/usr/bin/hookup
-        ${ROOT}${GIT_SHARE_DIR}/pre-commit
-        ${ROOT}${GIT_SHARE_DIR}/commit-msg
-        ${ROOT}${ZGLUE_SHARE_DIR}/styles/astyle-nuttx
-        ${ROOT}${ZGLUE_SHARE_DIR}/scripts/lib_body.sh
+        "${ROOT}"/usr/bin/style_file
+        "${ROOT}"/usr/bin/astyle
+        "${ROOT}"/usr/bin/hookup
+        "${ROOT}${HOOKS_DIR}"/pre-commit
+        "${ROOT}${HOOKS_DIR}"/commit-msg
+        "${ROOT}${STYLES_DIR}"/astyle-nuttx
+        "${ROOT}${ZGLUE_LIBDIR}"/lib_body.sh
  )
 }
 
@@ -54,13 +56,21 @@ diff_check()
         File_1="$1" ; shift
         File_2="$1" ; shift
 
-        [ -f "$File_1" ] && Sum_1="$(sha256sum $File_1 | awk '{print $1}')"
-        [ -f "$File_2" ] && Sum_2="$(sha256sum $File_2 | awk '{print $1}')"
+        [ -f "$File_1" ] && Sum_1="$(sha256sum "$File_1" | awk '{print $1}')"
+        [ -f "$File_2" ] && Sum_2="$(sha256sum "$File_2" | awk '{print $1}')"
 
        [ "$Sum_1" = "$Sum_2" ] && return
        return 1
 }
 
+#
+# Wrap a check of $DEBUG = 1 and echo.
+#
+echo_dbg()
+{
+        [ "$DEBUG" = "1" ] || return
+        echo -e "$@" >&2
+}
 
 #
 #
@@ -92,8 +102,13 @@ EOF
 personality_shrink()
 {
         if [ -f "$SIDE_FILE" ] ; then
-                [ -f "$0" ] && rm "$SIDE_FILE"
-                [ ! -f "$0" ] && mv "$SIDE_FILE" $0
+                [ "$DEBUG" = "1" ] && echo ":: Found $SIDE_FILE" >&2
+                [ -f "$0" ] && rm "$SIDE_FILE" \
+                   &&  [ "$DEBUG" = "1" ]  \
+                     &&  echo ":: New hookup in place, remove $SIDE_FILE" >&2
+                [ ! -f "$0" ] && mv "$SIDE_FILE" "$0" \
+                   &&  [ "$DEBUG" = "1" ]  \
+                         && echo ":: New hookup did not install, restore." >&2
         fi
 }
 
@@ -110,7 +125,8 @@ personality_split()
         bin="$1"
 
         if [ "$bin" = "$0" ] ; then
-                mv $0 "$SIDE_FILE"
+                [ "$DEBUG" = "1" ] && echo ":: Rename self to $SIDE_FILE" >&2
+                mv "$0" "$SIDE_FILE"
         fi
 }
 
@@ -122,14 +138,14 @@ instructions()
         local COLOR=
 
         COLOR=$BLUE
-        echo -e "\t${COLOR}As root or using sudo do the following will occur: ...\n"
-        echo -ne "\tchmod +x "
-        for bin in $BINS ; do
-                echo -ne "$(basename $bin) "
+        echo -e "\\t${COLOR}As root or using sudo do the following will occur: ...\\n"
+        echo -ne "\\tchmod +x "
+        for bin in "${BINS[@]}" ; do
+                echo -ne "$(basename "$bin") "
         done
         echo ""
-        for bin in $BINS ; do
-                echo -e "\tcp $(basename $bin)\t\t$bin"
+        for bin in "${BINS[@]}" ; do
+                echo -e "\\tcp $(basename "$bin")\\t\\t$bin"
         done
         echo -e "${RESET}"
 }
@@ -139,34 +155,29 @@ instructions()
 #
 refresh_hooks()
 {
-        local FA=
         local CMD=
         local hook=
         local RepoRoot=
         local msg_now=
 
-        FA=0
-
         RepoRoot=$(git rev-parse --show-toplevel)
-
   (
         rv=0
-        cd $RepoRoot
+        cd "$RepoRoot"
         for hook in $HOOKS ; do
-                [ ! -f $HOOKS_DIR/$hook ] && echo "Missing $HOOKS_DIR/$hook." >&2 && FA=1 && continue
+                [ ! -f "$HOOKS_DIR/$hook" ] && echo "Missing $HOOKS_DIR/$hook." >&2 && FA=1 && continue
                 # See if the two files are the same and skip if they are.
-                diff_check $HOOKS_DIR/$hook .git/hooks/$hook && continue
+                diff_check "$HOOKS_DIR/$hook" .git/hooks/"$hook" && continue
                 echo "$hook is different, replacing." >&2
                 CMD="cp $HOOKS_DIR/$hook .git/hooks/"
-                $CMD && chmod +x .git/hooks/$hook
+                $CMD && chmod +x .git/hooks/"$hook"
                 rv=1
         done
         return $rv
-  )
-       [ $? -ne 0 ] && msg_now="now "
+  ) || msg_now="now "
 
-        echo -e "All hooks are ${msg_now}current.\n"
-        return $FA
+        echo -e "All hooks are ${msg_now}current.\\n"
+        return
 }
 
 #
@@ -187,28 +198,6 @@ list_files()
         for fff in "${Files[@]}" ; do
                 echo -e "\t$fff"
         done
-}
-
-#
-#  Dump the keys and values in "${BIN[@]}"
-#
-list_bins()
-{
-        local Msg=
-        local Vars=
-        local vvv=
-
-        Msg="$1" ; shift
-        Vars=( "$@" )
-        echo -e "${Msg}"
-        for key in "${BINS[@]}" ; do
-                short_key=${key##*/}
-                echo -n -e "\\t$key:\\t"
-                [ "${#BINS[$key]}" -lt 8 ] && echo -n -e "\\t"
-                echo -e "${BINS[$key]}"
-        done
-
-        echo ""
 }
 
 #
@@ -240,6 +229,7 @@ validate_horde()
 {
         local FA=
         local bin=
+        local msg=
         local local_bin=
         declare -a msgs=
         declare -a Found=
@@ -251,8 +241,8 @@ validate_horde()
 
         echo "Making sure all of the files are here ... "
 	for bin in "${BINS[@]}" ; do
-                local_bin=$(basename $bin)
-                if [ -f $local_bin ] ; then
+                local_bin=$(basename "$bin")
+                if [ -f "$local_bin" ] ; then
                         if ! diff_check "$local_bin"  "$bin"  ; then
                                 Differs=( "$local_bin" "${Differs[@]}" )
                                 DIFFER["$local_bin"]="$bin"
@@ -266,8 +256,33 @@ validate_horde()
         [ -n "${Found[*]}" ] && list_files "${msgs[1]}" "${Found[@]}"
         [ -n "${Differs[*]}" ] && list_files "${msgs[0]}" "${Differs[@]}"
         [ -n "${NotFound[*]}" ] && list_files "${msgs[2]}" "${NotFound[@]}"
-#       [ -z "${Differs[*]}" ] && echo "All files are current." >&2
+        msg="All files are current."
+        [ -z "${NotFound[*]}" ] && [ -z "${Differs[*]}" ] && echo -e "$msg" >&2
         return $FA
+}
+
+#
+# Check for reasons to skip this bin. The package sourced
+# bin is missing, the bin is the same as the package.
+#
+# return 1 bin is not suitable for placement
+#        0 bin is suitable for placement.
+#
+bin_suitable()
+{
+        local Bin=
+        local This_Bin=
+
+        Bin="$1"
+        This_Bin="$(basename "$1")"
+
+        # Nothing to do if the package file is missing.
+        [ ! -f "$This_Bin" ] && return 1
+
+        # See if the two files are the same and skip if they are.
+        diff_check "$This_Bin"  "$Bin" && return 1
+
+        return 0
 }
 
 #
@@ -275,77 +290,74 @@ validate_horde()
 #
 place_files()
 {
-        local CMD=
+        declare -a CMD=
         local bin=
+        local this_bin=
+        local this_dir=
+        local SP=
 
-        if [ $(id -u) -ne 0 ] && [ -z "$ROOT" ] ; then
-                echo "Placing the files needs root privileges, please retry." >&2
+        if [ "$(id -u)" -ne 0 ] && [ -z "$ROOT" ] ; then
+                echo "Placing files requires root privileges, please retry." >&2
                 exit 1
         fi
 
         if ! validate_horde ; then
                 echo "" >&2
                 echo "Not all of the required files are available." >&2
-                echo "Please place the files not found into this local directory." >&2
+                echo "Please place missing files into this directory." >&2
                 return 1
         fi
         if [ "${#DIFFER[@]}" -eq 0 ] ; then
                 echo "No files differ, nothing to copy." >&2
-#               return
+                return
         fi
 	for bin in "${BINS[@]}" ; do
-	        this_bin="$(basename $bin)"
-	        this_dir="$(dirname $bin)"
+	        this_bin="$(basename "$bin")"
+	        this_dir="$(dirname "$bin")"
+                # Empty out the array so it reports 0 elements.
+                CMD=()
 
-                # Nothing to do if the package file is missing.
-                if [ ! -f "$this_bin" ] ; then
-                        continue
-                fi
-
-                # See if the two files are the same and skip if they are.
-                diff_check "$this_bin"  "$bin" && continue
-
+                bin_suitable "$bin" || continue
                 # See if we are replacing ourselves. If so, step aside.
                 personality_split "$bin"
-
-	        [ ! -d $this_dir ] && CMD="mkdir -p $this_dir"
+	        [ ! -d "$this_dir" ] && CMD=( "mkdir" "-p" "$this_dir" )
+	        [ "${#CMD[@]}" -gt 0 ] && echo -e "${CMD[*]}" && "${CMD[@]}"
 
 	        echo -n -e "Placing $this_bin:\\t"
-                [ "${#this_bin}" -lt 8 ] && echo -n -e "\\t"
-	        [ -n "$CMD" ] && echo "$CMD" && $CMD && unset CMD
-
-                CMD="cp $this_bin $bin"
-	        [ -n "$CMD" ] && echo "$CMD" && $CMD && unset CMD
-	        [ "$this_dir" == "${ROOT}${STYLES_DIR}" ] || chmod +x $bin
+                [ "${#this_bin}" -lt 8 ] && SP="\\t"
+                CMD=( "cp" "$this_bin" "$bin" )
+#	        [ "${#CMD[@]}" -gt 0 ] && echo "${CMD[@]}" && "${CMD[@]}"
+	        echo -e "${SP}${CMD[*]}" && "${CMD[@]}"
+	        [ "$this_dir" == "${ROOT}${STYLES_DIR}" ] || chmod +x "$bin"
 	        sleep 1
 	done
 }
 
 
 
-if [ "$1" == "" ] ; then
-        help
-        exit 0
-fi
+#
+# In case $# is 0 then we fall through the loop
+# and execute whatever is in ${CMD[@]}. Which,
+# in this case, is the same as -h.
+CMD=( "help" "&&" "exit 0" )
 
 while [ $# -ne 0 ] ; do
-        case $1 in
-        -h|--help) CMD="help && exit 0"
+        case "$1" in
+        -h|--help) CMD=( "help" "&&" "exit 0" )
           ;;
-        -i) CMD="instructions && exit 0"
+        -i) CMD=( "instructions" "&&" "exit 0" )
           ;;
-        -l) set_bins && list_bins && list_vars "Variables and their values" $VARS
+        -l) list_vars "Variables and their values" ROOT HOOKS HOOKS_DIR \
+                                STYLES_DIR ZGLUE_LIBDIR SIDE_FILE DEBUG
             exit 0
           ;;
-        -P|--place) CMD=place_files $MKDIR
-          ;;
-        -p|--place) CMD=place_files
+        -p|--place) CMD=( place_files )
           ;;
         -r|--root) [ -d "$2" ] && ROOT=$2 && shift
           ;;
-        -u|--update) CMD=refresh_hooks
+        -u|--update) CMD=( refresh_hooks )
           ;;
-        -v|--validate) CMD=validate_horde
+        -v|--validate) CMD=( validate_horde )
           ;;
         *) echo "That makes no sense: [$1]" >&2; exit 1
           ;;
@@ -353,10 +365,8 @@ while [ $# -ne 0 ] ; do
         shift
 done
 set_bins
-[ "$DEBUG" = "1" ] && list_bins ":: Files location"
-[ "$DEBUG" = "1" ] && list_vars ":: Debug Environs" $VARS
-[ "$DEBUG" = "1" ] && echo ":: $CMD"
-$CMD
+[ "$DEBUG" = "1" ] && list_vars ":: Debug Environs" ZGLUE_LIBDIR HOOKS_DIR STYLES_DIR
+[ "$DEBUG" = "1" ] && echo ":: ${CMD[*]}"
+"${CMD[@]}"
 
 personality_shrink
-

@@ -1,0 +1,61 @@
+#!/bin/bash
+
+declare -a Projects
+declare -A  SVN_TARGETS
+
+Projects=( "astyle-code" "AStyle" "AStyleDev" \
+          "AStyleTest" "AStyleWx" "AStyleWxTest" )
+for item in "${Projects[@]}" ; do
+        SVN_TARGETS["$item"]=1
+done
+# ASTYLE_CO="svn checkout https://svn.code.sf.net/p/astyle/code/trunk astyle-code"
+CO_PER_PROJECT="https://svn.code.sf.net/p/astyle/code/trunk/"${PROJECT}
+$ASTYLE_CO
+
+PROJECT="$1"
+
+do_for()
+{
+        local Cmd=
+        local List=
+        local var=
+
+        Cmd="$1" ; shift
+        List=( "$@" )
+
+        for var in "${List[@]}" ; do
+#               echo ":: var ($var)"
+                eval $Cmd
+        done
+}
+
+help_msg()
+{
+        echo "This script will checkout an astyle project that"
+        echo "you need to provide as an argument.  svnco AStyle."
+        echo "Empty args are, naturally, verboten or at least"
+        echo "unacceptable.  If you ask for a project that is"
+        echo -e "unknown you will be told.\nThe projects available are:"
+        do_for 'echo -e "\t$var"' "${Projects[@]}"
+}
+
+svn_checkout()
+{
+        local ASTYLE_HOST_URL=
+        local PROJECT=
+
+        PROJECT="$1"
+        if [ -z "${SVN_TARGETS["$PROJECT"]}" ] ; then
+                echo "Bad target: ($PROJECT)" >&2
+                return 1
+        fi
+        ASTYLE_HOST_URL=https://svn.code.sf.net/p/astyle/code/trunk/
+        echo svn co $ASTYLE_HOST_URL $PROJECT
+}
+
+[ -z "$1" ] && help_msg && exit 1
+
+HERE=$(pwd)
+[ "$(basename $HERE)" = "$1" ] && svn update && exit
+svn_checkout "$1"
+
