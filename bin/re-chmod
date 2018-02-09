@@ -1,0 +1,99 @@
+#!/bin/bash
+
+[ "$TRACE" = "1" ] && set -x && echo "Set -x"
+
+help_msg()
+{
+        cat <<"EOF"
+        re-chmod [-h | -c | -x ]
+        -c:  Run commit as well as git add.
+        -h:  help_msg (the message you're, hopefully, reading)
+        -r:  Restore the working tree back to top of tree (HEAD)
+        -x:  Remove the -x permissions from files in nrf52 directories.
+EOF
+}
+[ $# -eq 0 ] && help_msg && exit
+
+[ "$DEBUG" = "1" ] && ECHO=echo && STDERR='>&2' && echo "ECHO ($ECHO), STDERR ($STDERR)" >&2
+#
+# Check each file found having the executable permissions
+# and verify that they are no longer executable.
+#
+# Output any failures.
+#
+verify_no_exec()
+{
+        local Files=
+        local file=
+
+        Files=( "$@" )
+        for file in "${Files[@]}" ; do
+                if [ -x "$file" ] ; then
+                        Rv=$(( Rv + 1 ))
+                        echo -n "$file"
+                        echo -n -e "  "
+                        [ "$DEBUG" = "2" ] && echo "===!! ($file)" >&2
+                fi
+        done
+}
+
+#
+# back out the chmods by git reset followed by git checkout .
+#
+restore_repo()
+{
+        echo "Resetting your work space to HEAD:"
+        git reset
+        git checkout .
+}
+
+find_executable_files()
+{
+find arch/arm/src/nrf52 configs/nrf52832_dk arch/arm/include/nrf52 -type f -executable | while read badperms; do
+        if [ -z "${badperms##*.sh}" ] || [ -z "${badperms##*.bat}" ] || [ -z "${badperms##*.pl}" ] || [ -z "${badperms##*.py}" ] ;\
+        then
+                [ "$DEBUG" = "1" ] && echo "continure for script $badperms" >&2
+                continue
+        fi
+        if [ -z "$(file -b $badperms | grep -v executable)" ] ; then
+                [ "$DEBUG" = "1" ] && echo "continure for executable $badperms" >&2
+                continue
+        fi
+        eval $ECHO chmod -x $badperms $STDERR
+        echo "$badperms "
+done
+}
+
+while [ $# -gt 0 ] ; do
+        case "$1" in
+        -c) DO_COMMIT='git commit'
+            DO_FIX='git add ${GIT_ADD_FILES[@]}'
+        ;;
+        -h) help_msg
+        ;;
+        -r) restore_repo
+           exit
+        ;;
+        -s) git status
+        ;;
+        -x) DO_FIX='git add ${GIT_ADD_FILES[@]}'
+        ;;
+        *) echo "What is this: [$1]?" >&2
+           help_msg
+           exit 1
+        ;;
+        esac
+        shift
+done
+
+# echo "GIT_ADD_FILES:  ($GIT_ADD_FILES)"
+GIT_ADD_FILES=( $(find_executable_files) )
+echo "Files to be added: ${#GIT_ADD_FILES[@]}" >&2
+
+BADFILES=$(verify_no_exec "${GIT_ADD_FILES[@]}" )
+# verify_no_exec $GIT_ADD_FILES
+[ -n "$BADFILES" ] && [ "$DEBUG" = "1" ] && echo ":: Files remaining unmodified: ($BADFILES)"
+
+eval $ECHO $DO_FIX
+eval $ECHO $DO_COMMIT
+
