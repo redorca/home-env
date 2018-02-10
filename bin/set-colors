@@ -1,7 +1,8 @@
 #!/bin/bash
 
-ColorList=( "RESET" "RED" "REDBLK" "REDYLW" "REDBLU" "GREEN" "GRNBLK" "GRNGRN" "YELLOW"\
-            "YLWBLK" "YLWRED" "YLWGRN" "YLWBLU" "YLWLTBLU" "BLUE" "WHTBLK" )
+ColorList=( "RESET" "RED" "REDBLK" "REDYLW" "REDBLU" "GREEN" "GRNBLK" \
+            "GRNGRN" "YELLOW" "YLWBLK" "YLWRED" "YLWGRN" "YLWBLU" \
+            "YLWLTBLU" "BLUE" "BLUYLW" "WHTBLK" )
 do_for()
 {
         local Cmd=
@@ -52,6 +53,7 @@ set_colors()
         YLWBLU='\033[1;33;44m'
         YLWLTBLU='\033[1;33;46m'
         WHTBLK='\033[1;37;40m'
+        BLUYLW='\033[1;34;43m'
         BLUE='\033[1;34m'
 }
 

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+[ "$DEBUG" = "1" ] && ECHO="echo" && STDERR='>&2' && echo "ECHO ($ECHO), STDERR ($STDERR)" >&2
 [ "$TRACE" = "1" ] && set -x && echo "Set -x"
 
 help_msg()
@@ -14,10 +15,29 @@ EOF
 }
 [ $# -eq 0 ] && help_msg && exit
 
-[ "$DEBUG" = "1" ] && ECHO=echo && STDERR='>&2' && echo "ECHO ($ECHO), STDERR ($STDERR)" >&2
+#
+# General purpose for loop.
+#
+# Arg1 : command to run on each loop
+# Arg* : list of files to process
+#
+do_for()
+{
+        local Cmd=
+        declare -a List=
+        local var=
+
+        Cmd="$1" ; shift
+        List=( "$@" )
+
+        for var in "${List[@]}" ; do
+                $ECHO $Cmd $var
+        done
+}
+
 #
 # Check each file found having the executable permissions
-# and verify that they are no longer executable.
+# and verify that they no longer have executable permissions.
 #
 # Output any failures.
 #
@@ -42,36 +62,55 @@ verify_no_exec()
 #
 restore_repo()
 {
+        local Msg=
+
+        Msg="$@"
         echo "Resetting your work space to HEAD:"
-        git reset
-        git checkout .
+        HEAD=HEAD
+        if git log -1 --grep="$Msg" ; then
+                HEAD=HEAD^
+        fi
+        $ECHO git reset -- hard $HEAD >/dev/null 2>&1
+#       git checkout .
 }
 
 find_executable_files()
 {
 find arch/arm/src/nrf52 configs/nrf52832_dk arch/arm/include/nrf52 -type f -executable | while read badperms; do
+        if [ -z "$(file -b $badperms | grep -v executable)" ] ; then
+                [ "$VERBOSE" = "1" ] && echo "continure for executable $badperms" >&2
+                continue
+        fi
         if [ -z "${badperms##*.sh}" ] || [ -z "${badperms##*.bat}" ] || [ -z "${badperms##*.pl}" ] || [ -z "${badperms##*.py}" ] ;\
         then
-                [ "$DEBUG" = "1" ] && echo "continure for script $badperms" >&2
+                [ "$VERBOSE" = "1" ] && echo "continure for script $badperms" >&2
                 continue
         fi
-        if [ -z "$(file -b $badperms | grep -v executable)" ] ; then
-                [ "$DEBUG" = "1" ] && echo "continure for executable $badperms" >&2
-                continue
-        fi
-        eval $ECHO chmod -x $badperms $STDERR
-        echo "$badperms "
+        echo -n $badperms
+        # add space between files
+        echo "  "
 done
 }
 
+COMMIT_MSG="\"  Remove __X__X__X perm bit from source files.\""
 while [ $# -gt 0 ] ; do
         case "$1" in
-        -c) DO_COMMIT='git commit'
+        -c) DO_COMMIT='git commit -m $(echo $COMMIT_MSG)'
             DO_FIX='git add ${GIT_ADD_FILES[@]}'
         ;;
         -h) help_msg
+            exit
+        ;;
+        -l) GIT_ADD_FILES=( $(find_executable_files) )
+            if [ -z "${GIT_ADD_FILES[*]}" ] ; then
+                echo "No executable source or text files found."
+            else
+                echo "${GIT_ADD_FILES[@]}"
+            fi
+            exit
         ;;
         -r) restore_repo
+            git status >&2
            exit
         ;;
         -s) git status
@@ -88,12 +127,18 @@ done
 
 # echo "GIT_ADD_FILES:  ($GIT_ADD_FILES)"
 GIT_ADD_FILES=( $(find_executable_files) )
-echo "Files to be added: ${#GIT_ADD_FILES[@]}" >&2
+echo "(${GIT_ADD_FILES[*]})" >&2
 
-BADFILES=$(verify_no_exec "${GIT_ADD_FILES[@]}" )
+[ -z "${GIT_ADD_FILES[*]}" ] && echo "Nothing to chmod" >&2 && exit
+
+[ "$DEBUG" = "1" ] && echo "Files to be added: ${#GIT_ADD_FILES[@]}" >&2
+
+do_for "chmod -x" "${GIT_ADD_FILES[@]}"
+
+BADFILES=$(verify_no_exec ${GIT_ADD_FILES[@]})
 # verify_no_exec $GIT_ADD_FILES
 [ -n "$BADFILES" ] && [ "$DEBUG" = "1" ] && echo ":: Files remaining unmodified: ($BADFILES)"
 
 eval $ECHO $DO_FIX
-eval $ECHO $DO_COMMIT
+$ECHO $DO_COMMIT
 

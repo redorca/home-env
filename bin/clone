@@ -102,7 +102,7 @@ function init_repo_table()
         [ -z "$1" ] && return 1
         repo_host_url="$1"; shift
         [ -n "$DEBUG" ] && echo "repo_host_url ($repo_host_url)" >&2
-	Repo2Host["fast_api"]=master@$repo_host_url/fast_api
+	Repo2Host["fast_api"]=fast_api_dev@$repo_host_url/fast_api
 	Repo2Host["sdk_13"]=$SDK_13@$repo_host_url/3rd_Party_SDK
 	Repo2Host["sdk_14"]=$SDK_14@$repo_host_url/3rd_Party_SDK
 	Repo2Host["nordic"]=$SDK_13_1@$repo_host_url/3rd_Party_SDK
