@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -x
+
+TEXT="$(cat copyright.tmp)"
+
+eval sed -n -e \'/Author:/,/\*\/$/c$TEXT`\' fast_api/fast_api.h

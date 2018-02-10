@@ -1,0 +1,22 @@
+#!/bin/bash
+
+declare -A reponame_to_path
+
+reponame_to_path["auto_test"]=${HOME}/${TARGET_DIR}/
+reponame_to_path["nuttx_apps"]=${HOME}/${TARGET_DIR}/
+reponame_to_path["apps"]=${HOME}/${TARGET_DIR}/
+reponame_to_path["fast-api"]=${HOME}/${TARGET_DIR}/
+reponame_to_path["3rd_Party_SDK"]=${HOME}/${TARGET_DIR}/
+reponame_to_path["home-env"]=${HOME}/
+
+REPOS_TO_UPDATE=(
+        "master@auto_test"
+        "zdk@nuttx.gcc-version-7"
+        "zdk@nuttx_apps"
+        "zdk@apps"
+        "fast_api_dev@fast_api"
+        "dialog_585_sdk@3rd_Party_SDK"
+        "master@home-env"
+)
+
+
