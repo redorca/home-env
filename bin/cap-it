@@ -1,0 +1,15 @@
+#!/bin/bash
+
+[ $# -lt 2 ] &&  echo "No, at least two args are required." >&2 && exit 1
+
+FILE="$1" ; shift
+[ ! -f "$FILE" ] && echo "Not a file: [$FILE]" >&2 && exit 2
+
+# set -x
+
+STEM=${1%_t} ; shift
+
+
+eval sed -i -e \'s/${STEM}_t/${STEM^^}_t/g\' "$FILE"
+
+
