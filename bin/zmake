@@ -337,7 +337,7 @@ fi
             fi
             [ -z "$ftmp" ] && OUT_FILE=( ">" ${OUT}.$build "2>&1"  ) && _N="-n"
 
-            CMD="make V=\"$V\"  $NO_ERRORS $build"
+            CMD="make Q=\"$Q\"  $NO_ERRORS $build"
 
             echo_e "$_N"  "Building for $build: ... "
             eval $CMD ${OUT_FILE[*]}
