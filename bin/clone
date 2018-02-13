@@ -29,7 +29,8 @@ RepoRename["nordic"]=SDK_13.0.0-1@3rd_Party_SDK
 RepoRename["sdk_13_1"]=SDK_13.1.0@3rd_Party_SDK
 RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
 
-Repo2Host["zephyr"]=master@github.com/zephyrproject-rtos/zephyr.git
+Repo2Host["micro-ecc"]=master@git@github.com/kmackay/micro-ecc.git
+Repo2Host["zephyr"]=master@git@github.com/zephyrproject-rtos/zephyr.git
 Repo2Host["RIOT"]=master@github.com/RIOT-OS
 Repo2Host["bknuttx"]=master@${BITBUCKET_URL}/nuttx/nuttx.git
 Repo2Host["bktools"]=master@${BITBUCKET_URL}/nuttx/tools.git
