@@ -90,6 +90,7 @@ git_committed()
 #
 do_for()
 {
+        set -x
         local Cmd=
         declare -a List=
         local var=
@@ -97,9 +98,11 @@ do_for()
         Cmd="$1" ; shift
         List=( "$@" )
 
+        echo "$Cmd" >&2
         for var in "${List[@]}" ; do
-                $ECHO $Cmd $var
+                eval $ECHO $Cmd $var
         done
+        set +x
 }
 
 #
@@ -142,7 +145,7 @@ restore_repo()
         git checkout .
 }
 
-find_executable_files()
+find_all_files()
 {
         local Flag=
 
@@ -178,6 +181,20 @@ find "${Dirs[@]}" -type f -executable | while read badperms; do
         # add space between files
         echo "  "
 done
+}
+
+find_executable_files()
+{
+        local Flag=
+
+        Flag="$1"
+
+        if [ "$Flag" != "all" ] ; then
+                do_for '[ -x $var ] && echo' $(git_committed) $(git_committed unstaged)
+                return
+        else
+                find_all_files
+        fi
 }
 
 COMMIT_MSG="\"  Remove __X__X__X perm bit from source files.\""
