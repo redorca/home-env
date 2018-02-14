@@ -1,0 +1,112 @@
+#!/bin/bash
+
+HashID=$1
+export EndHash
+unset GIT_DIR
+
+#
+# Some basic validation of current runtime environment.
+#
+sanity_check()
+{
+        Flag=$(git rev-parse --is-inside-work-tree)
+        if [ "${Flag,,}" == "false" ] ; then
+                echo "Not in a working tree.  Please relocate and retry." >&2
+                return 1
+        fi
+}
+
+
+#
+# Given a commit id, find the most recent commit unrelated to this author
+#
+# This will look for a range of changes by the author of the commit id
+# passed in and return the commit id of the last committer other than
+# the author of the starting id.
+#
+find-range-end()
+{
+        local commit=
+        local Hash=
+        local Author=
+
+	git log --pretty="%an : %h" $HashID | while read commit ; do
+	        [ -z "$Author" ] && Author=$(echo $commit | awk -F':' '{print $1}')
+	        if [ "$Author" != "$(echo $commit | awk -F':' '{print $1}')" ] ; then
+	                Hash=$(echo $commit | awk -F':' '{print $2}')
+	                echo "$Hash"
+	                return 0
+	        fi
+	done
+}
+
+#
+# Given a starting (preceding commit) and ending (recent commit) generate
+# a set of patch files numerically ordered based on a starting count passed
+# in.
+#
+form-patch()
+{
+        local Delta=
+        [ $# -lt 3 ] && return 1
+
+        CMD='$(git format-patch $OUTDIR --start-number ${!1} ${!2}..${!3} | wc -l)'
+        echo "CMD: $CMD"
+        eval Delta=$CMD
+        echo "Delta: ($Delta)"
+        eval $1=$(( Delta + ${!1} ))
+}
+
+Help()
+{
+        echo "Insufficient list of arguments.  A starting commit hash id" >&2
+        echo "and an ending commit hash id must be supplied where the starting id" >&2
+        echo "is the id preceding the first commit of interest.  The ranges parent." >&2
+        echo "A single has id may be supplied in which case a path of  only that commit is created." >&2
+        echo ""
+        echo "The order of ids is important.  The first id should be the ancester of the second." >&2
+        echo ""
+}
+
+#
+# StartNum is the running value of the starting patch
+# sequence number if there are multiple sets of rev ranges
+# to cover.
+#
+StartNum=1
+
+#
+# StartHash and EndHash are the revision boundaries for
+# the range of commits to generate a patch from inclusive.
+#
+StartHash=
+EndHash=
+if [ $# -lt 1 ] ; then
+        Help
+        exit 1
+fi
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        -o) [ -z "$2" ] && Help && exit 1
+            OUTDIR="$1 $2"; shift
+                ;;
+        -h) Help && exit 0
+                ;;
+        -N) StartNum=$1
+                ;;
+        *)  [ -n "$StartHash" -a -n "$EndHash" ] && echo "What is this? ($1)" >&2 && Help && exit 1
+            [ -n "$StartHash" -a -z "$EndHash" ] && EndHash=$1
+            [ -z "$StartHash" -a -z "$EndHash" ] && StartHash=$1
+                ;;
+        esac
+        shift
+done
+[ -n "$StartHash" -a -z "$EndHash" ] && EndHash=$StartHash && StartHash=$(find-range-end $StartHash)
+
+if ! form-patch StartNum StartHash EndHash ; then
+        echo "Failed to forma patch." >&2
+        exit 1
+fi
+echo "Forming a patch from $EndHash to $StartHash"
+
+
