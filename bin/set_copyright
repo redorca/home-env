@@ -1,7 +1,14 @@
 #!/bin/bash
 
 set -x
+FILE=fast_api/fast_api.h
+TEXT="$(cat copyright.tmp | sed -n -e '2,/$/p')"
+AUTHORS="$(grep Author: $FILE)"
+OP=c
+[ -z "$AUTHORS" ] && OP=a && AUTHORS="Author:"
 
-TEXT="$(cat copyright.tmp)"
+eval sed -i -e \'/Author:/,/\\*\\/\$/${OP}"$TEXT"\' fast_api/fast_api.h
+# eval sed -i -e \'/\\\*/,/\\*\\/\$/${OP}"$TEXT"\' fast_api/fast_api.h
 
-eval sed -n -e \'/Author:/,/\*\/$/c$TEXT`\' fast_api/fast_api.h
+sed -i -e 's:\\$::' fast_api/fast_api.h 
+eval sed -i -e \'/Copyright/${OP}"$AUTHORS"\' fast_api/fast_api.h 
