@@ -2,7 +2,7 @@
 
 [ "$DEBUG" = "2" ] && set -x
 
-DO_COMMIT=
+DO_COMMIT=()
 DRY_RUN=${DRY_RUN:-0}
 DEBUG=${DEBUG:-0}
 VAR_LIST="LOOP_SET_COUNT count"
@@ -131,7 +131,8 @@ wait_rm_tmpfile()
                 sleep 1
         done
         rm $File
-return
+
+        return
 }
 
 
@@ -160,9 +161,9 @@ TMPFILE=$(mktemp -p /tmp .helper-XXXX)
 # ARGS_Begin
 while [ $# -ne 0 ] ; do
         case $1 in
-        -a) DO_COMMIT="git commit --amend"
+        -a) DO_COMMIT=( "git" "commit" "--amend" )
            ;;
-        -c) DO_COMMIT="git commit"
+        -c) DO_COMMIT=( "git" "commit" )
            ;;
         -d) DEBUG=1; echo "DEBUG = $DEBUG"
            ;;
@@ -188,6 +189,22 @@ while [ $# -ne 0 ] ; do
 done
 # ARGS_End"
 
+
+add_patch()
+{
+        local time_stamp=
+        local PATCH_FILE=
+        local branch=
+
+        branch="$(git branch | awk '{print $2}')"
+        time_stamp=$(date +"%Y-%a-%b@%e_%H.%M%P")
+        PATCH_FILE=patches/patch.$branch.$time_stamp
+
+        [ ! -d patches ] && mkdir -p patches
+        git diff > $PATCH_FILE
+        git diff --cached >> $PATCH_FILE
+}
+
 if ! var_sanity_check page_size ; then
         echo "page_size has a bad value: ($page_size)" >&2
         exit 1
@@ -204,6 +221,7 @@ fi
 Dir="$(git rev-parse --show-toplevel)" || exit 1
 echo_dbg "cd to $Dir"
 cd "$Dir" || exit 1
+add_patch
 git status --porcelain \
         | sed -e 's/^ /_/' \
         | grep "$FILTER" \
@@ -215,7 +233,8 @@ git status --porcelain \
                 page_break count page_size "\t=================="
         done
 
-        $DO_COMMIT
+        ${DO_COMMIT[@]}
+        [  "${#DO_COMMIT[@]}" -eq 0 ] && git status
 )
 echo_dbg "Back @ $(pwd)"
 
