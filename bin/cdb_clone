@@ -1,0 +1,14 @@
+git clone -b zdk-cc ssh://git@github.com/zglue-bill/nuttx-local
+git clone -b zdk ssh://bill@101.132.142.37:30149/nuttx_apps.git
+git clone -b master ssh://git@github.com/zglue-bill/auto_test.git
+git clone -b fast_api_dev ssh://bill@101.132.142.37:30149/fast_api
+git clone -b master ssh://git@github.com/kmackay/micro-ecc
+git clone -b master https://bitbucket.org/nuttx/tools.git
+git clone -b master https://bitbucket.org/nuttx/nuttx.git
+git clone -b master https://bitbucket.org/nuttx/apps.git
+git clone -b master https://bitbucket.org/nuttx/tools.git
+git clone -b master https://github.com/zephyrproject-rtos/zephyr.git
+git clone -b master git://git.rtems.org/rtems.git
+git clone -b master https://github.com/RIOT-OS/riot.git
+git clone -b master https://gerrit.googlesource.com/gerrit
+git clone -b master https://github.com/ARMmbed/mbed-os.git

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+CLONE_DB=~/bin/cdb_clone
+
+
+# remote_branch=$(git status -b --porcelain |
+remote_state=( $(git status -b --porcelain | head -1 | awk -F'.' '{print $1, $NF, NF}') )
+nf=${#remote_state[@]}
+echo "nf starts @ $nf remote_state contiains (${remote_state[@]})"
+nf=$(( nf - 1 ))
+echo "nf becomes: $nf"
+pieces=${remote_state[$nf]}
+echo "pieces: $pieces"
+if [ "$pieces" -lt 2 ] ; then
+        echo "Only found a a local branch, no backing repo."
+        exit 2
+fi
+echo "number of pieces from awk: remote_state[$nf]: ${remote_state[$nf]}"
+echo "${remote_state[0]}, ${remote_state[1]}, ${remote_state[2]}, ${remote_state[3]}, ${remote_state[4]}"
+# echo "remote_state: ${remote_state[0]} ${remote_state[1]}"
+# echo "Number of remote_state entries: ${#remote_state[@]}"
+# echo "0: ${remote_state[0]}"
+# echo "1: ${remote_state[1]}"
+# echo "2: ${remote_state[2]}"
+# echo "3: ${remote_state[3]}"
+
+if [ "${#remote_state[@]}" -lt 2 ] ; then
+        echo "No remote repo for this local branch." >&2
+        exit 1 
+fi
+
+local_branch=${remote_state[1]}
+remote=( $( echo ${remote_state[2]} | awk -F'/' '{print $1, $2}') )
+if [ -z "${remote[1]}" ] ; then
+        echo "There is no remote branch backing this branch [${remote[1]}]." >&2
+        exit 1
+fi
+echo "remote: ${remote[@]}"
+echo "local_branch: $local_branch"
+
+clone_ssh=$(git remote get-url ${remote[0]})
+echo "git clone -b ${remote[1]} $clone_ssh" >> $CLONE_DB
+
+cat $CLONE_DB
+

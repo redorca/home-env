@@ -7,3 +7,6 @@ mod gitrev-setup.sh to figure out the right remote repo name in refs/remotes
 finish mods to hookup (forward to auto_test/hooks/hookup) to print BINS and VARS
       paths fully encompassing $ROOT.
 
+mods to pre-commit: filter for -x on source files
+                    filter & fix for C++ style comments.
+
