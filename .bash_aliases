@@ -185,6 +185,7 @@ alias   launch="xdg-open"
 alias     diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
 alias      cls="clear_console"
 alias     grep="grep --exclude=.git --exclude=cscope.out"
+alias     halt="sudo /sbin/shutdown -h -t now"
 
 if which apt-get >/dev/null 2>&1 ; then
         echo "Set prompt for Debian sys-arch"
