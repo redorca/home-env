@@ -12,3 +12,10 @@ git clone -b master git://git.rtems.org/rtems.git
 git clone -b master https://github.com/RIOT-OS/riot.git
 git clone -b master https://gerrit.googlesource.com/gerrit
 git clone -b master https://github.com/ARMmbed/mbed-os.git
+git clone -b master https://github.com/openthread/openthread.git
+git clone -b master https://github.com/BoschSensortec/BMI160_driver.git
+git clone -b master https://github.com/BoschSensortec/BMM050_driver.git
+git clone -b master https://github.com/BoschSensortec/BME280_driver.git
+git clone -b master git@github.com:alexmurray/cstyle.git
+git clone -b master git@github.com:zglue/dialog
+git clone -b master https://gerrit.googlesource.com/git-repo
