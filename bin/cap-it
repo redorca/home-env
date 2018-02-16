@@ -2,6 +2,9 @@
 
 [ $# -lt 2 ] &&  echo "No, at least two args are required." >&2 && exit 1
 
+if [ "$1" = "uc" ] || [ "$1" = "lc" ] ; then
+        CASE="$1"; shift
+fi
 FILE="$1" ; shift
 [ ! -f "$FILE" ] && echo "Not a file: [$FILE]" >&2 && exit 2
 
@@ -10,6 +13,13 @@ FILE="$1" ; shift
 STEM=${1%_t} ; shift
 
 
-eval sed -i -e \'s/${STEM}_t/${STEM^^}_t/g\' "$FILE"
+if [ "$CASE" = "uc" ] || [ -z "$CASE" ] ; then
+        echo "Converting type variable to upper case." >&2
+        eval sed -i -e \'s/${STEM}_t/${STEM^^}_t/g\' "$FILE"
+fi
 
+if [ "$CASE" = "lc" ] ; then
+        echo "Converting type variable to lower case." >&2
+        eval sed -i -e \'s/${STEM^^}_t/${STEM,,}_t/g\' "$FILE"
+fi
 
