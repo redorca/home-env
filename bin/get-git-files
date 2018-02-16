@@ -1,0 +1,29 @@
+#!/bin/bash
+
+echo_dbg()
+{
+        [ "$DEBUG" = "1" ] || return
+
+        echo -e "$@"
+}
+
+#
+# Use the output of git status to create a set of files to process.
+#
+git_committed()
+{
+        local IFS=
+        local Filter1=
+        local Filter2=
+
+        [ "$1" = "unstaged" ] && IFS=" " && echo_dbg ":Setting IFS to a space"
+        Filter1="'/^${IFS}[AMC]/p'"
+        Filter2="'/^${IFS}[R]/p'"
+        git status -uno --porcelain=v1 | eval sed -n -e "$Filter1" -e "$Filter2" | \
+                awk '{print $NF}'
+}
+
+git_committed
+echo "================================"
+git_committed unstaged
+

@@ -1,0 +1,84 @@
+#!/bin/bash
+
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        -d) DEBUG="1"
+        ;;
+        -i) FLAG="inverted"
+        ;;
+        -s) FLAG="straight"
+        ;;
+        -x) set -x
+        ;;
+        *) echo "Hmmm, what in the world is this for: ["$1"]?"
+           exit 1
+        ;;
+        esac
+        shift
+done
+
+RV=0
+
+filter_files_by_mime()
+{
+        file -i $file  | sed -n -e '/ text\/plain/p'   \
+                                -e '/ text\/x-makefile/p'\
+                                -e '/ text\/x-c++/p'     \
+                                -e '/ text\/x-c/p'       \
+                                -e '/ text\/xml/p'       \
+                                -e '/ text\/html/p'      \
+                                -e '/ text\/x-asm/p'     \
+                                -e '/ text\/x-tex/p'
+}
+
+filter_files_by_group()
+{
+        file -i $file  | grep ": text/" | sed -n -e '/\/plain/p'   \
+                                -e '/\/x-makefile/p'\
+                                -e '/\/x-c++/p'     \
+                                -e '/\/x-c/p'       \
+                                -e '/\/xml/p'       \
+                                -e '/\/html/p'      \
+                                -e '/\/x-asm/p'     \
+                                -e '/\/x-tex/p'
+}
+
+filter_files_by_negation()
+{
+        file -i $file  | grep ": text/" | sed -n -e '/plain/p'   \
+                                -e '/x-makefile/p'\
+                                -e '/x-c++/p'     \
+                                -e '/x-c/p'       \
+                                -e '/xml/p'       \
+                                -e '/html/p'      \
+                                -e '/x-asm/p'     \
+                                -e '/x-tex/p'
+}
+while read file ; do
+if [ ! -f "$file" ] ; then
+        echo "=== Not a file: [$file]" >&2
+        continue
+fi
+[ "$DEBUG" = "1" ] && echo " $FLAG :: $file" >&2
+if [ "$FLAG" = "straight" ] ; then
+        file -i $file | sed -e '/text\/x-shellscript/d'  \
+                             -e '/text\/x-diff/d'        \
+                             -e '/text\/x-perl/d'        \
+                             -e '/text\/x-msdos-batch/d' \
+                             -e '/text\/x-python/d'      \
+                             -e '/application\//d'     \
+                             -e '/image\//d'     \
+                             -e '/inode\//d'     \
+
+elif [ "$FLAG" = "inverted" ] ; then
+
+        filter_files_by_mime $file
+#       filter_files_by_group $file
+#       filter_files_by_negation $file
+
+else
+        echo "What does this mean? [$FLAG]" >&2
+        RV=1
+fi
+done
+
