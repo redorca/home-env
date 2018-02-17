@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#
+# Turn on shell command tracing if DEBUG is "2"
+#
 [ "$DEBUG" = "2" ] && set -x
 
 Red='\033[1;31m'
@@ -87,7 +90,7 @@ set_env()
                         ALT=unstaged
                         ;;
                 *) if [ -f "$1" ] ; then
-                        FILES="${FILES[@]} $1"
+                        FILES=( "${FILES[@]}" "$1" )
                    elif [ ! -f "$1" ]  ; then
                         echo_err "${Red}No such file: ($1)${Reset}" && exit 1
                    elif [ "$FILE_ARGS" != "1" ] ; then
@@ -107,10 +110,9 @@ set_env()
 # In case any leading and/or trailing white space exists
 [ -n "${FILES[@]}" ] && strip_edge_ws FILES
 
-# export FILTERS_NRF="/nrf52/ /nrf52832_dk/"
-# export FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
-# export GIT_ADD=
-# export FILES=
+export FILTERS_NRF="/nrf52/ /nrf52832_dk/"
+export FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
+
 REPO_HOST="101.132.142.37"
 ACTIVELY_MANAGED_REPOS=( \
         "nuttx@$REPO_HOST" \
@@ -154,7 +156,7 @@ fi
 echo_dbg ":This repo is actively managed."
 
 
-[ -z "${FILES[*]}" ] && FILES="$(set_files "$ALT")"
+[ -z "${FILES[*]}" ] && FILES=( $(set_files "$ALT") )
 # In case any leading and/or trailing white space exists
 strip_edge_ws "${FILES[@]}"
 
