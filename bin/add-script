@@ -1,0 +1,40 @@
+#!/bin/bash
+
+REPO="git@github.com:zglue-bill/scripts.git"
+FILES=()
+
+if ! LOCAL_REPO="$(git remote get-url origin)" ; then
+        echo "Trouble getting the repos url." >&2
+        exit 2
+fi
+# ROOT=$(git rev-parse --show-toplevel)
+# echo "ROOT: $ROOT"
+
+if [ "$REPO" != "$LOCAL_REPO" ] ; then
+        echo "Is this the right repo? [$LOCAL_REPO]" >&2
+        exit 3
+fi
+
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        *) FILES=( "$1" "${FILES[@]}" )
+        ;;
+        esac
+        shift
+done
+if [ "${#FILES[@]}" -eq 0 ] ; then
+        echo "No files to process supplied as arguments." >&2
+        exit 1
+fi
+
+for file in "${FILES[@]}" ; do
+        if ! file_p=$(type -p $file) ; then
+                echo "Unable to process $file:" >&2
+                continue
+        fi
+        CMD="cp $file_p ."
+        echo "$CMD"
+        $CMD
+done
+
+

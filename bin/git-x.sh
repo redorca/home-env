@@ -23,7 +23,6 @@ setup_mode_code()
         GIT_MODE_CODE["C"]="git add"
         GIT_MODE_CODE["?"]="echo Untracked: "
         GIT_MODE_CODE["U"]="git add"
-#       GIT_MODE_CODE["U"]="$EDIT_WITH"
 }
 
 Help()
@@ -66,7 +65,7 @@ dump_env()
 # first argument may be a flag to indicate whether the
 # function should validate the initial directory mentioned
 # in the path part of the $Line's contents.
-# 
+#
 stage_line()
 {
         local tmp=
@@ -195,10 +194,15 @@ add_patch()
         local time_stamp=
         local PATCH_FILE=
         local branch=
+        declare -A Info=
+        eval Info=( $(git log -1 --format="[\"Hash\"]=\"%h\"       \
+                                           [\"Author\"]=\"%an\"    \
+                                           [\"Committer\"]=\"%cn\" \
+                                           [\"Subject\"]=\"%f\"") )
 
         branch="$(git branch | awk '{print $2}')"
         time_stamp=$(date +"%Y-%a-%b@%e_%H.%M%P")
-        PATCH_FILE=patches/patch.$branch.$time_stamp
+        PATCH_FILE=patches/patch.$branch.${Info["Hash"]}
 
         [ ! -d patches ] && mkdir -p patches
         git diff > $PATCH_FILE
@@ -218,23 +222,24 @@ if [ -n "$UNTRACK" ] && [ "$UNTRACK" -eq 1 ] ; then
 fi
 
 (
-Dir="$(git rev-parse --show-toplevel)" || exit 1
-echo_dbg "cd to $Dir"
-cd "$Dir" || exit 1
-add_patch
-git status --porcelain \
-        | sed -e 's/^ /_/' \
-        | grep "$FILTER" \
-        | awk '{print $1 "  " $NF}' \
-        | while read line ; do
-                if ! RESULTS="$(stage_line "$line") $RESULTS" ; then
-                        echo "Did not stage: [$line]"
-                fi
-                page_break count page_size "\t=================="
-        done
+        Dir="$(git rev-parse --show-toplevel)" || exit 1
+        echo_dbg "cd to $Dir"
+        cd "$Dir" || exit 1
+        if [ "${DO_COMMIT[2]}" = "--amend" ] ; then
+                add_patch
+        fi
+        git status --porcelain \
+                | sed -e 's/^ /_/' \
+                | grep "$FILTER" \
+                | awk '{print $1 "  " $NF}' \
+                | while read line ; do
+                        if ! RESULTS="$(stage_line "$line") $RESULTS" ; then
+                                echo "Did not stage: [$line]"
+                        fi
+                        page_break count page_size "\t=================="
+                done
 
         ${DO_COMMIT[@]}
         [  "${#DO_COMMIT[@]}" -eq 0 ] && git status
 )
-echo_dbg "Back @ $(pwd)"
 
