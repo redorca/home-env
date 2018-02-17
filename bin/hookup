@@ -59,8 +59,9 @@ diff_check()
         [ -f "$File_1" ] && Sum_1="$(sha256sum "$File_1" | awk '{print $1}')"
         [ -f "$File_2" ] && Sum_2="$(sha256sum "$File_2" | awk '{print $1}')"
 
-       [ "$Sum_1" = "$Sum_2" ] && return
-       return 1
+        [ "$Sum_1" = "$Sum_2" ] && return
+        [ "$DIFF_FILES" = "1" ] && diff -u $File_1 $File_2 > diff.$(basename $File_1)
+        return 1
 }
 
 #
@@ -89,7 +90,8 @@ help()
 
              Any files that differ from the currently installed versions are
              shown and will be updated when directed to with the "-p" option.
-
+        -vv : Not only validate existence of files and which differ but also
+              generate the diffs into files of the format: diff.<filename>
 
 EOF
 }
@@ -196,7 +198,7 @@ list_files()
 
         echo -e "${Msg}"
         for fff in "${Files[@]}" ; do
-                echo -e "\t$fff"
+                echo -e "\\t$fff"
         done
 }
 
@@ -237,7 +239,7 @@ validate_horde()
         declare -a Differs=
 
         FA=0
-        msgs=( "${RED}Differs:${RESET}" "${BLUE}Found${RESET}" "${RED}NotFound:${RESET}" )
+        msgs=( "${RED}Differ:${RESET}" "${BLUE}Found${RESET}" "${RED}NotFound:${RESET}" )
 
         echo "Making sure all of the files are here ... "
 	for bin in "${BINS[@]}" ; do
@@ -247,13 +249,15 @@ validate_horde()
                                 Differs=( "$local_bin" "${Differs[@]}" )
                                 DIFFER["$local_bin"]="$bin"
                         fi
-                        Found=( "$local_bin" "${Found[@]}" )
+                        [ -n "${Found[*]}" ] && Found=( "$local_bin" "${Found[@]}" )
+                        [ -z "${Found[*]}" ] && Found=( "$local_bin" )
                         continue
                 fi
                 NotFound=( "$local_bin" "${NotFound[@]}" )
                 FA=1
 	done
         [ -n "${Found[*]}" ] && list_files "${msgs[1]}" "${Found[@]}"
+        [ "${#Found[@]}" -eq "${#BINS[@]}" ] && echo -e "All files are found.\n" >&2
         [ -n "${Differs[*]}" ] && list_files "${msgs[0]}" "${Differs[@]}"
         [ -n "${NotFound[*]}" ] && list_files "${msgs[2]}" "${NotFound[@]}"
         msg="All files are current."
@@ -357,7 +361,11 @@ while [ $# -ne 0 ] ; do
           ;;
         -u|--update) CMD=( refresh_hooks )
           ;;
-        -v|--validate) CMD=( validate_horde )
+        -v) CMD=( validate_horde )
+          ;;
+       -vv) CMD=( validate_horde )
+            rm -f diff.*
+            DIFF_FILES=1
           ;;
         *) echo "That makes no sense: [$1]" >&2; exit 1
           ;;
