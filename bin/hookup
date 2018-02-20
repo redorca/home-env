@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 # DEBUG=1
 # ROOT=~
 
@@ -82,9 +83,10 @@ help()
         This file will install style_file, astyle, pre-commit, commit-msg
         and astyle-nuttx to provide style checking for git commits.
 
-        -p : Place all of these files in the proper locations. Must run as root!
+        -p : Place all of these files in the proper locations. Must run as root
+             unless "export ROOT=<location>"  is set in the environment.
         -u : Refresh .git/hooks with the latest pre-commit and commit-msg.
-             Must be run from the root of the repo.
+             Must be run from somewhere within the repo.
         -v : Validate that the necessary files are all present locally and
              how the compare with currently installed versions of these files.
 
@@ -200,6 +202,7 @@ list_files()
         for fff in "${Files[@]}" ; do
                 echo -e "\\t$fff"
         done
+        echo ""
 }
 
 #
