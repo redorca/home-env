@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[ "$DEBUG" = "2" ] && set -x
+[ "$TRACE" = "1" ] && set -x
 
 DO_COMMIT=()
 DRY_RUN=${DRY_RUN:-0}
@@ -207,7 +207,6 @@ add_patch()
                                            [\"Author\"]=\"%an\"    \
                                            [\"Committer\"]=\"%cn\" \
                                            [\"Subject\"]=\"%f\"") )"
-set -x
         branch="$(git branch | awk '{print $2}')"
         time_stamp=$(date +"%Y-%a-%b-%e@%H.%M%P")
         # shellcheck disable=2116 # Useless echo? Instead of 'cmd $(echo foo)', just use 'cmd foo'.
