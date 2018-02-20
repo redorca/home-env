@@ -191,6 +191,8 @@ done
 
 add_patch()
 {
+        [ ! -d .git ] && echo "No local .git/" >&2 && return 1
+
         local time_stamp=
         local PATCH_FILE=
         local branch=
@@ -199,10 +201,10 @@ add_patch()
                                            [\"Author\"]=\"%an\"    \
                                            [\"Committer\"]=\"%cn\" \
                                            [\"Subject\"]=\"%f\"") )
-
+set -x
         branch="$(git branch | awk '{print $2}')"
-        time_stamp=$(date +"%Y-%a-%b@%e_%H.%M%P")
-        PATCH_FILE=patches/patch.$branch.${Info["Hash"]}
+        time_stamp=$(date +"%Y-%a-%b-%e@%H.%M%P")
+        PATCH_FILE=patches/patch.$(echo $branch).${Info["Hash"]}.${time_stamp}
 
         [ ! -d patches ] && mkdir -p patches
         git diff > $PATCH_FILE
