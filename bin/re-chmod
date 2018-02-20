@@ -154,18 +154,21 @@ find_all_files()
                 $(verify_no_exec $(git_committed) $(git_committed unstaged))
                 return
         fi
-        find_all_executable_files "./"
+        find_all_executable_files $Flag "./"
 }
 
-# arch/arm/src/nrf52 configs/nrf52832_dk arch/arm/include/nrf52
 #
 # Find every file in the tree that is executable but probalby shouldn't be.
 #
 find_all_executable_files()
 {
         declare -a Dirs=
+        local Flag=
+        local FMT=
 
+        FMT="-n"
         [ "$#" -eq 0 ] && echo "Need a directory to start from." >&2 && return 1
+        [ "$1" = "all" ] && Flag="$1" && shift && FMT= && echo "Unformatted" >&2
         Dirs=( $@ )
 find "${Dirs[@]}" -type f -executable | while read badperms; do
         if [ -z "$(file -b $badperms | grep -v executable)" ] ; then
@@ -177,7 +180,9 @@ find "${Dirs[@]}" -type f -executable | while read badperms; do
                 [ "$VERBOSE" = "1" ] && echo "continure for script $badperms" >&2
                 continue
         fi
-        echo -n $badperms
+        FMT=
+        echo $badperms
+#       echo -n $badperms
         # add space between files
         echo "  "
 done
@@ -187,13 +192,13 @@ find_executable_files()
 {
         local Flag=
 
-        Flag="$1"
+        Flag="$1" ; shift
 
         if [ "$Flag" != "all" ] ; then
                 do_for '[ -x $var ] && echo' $(git_committed) $(git_committed unstaged)
                 return
         else
-                find_all_files
+                find_all_executable_files $Flag $@
         fi
 }
 
@@ -220,9 +225,9 @@ while [ $# -gt 0 ] ; do
         -hh) help_msg dev
             exit
         ;;
-        -l) GIT_ADD_FILES=( $(find_all_executable_files "$ALL" "./" ) )
+        -l) GIT_ADD_FILES=( $(find_executable_files "$ALL" "./" ) )
             if [ -z "${GIT_ADD_FILES[*]}" ] ; then
-                echo "No executable source or text files found."
+                echo "No executable source or text files found. ($ALL)"
             else
                 echo "${GIT_ADD_FILES[@]}"
             fi
@@ -262,7 +267,7 @@ echo "(${GIT_ADD_FILES[*]})" >&2
 do_for "$ECHO chmod -x" "${GIT_ADD_FILES[@]}"
 
 BADFILES=$(verify_no_exec ${GIT_ADD_FILES[@]})
-# verify_no_exec $GIT_ADD_FILES
+
 [ -n "$BADFILES" ] && [ "$DEBUG" = "1" ] && echo ":: Files remaining unmodified: ($BADFILES)"
 
 eval $ECHO $DO_FIX
