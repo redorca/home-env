@@ -19,7 +19,7 @@ am_I_lost()
                 #
                 # Take our path and strip off everything from .git on down.
                 Here="$(pwd)"
-                cd "${Here%.git/*}"
+                cd "${Here%.git/*}" || exit 2
         elif xtest="$(git rev-parse --is-inside-work-tree 2>/dev/null)" 2>/dev/null && [ "$xtest" = "false" ] ; then
                 echo "==== A::a"
                 exit
@@ -32,8 +32,9 @@ am_I_lost()
 GERRIT_HOST_IP="${GERRIT_HOST_IP:-"101.132.142.37"}"
 GERRIT_HOST_PORT="${GERRIT_HOST_PORT:-"30149"}"
 GERRIT_USER="${GERRIT_USER:-"bill"}"
+# shellcheck disable=2207
 Repo=( $(git remote -v | grep fetch | awk -F'/' '{print $NF}') )
-echo "Repo Repo Repo: ($Repo)"
+echo "Repo Repo Repo: (${Repo[*]})"
 GERRIT_REPO="${Repo[0]}"
 GERRIT_REPO_BRANCH="${GERRIT_REPO_BRANCH:-"zdk"}"
 LOCAL_REMOTE_NAME="${LOCAL_REMOTE_NAME:-"origin"}"
@@ -54,14 +55,14 @@ setup_gitreview()
 print_gitrev_config()
 {
         echo -e "===== Config ========="
-	echo -e "section:\t${git_review["section"]}"
-	echo -e "host:\t\t${git_review["host"]}"
-	echo -e "port:\t\t${git_review["port"]}"
-	echo -e "username:\t${git_review["username"]}"
-	echo -e "project:\t${git_review["project"]}"
-	echo -e "branch:\t\t${git_review["branch"]}"
-	echo -e "remote:\t\t${git_review["remote"]}"
-	echo -e "scheme:\t\t${git_review["scheme"]}"
+	echo -e "section:\\t${git_review["section"]}"
+	echo -e "host:\\t\\t${git_review["host"]}"
+	echo -e "port:\\t\\t${git_review["port"]}"
+	echo -e "username:\\t${git_review["username"]}"
+	echo -e "project:\\t${git_review["project"]}"
+	echo -e "branch:\\t\\t${git_review["branch"]}"
+	echo -e "remote:\\t\\t${git_review["remote"]}"
+	echo -e "scheme:\\t\\t${git_review["scheme"]}"
         echo -e "=====        ========="
 }
 
@@ -70,8 +71,8 @@ print_section_defaults()
         local Key=
 
         echo ""
-        for Key in ${!git_review[@]} ; do
-                echo -e "Key: ${GREEN}$Key,\t${YELLOW}${git_review[$Key]}${RESET}"
+        for Key in "${!git_review[@]}" ; do
+                echo -e "Key: ${GREEN}$Key,\\t${YELLOW}${git_review[$Key]}${RESET}"
         done
         echo ""
 }
@@ -106,38 +107,38 @@ print_array()
 #
 current_branch()
 {
+        # shellcheck disable=2162
         git branch | while read one two; do
                 [ -z "$two" ] && continue
                 [ "$one" = "*" ] && echo "$two" && break
         done
 }
 
-extract_environs()
-{
-        local User=
-        local Envars=
-
-        GERRIT_REPO_BRANCH=$(current_branch)
-        Envars=( $(git remote -v | grep fetch | awk  '{ print  $1 " "  $2 " " $3 " " $NF}') )
-        print_array Envars "${Envars[@]}"
-        LOCAL_REMOTE_NAME="${Envars[0]}"
-        URI="${Envars[1]}"
-        print_array URI "${URI[@]}"
-        URL=( $(echo $URI | awk -F'/' '{print NF  " " $1" "  $NF }') )
-        print_array URI "${URI[@]}"
-        INDEX=$(( ${#URL[@]} - 1 ))
-        User="$(git config --global user.email)"
-        GERRIT_USER="${User%@*}"
-        GERRIT_REPO="${URL[$INDEX]}"
-        INDEX=$(( INDEX - 1 ))
-        Repo="${URL[$INDEX]}" && echo "Repo: (${Repo[@]})"
-#       echo "Envars[1]:  (${Envars[1]})"
-#       GERRIT_XFER_PROTO=( $(echo ${Envars[1]} | awk -F'/' '{print $1 " " $2 " " $(NF-1) " " $NF " " NF}') )
-        print_array URL "${URL[@]}"
-}
+# extract_environs()
+# {
+#         local User=
+#         local Envars=
+# 
+#         GERRIT_REPO_BRANCH=$(current_branch)
+#         Envars=( $(git remote -v | grep fetch | awk  '{ print  $1 " "  $2 " " $3 " " $NF}') )
+#         print_array Envars "${Envars[@]}"
+#         LOCAL_REMOTE_NAME="${Envars[0]}"
+#         URI="${Envars[1]}"
+#         print_array URI "${URI[@]}"
+#         URL=( $(echo $URI | awk -F'/' '{print NF  " " $1" "  $NF }') )
+#         print_array URI "${URI[@]}"
+#         INDEX=$(( ${#URL[@]} - 1 ))
+#         User="$(git config --global user.email)"
+#         GERRIT_USER="${User%@*}"
+#         GERRIT_REPO="${URL[$INDEX]}"
+#         INDEX=$(( INDEX - 1 ))
+#         Repo="${URL[$INDEX]}" && echo "Repo: (${Repo[*]})"
+#         print_array URL "${URL[@]}"
+# }
 
 help()
 {
+        # shellcheck disable=2086
         sed -n -e '/^#Help/,/^#Help/p' $0 | grep -v ^#Help
 }
 
@@ -173,7 +174,7 @@ setup_gitreview
 #
 Section="${git_review["section"]}"
 for Key in "${!git_review[@]}" ; do
-        Cmd="git config --local "$Section"."$Key" ${git_review["$Key"]}"
+        Cmd="git config --local $Section.$Key ${git_review["$Key"]}"
         [ "$DEBUG" = "1" ] && echo "  $Cmd" && continue
         $Cmd
 done

@@ -11,6 +11,7 @@ VAR_LIST="LOOP_SET_COUNT count"
 # May be altered with the '-p <#>' argument.
 #
 page_size=10
+# shellcheck disable=2034 # count appears unused.
 count=$page_size
 declare -A GIT_MODE_CODE
 
@@ -27,8 +28,8 @@ setup_mode_code()
 
 Help()
 {
-        echo -e "$(basename $0):"
-        Exec "sed -n -e '/^# ARGS_Begin/,/^# ARGS_End/p' "$0" | grep ')'"
+        echo -e "$(basename "$0"):"
+        Exec 'sed -n -e '\''/^# ARGS_Begin/,/^# ARGS_End/p'\' "$0" '| grep -v "^#" | grep ")"'
         echo -e ""
 }
 
@@ -53,9 +54,9 @@ dump_env()
 {
         local Var=
 
-        echo "Environment of $(basename $0)"
+        echo "Environment of $(basename "$0")"
         for Var in $VAR_LIST ; do
-                echo -e "  $Var:\t${!Var}"
+                echo -e "  $Var:\\t${!Var}"
         done
         echo ""
 }
@@ -68,7 +69,7 @@ dump_env()
 #
 stage_line()
 {
-        local tmp=
+        declare -a tmp=
         local Key=
 
         #
@@ -77,7 +78,9 @@ stage_line()
         # not, and use the second character to see the
         # state of any un staged files.
         #
-        tmp=( $1 )
+        # shellcheck disable=2206 #Quote to prevent word splitting, or split
+                                  # robustly with mapfile or read -a
+        tmp=( $@ )
         Key="${tmp[0]#?}"
         echo_dbg "Raw Key: ${tmp[0]}  Key: $Key"
 
@@ -85,12 +88,12 @@ stage_line()
         # This will run the command if $DEBUG != 1, else
         # it will print the command string through stderr.
         #
-        Exec ${GIT_MODE_CODE[$Key]} "${tmp[1]}"
+        Exec "${GIT_MODE_CODE[$Key]}" "${tmp[1]}"
 }
 
 page_break()
 {
-        local tmp=
+        local tmpe=
         local Count=
         local Page_Size=
         local Page_Marker=
@@ -100,12 +103,12 @@ page_break()
         Page_Marker="$1"; shift
         if [ "${!Count}" -eq 0 ] ; then
                 echo -e "$Page_Marker"
-                eval ${Count}=$page_size
+                eval "${Count}"="$Page_Size"
                 sleep 1
                 return
         fi
-        tmp=${!Count}
-        eval "${Count}"=$(( tmp - 1 ))
+        tmpe=${!Count}
+        eval "${Count}"=$(( tmpe - 1 ))
 }
 
 var_sanity_check()
@@ -129,7 +132,7 @@ wait_rm_tmpfile()
         while [ ! -f "$File" ] ; do
                 sleep 1
         done
-        rm $File
+        rm "$File"
 
         return
 }
@@ -144,7 +147,7 @@ set_helper()
 {
         [ -z "$1" ] && return 1
 
-        cat > $1 <<"EOF"
+        cat > "$1" <<"EOF"
 #!/bin/bash
 
 exec 1>&-
@@ -155,7 +158,7 @@ EOF
         [ -f "$1" ] && chmod +x "$1"
 }
 
-TMPFILE=$(mktemp -p /tmp .helper-XXXX)
+# TMPFILE=$(mktemp -p /tmp .helper-XXXX)
 
 # ARGS_Begin
 while [ $# -ne 0 ] ; do
@@ -176,11 +179,11 @@ while [ $# -ne 0 ] ; do
            ;;
         -u) UNTRACK=1
            ;;
-        -v) EDIT_WITH="$TMPFILE nvim-qt";
-            set_helper $TMPFILE
-            echo_dbg ${GIT_MODE_CODE["U"]} $(get_files)
-            EDIT_WITH="${GIT_MODE_CODE["U"]} $(get_files)&"
-           ;;
+#       -v) EDIT_WITH="$TMPFILE nvim-qt";
+#           set_helper "$TMPFILE"
+#           echo_dbg "${GIT_MODE_CODE["U"]} $(get_files)"
+#           EDIT_WITH="${GIT_MODE_CODE["U"]} $(get_files)&"
+#          ;;
         *) echo "Unknown argument: $1"; Help; exit 0
            ;;
         esac
@@ -197,18 +200,30 @@ add_patch()
         local PATCH_FILE=
         local branch=
         declare -A Info=
-        eval Info=( $(git log -1 --format="[\"Hash\"]=\"%h\"       \
+#
+# Quoted this as per shellcheck.  Verify this still works!! XXX
+#
+        eval "Info=( $(git log -1 --format="[\"Hash\"]=\"%h\"       \
                                            [\"Author\"]=\"%an\"    \
                                            [\"Committer\"]=\"%cn\" \
-                                           [\"Subject\"]=\"%f\"") )
+                                           [\"Subject\"]=\"%f\"") )"
 set -x
         branch="$(git branch | awk '{print $2}')"
         time_stamp=$(date +"%Y-%a-%b-%e@%H.%M%P")
+        # shellcheck disable=2116 # Useless echo? Instead of 'cmd $(echo foo)', just use 'cmd foo'.
+        #                           In this case the $(echo ...) is extremely useful.  The echo
+        #                           strips off all the white space preceding and following the
+        #                           content that is needed.
+        #
+        # shellcheck disable=2086 # Double quote to prevent globbing and word splitting.
+        #                           In fact globbing and splitting is what is necessary here
+        #                           to ensure all of that extraneous white space is stripped.
+        #
         PATCH_FILE=patches/patch.$(echo $branch).${Info["Hash"]}.${time_stamp}
 
         [ ! -d patches ] && mkdir -p patches
-        git diff > $PATCH_FILE
-        git diff --cached >> $PATCH_FILE
+        git diff > "$PATCH_FILE"
+        git diff --cached >> "$PATCH_FILE"
 }
 
 if ! var_sanity_check page_size ; then
@@ -230,6 +245,7 @@ fi
         if [ "${DO_COMMIT[2]}" = "--amend" ] ; then
                 add_patch
         fi
+        # shellcheck disable=2162 # read without -r will mangle backslashes.
         git status --porcelain \
                 | sed -e 's/^ /_/' \
                 | grep "$FILTER" \
@@ -238,10 +254,10 @@ fi
                         if ! RESULTS="$(stage_line "$line") $RESULTS" ; then
                                 echo "Did not stage: [$line]"
                         fi
-                        page_break count page_size "\t=================="
+                        page_break count page_size "\\t=================="
                 done
 
-        ${DO_COMMIT[@]}
+        "${DO_COMMIT[@]}"
         [  "${#DO_COMMIT[@]}" -eq 0 ] && git status
 )
 
