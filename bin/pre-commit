@@ -198,5 +198,5 @@ if ! filter_files "$REPOROOT" "$ERR_FILE" "${FILES[@]}" ; then
         echo_err "${REDYLW}\\tSee style.errs in the root of this repo ($REPOROOT)."
         exit 2
 fi
-echo_err  "${GRNGRN}\\tNo style errors found.$"
+echo_err  "${GRNGRN}\\tNo style errors found."
 
