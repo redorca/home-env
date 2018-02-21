@@ -90,7 +90,6 @@ git_committed()
 #
 do_for()
 {
-        set -x
         local Cmd=
         declare -a List=
         local var=
@@ -182,9 +181,7 @@ find "${Dirs[@]}" -type f -executable | while read badperms; do
         fi
         FMT=
         echo $badperms
-#       echo -n $badperms
-        # add space between files
-        echo "  "
+        echo " "
 done
 }
 
