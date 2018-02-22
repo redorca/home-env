@@ -98,12 +98,12 @@ page_break()
         local Page_Size=
         local Page_Marker=
 
-        Count="$1"; shift
-        Page_Size="$1"; shift
+        Count="${1}"; shift
+        Page_Size="${1}"; shift
         Page_Marker="$1"; shift
         if [ "${!Count}" -eq 0 ] ; then
                 echo -e "$Page_Marker"
-                eval "${Count}"="$Page_Size"
+                eval "${Count}"="${!Page_Size}"
                 sleep 1
                 return
         fi
