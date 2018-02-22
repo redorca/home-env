@@ -10,3 +10,18 @@ finish mods to hookup (forward to auto_test/hooks/hookup) to print BINS and VARS
 mods to pre-commit: filter for -x on source files
                     filter & fix for C++ style comments.
 
+scripts:
+    given a package name see if it's installed.
+        Operate on command line or file based input.
+        Add capability to install what is not found.
+        Will need to run apt-get update.
+
+        for packages that are not found by apt-get install
+        running the command will print out the package
+        to install for that command.  Need to replicate
+        this capability.
+
+    import a "git clone" url into "clone" script format
+          Once that is working modify it to also work
+          with repo results of "git remote -v"
+

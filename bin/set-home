@@ -6,14 +6,14 @@ TMPFILE_EXEC=/tmp/.setup
 # Relocate so when we do a git checkout we don't overwrite ourselvves.
 #
 if [ "$(basename "$0")" = "set-home" ] ; then
-        cat $0 >  $TMPFILE_EXEC
-        cd /tmp
+        cat "$0" >  $TMPFILE_EXEC
+        cd /tmp ||  exit  1
         chmod +x  $TMPFILE_EXEC
         exec  $TMPFILE_EXEC
 fi
 
-VIM_SHARE_DIR=/usr/share/vim
-MSG="# Uncomment any one of the colors to provide vim with a color scheme"
+# VIM_SHARE_DIR=/usr/share/vim
+# MSG="# Uncomment any one of the colors to provide vim with a color scheme"
 PREAMBLE="# COLOR="
 if [ ! -d  ~/bin/home-env/bin ] ; then
         echo "The repo may not be placed correctly. Please make sure" >&2
@@ -24,11 +24,9 @@ mk_vimrc_color()
 {
         local File=
         local VimShareDir=
-        local ColorDefault=
 
         File=~/.vimrc_color
         VimShareDir=/usr/share/vim
-        ColorDefault=pablo
 
         cat >$File <<"EOF"
 "
@@ -42,13 +40,14 @@ EOF
         PREAMBLE="\" color "
         find $VimShareDir -type f -name "*.vim" \
                 | grep /colors/ \
-                | eval sed -e \''s:^.*\/::'\' -e \'s:^:$PREAMBLE:\' \
+                | eval sed -e \''s:^.*\/::'\' -e \'s:^:"$PREAMBLE":\' \
                         -e 's:\.vim$::' >> $File
         sed -i -e '/pablo$/s/^\" //' $File
 
         [ "$DEBUG" = "1" ] && cat $File
 }
 
+# shellcheck disable=2164
 pushd ~ >/dev/null
 
 _DIR=.git
@@ -62,9 +61,12 @@ mk_vimrc_color
 BASHRC=~/.bashrc
 
 if ! grep bash_aliases $BASHRC >/dev/null ; then
-        echo -e "\nif [ -f ~/.bash_aliases ] ; then" >> $BASHRC
-        echo -e "\tsource ~/.bash_aliases" >> $BASHRC
-        echo -e "fi\n" >> $BASHRC
+        # shellcheck disable=2129
+        echo -e "\\nif [ -f ~/.bash_aliases ] ; then" >> $BASHRC
+        echo -e "\\tsource ~/.bash_aliases" >> $BASHRC
+        echo -e "fi\\n" >> $BASHRC
 fi
+
+# shellcheck disable=2164
 popd >/dev/null
 

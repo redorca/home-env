@@ -2,6 +2,8 @@
 # shellcheck disable=2034
 ORIGIN=$(pwd)/
 
+[ "$TRACE" = "1" ] && set -x
+
 #
 # Set the color variables or unset them.  Arg1 = ""
 # or 1 sets them and arg1 = 0 unsets them.
@@ -14,7 +16,8 @@ set_colors()
         OnOff="$1"
 
         ColorList=( "RED" "REDBLK" "REDYLW" "REDBLU" "GREEN" "GRNBLK" "GRNGRN" \
-                   "YELLOW" "YLWBLK" "YLWRED" "YLWGRN" "YLWBLU" "YLWLTBLU" "BLUE" "RESET" )
+                   "YELLOW" "YLWBLK" "YLWRED" "YLWGRN" "YLWBLU" "YLWLTBLU" \
+                   "BLUE" "BLUYLW" "RESET" )
         if [ -n "$OnOff" ] && [ "$OnOff" = "0" ]  ; then
                 for var in "${ColorList[@]}" ; do
                         unset $var
@@ -35,8 +38,9 @@ set_colors()
         YLWRED='\033[1;33;41m'
         YLWGRN='\033[1;33;42m'
         YLWBLU='\033[1;33;44m'
-        YLWltBLU='\033[1;33;46m'
+        YLWLTBLU='\033[1;33;46m'
         BLUE='\033[1;34m'
+        BLUYLW='\033[1;34;43m'
         RESET='\033[0;39;49m'
 }
 
@@ -45,7 +49,7 @@ set_colors()
 #
 echo_err()
 {
-        /bin/echo -e  "$@" ${RESET}  >&2
+        /bin/echo -e  "$@" "${RESET}"  >&2
 }
 
 #
@@ -61,15 +65,8 @@ echo_dbg()
         #
         # If the first character in $@ is a ':' then treat $@ as a string.
         #
-        tmp=( "$@" )
-        [ "${tmp[0]#:}" != "${tmp[0]}" ]  && echo_err "${tmp[0]#:}" && return
-
-        # Else, treat all of the args as undereferenced variables.
-        #
-        for i in "$@" ; do
-                echo_err -n "    ::  $i\\t\\t"
-                echo_err  "(${!i})"
-        done
+        tmp=( $@ )
+        echo_err "${tmp[0]#:}"
 }
 
 #
@@ -96,7 +93,7 @@ exit_chk()
         Msg="$1" ; shift
         Assert="$1" ; shift
 
-        if ! eval $Assert ; then
+        if ! eval "$Assert" ; then
                 echo_err "Assertion failed: ($Assert)"
                 echo_err "$Msg"
                 $Action 1
@@ -109,20 +106,17 @@ exit_chk()
 # Actually, the shell expansion process following the echo
 # below will strip off all of the spaces from the edges.
 #
-# Arg : A variable not de-referenced (no '$'prefix).
-#       'strip_edge_ws' Var rather than 'strip_edge_ws $Var'
-#
 strip_edge_ws()
 {
         local chars=
         local key=
 
+        # shellcheck disable=2206
         chars=( $@ )
         for key in "${!chars[@]}" ; do
-                echo "key: ($key), chars[$key]: ${chars[$key]}"
-                char[$key]=$(echo "${chars[$key]}")
-#               echo char[$key]=${chars[$key]}
-#               eval $key=\"$(echo ${!key})\"
+                echo_dbg "key: ($key), chars[$key]: ${chars[$key]}"
+                # shellcheck disable=2116
+                chars[$key]=$(echo "${chars[$key]}")
         done
 }
 
@@ -154,7 +148,7 @@ flip_hashmark()
 }
 
 if [ -f "$1" ] ; then
-        flip_hashmark "$@"
+        flip_hashmark $@
 fi
 
 EOF
@@ -193,7 +187,7 @@ set_files()
         # See if there are any staged files to check:
         #
         Files=( "$(eval "$GIT_CMD")" ) || return 1
-        [ -n "${Files[*]}" ] && echo "${Files[@]}" && return 0
+        [ -n "${Files[*]}" ] && echo "${Files[*]}" && return 0
 
         #
         # Finding a lack of files to process turn to the most recent
@@ -203,12 +197,15 @@ set_files()
         FileCount=$(git log -1 --name-only $AGAINST | wc -l)
         if [ "$FileCount" -gt 150 ] ; then
                 echo_err -n "${RED}Too many files${RESET} to process."
-                echo_err "(${BLUE}$FileCount)"
+                echo_err "File count: ${BLUE}$FileCount"
                 return 1
         fi
 
         Files=( "$(eval "$GIT_CMD")" ) || return 1
-        [ -n "${Files[*]}" ] && echo "${Files[@]}" && return 0
+        if [ -n "${Files[*]}" ] ; then
+                echo "${Files[*]}"
+                return 0
+        fi
 
         return 1
 }
@@ -219,19 +216,21 @@ set_files()
 find_repo()
 {
         local Here=
-        local File=
+        declare -a Files=
         local Cmd=
         local Rv=
 
-        File="$1"
+        # shellcheck disable=2206
+        Files=( $@ )
         Cmd="git rev-parse --show-toplevel"
-        [ "${File#/}" != "$File" ] && Here=$(pwd) && cd "$(dirname "${File[0]}")"
+  (
+        # shellcheck disable=2164
+        [ "${Files[0]#/}" != "${Files[0]}" ] && cd "$(dirname "${Files[0]}")"
         $Cmd 2>/dev/null
         Rv=$?
 
-        [ -n "$Here" ] && cd "$Here"
-
         return $Rv
+  )
 }
 
 #
@@ -240,15 +239,19 @@ find_repo()
 filter_style()
 {
         declare -a Files=
+        declare -a SRCS=
         local Results=
         local ASTYLE=
         local ASTYLE_OPTS=
         local STYLE_OPTIONS=
         local ZGLUE_OPTS_DIR=
+        local TMPFILE=
 
         Results=$1; shift
 
-        Files=( "$@" )
+        Files=( $@ )
+        # shellcheck disable=2207
+        SRCS=( $(filter_for_srcfiles "${Files[@]}") )
         #
         # Look first in the local directory (ORIGIN) to see if
         # astyle is local and executable.  If not then try /usr/bin
@@ -260,35 +263,41 @@ filter_style()
         [ ! -x "$ASTYLE" ] && ASTYLE=/usr/bin/astyle
         [ ! -x "$ASTYLE" ] && ASTYLE=$(which astyle)
         [ ! -x "$ASTYLE" ] && echo_err "Unable to find the astyle program" && return 1
-        echo_dbg ":$ASTYLE will be used."
+        echo_dbg "$ASTYLE will be used."
 
         ASTYLE_OPTS=astyle-nuttx
         STYLE_OPTIONS=${ORIGIN}${ASTYLE_OPTS}
         ZGLUE_OPTS_DIR=/usr/share/zglue/styles
         [ ! -f "$STYLE_OPTIONS" ] && STYLE_OPTIONS=$ZGLUE_OPTS_DIR/${ASTYLE_OPTS}
-        echo_dbg ":$STYLE_OPTIONS will be used with astyle."
+        echo_dbg "$STYLE_OPTIONS will be used with astyle."
 
         QUIET='-q'
         [ "$DEBUG"  = "1" ]  && QUIET='-v'
-        echo_dbg ASTYLE STYLE_OPTIONS
+        echo_dbg "$ASTYLE $STYLE_OPTIONS"
 
         [ -f "$STYLE_OPTIONS" ] || echo_err "Missing [$STYLE_OPTIONS]" || return 1
 
         #
         # style check the files to commit, quietly unless DEBUG is set.
         #
-        CMD=( "$ASTYLE" "--options=$STYLE_OPTIONS" $QUIET "${Files[@]}" )
+        # shellcheck disable=2206
+        CMD=( "$ASTYLE" "--options=$STYLE_OPTIONS" $QUIET "${SRCS[@]}" )
         echo_dbg "${CMD[@]}"
         if ! "${CMD[@]}" ; then
                 echo_err "${RED}Fail"
                 return 1
         fi
 
-        CMD=( "$TMPFILE" "${Files[@]}" )
-        eval "${CMD[@]}" > $Results
+        #
+        # Adjust the results to account for minor variations from astyle
+        # Create temp script to post process files styled by astyle
+        #
+        TMPFILE="$(mktemp -p /tmp .cleanup_astyle.XXX)"
+        setup_flip_hashmark "$TMPFILE"
 
-        # Ignore error messages so they themselves don't cause a style failure.
-        git diff "${Files[@]}" > "$Results" 2>/dev/null
+        CMD=( "$TMPFILE" "${SRCS[@]}" )
+        eval "${CMD[@]}" > "$Results"
+        rm -f "$TMPFILE"
 
         # Remove incidental files generated by astyle and this script.
         #
@@ -304,7 +313,7 @@ find_files_for()
         local file=
         local dir=
 
-        for file in "$@" ; do
+        for file in $@ ; do
                 dir="$(basename "$file")"
                 if [ "${dir#/nrf*}" != "$dir" ] ; then
                         echo -n "$file "
@@ -321,11 +330,7 @@ filter_out_whitespace()
         local Results=
 
         Results="$1"; shift
-        for file in "$@" ; do
-#               if [ "${file%%.c}" = "$file" ] && [ "${file%%.h}" = "$file" ] ; then
-#                       echo_dbg ":Skipping $file"
-#                       continue
-#               fi
+        for file in $@ ; do
                 sed -i -e 's/[ 	]\+$//' "$file"
         done
 }
@@ -342,7 +347,7 @@ filter_if_0()
         local Msg=
 
         Results="$1"; shift
-        Files=( "$@" )
+        Files=( $@ )
         Key="^[ 	]*#if[ 	]*0"
         Msg="XXX Please remove or rename \\'if 0\\'"
         for i in "${Files[@]}" ; do
@@ -362,7 +367,7 @@ filter_for_nrf52()
         local dir=
         local Filter=
 
-        for file in "$@" ; do
+        for file in $@ ; do
                 dir="$(dirname "$file")"/
                 for Filter in $FILTERS_NRF ; do
                        #echo "Filter: $Filter:  ${dir%${FILTER_DIR}*}"
@@ -383,12 +388,14 @@ filter_for_externs()
         local Results=
 
         Results="$1"; shift
-        Files=( "$@" )
+        Files=( $@ )
         for i in "${Files[@]}" ; do
                 [ -n "${i%%*.h}" ] && continue
                 grep "^extern.*;" "$i" >/dev/null 2>&1 && sed -i \
                         -e '/^extern.*;/iXXX Remove this extern!' "$i"
         done
+
+        return 0
 }
 
 #
@@ -398,10 +405,9 @@ filter_files()
 {
         local RepoRoot=
         declare -a Files=
-        local TMPFILE=
         local Results=
         local ZGLUE_OPTS_DIR=
-        local tmp=
+        declare -a tmp=
         local RV=
 
         RV=1
@@ -413,28 +419,24 @@ filter_files()
 
         RepoRoot="$1"; shift
         Results="$1" ; shift
+
         RESULTS=${RepoRoot}/$Results
-        tmp=$(echo "$1")
-        echo_err "${BLUE}1 is ($tmp)"
+        # shellcheck disable=2206
+        Files=( $@ )
+        echo_dbg " === Files has ${#Files[@]} elements"
 
-        if [ "${tmp:0:1}" = " " ] ; then
-                echo_err "${GREEN}tmp has a leading space"
+        strip_edge_ws "${Files[@]}"
+        if [ "${Files:0:1}" = " " ] ; then
+                echo_err "${YLWBLU}${Files[0]}  has a leading space"
         fi
-        [ ! -f $tmp ] && echo_err "No files to style." && return 0
-        Files=( "$@" )
-
-        #
-        # Adjust the results to account for minor variations from astyle
-        # Create temp script to post process files styled by astyle
-        #
-        TMPFILE="$(mktemp -p /tmp .cleanup_astyle.XXX)"
-        setup_flip_hashmark "$TMPFILE"
+        [ ! -f "${Files[0]}" ] && echo_err "No files to style." && return 0
 
   (
         [ -z "$RepoRoot" ] && return 1
-        cd "$RepoRoot"
+        cd "$RepoRoot" || return 2
+
         for Func in $FILTER_FUNCTIONS ; do
-                echo_dbg ":Filter  $Func"
+                echo_dbg "Filter  $Func"
                 if ! $Func "$RESULTS" "${Files[@]}" ; then
                         echo_err "${RED}== $Func failed."
                 fi
@@ -444,16 +446,17 @@ filter_files()
         #
         # Run filter_style last as it will gather all of the diffs into one file.
         #
-        SRCS=( $(filter_for_srcfiles "${Files[@]}") )
-        echo_dbg ":SRCS has ${#SRCS[@]} elements"
+        echo_dbg "SRCS has ${#SRCS[@]} elements"
         if [ -n "${SRCS[*]}" ] ; then
                 filter_style "$RESULTS" "${SRCS[@]}"
         fi
+        # Ignore error messages so they themselves don't cause a style failure.
+        git diff "${Files[@]}" > "$RESULTS" 2>/dev/null
+
         [ -s "$RESULTS" ] && grep "^XXX" "$RESULTS" && unset GIT_ADD
         return $RV
-  ) && return $?
+  )
 
-        rm -f "$TMPFILE"
         #
         # Set return value based on size of output file.
         #
@@ -474,16 +477,18 @@ in_managed_repo()
         declare -a RemoteNames=
         local ManagedTuples=
 
+        # shellcheck disable=2207
         RemoteNames=( $(git remote) )
-        [ -z "${RemoteNames[*]}" ] && echo_dbg ":No remote for this repo." && return 1
-        ManagedTuples=( "$@" )
+        [ -z "${RemoteNames[*]}" ] && echo_dbg "No remote for this repo." && return 1
+        ManagedTuples=( $@ )
         for name in "${RemoteNames[@]}" ; do
+                # shellcheck disable=2207
                 RemoteTuple=( $(git remote get-url "$name" | awk -F'/' '{print $3, $4}') )
                 RemoteTuple[0]=${RemoteTuple[0]#*@}
                 VerifyTuple=${RemoteTuple[1]%%.git}@${RemoteTuple[0]%%:*}
                 for tuple in "${ManagedTuples[@]}" ; do
                         if [ $tuple == $VerifyTuple ] ; then
-                                echo_dbg ":$VerifyTuple Matched!"
+                                echo_dbg "$VerifyTuple Matched!"
                                 return 0
                         fi
                 done
@@ -501,16 +506,16 @@ filter_for_srcfiles()
         local tmpo=
         declare -a tmpe=
 
-        tmpe=( ${@} )
-        echo_dbg ": tmpe has ${#tmpe[@]} elements"
+        tmpe=( $@ )
+        echo_dbg " tmpe has ${#tmpe[@]} elements"
         for file in "${tmpe[@]}" ; do
                 tmpo=${file%%*.[ch]}
-                [ -n "$tmpo" ] && echo_dbg ":skipping $file" && continue
+                [ -n "$tmpo" ] && echo_dbg "skipping $file" && continue
 
                 # shellcheck disable=2153
                 [ -n "${tmpo%%/*}" ] && file=${REPOROOT}$file
                 echo -n "$file "
-                echo_dbg file
+                echo_dbg "$file"
 
         done
 }
@@ -524,7 +529,7 @@ git_committed()
         local Filter1=
         local Filter2=
 
-        [ "$1" = "unstaged" ] && IFS=" " && echo_dbg ":Setting IFS to a space"
+        [ "$1" = "unstaged" ] && IFS=" " && echo_dbg "Setting IFS to a space"
         Filter1="'/^${IFS}[AMC]/p'"
         Filter2="'/^${IFS}[R]/p'"
         git status -uno --porcelain=v1 | eval sed -n -e "$Filter1" -e "$Filter2" | \

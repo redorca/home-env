@@ -167,7 +167,7 @@ while [ $# -ne 0 ] ; do
         -a) DO_COMMIT=( "git" "commit" "--amend" "--date=${NEW_TIME_STAMP}" )
             myname="$(git config --get user.name)"
             author=$(git log -1 --pretty=short | awk '/^Author:/ {print $2 " " $3}' )
-            if [ "$myname" != "author" ] ; then
+            if [ "$myname" != "$author" ] ; then
                 DO_COMMIT=( "${DO_COMMIT[@]}" "--reset-author" )
             fi
            ;;
@@ -224,7 +224,7 @@ add_patch()
         #                           In fact globbing and splitting is what is necessary here
         #                           to ensure all of that extraneous white space is stripped.
         #
-        PATCH_FILE=patches/patch.$(echo $branch).${Info["Hash"]}.${time_stamp}
+        PATCH_FILE=patches/patch.$(echo $branch | sed -e 's/\//_/g').${Info["Hash"]}.${time_stamp}
 
         [ ! -d patches ] && mkdir -p patches
         git diff > "$PATCH_FILE"

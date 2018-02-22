@@ -26,14 +26,14 @@ MSG="$1"
 # Check for, and add if missing, a unique Change-Id
 #
 add_ChangeId() {
-	clean_message=`sed -e '
+	clean_message=$(sed -e '
 		/^diff --git .*/{
 			s///
 			q
 		}
 		/^Signed-off-by:/d
 		/^#/d
-	' "$MSG" | git stripspace`
+	' "$MSG" | git stripspace)
 	if test -z "$clean_message"
 	then
 		return
@@ -45,7 +45,7 @@ add_ChangeId() {
 		return
 	fi
 
-	if test "false" = "`git config --bool --get gerrit.createChangeId`"
+	if test "false" = "$(git config --bool --get gerrit.createChangeId)"
 	then
 		return
 	fi
@@ -56,18 +56,20 @@ add_ChangeId() {
 		return
 	fi
 
-	id=`_gen_ChangeId`
+	id=$(_gen_ChangeId)
 	T="$MSG.tmp.$$"
-	AWK=awk
+	AWK="awk"
 	if [ -x /usr/xpg4/bin/awk ]; then
 		# Solaris AWK is just too broken
 		AWK=/usr/xpg4/bin/awk
 	fi
 
 	# Get core.commentChar from git config or use default symbol
-	commentChar=`git config --get core.commentChar`
+	commentChar=$(git config --get core.commentChar)
 	commentChar=${commentChar:-#}
 
+        # shellcheck disable=2015
+        # shellcheck disable=2016
 	# How this works:
 	# - parse the commit message as (textLine+ blankLine*)*
 	# - assume textLine+ to be a footer until proven otherwise
@@ -172,13 +174,13 @@ add_ChangeId() {
 	}' "$MSG" > "$T" && mv "$T" "$MSG" || rm -f "$T"
 }
 _gen_ChangeIdInput() {
-	echo "tree `git write-tree`"
-	if parent=`git rev-parse "HEAD^0" 2>/dev/null`
+	echo "tree $(git write-tree)"
+	if parent=$(git rev-parse "HEAD^0" 2>/dev/null)
 	then
 		echo "parent $parent"
 	fi
-	echo "author `git var GIT_AUTHOR_IDENT`"
-	echo "committer `git var GIT_COMMITTER_IDENT`"
+	echo "author $(git var GIT_AUTHOR_IDENT)"
+	echo "committer $(git var GIT_COMMITTER_IDENT)"
 	echo
 	printf '%s' "$clean_message"
 }
