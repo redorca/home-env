@@ -17,6 +17,7 @@ DIALOG_SDK=dialog_585_sdk_dev
 declare -A Repo2Host
 declare -A RepoRename
 
+RepoRename["mynewt"]=mynewt-core
 RepoRename["fast"]=fast_api
 RepoRename["NuttX"]=bknuttx
 RepoRename["AppsX"]=bkapps
@@ -29,6 +30,7 @@ RepoRename["nordic"]=SDK_13.0.0-1@3rd_Party_SDK
 RepoRename["sdk_13_1"]=SDK_13.1.0@3rd_Party_SDK
 RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
 
+Repo2Host["mynewt-core"]=master@git@github.com/apache/mynewt-core.git
 Repo2Host["micro-ecc"]=master@git@github.com/kmackay/micro-ecc.git
 Repo2Host["zephyr"]=master@git@github.com/zephyrproject-rtos/zephyr.git
 Repo2Host["RIOT"]=master@github.com/RIOT-OS
@@ -123,16 +125,14 @@ dump_Repo2Host()
         echo -e "\tRepo names to clone and their repo urls"
         echo -e "\tFormat of repo url:  branch@name@url/x.git"
         for key in ${!Repo2Host[@]} ; do
-                echo -e "Repo: ${YELLOW}$key\t\t${BLUE}${Repo2Host[$key]}${RESET}"
+                echo -n -e "Repo: ${YEllOW}$key\t"
+                [ "${#key}" -le 9 ] && echo -n -e "\t"
+                echo -e "${BLUE}${Repo2Host[$key]}${RESET}"
         done
         echo -e "\t\tAliases"
         for key in ${!RepoRename[@]} ; do
-#               re_key="${RepoRename[$key]}"
-#               re_key=${re_key##*@}
                 for="${RepoRename[$key]}"
-                echo -e "alias: ${GREEN}$key\t\t${YELLOW}${for#*@}${RESET}"
-#               echo "key: $key, re_key $re_key"
-#               echo -e "alias: $key\t\t${Repo2Host[$re_key]}"
+                echo -e "alias: ${BLUE}$key\t\t${RED}${for#*@}${RESET}"
         done
 }
 
