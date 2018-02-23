@@ -11,7 +11,7 @@ help_msg()
        -u : Capitalize all typedefed variables so any variable name
              of the form [a-z]*_t will be changed to [A-Z]*_t.
 
-       -l : Default: Inverse of uc.
+       -l : Inverse of uc.
 
        -h : This message.
 
@@ -22,6 +22,9 @@ EOF
 
 foo()
 {
+        local File=
+        local STEM=
+
         File=$1
         grep "[a-zA-Z_0-9]\+_t" $File | sed -e 's/[u]*int[0-9]*_t//g' \
                 -n -e 's/.*[ 	]\([a-zA-Z0-9_][a-zA-Z0-9_]\+_t\)[^a-zA-Z0-9_].*/\1/p' | while read Type ; do
@@ -30,7 +33,6 @@ foo()
         done
 }
 
-CASE=lc
 [ $# -lt 1 ] && help_msg && exit 1
 while [ $# -ne 0 ] ; do
         case "$1" in
@@ -46,13 +48,15 @@ while [ $# -ne 0 ] ; do
         esac
         shift
 done
+( [ -z "$CASE" ] || [ -z "${FILES[*]}" ] ) && help_msg && exit 1
 
+#
+# Establish VARTYPES hash
+#
 eval $(foo $file)
-for File in "${FILES[@]}" ; do
-        grep "[a-zA-Z_0-9]\+_t" $file | sed -e '/*.*\([a-zA-Z0-9_]\+_t\)/\1/p'
-done
-exit
 
+#
+#
 STEM=${1%_t} ; shift
 
 
