@@ -15,6 +15,7 @@ if [ ! -f "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT" ] ; then
         echo "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT not found." >&2
         exit 1
 fi
+# shellcheck disable=1090
 source "$ZGLUE_LIBSTYLE"
 echo_dbg ":ZGLUE_LIBSTYLE : ($ZGLUE_LIBSTYLE)" >&2
 
@@ -65,6 +66,7 @@ EOF
 set_env()
 {
         while [ $# -ne 0 ] ; do
+                # shellcheck disable=2207
                 case "$1" in
                 --add) GIT_ADD=yes;
                         ;;
@@ -72,12 +74,12 @@ set_env()
                         ;;
                 -f|--file) [ ! -f "$2" ] && echo_err "No file? [$2]" && exit 1
                         [ -f "$2" ] && FILES=( $(sed -e 's/^[ 	]*//' "$2") ) && shift
-                        echo_dbg ":" "From containing file, list of files is \\n("${FILES[@]}")"
+                        echo_dbg ":" "From containing file, list of files is \\n(${FILES[*]})"
                         if [ -z "${FILES[*]}" ] ; then
                                 echo_err "Failed to read files from $2"
                                 exit 1
                         fi
-                        [ -n "${FILES[@]}" ] && echo_dbg ":" "Found files."
+                        [ -n "${FILES[*]}" ] && echo_dbg ":" "Found files."
                         ;;
                 -g|--git) FILES=( $(git_committed) )
                         [ -z "${FILES[*]}" ] && echo_err "No files found to process." ; exit 0
@@ -108,7 +110,7 @@ set_env()
 }
 
 # In case any leading and/or trailing white space exists
-[ -n "${FILES[@]}" ] && strip_edge_ws FILES
+[ -n "${FILES[*]}" ] && strip_edge_ws FILES
 
 export FILTERS_NRF="/nrf52/ /nrf52832_dk/"
 export FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
@@ -121,11 +123,6 @@ ACTIVELY_MANAGED_REPOS=( \
         "3rd_Party_SDK@$REPO_HOST" \
         "fast_api@$REPO_HOST" \
         )
-declare -A REPO_FILTERS
-REPO_FILTERS[nuttx@$REPO_HOST]="filter_if_0 filter_out_whitespace filter_for_externs"
-REPO_FILTERS[nuttx_apps@$REPO_HOST]="filter_if_0 filter_out_whitespace filter_for_externs"
-REPO_FILTERS[auto_test@$REPO_HOST]="filter_out_whitespace"
-REPO_FILTERS[3rd_Party_SDK@$REPO_HOST]="filter_out_whitespace"
 
 if [ "$(basename "$0")" != "pre-commit" ] ; then
         set_env "$@"
@@ -156,6 +153,7 @@ fi
 echo_dbg ":This repo is actively managed."
 
 
+# shellcheck disable=2207
 [ -z "${FILES[*]}" ] && FILES=( $(set_files "$ALT") )
 # In case any leading and/or trailing white space exists
 strip_edge_ws "${FILES[@]}"
@@ -198,5 +196,5 @@ if ! filter_files "$REPOROOT" "$ERR_FILE" "${FILES[@]}" ; then
         echo_err "${REDYLW}\\tSee style.errs in the root of this repo ($REPOROOT)."
         exit 2
 fi
-echo_err  "${GRNGRN}\\tNo style errors found.$"
+echo_err  "${GRNGRN}\\tNo style errors found."
 
