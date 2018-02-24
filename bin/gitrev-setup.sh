@@ -5,9 +5,12 @@
 # shellcheck disable=2034
 # YLWltBLU='\033[1;33;46m'
 # shellcheck disable=2034
-# YLWGRN='\033[1;33;42m'
+YLWGRN='\033[1;33;42m'
 # shellcheck disable=2034
-# RESET='\033[0;39;49m'
+YELLOW="\033[1;33m"
+# shellcheck disable=2034
+GREEN="\033[1;32m"
+RESET='\033[0;39;49m'
 # DEBUG=${DEBUG:-0}
 declare -A git_review
 # [ -f ~/bin/colors ] && source ~/bin/colors
@@ -34,10 +37,11 @@ GERRIT_HOST_PORT="${GERRIT_HOST_PORT:-"30149"}"
 GERRIT_USER="${GERRIT_USER:-"bill"}"
 # shellcheck disable=2207
 Repo=( $(git remote -v | grep fetch | awk -F'/' '{print $NF}') )
-echo "Repo Repo Repo: (${Repo[*]})"
+Local_Branch="$(git branch | awk '{print $2}' | tr -d [:space:])"
+Repo_Branch=( $(git branch -vv | grep $Local_Branch | sed -e 's/^.*\[\([^:]*\):.*/\1/' | awk -F'/' '{print $1 " " $2}') )
 GERRIT_REPO="${Repo[0]}"
-GERRIT_REPO_BRANCH="${GERRIT_REPO_BRANCH:-"zdk"}"
-LOCAL_REMOTE_NAME="${LOCAL_REMOTE_NAME:-"origin"}"
+GERRIT_REPO_BRANCH="${GERRIT_REPO_BRANCH:-${Repo_Branch[1]}}"
+LOCAL_REMOTE_NAME="${LOCAL_REMOTE_NAME:-${Repo_Branch[0]}}"
 GERRIT_XFER_PROTO="${GERRT_XFER_PROTO:-"ssh"}"
 
 setup_gitreview()
@@ -79,7 +83,7 @@ print_section_defaults()
 
 print_section_config()
 {
-        git config --local --get-regexp "gitreview.*"
+        git config --local --get-regexp "gitreview.*" | sed -e 's/^/\t/'
 }
 
 print_array()
@@ -114,38 +118,16 @@ current_branch()
         done
 }
 
-# extract_environs()
-# {
-#         local User=
-#         local Envars=
-# 
-#         GERRIT_REPO_BRANCH=$(current_branch)
-#         Envars=( $(git remote -v | grep fetch | awk  '{ print  $1 " "  $2 " " $3 " " $NF}') )
-#         print_array Envars "${Envars[@]}"
-#         LOCAL_REMOTE_NAME="${Envars[0]}"
-#         URI="${Envars[1]}"
-#         print_array URI "${URI[@]}"
-#         URL=( $(echo $URI | awk -F'/' '{print NF  " " $1" "  $NF }') )
-#         print_array URI "${URI[@]}"
-#         INDEX=$(( ${#URL[@]} - 1 ))
-#         User="$(git config --global user.email)"
-#         GERRIT_USER="${User%@*}"
-#         GERRIT_REPO="${URL[$INDEX]}"
-#         INDEX=$(( INDEX - 1 ))
-#         Repo="${URL[$INDEX]}" && echo "Repo: (${Repo[*]})"
-#         print_array URL "${URL[@]}"
-# }
-
 help()
 {
         # shellcheck disable=2086
-        sed -n -e '/^#Help/,/^#Help/p' $0 | grep -v ^#Help
+        sed -n -e '/^#Help/,/^#Help/p' $0 | grep -v ^#Help | grep -v ";;"
 }
 
 while [ $# -ne 0 ] ; do
         case "$1" in
 #Help Start
-             --env) PRINT_ENV="yes" # Print the internal default environment to use.
+        --env) PRINT_ENV="yes" # Print the internal default environment to use.
         ;;
         -e | --edit) git config --local --edit ; exit 0
         ;;
@@ -153,7 +135,11 @@ while [ $# -ne 0 ] ; do
         ;;
         -l | --list) PRINT_CURRENT_CONFIG=yes     # Print current settings for the repo.
         ;;
-        *) echo "I have no idea what that argument ($1) means.";
+        -r) # Remove the gitreview config info/section.
+            git config --local --remove-section gitreview
+            exit 0
+        ;;
+        *)  echo "I have no idea what that argument ($1) means.";
             exit 1
         ;;
 #Help End
@@ -162,6 +148,7 @@ while [ $# -ne 0 ] ; do
 done
 
 setup_gitreview
+
 [ "$PRINT_CURRENT_CONFIG" = "yes" ] && print_section_config && exit
 [ "$PRINT_ENV" = "yes" ] && print_section_defaults && exit
 

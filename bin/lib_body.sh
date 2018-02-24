@@ -65,7 +65,7 @@ echo_dbg()
         #
         # If the first character in $@ is a ':' then treat $@ as a string.
         #
-        tmp=( $@ )
+        tmp=( "$@" )
         echo_err "${tmp[0]#:}"
 }
 
@@ -112,7 +112,7 @@ strip_edge_ws()
         local key=
 
         # shellcheck disable=2206
-        chars=( $@ )
+        chars=( "$@" )
         for key in "${!chars[@]}" ; do
                 echo_dbg "key: ($key), chars[$key]: ${chars[$key]}"
                 # shellcheck disable=2116
@@ -221,7 +221,7 @@ find_repo()
         local Rv=
 
         # shellcheck disable=2206
-        Files=( $@ )
+        Files=( "$@" )
         Cmd="git rev-parse --show-toplevel"
   (
         # shellcheck disable=2164
@@ -249,7 +249,7 @@ filter_style()
 
         Results=$1; shift
 
-        Files=( $@ )
+        Files=( "$@" )
         # shellcheck disable=2207
         SRCS=( $(filter_for_srcfiles "${Files[@]}") )
         #
@@ -313,6 +313,7 @@ find_files_for()
         local file=
         local dir=
 
+        # shellcheck disable=2068
         for file in $@ ; do
                 dir="$(basename "$file")"
                 if [ "${dir#/nrf*}" != "$dir" ] ; then
@@ -330,6 +331,7 @@ filter_out_whitespace()
         local Results=
 
         Results="$1"; shift
+        # shellcheck disable=2068
         for file in $@ ; do
                 sed -i -e 's/[ 	]\+$//' "$file"
         done
@@ -347,7 +349,7 @@ filter_if_0()
         local Msg=
 
         Results="$1"; shift
-        Files=( $@ )
+        Files=( "$@" )
         Key="^[ 	]*#if[ 	]*0"
         Msg="XXX Please remove or rename \\'if 0\\'"
         for i in "${Files[@]}" ; do
@@ -367,6 +369,7 @@ filter_for_nrf52()
         local dir=
         local Filter=
 
+        # shellcheck disable=2068
         for file in $@ ; do
                 dir="$(dirname "$file")"/
                 for Filter in $FILTERS_NRF ; do
@@ -388,7 +391,7 @@ filter_for_externs()
         local Results=
 
         Results="$1"; shift
-        Files=( $@ )
+        Files=( "$@" )
         for i in "${Files[@]}" ; do
                 [ -n "${i%%*.h}" ] && continue
                 grep "^extern.*;" "$i" >/dev/null 2>&1 && sed -i \
@@ -422,7 +425,7 @@ filter_files()
 
         RESULTS=${RepoRoot}/$Results
         # shellcheck disable=2206
-        Files=( $@ )
+        Files=( "$@" )
         echo_dbg " === Files has ${#Files[@]} elements"
 
         strip_edge_ws "${Files[@]}"
@@ -480,7 +483,7 @@ in_managed_repo()
         # shellcheck disable=2207
         RemoteNames=( $(git remote) )
         [ -z "${RemoteNames[*]}" ] && echo_dbg "No remote for this repo." && return 1
-        ManagedTuples=( $@ )
+        ManagedTuples=( "$@" )
         for name in "${RemoteNames[@]}" ; do
                 # shellcheck disable=2207
                 RemoteTuple=( $(git remote get-url "$name" | awk -F'/' '{print $3, $4}') )
@@ -506,7 +509,7 @@ filter_for_srcfiles()
         local tmpo=
         declare -a tmpe=
 
-        tmpe=( $@ )
+        tmpe=( "$@" )
         echo_dbg " tmpe has ${#tmpe[@]} elements"
         for file in "${tmpe[@]}" ; do
                 tmpo=${file%%*.[ch]}

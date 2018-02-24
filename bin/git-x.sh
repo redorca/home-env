@@ -216,6 +216,7 @@ add_patch()
                                            [\"Committer\"]=\"%cn\" \
                                            [\"Subject\"]=\"%f\"") )"
         branch="$(git branch | awk '{print $2}')"
+        branch="$(git branch | awk '{print $2}' | tr -d [:space:])"
         time_stamp=$(date +"%Y-%a-%b-%e@%H.%M%P")
         # shellcheck disable=2116 # Useless echo? Instead of 'cmd $(echo foo)', just use 'cmd foo'.
         #                           In this case the $(echo ...) is extremely useful.  The echo
