@@ -1,0 +1,193 @@
+#!/bin/bash
+
+# shellcheck disable=2034
+RESET="\\033[0;39;49m"
+# shellcheck disable=2034
+RED="\\033[1;31m"
+# shellcheck disable=2034
+BLUE="\\033[1;34m"
+
+ROOT=~/bin
+declare -a BINS
+declare -A DIFFER
+declare -A NOTFOUND
+
+ftrace="eval echo_dbg \${FUNCNAME[0]}"
+
+#
+# List of files required to provide style checking
+# and pre-commit hook support to git repos.
+#
+set_bins()
+{
+        $ftrace
+        local Root=
+
+    [ -n "$1" ] && Root="$1" && echo "Rebasing on: $Root"
+    echo_dbg " :: Root = $Root"
+    BINS=(
+        "${Root}"/usr/bin/style_file
+        "${Root}"/usr/bin/astyle
+        "${Root}"/usr/bin/hookup
+        "${Root}${HOOKS_DIR}"/pre-commit
+        "${Root}${HOOKS_DIR}"/commit-msg
+        "${Root}${STYLES_DIR}"/astyle-nuttx
+        "${Root}${ZGLUE_LIBDIR}"/lib_body.sh
+ )
+}
+
+#
+# See if the two files passed in are the same.
+#
+diff_check()
+{
+        $ftrace
+        local File_1=
+        local File_2=
+        local Sum_1=
+        local Sum_2=
+
+        File_1="$1" ; shift
+        File_2="$1" ; shift
+
+        [ -f "$File_1" ] && Sum_1="$(sha256sum "$File_1" | awk '{print $1}')"
+        [ -f "$File_2" ] && Sum_2="$(sha256sum "$File_2" | awk '{print $1}')"
+
+        [ "$Sum_1" = "$Sum_2" ] && return
+        [ "$DIFF_FILES" = "1" ] && diff -u "$File_1" "$File_2" > diff."$(basename "$File_1")"
+        return 1
+}
+
+
+#
+# Wrap a check of $DEBUG = 1 and echo.
+#
+echo_dbg()
+{
+        [ "$DEBUG" = "1" ] || return
+        echo -e "$@" >&2
+}
+
+#
+# Update the binaries if necessary.
+#
+place_files()
+{
+        $ftrace
+        declare -a CMD=
+        local bin=
+        local this_bin=
+        local this_dir=
+        local SP=
+
+        if [ "$(id -u)" -ne 0 ] && [ -z "$ROOT" ] ; then
+                echo "Placing files requires root privileges, please retry." >&2
+                exit 1
+        fi
+
+        if [ -n "${NOTFOUND[*]}" ] ; then
+                echo "" >&2
+                echo "Not all of the required files are available." >&2
+                echo "Please place missing files into this directory." >&2
+                return 1
+        fi
+        if [ "${#DIFFER[@]}" -eq 0 ] ; then
+                echo "No files differ, nothing to copy." >&2
+                return
+        fi
+	for bin in "${BINS[@]}" ; do
+	        this_bin="$(basename "$bin")"
+	        this_dir="$(dirname "$bin")"
+                # Empty out the array so it reports 0 elements.
+                CMD=()
+
+                [ -n "${DIFFER[$this_bin]}" ] || continue
+                # See if we are replacing ourselves. If so, step aside.
+	        [ ! -d "$this_dir" ] && CMD=( "mkdir" "-p" "$this_dir" )
+	        [ "${#CMD[@]}" -gt 0 ] && echo -e "${CMD[*]}" && "${CMD[@]}"
+
+	        echo -n -e "Placing $this_bin:\\t"
+                [ "${#this_bin}" -lt 8 ] && SP="\\t"
+                CMD=( "cp" "$this_bin" "$bin" )
+	        echo -e "${SP}${CMD[*]}" && "${CMD[@]}"
+                SP=
+
+	        [ "$this_dir" == "${ROOT}${STYLES_DIR}" ] || chmod +x "$bin"
+	        sleep 1
+	done
+
+        return 0
+}
+
+
+#
+#  Given a list of files or anything cycle through the list
+#  printing each element in turn.  TODO: add ability to format
+#  the page as into columns 
+#
+list_files()
+{
+        $ftrace
+        local Msg=
+        local fff=
+        declare -a Files=
+
+        Msg="$1" ; shift
+        Files=( "$@" )
+
+        echo -e "${Msg}"
+        for fff in "${Files[@]}" ; do
+                echo -e "\\t$fff"
+        done
+}
+
+#
+# validate the required files are available to place.
+#
+validate_horde()
+{
+        $ftrace
+        local FA=
+        local bin=
+        local msg=
+        local local_bin=
+        declare -a msgs=
+        declare -a Found=
+        declare -a NotFound=
+        declare -a Differs=
+
+        FA=0
+        msgs=( "${RED}Differ:${RESET}" "${BLUE}Found${RESET}" "${RED}NotFound:${RESET}" )
+
+        echo "Making sure all of the files are here ... "
+	for bin in "${BINS[@]}" ; do
+                local_bin=$(basename "$bin")
+                if [ -f "$local_bin" ] ; then
+                        if ! diff_check "$local_bin"  "$bin"  ; then
+                                Differs=( "$bin" "${Differs[@]}" )
+                                DIFFER["$local_bin"]="$bin"
+                        fi
+                        [ -n "${Found[*]}" ] && Found=( "$local_bin" "${Found[@]}" )
+                        [ -z "${Found[*]}" ] && Found=( "$local_bin" )
+                        continue
+                fi
+                NotFound=( "$local_bin" "${NotFound[@]}" )
+                NOTFOUND["$local_bin"]="$bin"
+                FA=1
+	done
+        [ -n "${Found[*]}" ] && list_files "${msgs[1]}" "${Found[@]}"
+        [ "${#Found[@]}" -eq "${#BINS[@]}" ] && echo -e "All files are found.\\n" >&2
+        [ -n "${Differs[*]}" ] && list_files "${msgs[0]}" "${Differs[@]}"
+        [ -n "${NotFound[*]}" ] && list_files "${msgs[2]}" "${NotFound[@]}"
+        msg="All files are current."
+        [ -z "${NotFound[*]}" ] && [ -z "${Differs[*]}" ] && echo -e "$msg" >&2
+        return $FA
+}
+
+set_bins "$ROOT"
+if validate_horde ; then
+        place_files
+else
+   echo "Could not validate files." >&2
+fi
+
