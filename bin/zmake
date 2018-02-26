@@ -197,7 +197,7 @@ set_app_list()
 
         pieces=( $(echo $fresults | sed -e 's/\// /g') )
         count=$(( "${#pieces[@]}" + 1 ))
-        [ "$DEBUG" = "1" ] && echo_e "== fresults: ($fresults), count: $count"
+        [ "$DEBUG" = "1" ] && echo_e "== fresults: ($fresults), count: [$count]"
 
         pieces=( $(ls $fresults/*/$File_Key | cut --delim='/' -f $count) )
         echo "${pieces[@]}"
