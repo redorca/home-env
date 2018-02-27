@@ -148,7 +148,7 @@ flip_hashmark()
 }
 
 if [ -f "$1" ] ; then
-        flip_hashmark $@
+        flip_hashmark "$@"
 fi
 
 EOF
@@ -310,16 +310,54 @@ filter_style()
 #
 find_files_for()
 {
-        local file=
+        local File=
         local dir=
 
         # shellcheck disable=2068
-        for file in $@ ; do
+        for File in $@ ; do
                 dir="$(basename "$file")"
                 if [ "${dir#/nrf*}" != "$dir" ] ; then
-                        echo -n "$file "
+                        echo -n "$File "
                 fi
         done
+}
+
+#
+# Flag the file as potentially executable and 
+# return true.
+#
+is_executable()
+{
+        local File=
+
+        File=$1
+        if ! file -ib $File | grep ^text >/dev/null ; then
+                return 0
+        elif [ -z "$(file $File  | sed -e '/DOS/d' | sed -e '/executable/d')" ]  ; then
+                return 0
+        fi
+
+        return 1
+}
+
+#
+# Strip out excess white space at end of lines
+#
+filter_set_noexec()
+{
+        local File=
+        local Results=
+
+        Results="$1"; shift
+        # shellcheck disable=2068
+        for File in $@ ; do
+                if  is_executable "$File" ; then
+                        continue
+                fi
+                [ -x "$File" ] && chmod -x "$File"
+        done
+
+        return 0
 }
 
 #
@@ -327,13 +365,18 @@ find_files_for()
 #
 filter_out_whitespace()
 {
-        local file=
+        local File=
         local Results=
 
         Results="$1"; shift
         # shellcheck disable=2068
-        for file in $@ ; do
-                sed -i -e 's/[ 	]\+$//' "$file"
+        for File in $@ ; do
+#               if [ -z "$(file -ib $File | grep ^text\/ 2>/dev/null)" ] ; then
+                if ! file -ib $File | grep ^text\/ >/dev/null 2>&1 ; then
+                        echo_dbg "Skipping\t $File:"
+                        continue
+                fi
+                sed -i -e 's/[ 	]\+$//' "$File"
         done
 }
 
@@ -365,17 +408,17 @@ filter_if_0()
 #
 filter_for_nrf52()
 {
-        local file=
+        local File=
         local dir=
         local Filter=
 
         # shellcheck disable=2068
-        for file in $@ ; do
+        for File in $@ ; do
                 dir="$(dirname "$file")"/
                 for Filter in $FILTERS_NRF ; do
                        #echo "Filter: $Filter:  ${dir%${FILTER_DIR}*}"
                         if [ "${dir%${Filter}*}" != "$dir" ] ; then
-                                echo "$file "
+                                echo "$File "
                                 break
                         fi
                 done
@@ -449,9 +492,9 @@ filter_files()
         #
         # Run filter_style last as it will gather all of the diffs into one file.
         #
-        echo_dbg "SRCS has ${#SRCS[@]} elements"
-        if [ -n "${SRCS[*]}" ] ; then
-                filter_style "$RESULTS" "${SRCS[@]}"
+        echo_dbg "Files has ${#Files[@]} elements"
+        if [ -n "${Files[*]}" ] ; then
+                filter_style "$RESULTS" "${Files[@]}"
         fi
         # Ignore error messages so they themselves don't cause a style failure.
         git diff "${Files[@]}" > "$RESULTS" 2>/dev/null
@@ -505,20 +548,20 @@ in_managed_repo()
 #
 filter_for_srcfiles()
 {
-        local file=
+        local File=
         local tmpo=
         declare -a tmpe=
 
         tmpe=( "$@" )
         echo_dbg " tmpe has ${#tmpe[@]} elements"
-        for file in "${tmpe[@]}" ; do
-                tmpo=${file%%*.[ch]}
-                [ -n "$tmpo" ] && echo_dbg "skipping $file" && continue
+        for File in "${tmpe[@]}" ; do
+                tmpo=${File%%*.[ch]}
+                [ -n "$tmpo" ] && echo_dbg "skipping $File" && continue
 
                 # shellcheck disable=2153
-                [ -n "${tmpo%%/*}" ] && file=${REPOROOT}$file
-                echo -n "$file "
-                echo_dbg "$file"
+                [ -n "${tmpo%%/*}" ] && File=${REPOROOT}$File
+                echo -n "$File "
+                echo_dbg "$File"
 
         done
 }

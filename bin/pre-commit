@@ -17,7 +17,7 @@ if [ ! -f "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT" ] ; then
 fi
 # shellcheck disable=1090
 source "$ZGLUE_LIBSTYLE"
-echo_dbg "ZGLUE_LIBSTYLE : ($ZGLUE_LIBSTYLE)" >&2
+echo_dbg "ZGLUE_LIBSTYLE := ($ZGLUE_LIBSTYLE)"
 
 #
 # Help nessage describing the command line options
@@ -113,7 +113,7 @@ set_env()
 [ -n "${FILES[*]}" ] && strip_edge_ws FILES
 
 export FILTERS_NRF="/nrf52/ /nrf52832_dk/"
-export FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
+export FILTER_FUNCTIONS="filter_out_whitespace filter_set_noexec filter_if_0 filter_for_externs"
 
 REPO_HOST="101.132.142.37"
 ACTIVELY_MANAGED_REPOS=( \
@@ -193,7 +193,7 @@ if ! filter_files "$REPOROOT" "$ERR_FILE" "${FILES[@]}" ; then
                 git add "$VERBOSE" "$SRCS"
                 PHRASEX="${GRNGRN}corrected, and  staged."
         fi
-        echo_err "$MAIN_PHRASE $PHRASEX$"
+        echo_err "$MAIN_PHRASE $PHRASEX"
         echo_err "${REDYLW}\\tSee style.errs in the root of this repo ($REPOROOT)."
         exit 2
 fi

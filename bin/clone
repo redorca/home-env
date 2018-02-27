@@ -16,6 +16,7 @@ DIALOG_SDK=dialog_585_sdk_dev
 
 declare -A Repo2Host
 declare -A RepoRename
+declare -A CONFIGS
 
 RepoRename["mynewt"]=mynewt-core
 RepoRename["fast"]=fast_api
@@ -91,21 +92,29 @@ BLUE='\033[1;34m'
 # shellcheck disable=2034
 RESET='\033[0;39;49m'
 
+echo_dbg()
+{
+        [ "$DEBUG" != "1" -a "$DEBUG" != "2" -a "$DEBUG" != "3" ] && return
+
+        echo -e "${FUNCNAME[1]} ::   $@" >&2
+}
+
 function help()
 {
-        sed -n -e '/^#Help/,/^#Help/p' "$0" | grep ')'
+        sed    -e '1,/^#Help/d' -e '/^#Help/,$d' "$0" | \
+                        sed -n -e '/^[ 	]\+[^A-Za-z0-9+=);_-]\+#/p' -e '/)/p'
 }
 
 #
 # Setup the repo table with a repo host url
 #
-function init_repo_table()
+setup_repo_table()
 {
         local repo_host_url=
 
-        [ -z "$1" ] && return 1
+        [ -z "$1" ] && echo_dbg "No repo provided." && return 1
         repo_host_url="$1"; shift
-        [ -n "$DEBUG" ] && echo "repo_host_url ($repo_host_url)" >&2
+        echo_dbg "repo_host_url ($repo_host_url)"
 	Repo2Host["fast_api"]=fast_api_dev@$repo_host_url/fast_api
 	Repo2Host["sdk_13"]=$SDK_13@$repo_host_url/3rd_Party_SDK
 	Repo2Host["sdk_14"]=$SDK_14@$repo_host_url/3rd_Party_SDK
@@ -169,6 +178,30 @@ setup_GERRIT_vars()
 }
 
 #
+# Perform any setup for this repo such as config settings,
+# adding remotes, renaming remotes.
+#
+# Arg1 : The repo to configure
+# Arg2 : The branch involved (may not be used)
+#
+setup_repo()
+{
+        local Repo=
+        local tmp=
+
+        Repo="$1" ; shift
+
+        if [ -z "${CONFIG[$Repo]}" ] ; then
+                return
+        fi
+    (
+        tmp=$(basename $Repo)
+        cd ${tmp%.git}
+        "${CONFIG_CMDS[@]}"
+    )
+}
+
+#
 # Setup remotes so that one points to gerrit and the other
 # points to git-hub.  The idea is to develop with git-hub
 # updating along the way from gerrit, and then push to gerrit
@@ -190,10 +223,11 @@ function clone()
         local Uri=
         local Key=
         local RepoName=
+        local tmp=
 
         [ -z "$1" ] && return 1
         Key=${1%%.git}
-        echo -n "Key: (${Key})"
+        echo_dbg "-n Key: (${Key})"
         if [ "${Key}" = "astyle" ] ; then
                 $ASTYLE_CO
                 return
@@ -205,7 +239,7 @@ function clone()
         else
                 Branch=${Repo2Host[$Key]}
         fi
-        echo "   Key: (${Key})"
+
         Proto=ssh
         Branch=${Branch%%@*}
         Uri=${Repo2Host[$Key]}
@@ -217,6 +251,7 @@ function clone()
         CMD="git clone -b $Branch $Proto://$Uri"
         echo "$CMD"
         $CMD
+
 }
 
 dual_source_repos()
@@ -230,25 +265,39 @@ SRC_REPO_URL="$GERRIT_HOST_URL"
 #Help
 while [ $# -ne 0 ] ; do
         case "$1" in
-        -p | --print) PRINT=YES  # Print the set of repos and names.
-                ;;
         -h | --help) help; exit
                 ;;
-        -R | --repo ) SRC_REPO_URL="$2"; shift # set the repo to init with.
-                ;;
+        # Rename origin to something else.
         -O | --no-origin)
                      CONFIG_TWO_REPOS="dual_source_repo" # TBD
                 ;;
+        -p | --print) PRINT=YES  # Print the set of repos and names.
+                ;;
+        # set a particular url to clone the desired repo from.
+        -R | --repo ) SRC_REPO_URL="$2"; shift # set the repo to init with.
+                ;;
         *) TARGET="$1"; # The repo name to clone.
+                [ -z "$TARGET" ] && help && exit
+#               if [ -z "${RepoRename[$1]}" ] && [ -z "${Repo2Host[$1]}" ] ; then
+#                       if [ -n "$1" ] ; then
+#                               echo -e "==  Not a supported target: ["$1"]" >&2
+#                       fi
+#                       help && exit
+#               fi
                 ;;
         esac
         shift
 done
 #Help
 
-if ! init_repo_table $SRC_REPO_URL ; then
+if ! setup_repo_table $SRC_REPO_URL ; then
         exit 1
 fi
+# repo=
+# if [ -n "${CONFIGS[$branch]}" ] ; then
+#         "${CONFIGS[$branch]}"
+# fi
+
 [ "$PRINT" = "YES" ] && dump_Repo2Host && exit 0
 
 clone $TARGET
