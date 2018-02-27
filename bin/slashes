@@ -1,0 +1,76 @@
+#!/bin/bash
+
+
+RED='\033[1;31m'
+RESET='\033[0;39;49m'
+#
+# Shortcut to send output to stderr by default.
+#
+echo_err()
+{
+        /bin/echo -e  "$@" "${RESET}"  >&2
+}
+
+#
+# Shortcut to send output to stderr by default.
+#
+echo_dbg()
+{
+        [ "$DEBUG" != "1" ] && return
+
+        local i=
+        declare -a tmp=
+
+        #
+        # If the first character in $@ is a ':' then treat $@ as a string.
+        #
+        tmp=( "$@" )
+        echo_err "${tmp[0]#:}"
+}
+
+#
+# Return the file list containing only *.[ch] files
+#
+filter_for_srcfiles()
+{
+        local file=
+        local tmpo=
+        declare -a tmpe=
+
+        tmpe=( "$@" )
+        echo_dbg " tmpe has ${#tmpe[@]} elements"
+        for file in "${tmpe[@]}" ; do
+                tmpo=${file%%*.[ch]}
+                [ -n "$tmpo" ] && echo_dbg "skipping $file" && continue
+
+                # shellcheck disable=2153
+                [ -n "${tmpo%%/*}" ] && file=${REPOROOT}$file
+                echo -n "$file "
+                echo_dbg "$file"
+
+        done
+}
+
+
+#
+# Correct c++ commenting tokens to C99 commenting tokens.
+#
+filter_double_slashes()
+{
+        declare -a Files=
+        declare -a SRCS=
+        local Results=
+
+        Results=$1; shift
+
+        Files=( "$@" )
+        # shellcheck disable=2207
+        SRCS=( $(filter_for_srcfiles "${Files[@]}") )
+        for File in "${SRCS[@]}" ; do
+                sed -i -e '/\/\/[^/<]*.*\/\*/s:/\*::' -e '/\/\/[^/<]/s:[^\*][^/]$: \*/:' -e '/\/\/[^/<]/s://:/\* :' $File
+        done
+}
+
+
+filter_double_slashes /tmp/foox "$@"
+
