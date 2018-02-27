@@ -41,6 +41,7 @@ Repo2Host["fw_devtools"]=master@$ZGLUE_BILL_HOST/fw_devtools.git
 Repo2Host["home-env"]=master@$ZGLUE_BILL_HOST/home-env.git
 Repo2Host["nuttx-local"]=zdk@$ZGLUE_BILL_HOST/nuttx-local.git
 Repo2Host["apps-local"]=zdk@$ZGLUE_BILL_HOST/apps-local.git
+Repo2Host["linux"]=master@git@github.com/torvalds/linux.git
 
 #
 # Table of color codes for vt100.  To be imported
