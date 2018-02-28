@@ -1,16 +1,11 @@
 #!/bin/bash
 
-TARFILE=$(mktemp -d /tmp .config_xXX)
+TMPDIR=/tmp
+TARFILE=$(mktemp -p "$TMPDIR" .config_xXX.tgz)
 
 sed -n -e '/^## ::/,$/p' "$0" > $TARFILE
-tar -zxvf $TARFILE
+TARGETS=( "$(tar -C "$TMPDIR" -zxvf $TARFILE)" )
 
-TARGETS=( "zeus" "sim" )
-
-CONFIG_ZEUS1=
-CONFIG_ZEUS2=
-
-
-
+echo_dbg "Number of targets: [${#TARGETS[@]}]"
 exit
 ## :: End of ascii shell code.
