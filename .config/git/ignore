@@ -25,3 +25,4 @@ foo.*
 android_apps/
 copyright-info/
 micro-ecc*
+cscope.out
