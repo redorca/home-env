@@ -11,12 +11,17 @@
 # zeus2  ==>  zeus2 arch zeus target
 # sim    ==>  sim target for given zeus arch.
 #
-CONFIG_TEMPLATES  = config.zeus1.zeus
-CONFIG_TEMPLATES += config.zeus1.sim
-CONFIG_TEMPLATES += config.zeus2.zeus
-CONFIG_TEMPLATES += config.zeus2.sim
+CONFIG_TEMPLATES = $(shell ls config.*.*)
+# CONFIG_TEMPLATES  = config.zeus1.zeus
+# CONFIG_TEMPLATES += config.zeus1.sim
+# CONFIG_TEMPLATES += config.zeus2.zeus
+# CONFIG_TEMPLATES += config.zeus2.sim
+
+PROG_NAME = mkfast
 
 help:
+	@echo ""
+	@echo "\tTargets supported: $(PROG_NAME), clean, print."
 	@echo ""
 	@echo "\tMake a self-installing shell script for test building"
 	@echo "\tthe fast code."
@@ -27,10 +32,22 @@ help:
 	@echo ""
 
 
-mkfast: mkfast.sh mkfast.tgz
-	@cp $@.sh $@ && chmod +x $@
-	@cat $@.tgz >> $@
+$(PROG_NAME): %:%.tgz
+$(PROG_NAME): %:%.sh
+	$(Q) cp $@.sh $@ && chmod +x $@
+	$(Q) cat $@.tgz >> $@
 
-mkfast.tgz: $(CONFIG_TEMPLATES)
-	@tar -zcvf $@ $(CONFIG_TEMPLATES)
+%.tgz: $(CONFIG_TEMPLATES)
+	$(Q) tar -zcf $@ $(CONFIG_TEMPLATES)
+
+print:
+	@echo "Variables used by make:"
+	@echo ""
+	@echo "CONFIG_TEMPLATES\t$$(echo $(CONFIG_TEMPLATES) | sed -e 's/ /\\n\\t\\t\\t/g')"
+	@echo ""
+	@echo "PROG_NAME\t\t$(PROG_NAME)"
+	@echo ""
+
+clean:
+	@$(RM) $(PROG_NAME) $(PROG_NAME:%=%.tgz)
 
