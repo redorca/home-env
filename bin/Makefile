@@ -35,7 +35,8 @@ help:
 $(PROG_NAME): %:%.tgz
 $(PROG_NAME): %:%.sh
 	$(Q) cp $@.sh $@ && chmod +x $@
-	$(Q) cat $@.tgz >> $@
+	$(Q) xxd $@.tgz >> $@
+#	$(Q) cat $@.tgz >> $@
 
 %.tgz: $(CONFIG_TEMPLATES)
 	$(Q) tar -zcf $@ $(CONFIG_TEMPLATES)
