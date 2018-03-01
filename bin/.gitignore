@@ -3,7 +3,6 @@
 
 # home-env/bin
 home-env/
-mkfast
 *.tgz
 *.patch
 
