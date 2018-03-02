@@ -31,7 +31,6 @@ do_make()
         echo "Making ${Target} for ${Arch} architecture"
         cp "$TMPDIR/$Config" .config
         make ${MAKE_OPTS} $Target
-# > test.${Arch}-${Target}.txt 2>&1
 }
 
 #
@@ -134,10 +133,10 @@ CONFIG=.config
 
 eval rm -f "${TARFILE%_*}*"
     (
-        cd $ROOT/build/gcc
+        cd "$ROOT/build/gcc" || exit 1
 
         do_make config.zeus1.sim distclean zeus1 >/dev/null 2>&1
-        rm -f test.zeus*.txt
+        rm -f "$ROOT/test.zeus*.txt"
         for i in $(seq 0 1 3) ; do
                 echo_dbg "TARGETS[$i] :: ${TARGETS[$i]}"
                 SET=( $(echo ${TARGETS[$i]} | awk -F'.' '{print $2 " " $3}') )
@@ -146,16 +145,18 @@ eval rm -f "${TARFILE%_*}*"
                         exit 5
                 fi
 
-                OUTFILE=test."${SET[0]}"."${SET[1]}".txt
+                OUTFILE="$ROOT"/test."${SET[0]}"."${SET[1]}".txt
                 echo -e -n "Test build of ${SET[1]} for ${SET[0]}\t"
                 if do_make "${TARGETS[$i]}" "${SET[1]}" "${SET[0]}" > $OUTFILE 2>&1 ; then
                         if validate_files $CONFIG "${SET[0]}" "${SET[1]}" >>$OUTFILE ; then
                                 echo "Success"
                                 rm $OUTFILE
                         else
-                                echo "Fail"
+                                echo "Fail" >&2
                                 Rv=1
                         fi
+                else
+                        echo "Failed"
                 fi
                 do_make "${TARGETS[$i]}" "$CLEAR" "${SET[0]}" >/dev/null 2>&1
                 sleep 1
@@ -164,8 +165,9 @@ eval rm -f "${TARFILE%_*}*"
 
     cd /tmp
     rm -f "${TARGETS[$val]}"
-    if [ -n "$(ls $ROOT/build/gcc/test.zeus*.txt 2>/dev/null)" ] ; then
-        echo "Fail!!"
+    if ERR_OUTS="$(ls "$ROOT"/test.zeus*.txt 2>/dev/null)" ; then
+        echo "Fail!!" >&2
+        echo -e "See files $(echo $ERR_OUTS | sed -e 's/^/\\n\\t/' -e 's/ /\\n\\t/')\nfor details." >&2
         exit  1
     else
         echo "Success!!"
