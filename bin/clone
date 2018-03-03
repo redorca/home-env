@@ -189,15 +189,12 @@ setup_repo()
         local Repo=
         local tmp=
 
-        Repo="$1" ; shift
-
-        if [ -z "${CONFIG[$Repo]}" ] ; then
-                return
-        fi
+        [ ! -d "$1" ] && return 1
+        Repo="$1"
     (
-        tmp=$(basename $Repo)
-        cd ${tmp%.git}
-        "${CONFIG_CMDS[@]}"
+        cd "$Repo" || return 1
+        git config --local pull.rebase true
+        gitrev-setup.sh
     )
 }
 
@@ -212,18 +209,13 @@ setup_repo()
 # }
 
 #
-# Given a keyword or hint from the user find the branch,
-# repo, and URI associated and clone.
+# Given a repo id figure out the branch and url to clone
 #
-function clone()
+get_info()
 {
-        local CMD=
-        local Proto=
+        local Key=
         local Branch=
         local Uri=
-        local Key=
-        local RepoName=
-        local tmp=
 
         [ -z "$1" ] && return 1
         Key=${1%%.git}
@@ -235,23 +227,49 @@ function clone()
         [ -n "${RepoRename[$Key]}" ] && Key=${RepoRename[$Key]}
         if [ "${Key%%@*}" != "${Key}" ] ; then
                 Branch=${Key##@*}
-                RepoName=${Key##*@}
         else
                 Branch=${Repo2Host[$Key]}
         fi
 
+        # The branch name
+        echo -n "${Branch%%@*}"
+        echo -n "  "
+        # The uri pointing to the repo
+        echo -n "${Repo2Host[$Key]#*@}"
+        echo -n "  "
+        # The repo directory
+        echo    "${Repo2Host[$Key]##*/}"
+}
+
+#
+# Given a keyword or hint from the user find the branch,
+# repo, and URI associated and clone.
+#
+function clone()
+{
+        local CMD=
+        local Proto=
+        local Branch=0
+        local URL=1
+        local Uri=
+        local tmp=
+        declare -a Info=
+
+        [ -z "$1" ] && return 1
+        Info=( $(get_info $1) )
+
         Proto=ssh
-        Branch=${Branch%%@*}
-        Uri=${Repo2Host[$Key]}
-        Uri=${Uri#*@}
+        Uri=${Info[$URL]}
         tmp="${Uri#*://}"
         [ "$tmp" != "${Uri}" ] && Proto="${Uri%://*}"
         Uri="${Uri#*://}"
         [ -z "$Proto" ] && Proto=ssh
-        CMD="git clone -b $Branch $Proto://$Uri"
+        CMD="git clone -b "${Info[$Branch]}" $Proto://$Uri"
         echo "$CMD"
-        $CMD
-
+        if $CMD ; then
+                echo "Repo built: ${Info[2]}"
+                setup_repo "${Info[2]%.git}"
+        fi
 }
 
 dual_source_repos()
@@ -301,5 +319,6 @@ fi
 [ "$PRINT" = "YES" ] && dump_Repo2Host && exit 0
 
 clone $TARGET
+
 $CONFIG_TWO_REPOS
 
