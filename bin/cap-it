@@ -2,6 +2,8 @@
 
 declare -A VARTYPES
 
+[ "$TRACE" = "1" ] && set -x && echo "set X"
+
 help_msg()
 {
         cat << "EOF"
@@ -18,6 +20,34 @@ help_msg()
         file-0 ... : Set of files to process.
 
 EOF
+}
+
+#
+# Convert the case of some variable to upper or lower case.
+#
+re_case()
+{
+        local Case=
+        local File=
+        local Stem=
+        local CMD=
+
+        Case="$1" ; shift
+	Stem=${1%_[tu]} ; shift
+        [ -f "$1" ] || return 1
+        File="$1" ; shift
+
+	if [ "$Case" = "uc" ] ; then
+	        echo "Converting type variable to upper case." >&2
+	        CMD=( "sed" "-i" "-e" "'s/${Stem}_t/${Stem^^}_t/g'" "$File" )
+	elif [ "$Case" = "lc" ] ; then
+	        echo "Converting type variable to lower case." >&2
+	        CMD=( "sed" "-i" "-e" "'s/${Stem}_t/${Stem,,}_t/g'" "$File" )
+	else
+                echo "Huh?  How did we get here?" >&2
+                exit 2
+	fi
+	eval "${CMD[@]}"
 }
 
 foo()
@@ -42,7 +72,7 @@ while [ $# -ne 0 ] ; do
         ;;
         -u) CASE=uc
         ;;
-        *) [ ! -f ] "$1" && echo "File not found:[$1]" && help_msg && exit 1
+        *) [ ! -f "$1" ] && echo "File not found:[$1]" && help_msg && exit 1
            FILES=( "$1" "${FILES[@]}" )
         ;;
         esac
@@ -51,24 +81,25 @@ done
 ( [ -z "$CASE" ] || [ -z "${FILES[*]}" ] ) && help_msg && exit 1
 
 #
-# Establish VARTYPES hash
+# Fill out hash table
 #
-eval $(foo $file)
+for File in "${FILES[@]}" ; do
+	#
+	# Establish VARTYPES hash
+	#
+	eval $(foo "$File")
+        for Key in "${!VARTYPES[@]}" ; do
+                [ "$DEBUG" = "1" ] && echo -e "VARTYPES[$Key]\t${VARTYPES[$Key]}"
+        done
+done
 
 #
+# Apply hash table to each file.
 #
-STEM=${1%_t} ; shift
-
-
-CMD=( "sed" "-i" "-e" "\'s/${STEM}_t/${STEM^^}_t/g\'" "$FILE" )
-if [ "$CASE" = "uc" ] ; then
-        echo "Converting type variable to upper case." >&2
-        CMD=( "sed" "-i" "-e" "\'s/${STEM}_t/${STEM^^}_t/g\'" "$FILE" )
-        eval "${CMD[@]}"
-fi
-
-if [ "$CASE" = "lc" ] ; then
-        echo "Converting type variable to lower case." >&2
-        eval sed -i -e \'s/${STEM^^}_t/${STEM,,}_t/g\' "$FILE"
-fi
+for File in "${FILES[@]}" ; do
+        echo "Processing $File"
+        for Key in "${!VARTYPES[@]}" ; do
+                re_case "$CASE" "${VARTYPES[$Key]}" "$File"
+        done
+done
 

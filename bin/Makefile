@@ -11,11 +11,7 @@
 # zeus2  ==>  zeus2 arch zeus target
 # sim    ==>  sim target for given zeus arch.
 #
-CONFIG_TEMPLATES = $(shell ls config.*.*)
-# CONFIG_TEMPLATES  = config.zeus1.zeus
-# CONFIG_TEMPLATES += config.zeus1.sim
-# CONFIG_TEMPLATES += config.zeus2.zeus
-# CONFIG_TEMPLATES += config.zeus2.sim
+CONFIG_TEMPLATES = $(shell ls config.zeus*.*)
 
 PROG_NAME = mkfast
 
