@@ -262,7 +262,7 @@ fi
                         if ! RESULTS="$(stage_line "$line") $RESULTS" ; then
                                 echo "Did not stage: [$line]"
                         fi
-                        page_break count page_size "\\t=================="
+                        page_break count page_size "\\t======================================="
                 done
 
         "${DO_COMMIT[@]}"
