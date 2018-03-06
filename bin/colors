@@ -81,12 +81,9 @@ attr_names=( BRIGHT DIM UNDERSCORE BLINK REVERSE HIDDEN )
 print_hash_entries()
 {
         local key=
-        local cname=
         declare -a Hash=
 
         Hash=( "$@" )
-#       echo "Hash has ${#Hash[@]} elements"
-
         for key in ${!Hash[@]} ; do
                 echo "key: $key, val: ${Hash[$key]}"
         done

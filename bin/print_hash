@@ -1,0 +1,84 @@
+#!/bin/bash
+
+
+#
+#
+#
+print_array()
+{
+        [ "$DEBUG" = "1" ] || return 1
+
+        for i in $(seq 0 1 $#) ; do
+                echo -e "\t$1"
+                shift
+        done
+}
+
+
+print_hash_entries()
+{
+        local key=
+        declare -a Hash=
+
+        Hash=( "$@" )
+        for key in ${!Hash[@]} ; do
+                echo "key: $key, val: ${Hash[$key]}"
+        done
+
+        return
+}
+
+
+print_error_codes()
+{
+	for key in "${!errno[@]}" ; do
+	        echo -e -n "$key\t"
+	        [ "${#errno[$key]}" -lt 7 ] && echo -e -n "\t:: "
+	        echo "${errno[$key]}"
+	done
+}
+
+# print_hash Array_assoc
+# foo=$(declare -p Array_assoc | sed -e 's/^.*(//' -e 's/)//' -e 's/\[/\\tArray_assoc\[/g' -e 's/ /\\n/g')
+fiff()
+{
+        local AName=
+
+        AName="$1"
+        echo "================================================="
+        echo -e "$(declare -p ${AName} | eval sed -e \'s/^.*\(//\' -e \'s/\)//\' -e \'s/\\[/\\t${AName}\\[/g\' -e \'s/ /\\n/g\')"
+
+        date
+}
+
+print_hash()
+{
+        local key=
+        local Hash=
+        local KEYS=
+
+        Hash="$1" ; shift
+        key="$1" ; shift
+
+        KEYS="${!Hash[@]}"
+#       for key in ${!Hash[@]} ; do
+        for key in ${KEYS} ; do
+                echo "key: $key, val: ${Hash[$key]}"
+        done
+
+        return
+}
+
+
+
+declare -A Array_assoc
+declare -a Array_ordered
+
+
+Array_assoc=(["a"]="Antelope"  ["b"]="Bertrand" ["c"]="Charlie" ["x"]="X-Ray")
+Array_ordered=( "a" "b" "c" "x")
+
+fiff Array_assoc
+fiff Array_ordered
+# echo -e $foo
+

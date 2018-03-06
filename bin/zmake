@@ -15,6 +15,7 @@ COLOR="${COLOR:-1}"
 DEBUG="${DEBUG:-0}"
 V="${V:-0}"
 Q="${Q:-@}"
+# BOARD=zeus-austin
 BOARD="${BOARD:-nrf52832_dk}"
 ESC="\033[;"
 #
@@ -192,7 +193,7 @@ set_app_list()
         Board_Cfg="$1" ; shift
         File_Key="$1" ; shift
 
-        fresults="$(find . -type d -name $Board_Cfg)"
+        fresults="$(find configs -type d -name $Board_Cfg)"
         [ -z "$fresults" ] && return 1
 
         pieces=( $(echo $fresults | sed -e 's/\// /g') )
