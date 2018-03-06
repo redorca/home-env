@@ -1,6 +1,6 @@
 #!/bin/bash
 
-
+[ "$TRACE" = "1" ] && set -x && echo "set -x" >&2
 #
 #
 #
@@ -40,15 +40,21 @@ print_error_codes()
 
 # print_hash Array_assoc
 # foo=$(declare -p Array_assoc | sed -e 's/^.*(//' -e 's/)//' -e 's/\[/\\tArray_assoc\[/g' -e 's/ /\\n/g')
-fiff()
+copy()
 {
         local AName=
+        local BName=
+        local Tmp=
 
-        AName="$1"
+        AName="$1" ; shift
+        BName="$1" ; shift
+
         echo "================================================="
-        echo -e "$(declare -p ${AName} | eval sed -e \'s/^.*\(//\' -e \'s/\)//\' -e \'s/\\[/\\t${AName}\\[/g\' -e \'s/ /\\n/g\')"
-
-        date
+        declare -p ${AName} | eval sed -e 's/${AName}/${BName}/'
+        echo ":: " $Tmp
+        eval ${BName}=\([0]="a" [1]="b" [2]="c" [3]="x"\)
+#       declare -a Hoo=([0]="a" [1]="b" [2]="c" [3]="x")
+#       echo "=== ${BName[@]}"
 }
 
 print_hash()
@@ -71,14 +77,19 @@ print_hash()
 
 
 
-declare -A Array_assoc
-declare -a Array_ordered
+declare -A Array_assoc  Foo
+declare -A Array_assoc  Goo
+declare -a Array_ordered  Hoo
+declare -a Array_ordered  Yoo
 
 
 Array_assoc=(["a"]="Antelope"  ["b"]="Bertrand" ["c"]="Charlie" ["x"]="X-Ray")
 Array_ordered=( "a" "b" "c" "x")
 
-fiff Array_assoc
-fiff Array_ordered
+copy Array_assoc Goo
+echo ",, Goo ${Goo[@]}"
+
+copy Array_ordered Hoo
+echo ",, Hoo ${Hoo[@]}"
 # echo -e $foo
 
