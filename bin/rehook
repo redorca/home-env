@@ -23,12 +23,12 @@ set_bins()
         $ftrace
         local Root=
 
-    [ -n "$1" ] && Root="$1" && echo "Rebasing on: $Root"
+    [ -d "$1" ] && Root="$1" && echo "Rebasing on: $Root"
     echo_dbg " :: Root = $Root"
     BINS=(
-        "${Root}"/usr/bin/style_file
-        "${Root}"/usr/bin/astyle
-        "${Root}"/usr/bin/hookup
+        "${Root}${BIN_DIR}"/style_file
+        "${Root}${BIN_DIR}"/astyle
+        "${Root}${BIN_DIR}"/hookup
         "${Root}${HOOKS_DIR}"/pre-commit
         "${Root}${HOOKS_DIR}"/commit-msg
         "${Root}${STYLES_DIR}"/astyle-nuttx

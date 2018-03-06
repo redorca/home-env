@@ -173,7 +173,8 @@ info()
 #
 setup_GERRIT_vars()
 {
-        GERRIT_UNAME="$(git config --local gitreview.username)"
+#       GERRIT_UNAME="$(git config --local gitreview.username)"
+        GERRIT_UNAME="$(git config --global user.name)"
         GERRIT_HOST="$(git config --local gitreview.host)"
 }
 

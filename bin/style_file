@@ -1,10 +1,5 @@
 #!/bin/bash
 
-#
-# Turn on shell command tracing if DEBUG is "2"
-#
-[ "$DEBUG" = "2" ] && set -x
-
 Red='\033[1;31m'
 Reset='\033[0;39;49m'
 ##### Script personality goes below
@@ -15,7 +10,6 @@ if [ ! -f "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT" ] ; then
         echo "$ZGLUE_SCRIPTS_DIR/$LIB_SCRIPT not found." >&2
         exit 1
 fi
-# shellcheck disable=1090
 source "$ZGLUE_LIBSTYLE"
 echo_dbg ":ZGLUE_LIBSTYLE : ($ZGLUE_LIBSTYLE)" >&2
 
@@ -66,35 +60,32 @@ EOF
 set_env()
 {
         while [ $# -ne 0 ] ; do
-                # shellcheck disable=2207
                 case "$1" in
                 --add) GIT_ADD=yes;
                         ;;
-                -c|--color-off) COLOR_OFF=0
-                        ;;
                 -f|--file) [ ! -f "$2" ] && echo_err "No file? [$2]" && exit 1
-                        [ -f "$2" ] && FILES=( $(sed -e 's/^[ 	]*//' "$2") ) && shift
-                        echo_dbg ":" "From containing file, list of files is \\n(${FILES[*]})"
-                        if [ -z "${FILES[*]}" ] ; then
+                        [ -f "$2" ] && FILES="$(sed -e 's/^[ 	]*//' "$2")" && shift
+                        echo_dbg ":" "From containing file, list of files is \\n($FILES)"
+                        if [ -z "$FILES" ] ; then
                                 echo_err "Failed to read files from $2"
                                 exit 1
                         fi
-                        [ -n "${FILES[*]}" ] && echo_dbg ":" "Found files."
+                        [ -n "$FILES" ] && echo_dbg ":" "Found files."
                         ;;
-                -g|--git) FILES=( $(git_committed) )
-                        [ -z "${FILES[*]}" ] && echo_err "No files found to process." ; exit 0
-                        echo_dbg "${FILES[@]}"
+                -g|--git) FILES="$(git_committed)"
+                        [ -z "$FILES" ] && echo_err "No files found to process." ; exit 0
+                        echo_dbg FILES
                         ;;
                 -h) help; exit 0;
                         ;;
-                -w) FILES=( $(git_committed unstaged) );
-                        [ -z "${FILES[*]}" ] && echo_err "No files found to process." ; exit 0
+                -w) FILES=$(git_committed unstaged);
+                        [ -z "$FILES" ] && echo_err "No files found to process." ; exit 0
                         ALT=unstaged
                         ;;
                 *) if [ -f "$1" ] ; then
-                        FILES=( "${FILES[@]}" "$1" )
+                        FILES="$FILES $1"
                    elif [ ! -f "$1" ]  ; then
-                        echo_err "${Red}No such file: ($1)${Reset}" && exit 1
+                        echo "${Red}No such file: ($1)${Reset}" && exit 1
                    elif [ "$FILE_ARGS" != "1" ] ; then
                         echo_err "Unknown or unexpected arg ($1)."
                         [ -f "$1" ] && \
@@ -106,15 +97,16 @@ set_env()
         done
 
         # In case any leading and/or trailing white space exists
-        strip_edge_ws "${FILES[@]}"
+        strip_edge_ws FILES
 }
 
 # In case any leading and/or trailing white space exists
-[ -n "${FILES[*]}" ] && strip_edge_ws FILES
+[ -n "$FILES" ] && strip_edge_ws FILES
 
 export FILTERS_NRF="/nrf52/ /nrf52832_dk/"
 export FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
-
+export GIT_ADD=
+export FILES=
 REPO_HOST="101.132.142.37"
 ACTIVELY_MANAGED_REPOS=( \
         "nuttx@$REPO_HOST" \
@@ -123,23 +115,26 @@ ACTIVELY_MANAGED_REPOS=( \
         "3rd_Party_SDK@$REPO_HOST" \
         "fast_api@$REPO_HOST" \
         )
+declare -A REPO_FILTERS
+REPO_FILTERS[nuttx@$REPO_HOST]="filter_if_0 filter_out_whitespace filter_for_externs"
+REPO_FILTERS[nuttx_apps@$REPO_HOST]="filter_if_0 filter_out_whitespace filter_for_externs"
+REPO_FILTERS[auto_test@$REPO_HOST]="filter_out_whitespace"
+REPO_FILTERS[3rd_Party_SDK@$REPO_HOST]="filter_out_whitespace"
 
 if [ "$(basename "$0")" != "pre-commit" ] ; then
         set_env "$@"
 elif [ "$#" -ne 0 ] ; then
         echo_dbg ":Ignoring command line arguments"
 fi
-set_colors $COLOR_OFF
-[ "$COLOR_OFF" = "0" ] && echo_err "${GRNGRN}=== colors should be off."
 
 #
 # At this point if no files have been provided over the command line
 # make sure we are running within a repo else there will be no way
 # to discover any potential files for processing.
 #
-if ! REPOROOT="$(find_repo "${FILES[@]}")" ; then
+if ! REPOROOT="$(find_repo $FILES)" ; then
         # shellcheck disable=2153
-        echo_err "${REDYLW}Error looking for a repo root directory."
+        echo_err "${REDYLW}Error looking for a repo root directory.${RESET}"
         exit 1
 fi
 #
@@ -153,22 +148,21 @@ fi
 echo_dbg ":This repo is actively managed."
 
 
-# shellcheck disable=2207
-[ -z "${FILES[*]}" ] && FILES=( $(set_files "$ALT") )
+[ -z "$FILES" ] && FILES="$(set_files "$ALT")"
 # In case any leading and/or trailing white space exists
-strip_edge_ws "${FILES[@]}"
+strip_edge_ws FILES
 
 #
 # If there are no files to process there weren't any style errors!
 #
-[ -z "${FILES[*]}" ] && \
-        echo_dbg  ":${GRNGRN}\\tNo files to process." && \
+[ -z "$FILES" ] && \
+        echo_dbg  ":${GRNGRN}\\tNo files to process.${RESET}" && \
         exit 0
 
 #
 # Assume the first file is representative of the location of the repo
 #
-if [ "$REPOROOT" != "$(find_repo "${FILES[@]}")" ] ; then
+if [ "$REPOROOT" != "$(find_repo $FILES)" ] ; then
         echo_err "Yikes!"
         if [ "$(basename "$0")" = "pre-commit" ] ; then
                 echo_err "No repo found."
@@ -182,19 +176,18 @@ echo_dbg REPOROOT
 # If there are no SRCS to format then by default there are no style errors.
 #
 echo_dbg SRCS REPOROOT ORIGIN
-strip_edge_ws "${FILES[@]}"
-ERR_FILE=style.errs
-if ! filter_files "$REPOROOT" "$ERR_FILE" "${FILES[@]}" ; then
+strip_edge_ws FILES
+
+if ! filter_files "$REPOROOT" $FILES ; then
         [ "$DEBUG" = "1" ] && VERBOSE=--verbose
         MAIN_PHRASE="${REDYLW}\\tNuttx style errors found,"
         PHRASEX="left unstaged."
         if [ -n "$GIT_ADD" ] ; then
                 git add "$VERBOSE" "$SRCS"
-                PHRASEX="${GRNGRN}corrected, and  staged."
+                PHRASEX="${GRNGRN}corrected, and  staged.${RESET}"
         fi
-        echo_err "$MAIN_PHRASE $PHRASEX$"
+        echo_err "$MAIN_PHRASE $PHRASEX"
         echo_err "${REDYLW}\\tSee style.errs in the root of this repo ($REPOROOT)."
         exit 2
 fi
-echo_err  "${GRNGRN}\\tNo style errors found."
-
+echo_dbg  ":${GRNGRN}\\tNo style errors found.${RESET}"
