@@ -2,12 +2,13 @@
 
 DEBUG=0
 [ "$TRACE" = "1" ] && set -x
+declare -a Output=
 
 echo_dbg()
 {
         [ "$DEBUG" != "1" ] && return
 
-        echo -e "$@" >&2
+        echo -e ":: $@" >&2
 }
 
 #
@@ -26,11 +27,10 @@ do_make()
 
         Config="$1" ; shift
         Target="$1" ; shift
-        Arch="$1"   ; shift
+        Results="$1"   ; shift
 
-        echo "Making ${Target} for ${Arch} architecture"
         cp "$TMPDIR/$Config" .config
-        make ${MAKE_OPTS} $Target
+        make ${MAKE_OPTS} deliverables $Target | tee $Results | sed -e '/=/s/^.*=//'
 }
 
 #
@@ -52,24 +52,12 @@ print_array()
 validate_files()
 {
         local Rv=
-        local Tmp=
         local RefTime=
         local Arch=
-        local Target=
-        declare -a Output=
+        local File=
 
         RefTime="$1" ; shift
-        Arch="$1"    ; shift
-        Target="$1"  ; shift
 
-        Tmp=fast_api_include_${Arch}.h
-
-        Output=( "fast_api_include.h" "$Tmp" )
-        if [ "$Target" = "zeus" ] ; then
-                Output=( "${Output[@]}" "fast_api.lib" "map/fast_api.list" "map/System_Fast.map" )
-        elif [ "$Target" = "sim" ] ; then
-                Output=( "${Output[@]}" "sim/fast_api_sim.o" )
-        fi
         Rv=0
 
     (
@@ -77,26 +65,20 @@ validate_files()
         echo "========================================"
         echo "       Validate ${SET[1]} build."
 
-        for file  in "${Output[@]}" ; do
-                echo_dbg "  == $file"
-                if [ ! -f "$file" ] ; then
-                        echo "Missing file: $file"
-                        Rv=$(( Rv + 1 ))
-                        continue
+        for File  in "${Output[@]}" ; do
+                echo_dbg "  == $File"
+                if [ -f "$File" ] ; then
+                        if [ "$RefTime" -ot "$File" ] ; then
+                                continue
+                        else
+                                echo "Old file: $File"
+                        fi
+                else
+                        echo "Missing file: $File"
                 fi
-
-                if [ "$RefTime" -nt "$file" ] ; then
-                        echo "Old file: $file"
-                        Rv=$(( Rv + 1 ))
-                        continue
-                fi
+                Rv=$(( Rv + 1 ))
         done 
 
-        [ -f fast_api_include.h ] &&  \
-        if ! diff fast_api_include.h "$Tmp" >/dev/null ; then
-                echo "fast_api_include.h does not match $Tmp"
-                Rv=1
-        fi
         return $Rv
     )
 }
@@ -119,8 +101,7 @@ TARFILE=$(mktemp -p "$TMPDIR" .config_XXX)
 
 [ ! -f $TARFILE ] && echo_dbg "Unable to create a tar file name." && exit 1
 
-MAKE_OPTS='Q='
-# [ "$DEBUG" = "1" ] && MAKE_OPTS='Q='
+[ "$DEBUG" = "1" ] && MAKE_OPTS='Q='
 sed -e '1,/^## ::/d' "$0" > ${TARFILE}.xxd
 xxd -r ${TARFILE}.xxd > ${TARFILE}
 TARGETS=( $(tar -C "$TMPDIR" -zxvf $TARFILE) )
@@ -135,7 +116,7 @@ eval rm -f "${TARFILE%_*}*"
     (
         cd "$ROOT/build/gcc" || exit 1
 
-        do_make config.zeus1.sim distclean zeus1 >/dev/null 2>&1
+        do_make config.zeus1.sim distclean /tmp/foo >/dev/null 2>&1
         rm -f "$ROOT/test.zeus*.txt"
         for i in $(seq 0 1 3) ; do
                 echo_dbg "TARGETS[$i] :: ${TARGETS[$i]}"
@@ -147,7 +128,8 @@ eval rm -f "${TARFILE%_*}*"
 
                 OUTFILE="$ROOT"/test."${SET[0]}"."${SET[1]}".txt
                 echo -e -n "Test build of ${SET[1]} for ${SET[0]}\t"
-                if do_make "${TARGETS[$i]}" "${SET[1]}" "${SET[0]}" > $OUTFILE 2>&1 ; then
+                if Output=( $(do_make "${TARGETS[$i]}" "${SET[1]}" "$OUTPUT" "${SET[0]}") ) ; then
+                        echo_dbg "Output = ${Output[@]}"
                         if validate_files $CONFIG "${SET[0]}" "${SET[1]}" >>$OUTFILE ; then
                                 echo "Success"
                                 rm $OUTFILE
@@ -158,14 +140,14 @@ eval rm -f "${TARFILE%_*}*"
                 else
                         echo "Failed"
                 fi
-                do_make "${TARGETS[$i]}" "$CLEAR" "${SET[0]}" >/dev/null 2>&1
+                do_make "${TARGETS[$i]}" "$CLEAR" "$OUTPUT" "${SET[0]}" >/dev/null 2>&1
                 sleep 1
         done
     )
 
     cd /tmp
     rm -f "${TARGETS[$val]}"
-    if ERR_OUTS="$(ls "$ROOT"/test.zeus*.txt 2>/dev/null)" ; then
+    if ERR_OUTS=( $(ls "$ROOT"/test.zeus*.txt 2>/dev/null)  ) ; then
         echo "Fail!!" >&2
         echo -e "See files $(echo $ERR_OUTS | sed -e 's/^/\\n\\t/' -e 's/ /\\n\\t/')\nfor details." >&2
         exit  1
