@@ -11,6 +11,22 @@ dir_to_flag["file"]="f"
 ZERO="0"
 DBG_LVL="${DBG_LVL:-$ZERO}"
 
+#
+# Simplify creating a cscope tag database
+#
+function tag()
+{
+        local  START_DIR=
+        local  CSCOPE_OPTS=
+        local  CSCOPE_DBFILE=
+
+        CSCOPE_DBFILE=cscope.out
+        START_DIR="./"
+        [ -n "$1" ] && [ -d "$1" ] && START_DIR="$1"
+        CSCOPE_OPTS="-R -k -b -s"
+        [ -f "$CSCOPE_DBFILE" ] && rm "$CSCOPE_DBFILE"
+        cscope $CSCOPE_OPTS "$START_DIR"
+}
 
 function vim_color_setup()
 {
