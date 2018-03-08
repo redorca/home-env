@@ -183,9 +183,9 @@ while [ $# -ne 0 ] ; do
            ;;
         -n) DRY_RUN=1; echo "DRY_RUN = $DRY_RUN"
            ;;
-        -p) page_size=$2; echo "page size: $page_size"
+        -P) page_size=$2; echo "page size: $page_size"
            ;;
-        -P|--push) DO_COMMIT=( "git" "commit" "&&" "git" "push" )
+        -p|--push) DO_COMMIT=( "eval" "git" "commit" "&&" "git" "push" )
            ;;
         -u) UNTRACK=1
            ;;

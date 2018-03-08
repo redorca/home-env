@@ -33,6 +33,25 @@ function trace()
 }
 
 #
+# Export DEBUG = 1 (on) or disable (0)
+#
+function dbg()
+{
+        local PUBLISH=
+
+        PUBLISH=( "eval" "echo" "DEBUG: [ \$DEBUG ]" )
+        case "$1" in
+        1|on|ON)    export DEBUG=1 && ${PUBLISH[@]}
+        ;;
+        0|off|OFF)  DEBUG=0 && ${PUBLISH[@]}
+        ;;
+        *) [ -z "$1" ]  && ${PUBLISH[@]}
+           [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
+        ;;
+        esac
+}
+
+#
 #
 # Simplify creating a cscope tag database
 #

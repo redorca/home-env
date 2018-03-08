@@ -1,8 +1,14 @@
 #!/bin/bash
 
-DEBUG=0
+DEBUG=${DEBUG:-0}
 [ "$TRACE" = "1" ] && set -x
 declare -a Output=
+# declare -a DELIVERABLES=
+
+echo_err()
+{
+        echo -e "$@" >&2
+}
 
 echo_dbg()
 {
@@ -30,7 +36,8 @@ do_make()
         Results="$1"   ; shift
 
         cp "$TMPDIR/$Config" .config
-        make ${MAKE_OPTS} deliverables $Target | tee $Results | sed -e '/=/s/^.*=//'
+#       make ${MAKE_OPTS} deliverables $Target | tee $Results | sed -e '/=/s/^.*=//'
+        make ${MAKE_OPTS} deliverables $Target | tee $Results
 }
 
 #
@@ -64,21 +71,21 @@ validate_files()
         cd ../../output || return 1
         echo "========================================"
         echo "       Validate ${SET[1]} build."
-
-        for File  in "${Output[@]}" ; do
-                echo_dbg "  == $File"
+set -x
+        for File  in "${DELIVERABLES[@]}" ; do
+                echo_err "File  == $File"
                 if [ -f "$File" ] ; then
                         if [ "$RefTime" -ot "$File" ] ; then
                                 continue
                         else
-                                echo "Old file: $File"
+                                echo_err "Old file: $File"
                         fi
                 else
-                        echo "Missing file: $File"
+                        echo_err "Missing file: $File"
                 fi
                 Rv=$(( Rv + 1 ))
         done 
-
+set +x
         return $Rv
     )
 }
@@ -98,6 +105,7 @@ fi
 TMPDIR=/tmp
 TARFILE=$(mktemp -p "$TMPDIR" .config_XXX)
 # echo "TARFILE  :: ($TARFILE)"
+FOOFILE=/tmp/foo
 
 [ ! -f $TARFILE ] && echo_dbg "Unable to create a tar file name." && exit 1
 
@@ -128,8 +136,11 @@ eval rm -f "${TARFILE%_*}*"
 
                 OUTFILE="$ROOT"/test."${SET[0]}"."${SET[1]}".txt
                 echo -e -n "Test build of ${SET[1]} for ${SET[0]}\t"
-                if Output=( $(do_make "${TARGETS[$i]}" "${SET[1]}" "$OUTPUT" "${SET[0]}") ) ; then
-                        echo_dbg "Output = ${Output[@]}"
+                if Output=( $(do_make "${TARGETS[$i]}" "${SET[1]}" "$OUTPUT" "${SET[0]}" | sed -n -e '/=/p')) ; then
+                        echo_err "${#Output[@]} :: ${Output[@]}"
+                        eval "${Output[@]}"
+                        echo_err "Deliverables: [ ${DELIVERABLES[@]} ]"
+                        [ -f "$OUTFILE" ] && rm -f "$OUTFILE"
                         if validate_files $CONFIG "${SET[0]}" "${SET[1]}" >>$OUTFILE ; then
                                 echo "Success"
                                 rm $OUTFILE
@@ -149,9 +160,10 @@ eval rm -f "${TARFILE%_*}*"
     rm -f "${TARGETS[$val]}"
     if ERR_OUTS=( $(ls "$ROOT"/test.zeus*.txt 2>/dev/null)  ) ; then
         echo "Fail!!" >&2
-        echo -e "See files $(echo $ERR_OUTS | sed -e 's/^/\\n\\t/' -e 's/ /\\n\\t/')\nfor details." >&2
+        echo -e "See files $(echo ${ERR_OUTS[@]} | sed -e 's/^/\\n\\t/' -e 's/ /\\n\\t/g')\nfor details." >&2
         exit  1
     else
+        rm -f $FOOFILE
         echo "Success!!"
     fi
 exit  0
