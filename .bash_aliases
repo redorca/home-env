@@ -12,6 +12,28 @@ ZERO="0"
 DBG_LVL="${DBG_LVL:-$ZERO}"
 
 #
+# Set exported variable TRACE to 1 (on) or 0 (off).
+# Pertains mostly to shell scripts who check for
+# TRACE and "set -x" when TRACE=1.
+#
+function trace()
+{
+        local PUBLISH=
+
+        PUBLISH=( "eval" "echo" "TRACE: [\$TRACE]" )
+        case "$1" in
+        1|on|ON)    export TRACE=1 && ${PUBLISH[@]}
+        ;;
+        0|off|OFF)  TRACE=0 && ${PUBLISH[@]}
+        ;;
+        *) [ -z "$1" ]  && ${PUBLISH[@]}
+           [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
+        ;;
+        esac
+}
+
+#
+#
 # Simplify creating a cscope tag database
 #
 function tag()

@@ -185,6 +185,8 @@ while [ $# -ne 0 ] ; do
            ;;
         -p) page_size=$2; echo "page size: $page_size"
            ;;
+        -P|--push) DO_COMMIT=( "git" "commit" "&&" "git" "push" )
+           ;;
         -u) UNTRACK=1
            ;;
 #       -v) EDIT_WITH="$TMPFILE nvim-qt";
@@ -264,7 +266,7 @@ fi
                         fi
                         page_break count page_size "\\t======================================="
                 done
-
+        echo "== ${DO_COMMIT[@]}"
         "${DO_COMMIT[@]}"
         [  "${#DO_COMMIT[@]}" -eq 0 ] && git status
 )
