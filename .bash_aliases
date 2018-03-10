@@ -201,6 +201,24 @@ zee()
         echo $CMD && $CMD
 }
 
+#
+# Run "set" and grab the output for whatever shell function
+# is specified.
+#
+function show()
+{
+        local Func=
+
+        case "$1" in
+        -l) set | grep "^[a-zA-Z_-]*[ 	]*()"
+           ;;
+        *) Func="$1"
+           ;;
+        esac
+
+        set | eval sed  -n -e '/^$1/,/^}/p'
+}
+
 export EDITOR=vim
 export GOPATH=$HOME/src/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
