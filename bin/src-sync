@@ -1,0 +1,94 @@
+#!/bin/bash
+
+declare -A comments
+
+
+comments["blank_line"]="\040*"
+comments["copyright"]="Copyright (C) 2018"
+comments["hdr_intro"]='#if !defined(xxx)\n#define xxx\n#endif'
+comments["hdr_outro"]='#endif /* xxx */'
+comments["c+intro"]='#undef EXTERN\n#if ddefined(__cplusplus)\nn#define EXTERN extern "C"\nextern "C"\n{\n#else\n#define EXTERN extern\n#endif'
+comments["c+outro"]='#undef EXTERNa\n#if defined(__cplusplus)\n}\n#endif.'
+comments["intro"]='/******************************************************************************'
+comments["outro"]='\040*****************************************************************************/'
+comments["section_name"]='\040* Name: xxx'
+comments["section_descr"]='\040* Description:'
+comments["section_params_in"]='\040* Input Parameters:'
+comments["section_returned_val"]='\040* Returned Value:'
+
+mk_func_hdr()
+{
+
+        local File=
+        local FuncName=
+
+        [ ! -f "$1" ] && echo "No file specified" >&2 && return 1
+        File="$1" ; shift
+        FuncName="$1" ; shift
+
+set -f
+        echo -e ${comments["intro"]}
+        echo -e ${comments["blank_line"]}
+        echo -e ${comments["section_name"]}  | eval sed -e 's/xxx/$FuncName/'
+        echo -e ${comments["blank_line"]}
+        echo -e ${comments["section_descr"]} 
+        echo -e ${comments["blank_line"]}
+        echo -e ${comments["section_params_in"]} 
+        echo -e ${comments["blank_line"]}
+        echo -e ${comments["section_returned_val"]} 
+        echo -e ${comments["blank_line"]}
+        echo -e ${comments["outro"]}
+set +f
+}
+
+set_copyright()
+{
+eval cat <<"EOF"
+/****************************************************************************
+ * $PATH
+ *
+ *   Copyright (C) 2007-2017 Gregory Nutt. All rights reserved.
+ *   $AUTHOR
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name NuttX nor the names of its contributors may be
+ *    used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ ****************************************************************************/
+EOF
+}
+
+spacer()
+{
+        echo -e "\n\n"
+}
+
+SRCFILE=/tmp/boo
+touch "$SRCFILE"
+set_copyright | eval sed -e \'s/PATH/$SRCFILE/\' > "$SRCFILE"
+spacer >> "$SRCFILE"
+mk_func_hdr "$SRCFILE" up_send >> "$SRCFILE"
+
