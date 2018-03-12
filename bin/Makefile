@@ -11,8 +11,11 @@
 # zeus2  ==>  zeus2 arch zeus target
 # sim    ==>  sim target for given zeus arch.
 #
-CONFIG_TEMPLATES = $(shell ls config.zeus*.*)
+CONFIG_TEMPLATES = $(shell ls config.zeus*.* 2>/dev/null)
 
+ifeq ($(CONFIG_TEMPLATES),)
+$(error Empty config templates)
+endif
 PROG_NAME = mkfast
 
 help:

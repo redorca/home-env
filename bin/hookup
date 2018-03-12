@@ -193,7 +193,7 @@ list_files()
 
         echo -e "${Msg}"
         for fff in "${Files[@]}" ; do
-                echo -e "\t$fff"
+                echo -e "\\t$fff"
         done
 }
 

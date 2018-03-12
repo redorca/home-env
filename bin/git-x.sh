@@ -158,6 +158,8 @@ EOF
         [ -f "$1" ] && chmod +x "$1"
 }
 
+PUSH="push"
+# PUSH="review -D"
 
 # ARGS_Begin
 while [ $# -ne 0 ] ; do
@@ -185,7 +187,7 @@ while [ $# -ne 0 ] ; do
            ;;
         -P) page_size=$2; echo "page size: $page_size"
            ;;
-        -p|--push) DO_COMMIT=( "eval" "git" "commit" "&&" "git" "push" )
+        -p|--push) DO_COMMIT=( "eval" "git" "commit" "&&" "git" "$PUSH" )
            ;;
         -u) UNTRACK=1
            ;;
