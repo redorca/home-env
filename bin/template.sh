@@ -1,0 +1,91 @@
+#!/bin/bash
+
+TRACE=${TRACE:-0}
+DEBUG=${DEBUG:-0}
+SIGNALS=${SIGNALS:-}
+[ "$TRACE" = "1" ] && set -x
+
+#
+# Trap all '$SIGNALS'.
+#
+on_exit()
+{
+        RV=$?
+
+        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit [$RV]: ${RESET}"
+        exit $RV
+}
+
+
+#
+# Filter out everything but the while loop and the two boundary markers.
+# Then filter out anything that does not have a ')' in it.  Voila, instant
+# help message!
+#
+help_all()
+{
+
+        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" |
+               sed -e '/^### HELP/,/case/d' -e '/esac/,/^### HELP/d' -e '/;;/d'
+}
+
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+#
+# Wrap echo with echo_e() and use /bin/echo instead.  This allows invoking
+# this script using sh as in "sh $(basename $0)"
+#
+echo_err()
+{
+        local Bin=
+
+        Bin=echo
+        [ -z "$(echo -e "\t")" ] && Bin="/bin/echo -e"
+        CMD="$Bin $@"
+        echo_dbg "$CMD"
+        $CMD >&2
+}
+
+#
+# Shortcut to send output to stderr by default.
+#
+echo_dbg()
+{
+        [ "$DEBUG" != "1" ] && return
+
+        local i=
+        local tmpe=
+        declare -a tmp=
+
+        #
+        # If the first character in $@ is a ':' then treat $@ as a string.
+        #
+        tmp=( "$@" )
+        echo "${tmp[@]}" >&2
+}
+
+### HELP message start
+process_args()
+{
+        while [ $# -ne 0 ] ; do
+                case "$1" in
+                -h) help_all
+                    ;;
+                *) [ "${1:0:1}" = "-" ] && echo_err "[ "$1" ] :: Not yet implemented"
+                   [ "${1:0:1}" != "-" ] && echo_err "Not sure what to do with ["$1"]"
+                   exit
+                    ;;
+                esac
+                shift
+        done
+}
+### HELP message end
+
+[ -n "$SIGNALS" ] && trap on_exit "$SIGNALS"
+process_args "$@"
+
+

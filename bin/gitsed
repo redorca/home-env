@@ -1,0 +1,19 @@
+#!/bin/bash
+
+help()
+{
+        cat <<"EOF"
+        gitsed  grep through log -p output for file (Arg1) looking for some
+                key (Arg2) Along with any patch output matching the key is
+                also the commit associated with it.
+EOF
+}
+
+[ $# -lt 2 ] && help && exit 1
+[ -z "$1" ] && help && exit 1
+
+
+git log -p "$1" | eval sed -n \
+        -e \'/^commit/p\' \
+        -e \'/"$2"/p\' \
+

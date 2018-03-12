@@ -10,6 +10,8 @@ dir_to_flag["dir"]="d"
 dir_to_flag["file"]="f"
 ZERO="0"
 DBG_LVL="${DBG_LVL:-$ZERO}"
+unset TRACE
+unset DEBUG
 
 #
 # Set exported variable TRACE to 1 (on) or 0 (off).

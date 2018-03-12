@@ -12,11 +12,12 @@
 # sim    ==>  sim target for given zeus arch.
 #
 CONFIG_TEMPLATES = $(shell ls config.zeus*.* 2>/dev/null)
+SHELL_TEMPLATE = template.sh
 
 ifeq ($(CONFIG_TEMPLATES),)
 $(error Empty config templates)
 endif
-PROG_NAME = mkfast
+PROG_NAME = mkfast new
 
 help:
 	@echo ""
@@ -31,14 +32,20 @@ help:
 	@echo ""
 
 
-$(PROG_NAME): %:%.tgz
 $(PROG_NAME): %:%.sh
+	cp $? $@ && chmod +x $@
+
+mkfast: %:%.tgz
+mkfast.sh:
 	$(Q) cp $@.sh $@ && chmod +x $@
 	$(Q) xxd $@.tgz >> $@
-#	$(Q) cat $@.tgz >> $@
 
 %.tgz: $(CONFIG_TEMPLATES)
 	$(Q) tar -zcf $@ $(CONFIG_TEMPLATES)
+
+new-%.sh:
+	echo "Creating new program ${@:new-%=%}"
+	$(CP) $(SHELL_TEMPLATE) ${@:new-%=%}
 
 print:
 	@echo "Variables used by make:"

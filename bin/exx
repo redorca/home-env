@@ -1,0 +1,29 @@
+#!/bin/bash
+
+
+LEGAL_SIGS=( EXIT ERR RETURN DEBUG $(trap -l | sed -e 's/[0-9]*)//g') )
+declare -ax SIGNALS=()
+
+sigs()
+{
+        local Sig=
+        local ACTION=
+        local ADD=
+        local RM=
+
+        ADD="Adding"
+        RM="Remove"
+        ACTION="${ADD,,}"
+        Sig="$1" ; shift
+        [ "$1" = "${RM,,}" ] && ACTION=${RM,,} && shift
+        [ "${ACTION,,}" = "${ADD,,}" ] && SIGNALS=( "${Sig^^}" "${SIGNALS[@]}" )
+        [ "${ACTION,,}" = "${RM,,}" ] && SIGNALS=( "$(echo "${SIGNALS[@]}" | eval sed -e \'s/${Sig^^}//\' -e \'s/^  *//\' -e \'s/  *$//\')" )
+}
+
+while read -p "[ ${SIGNALS[*]} ]: " line action; do
+        [ "$line" = "-x" ] && exit
+        [ -z "$line" ] && continue
+        echo "${LEGAL_SIGS[@]}" | grep "${line^^}" >/dev/null || continue
+        sigs ${line} $action
+done
+

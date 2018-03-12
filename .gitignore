@@ -1,3 +1,4 @@
+
 # Prerequisites
 *.d
 
@@ -96,11 +97,12 @@ mergehex
 /patch.*
 !patches/
 /fw_devtools
-aa
-bb
-cc
-dd
-ff
+a[a]*
+b[b]*
+c[c]*
+d[d]*
+f[f]*
+g[g]*
 foo*
 boo*
 goo*
