@@ -181,6 +181,17 @@ function trace()
         esac
 }
 
+#
+# Edit a file in ~/bin from anywhere on the system.
+#
+function vimbin()
+{
+        local -a Files=
+
+        Files="$*"
+        pushd ~/bin > /dev/null && vim $Files && popd >/dev/null
+}
+
 function vim_color_setup()
 {
         local new_color=
