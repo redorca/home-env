@@ -25,3 +25,8 @@ scripts:
           Once that is working modify it to also work
           with repo results of "git remote -v"
 
+
+    get-hooks
+    simple hooks install that clones from auto_test, runs sudo hookup -p
+    asks for repo locations and updates the local hook scripts.
+
