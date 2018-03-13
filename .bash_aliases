@@ -13,83 +13,6 @@ DBG_LVL="${DBG_LVL:-$ZERO}"
 unset TRACE
 unset DEBUG
 
-#
-# Set exported variable TRACE to 1 (on) or 0 (off).
-# Pertains mostly to shell scripts who check for
-# TRACE and "set -x" when TRACE=1.
-#
-function trace()
-{
-        local PUBLISH=
-
-        PUBLISH=( "eval" "echo" "TRACE: [\$TRACE]" )
-        case "$1" in
-        1|on|ON)    export TRACE=1 && ${PUBLISH[@]}
-        ;;
-        0|off|OFF)  TRACE=0 && ${PUBLISH[@]}
-        ;;
-        *) [ -z "$1" ]  && ${PUBLISH[@]}
-           [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
-        ;;
-        esac
-}
-
-#
-# Export DEBUG = 1 (on) or disable (0)
-#
-function dbg()
-{
-        local PUBLISH=
-
-        PUBLISH=( "eval" "echo" "DEBUG: [ \$DEBUG ]" )
-        case "$1" in
-        1|on|ON)    export DEBUG=1 && ${PUBLISH[@]}
-        ;;
-        0|off|OFF)  DEBUG=0 && ${PUBLISH[@]}
-        ;;
-        *) [ -z "$1" ]  && ${PUBLISH[@]}
-           [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
-        ;;
-        esac
-}
-
-#
-#
-# Simplify creating a cscope tag database
-#
-function tag()
-{
-        local  START_DIR=
-        local  CSCOPE_OPTS=
-        local  CSCOPE_DBFILE=
-
-        CSCOPE_DBFILE=cscope.out
-        START_DIR="./"
-        [ -n "$1" ] && [ -d "$1" ] && START_DIR="$1"
-        CSCOPE_OPTS="-R -k -b -s"
-        [ -f "$CSCOPE_DBFILE" ] && rm "$CSCOPE_DBFILE"
-        cscope $CSCOPE_OPTS "$START_DIR"
-}
-
-function vim_color_setup()
-{
-        local new_color=
-
-        [ -z "$1" ] && return 1
-
-        new_color="$1"
-        last=$(sed -n -e '/^[^#]*color /s/.*color *//p' ~/.vimrc | tail -1)
-        [ "$last" == "$new_color" ] && return
-        sed -i -e '/^[#]*color.*${last}/s/color.*${last}/color $new_color/' ~/.vimrc
-        echo "Color will go from $last to $new_color"
-}
-
-function pd()
-{
-	pushd $1 >/dev/null
-	dirs -v
-}
-
 function add_path()
 {
         if echo $PATH | sed -e 's/:/ /g' | grep -w "$1" >/dev/null ; then
@@ -111,6 +34,25 @@ function del_path()
         if [ $? -eq 0 -a -n "$FOO" ] ; then
                 PATH=$(echo $FOO | sed -e 's/^ //' -e 's/  */:/g')
         fi
+}
+
+#
+# Export DEBUG = 1 (on) or disable (0)
+#
+function dbg()
+{
+        local PUBLISH=
+
+        PUBLISH=( "eval" "echo" "DEBUG: [ \$DEBUG ]" )
+        case "$1" in
+        1|on|ON)    export DEBUG=1 && ${PUBLISH[@]}
+        ;;
+        0|off|OFF)  DEBUG=0 && ${PUBLISH[@]}
+        ;;
+        *) [ -z "$1" ]  && ${PUBLISH[@]}
+           [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
+        ;;
+        esac
 }
 
 #
@@ -145,6 +87,11 @@ function find-fu()
         fi
 }
 
+function pd()
+{
+	pushd $1 >/dev/null
+	dirs -v
+}
 
 #
 # Find all files of type ARG2 and remove them. E.G to get rid of all
@@ -178,6 +125,76 @@ function rm-fu()
 }
 
 #
+# Run "set" and grab the output for whatever shell function
+# is specified.
+#
+function show()
+{
+        local Func=
+
+        case "$1" in
+        -l) set | grep "^[a-zA-Z_-]*[ 	]*()"
+           ;;
+        *) Func="$1"
+           ;;
+        esac
+
+        set | eval sed  -n -e '/^$1/,/^}/p'
+}
+
+#
+#
+# Simplify creating a cscope tag database
+#
+function tag()
+{
+        local  START_DIR=
+        local  CSCOPE_OPTS=
+        local  CSCOPE_DBFILE=
+
+        CSCOPE_DBFILE=cscope.out
+        START_DIR="./"
+        [ -n "$1" ] && [ -d "$1" ] && START_DIR="$1"
+        CSCOPE_OPTS="-R -k -b -s"
+        [ -f "$CSCOPE_DBFILE" ] && rm "$CSCOPE_DBFILE"
+        cscope $CSCOPE_OPTS "$START_DIR"
+}
+
+#
+# Set exported variable TRACE to 1 (on) or 0 (off).
+# Pertains mostly to shell scripts who check for
+# TRACE and "set -x" when TRACE=1.
+#
+function trace()
+{
+        local PUBLISH=
+
+        PUBLISH=( "eval" "echo" "TRACE: [\$TRACE]" )
+        case "$1" in
+        1|on|ON)    export TRACE=1 && ${PUBLISH[@]}
+        ;;
+        0|off|OFF)  TRACE=0 && ${PUBLISH[@]}
+        ;;
+        *) [ -z "$1" ]  && ${PUBLISH[@]}
+           [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
+        ;;
+        esac
+}
+
+function vim_color_setup()
+{
+        local new_color=
+
+        [ -z "$1" ] && return 1
+
+        new_color="$1"
+        last=$(sed -n -e '/^[^#]*color /s/.*color *//p' ~/.vimrc | tail -1)
+        [ "$last" == "$new_color" ] && return
+        sed -i -e '/^[#]*color.*${last}/s/color.*${last}/color $new_color/' ~/.vimrc
+        echo "Color will go from $last to $new_color"
+}
+
+#
 # ssh into one of the z servers: 1 - 6.
 #
 zee()
@@ -201,24 +218,6 @@ zee()
 
         CMD="$SSH bill@192.168.168.${ZSERVER}"
         echo $CMD && $CMD
-}
-
-#
-# Run "set" and grab the output for whatever shell function
-# is specified.
-#
-function show()
-{
-        local Func=
-
-        case "$1" in
-        -l) set | grep "^[a-zA-Z_-]*[ 	]*()"
-           ;;
-        *) Func="$1"
-           ;;
-        esac
-
-        set | eval sed  -n -e '/^$1/,/^}/p'
 }
 
 export EDITOR=vim
@@ -252,6 +251,7 @@ alias          vi=vim
 alias      valias="vim ~/.bash_aliases"
 alias     vignore="vim ~/.config/git/ignore"
 alias     vimtodo="vim ~/bin/TODO.now"
+# alias    vimbin="vim ~/bin/\$1"
 alias  bin-commit="bash -c 'cd ~/bin && git-x.sh -c'"
 alias    bin-push="bash -c 'cd ~/bin && git-x.sh -p'"
 alias        path="echo \$PATH"

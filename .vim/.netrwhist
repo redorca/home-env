@@ -1,7 +1,8 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhist_cnt =5
+let g:netrw_dirhist_cnt =6
 let g:netrw_dirhist_1='/home/zglue/foo'
 let g:netrw_dirhist_2='/home/zglue/src/zglue/auto_test/setup'
 let g:netrw_dirhist_3='/home/zglue/bin'
 let g:netrw_dirhist_4='/home/zglue/src/mynewt-core/compiler/gdbmacros'
 let g:netrw_dirhist_5='/home/zglue/src/zglue/nuttx/configs/zeus_austin'
+let g:netrw_dirhist_6='/home/zglue/bin'
