@@ -329,6 +329,7 @@ fi
     TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
     [ "${VERBOSE:0:1}" = "V" ] && print_keyval
 
+    echo_e "Compiling for $BOARD"
     for build in $TARGET_DIRS ; do
             CMD="make distclean"
             ftmp="${pseudo_targets[$build]}"

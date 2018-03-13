@@ -25,6 +25,20 @@ function add_path()
         PATH=$1:$PATH
 }
 
+#
+# Set a BOARD env var used by zmake to determine which configs dir to use.
+#
+board()
+{
+        local Dir=
+
+        Dir="$1"
+        [ -d "$(git rev-parse --show-toplevel)/configs/$1" ] || return 1
+
+        export BOARD="$Dir"
+        echo "BOARD: [$BOARD]"
+}
+
 function del_path()
 {
         if [ -z "$1" ] ; then
