@@ -17,7 +17,7 @@ SHELL_TEMPLATE = template.sh
 ifeq ($(CONFIG_TEMPLATES),)
 $(error Empty config templates)
 endif
-PROG_NAME = mkfast new
+PROG_NAME = mkfast
 
 help:
 	@echo ""
@@ -33,11 +33,10 @@ help:
 
 
 $(PROG_NAME): %:%.sh
-	cp $? $@ && chmod +x $@
 
 mkfast: %:%.tgz
 mkfast.sh:
-	$(Q) cp $@.sh $@ && chmod +x $@
+	$(Q) cp $@ $@ && chmod +x $@
 	$(Q) xxd $@.tgz >> $@
 
 %.tgz: $(CONFIG_TEMPLATES)
