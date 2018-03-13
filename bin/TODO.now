@@ -2,12 +2,18 @@
 # List of mods to consider in the future.
 #
 
-combine gitset and gitrev-seutp.sh
-mod gitrev-setup.sh to figure out the right remote repo name in refs/remotes
-finish mods to hookup (forward to auto_test/hooks/hookup) to print BINS and VARS
-      paths fully encompassing $ROOT.
+    gitset + gitrev-setup.sh:
+        combine gitset and gitrev-seutp.sh
 
-mods to pre-commit: filter for -x on source files
+    gitrev-setup.sh:
+        mod gitrev-setup.sh to figure out the right remote repo name in
+
+    hookup:
+        refs/remotes finish mods to hookup (forward to auto_test/hooks/hookup)
+                to print BINS and VARS paths fully encompassing $ROOT.
+
+    pre-commit:
+        mods to pre-commit: filter for -x on source files
                     filter & fix for C++ style comments.
 
 scripts:
@@ -16,17 +22,23 @@ scripts:
         Add capability to install what is not found.
         Will need to run apt-get update.
 
+    apt-get install:
         for packages that are not found by apt-get install
         running the command will print out the package
         to install for that command.  Need to replicate
         this capability.
 
-    import a "git clone" url into "clone" script format
+    clone upgrade:
+          import a "git clone" url into "clone" script format
           Once that is working modify it to also work
           with repo results of "git remote -v"
 
 
-    get-hooks
-    simple hooks install that clones from auto_test, runs sudo hookup -p
-    asks for repo locations and updates the local hook scripts.
+    get-hooks:
+        simple hooks install that clones from auto_test, runs sudo hookup -p
+        asks for repo locations and updates the local hook scripts.
+
+    profiles:
+        Setup profiles for gnome-terminal so I can choose between dark
+        and light windows.
 
