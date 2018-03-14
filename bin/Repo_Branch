@@ -1,0 +1,7 @@
+#!/bin/bash
+ 
+# boo=( "$(git branch -vv | grep ^* | sed -e 's/\[/ /' -e 's/\]/ /' -e 's/:/ /g' | awk '{print $2 ", " $4}')" )
+boo=( "$(git branch -vv | grep ^* | sed -e 's/[:\]\[]/ /' | awk '{print $2 ", " $4}')" )
+
+echo "${boo[*]}"
+

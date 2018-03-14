@@ -318,107 +318,26 @@ filter_if_0()
 }
 
 #
-# Given a directory of the form "abc/" or "/abc/" and a list
-# of files return the list of files NOT containing that directory
-# in its path.
-#
-filter_out_dirs()
-{
-        local Dir=
-        local Flag=
-
-        Dir="$1" ; shift
-
-        filter_for_dirs "NOT" "$Dir" "$@"
-}
-
-#
 # Filter for files in the zglue NRF domain. Primarily files
 # containing /nrf* in their repo path.
 #
-filter_for_dirs()
+filter_for_dir()
 {
         local file=
-        local Dir=
-        local A_CMD=
-        local B_CMD=
-
-        # The normal case: i.e. report paths containing the directory
-        A_CMD="eval echo \$file"
-        B_CMD=
-        if [ "$1" = "NOT" ] ; then
-                shift
-                # The NOT case: i.e. Don't report paths containing
-                # the directory
-                B_CMD="eval echo \$file"
-                A_CMD=
-        fi
-        Dir="$1" ; shift
+        local dir=
+        local Filter=
 
         for file in "$@" ; do
-                #
-                # If these two strings don't match then the file
-                # path continas the directory component.
-                #
-                if [ "${file%${Dir}*}" != "$file" ] ; then
-                        $A_CMD
-                        continue
-                fi
-                $B_CMD
+                dir="$(dirname "$file")"/
+                for Filter in $FILTERS_NRF ; do
+                       #echo "Filter: $Filter:  ${dir%${FILTER_DIR}*}"
+                        if [ "${dir%${Filter}*}" != "$dir" ] ; then
+                                echo "$file "
+                                break
+                        fi
+                done
         done
 }
-
-#
-# Remove paths including files in ignored directories.
-#
-exclude_dirs()
-{
-        local Dir=
-        local Limit=
-        local Idx=
-        declare -a RESULTS= 
-
-        Idx=0
-        #
-        # Init the RESULTS hash with the first dir to exclude.
-        RESULTS=( $(filter_out_dirs "${IGNORE_DIRS[$Idx]}" "$@") )
-        Limit=$(( ${#IGNORE_DIRS[@]} - 1 ))
-
-        for Idx in $(seq 1 1 $Limit) ; do
-                Dir="${IGNORE_DIRS[$Idx]}"
-                #
-                # Feed the pared down set of files back for further filtering.
-                RESULTS=( $(filter_out_dirs "$Dir" "${RESULTS[@]}") )
-        done
-
-        #
-        # Finally, the set of files matching NONE
-        # of the dirs in the list of exluded dirs.
-        #
-        echo "${RESULTS[@]}"
-}
-
-#
-#
-#
-any_protected_dirs()
-{
-        declare -a files=
-        declare -a OUT=
-
-        files=( $@ )
-
-        for i in $(seq 0 1 ${#NUTTX_PROTECTED_DIRS[@]}) ; do
-            OUT=( $(filter_for_dirs "${NUTTX_PROTECTED_DIRS[$i]}" "${files[@]}") "${OUT[@]}" )
-        done
-
-        if [ -z "${OUT[*]}" ] ; then
-                return 1
-        fi
-        echo "${OUT[@]}"
-        return 0
-}
-
 
 #
 # Look for externs lurking in header files.

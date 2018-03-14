@@ -103,7 +103,6 @@ set_env()
 # In case any leading and/or trailing white space exists
 [ -n "$FILES" ] && strip_edge_ws FILES
 
-IGNORE_DIRS=( "external" )
 export FILTERS_NRF="/nrf52/ /nrf52832_dk/"
 export FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs"
 export GIT_ADD=
@@ -155,18 +154,12 @@ echo_dbg ":This repo is actively managed."
 
 
 [ -z "$FILES" ] && FILES="$(set_files "$ALT")"
-#
-# Filter out any paths containing exluded directories:
-#
-FILES=$(exclude_dirs $FILES)
-
 # In case any leading and/or trailing white space exists
 strip_edge_ws FILES
 
-if RES=( $(any_protected_dirs "$FILES") ) ; then
-        echo_err "The set of changes includes one or more protected directories:"
+if any_protected_dirs "$FILES" ; then
+        echo_err "The set of files includes one or more protected directories:"
         echo_err "\t\t${PROTECTED_DIRS[!@]}"
-        eche_err "${RES[@]}"
         exit 1
 fi
 

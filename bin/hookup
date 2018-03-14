@@ -1,15 +1,18 @@
 #!/bin/bash
 
+# DEBUG=1
+# ROOT=~
+
 #
 # Set shell mode to trace each function call
-[ "$TRACE" = "1" ] && set -x
+[ "$DEBUG" = "2" ] && set -x
 
+ROOT=${ROOT:-}
 # shellcheck disable=2034
 HASH=sha256sum
-BIN_DIR=${BIN_DIR:-/usr/bin}
-HOOKS_DIR=${HOOKS_DIR:-/usr/share/git-core/templates/hooks}
-STYLES_DIR=${STYLES_DIR:-/usr/share/zglue/styles}
-ZGLUE_LIBDIR=${ZGLUE_LIBDIR:-/usr/share/zglue/scripts}
+HOOKS_DIR=/usr/share/git-core/templates/hooks
+STYLES_DIR=/usr/share/zglue/styles
+ZGLUE_LIBDIR=/usr/share/zglue/scripts
 HOOKS="pre-commit commit-msg"
 RED='\033[1;31m'
 # shellcheck disable=2034
@@ -28,11 +31,11 @@ declare -A DIFFER
 #
 set_bins()
 {
-    [ -d "$ROOT" ] && echo "Rebasing on root $ROOT"
+    [ -n "$ROOT" ] && echo "Rebasing on root $ROOT"
     BINS=(
-        "${ROOT}${BIN_DIR}"/style_file
-        "${ROOT}${BIN_DIR}"/astyle
-        "${ROOT}${BIN_DIR}"/hookup
+        "${ROOT}"/usr/bin/style_file
+        "${ROOT}"/usr/bin/astyle
+        "${ROOT}"/usr/bin/hookup
         "${ROOT}${HOOKS_DIR}"/pre-commit
         "${ROOT}${HOOKS_DIR}"/commit-msg
         "${ROOT}${STYLES_DIR}"/astyle-nuttx
@@ -193,7 +196,7 @@ list_files()
 
         echo -e "${Msg}"
         for fff in "${Files[@]}" ; do
-                echo -e "\\t$fff"
+                echo -e "\t$fff"
         done
 }
 
@@ -313,8 +316,6 @@ place_files()
 	        this_dir="$(dirname "$bin")"
                 # Empty out the array so it reports 0 elements.
                 CMD=()
-                # Reset the spacer for the next go around.
-                SP=
 
                 bin_suitable "$bin" || continue
                 # See if we are replacing ourselves. If so, step aside.
@@ -325,6 +326,7 @@ place_files()
 	        echo -n -e "Placing $this_bin:\\t"
                 [ "${#this_bin}" -lt 8 ] && SP="\\t"
                 CMD=( "cp" "$this_bin" "$bin" )
+#	        [ "${#CMD[@]}" -gt 0 ] && echo "${CMD[@]}" && "${CMD[@]}"
 	        echo -e "${SP}${CMD[*]}" && "${CMD[@]}"
 	        [ "$this_dir" == "${ROOT}${STYLES_DIR}" ] || chmod +x "$bin"
 	        sleep 1
@@ -362,8 +364,7 @@ while [ $# -ne 0 ] ; do
         esac
         shift
 done
-set_bins "$ROOT"
-
+set_bins
 [ "$DEBUG" = "1" ] && list_vars ":: Debug Environs" ZGLUE_LIBDIR HOOKS_DIR STYLES_DIR
 [ "$DEBUG" = "1" ] && echo ":: ${CMD[*]}"
 "${CMD[@]}"
