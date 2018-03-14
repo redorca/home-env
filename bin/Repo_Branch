@@ -1,7 +1,10 @@
 #!/bin/bash
  
 # boo=( "$(git branch -vv | grep ^* | sed -e 's/\[/ /' -e 's/\]/ /' -e 's/:/ /g' | awk '{print $2 ", " $4}')" )
-boo=( "$(git branch -vv | grep ^* | sed -e 's/[:\]\[]/ /' | awk '{print $2 ", " $4}')" )
-
-echo "${boo[*]}"
+# boo=( $(git branch -vv | grep ^* | sed -e 's/\[\(.*\)\/\(.*\)[:].*/\1 \2/' | 
+#                 awk '{print $2 " " $4 " " $5}') )
+# boo=( $(git branch -vv | grep ^* | sed -e 's/\[\(.*\)\/\(.*\)[:]*.*\].*/\1 \2/' | \
+#                 awk '{print $2 " " $4 " " $5}') )
+boo=( $(git branch -vv | grep ^* | sed  -e 's/://' -e 's/\]/:/' -e 's/\[\(.*\)\/\(.*\):.*/\1 \2/' | awk '{print $2" " $4" " $5}') )
+echo "${#boo[@]} : local branch: ${boo[0]}  tracking branch ${boo[2]}    remote: ${boo[1]}"
 
