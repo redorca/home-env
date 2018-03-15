@@ -77,18 +77,46 @@ process_args()
 {
         while [ $# -ne 0 ] ; do
                 case "$1" in
-                -g)
+                -r) Repo="$2" ; shift
                     ;;
-                -h) help_all
+                # May be issued multiple times. i.e. get-hooks -s QUIT -s EXIT -s TRAP
+                -s) SIGNALS=( "${2^^}" "${SIGNALS[@]}" ) ; shift
+                    ;;
+                -h) help_all ; exit
                     ;;
                 *) [ "${1:0:1}" = "-" ] && echo_err "[ "$1" ] :: Not yet implemented"
-                   [ "${1:0:1}" != "-" ] && echo_err "Not sure what to do with ["$1"]"
-                   exit
+                   [ "${1:0:1}" != "-" ] && echo_err "Not sure what to do with ["$1"]" && exit
                     ;;
                 esac
                 shift
         done
 }
+
+#
+# General input query routine
+#
+ask()
+{
+        local Var=
+        local Msg=
+        local Tmp=
+        local PromptOpt=
+
+        [ -n "${Var}" ] && [ -n "${!Var}" ] && PromptOpt="-i ${!Var}"
+        Var="$1" ; shift
+        Msg="$*"
+
+        [ -z "${!Var}" ] && blah
+        read ${PromptOpt} -e -p "$Msg" "${Var}"
+        while [ -z "${!Var}" ] ; do
+        if [ "${!Var}" = "-x" ] ; then
+                        echo_err "Exiting."
+                        exit 1
+        fi
+        done
+        return 0
+}
+
 ### HELP message end
 
 Repo=auto_test
@@ -97,10 +125,10 @@ process_args "$@"
    (
         cd /tmp
         [ -d "$Repo" ] && rm -rf "$Repo"
-        while read -p "Login name to gerrit []" Name ; do
-                if git clone -b master ssh://${Name}@101.132.142.37:30149/"$Repo" ; then
-                        break
-                fi
+        Name="$(git config --global user.email | sed -e 's/@.*//')@"
+        Name=foo
+        while ! git clone -b master ssh://${Name}@101.132.142.37:30149/"$Repo" >/dev/null 2>&1 ; do
+                        ask Name "gerrit user id for ssh access "
         done
         cd "$Repo"/hooks
         if hookup -v >/dev/null ; then
