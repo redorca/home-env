@@ -189,6 +189,9 @@ while [ $# -ne 0 ] ; do
            ;;
         -p|--push) DO_COMMIT=( "eval" "git" "commit" "&&" "git" "$PUSH" )
            ;;
+        -r) PUSH="review -D"
+            DO_COMMIT=( "eval" "git" "commit" "&&" "git" "$PUSH" )
+           ;;
         -u) UNTRACK=1
            ;;
 #       -v) EDIT_WITH="$TMPFILE nvim-qt";

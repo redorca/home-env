@@ -1,18 +1,15 @@
 #!/bin/bash
 
-# DEBUG=1
-# ROOT=~
-
 #
 # Set shell mode to trace each function call
-[ "$DEBUG" = "2" ] && set -x
+[ "$TRACE" = "1" ] && set -x
 
-ROOT=${ROOT:-}
 # shellcheck disable=2034
 HASH=sha256sum
-HOOKS_DIR=/usr/share/git-core/templates/hooks
-STYLES_DIR=/usr/share/zglue/styles
-ZGLUE_LIBDIR=/usr/share/zglue/scripts
+BIN_DIR=${BIN_DIR:-/usr/bin}
+HOOKS_DIR=${HOOKS_DIR:-/usr/share/git-core/templates/hooks}
+STYLES_DIR=${STYLES_DIR:-/usr/share/zglue/styles}
+ZGLUE_LIBDIR=${ZGLUE_LIBDIR:-/usr/share/zglue/scripts}
 HOOKS="pre-commit commit-msg"
 RED='\033[1;31m'
 # shellcheck disable=2034
@@ -31,11 +28,11 @@ declare -A DIFFER
 #
 set_bins()
 {
-    [ -n "$ROOT" ] && echo "Rebasing on root $ROOT"
+    [ -d "$ROOT" ] && echo "Rebasing on root $ROOT"
     BINS=(
-        "${ROOT}"/usr/bin/style_file
-        "${ROOT}"/usr/bin/astyle
-        "${ROOT}"/usr/bin/hookup
+        "${ROOT}${BIN_DIR}"/style_file
+        "${ROOT}${BIN_DIR}"/astyle
+        "${ROOT}${BIN_DIR}"/hookup
         "${ROOT}${HOOKS_DIR}"/pre-commit
         "${ROOT}${HOOKS_DIR}"/commit-msg
         "${ROOT}${STYLES_DIR}"/astyle-nuttx
@@ -59,8 +56,9 @@ diff_check()
         [ -f "$File_1" ] && Sum_1="$(sha256sum "$File_1" | awk '{print $1}')"
         [ -f "$File_2" ] && Sum_2="$(sha256sum "$File_2" | awk '{print $1}')"
 
-       [ "$Sum_1" = "$Sum_2" ] && return
-       return 1
+        [ "$Sum_1" = "$Sum_2" ] && return
+        [ "$DIFF_FILES" = "1" ] && diff -u "$File_1" "$File_2" > diff."$(basename "$File_1")"
+        return 1
 }
 
 #
@@ -82,14 +80,18 @@ help()
         and astyle-nuttx to provide style checking for git commits.
 
         -p : Place all of these files in the proper locations. Must run as root!
+
         -u : Refresh .git/hooks with the latest pre-commit and commit-msg.
-             Must be run from the root of the repo.
+
+        -U : Update hooks in all repos found from this directory.
+
         -v : Validate that the necessary files are all present locally and
              how the compare with currently installed versions of these files.
 
              Any files that differ from the currently installed versions are
              shown and will be updated when directed to with the "-p" option.
-
+        -vv : Not only validate existence of files and which differ but also
+              generate the diffs into files of the format: diff.<filename>
 
 EOF
 }
@@ -110,6 +112,8 @@ personality_shrink()
                    &&  [ "$DEBUG" = "1" ]  \
                          && echo ":: New hookup did not install, restore." >&2
         fi
+
+        return 0
 }
 
 #
@@ -162,21 +166,24 @@ refresh_hooks()
 
         RepoRoot=$(git rev-parse --show-toplevel)
   (
+        set -x
         rv=0
         cd "$RepoRoot"
         for hook in $HOOKS ; do
-                [ ! -f "$HOOKS_DIR/$hook" ] && echo "Missing $HOOKS_DIR/$hook." >&2 && FA=1 && continue
+                [ ! -f "$HOOKS_DIR/${hook}" ] && echo "Missing $HOOKS_DIR/${hook}." >&2 && FA=1 && continue
                 # See if the two files are the same and skip if they are.
-                diff_check "$HOOKS_DIR/$hook" .git/hooks/"$hook" && continue
-                echo "$hook is different, replacing." >&2
-                CMD="cp $HOOKS_DIR/$hook .git/hooks/"
-                $CMD && chmod +x .git/hooks/"$hook"
+                diff_check "$HOOKS_DIR/${hook}" .git/hooks/"${hook}" && continue
+                echo -e "=:\\t${hook} is DIFFERENT, replacing."
+                CMD="cp $HOOKS_DIR/${hook} .git/hooks/"
+                $CMD && chmod +x .git/hooks/"${hook}"
                 rv=1
         done
+        set +X
         return $rv
-  ) || msg_now="now "
+  ) || msg_now="now"
 
-        echo -e "All hooks are ${msg_now}current.\\n"
+        echo ""
+        echo -e "\\tAll hooks are ${msg_now}[ -n "${msg_now}" ] && echo -n " "current."
         return
 }
 
@@ -196,7 +203,7 @@ list_files()
 
         echo -e "${Msg}"
         for fff in "${Files[@]}" ; do
-                echo -e "\t$fff"
+                echo -e "\\t$fff"
         done
 }
 
@@ -237,7 +244,7 @@ validate_horde()
         declare -a Differs=
 
         FA=0
-        msgs=( "${RED}Differs:${RESET}" "${BLUE}Found${RESET}" "${RED}NotFound:${RESET}" )
+        msgs=( "${RED}Differ:${RESET}" "${BLUE}Found${RESET}" "${RED}NotFound:${RESET}" )
 
         echo "Making sure all of the files are here ... "
 	for bin in "${BINS[@]}" ; do
@@ -247,13 +254,15 @@ validate_horde()
                                 Differs=( "$local_bin" "${Differs[@]}" )
                                 DIFFER["$local_bin"]="$bin"
                         fi
-                        Found=( "$local_bin" "${Found[@]}" )
+                        [ -n "${Found[*]}" ] && Found=( "$local_bin" "${Found[@]}" )
+                        [ -z "${Found[*]}" ] && Found=( "$local_bin" )
                         continue
                 fi
                 NotFound=( "$local_bin" "${NotFound[@]}" )
                 FA=1
 	done
         [ -n "${Found[*]}" ] && list_files "${msgs[1]}" "${Found[@]}"
+        [ "${#Found[@]}" -eq "${#BINS[@]}" ] && echo -e "All files are found.\\n" >&2
         [ -n "${Differs[*]}" ] && list_files "${msgs[0]}" "${Differs[@]}"
         [ -n "${NotFound[*]}" ] && list_files "${msgs[2]}" "${NotFound[@]}"
         msg="All files are current."
@@ -316,6 +325,8 @@ place_files()
 	        this_dir="$(dirname "$bin")"
                 # Empty out the array so it reports 0 elements.
                 CMD=()
+                # Reset the spacer for the next go around.
+                SP=
 
                 bin_suitable "$bin" || continue
                 # See if we are replacing ourselves. If so, step aside.
@@ -326,13 +337,32 @@ place_files()
 	        echo -n -e "Placing $this_bin:\\t"
                 [ "${#this_bin}" -lt 8 ] && SP="\\t"
                 CMD=( "cp" "$this_bin" "$bin" )
-#	        [ "${#CMD[@]}" -gt 0 ] && echo "${CMD[@]}" && "${CMD[@]}"
 	        echo -e "${SP}${CMD[*]}" && "${CMD[@]}"
+                SP=
+
 	        [ "$this_dir" == "${ROOT}${STYLES_DIR}" ] || chmod +x "$bin"
 	        sleep 1
 	done
+
+        return 0
 }
 
+#
+# Remove all the local files that were installed.
+#
+clean_up()
+{
+        local tmp=
+        local bin=
+
+        for bin in "${BINS[@]}" ; do
+                tmp="$(basename "$bin")"
+                if [ -n "$(git ls-files "$tmp")" ] ; then
+                        continue
+                fi
+                [ -f "$tmp" ] && rm "$tmp"
+        done
+}
 
 
 #
@@ -343,6 +373,9 @@ CMD=( "help" "&&" "exit 0" )
 
 while [ $# -ne 0 ] ; do
         case "$1" in
+        -D) DEBUG=1
+            echo_dbg "DEBUG set."
+          ;;
         -h|--help) CMD=( "help" "&&" "exit 0" )
           ;;
         -i) CMD=( "instructions" "&&" "exit 0" )
@@ -351,22 +384,49 @@ while [ $# -ne 0 ] ; do
                                 STYLES_DIR ZGLUE_LIBDIR SIDE_FILE DEBUG
             exit 0
           ;;
-        -p|--place) CMD=( place_files )
+        -p|--place) CMD=( "eval" "place_files" "&&" "clean_up" )
           ;;
         -r|--root) [ -d "$2" ] && ROOT=$2 && shift
           ;;
+        -t) set -x
+          ;;
         -u|--update) CMD=( refresh_hooks )
           ;;
-        -v|--validate) CMD=( validate_horde )
+        -U) # find all repos in this directory and update the hooks.
+                count=0
+                for dir in $(find . -type d -name .git 2>/dev/null) ; do
+                    (
+                        [ "$DEBUG" = "1" ] && echo -n -e " ${#dir}\t" >&2
+                        cd $(dirname $dir) >/dev/null || continue
+                        echo -e "=: Updating hooks for $(dirname $dir)"
+                        [ "${#dir}" -lt  9 ] && echo -n -e "\\t"
+                        [ "${#dir}" -lt 18 ] && echo -n -e "\\t"
+                        [ "${#dir}" -lt 26 ] && echo -n -e "\\t"
+                        hookup -u
+                        count=$(( count + 1 ))
+#                       sleep 1
+                    )
+                done
+                echo "    Updated $count repos." >&2
+                exit
+          ;;
+        -v) CMD=( validate_horde )
+          ;;
+       -vv) CMD=( validate_horde )
+            rm -f diff.*
+            DIFF_FILES=1
           ;;
         *) echo "That makes no sense: [$1]" >&2; exit 1
           ;;
         esac
         shift
 done
-set_bins
+
+set_bins "$ROOT"
+
 [ "$DEBUG" = "1" ] && list_vars ":: Debug Environs" ZGLUE_LIBDIR HOOKS_DIR STYLES_DIR
 [ "$DEBUG" = "1" ] && echo ":: ${CMD[*]}"
+
 "${CMD[@]}"
 
 personality_shrink
