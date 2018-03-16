@@ -10,6 +10,12 @@ YLWGRN='\033[1;33;42m'
 YELLOW="\033[1;33m"
 # shellcheck disable=2034
 GREEN="\033[1;32m"
+BLUE="\033[1;34m"
+## # shellcheck disable=2034
+LTBLUE="\033[1;36m"
+## # shellcheck disable=2034
+PURPLE="\033[1;35m"
+## # shellcheck disable=2034
 RESET='\033[0;39;49m'
 # DEBUG=${DEBUG:-0}
 declare -A git_review
@@ -62,7 +68,7 @@ print_gitrev_config()
 	echo -e "host:\\t\\t${git_review["host"]}"
 	echo -e "port:\\t\\t${git_review["port"]}"
 	echo -e "username:\\t${git_review["username"]}"
-	echo -e "project:\\t${git_review["project"]}"
+	echo -e "project:\\t${git_review["project"]}YELLOW"
 	echo -e "branch:\\t\\t${git_review["branch"]}"
 	echo -e "remote:\\t\\t${git_review["remote"]}"
 	echo -e "scheme:\\t\\t${git_review["scheme"]}"
@@ -75,7 +81,7 @@ print_section_defaults()
 
         echo ""
         for Key in "${!git_review[@]}" ; do
-                echo -e "Key: ${GREEN}$Key,\\t${YELLOW}${git_review[$Key]}${RESET}"
+                echo -e "Key: ${GREEN}$Key,\\t${BLUE}${git_review[$Key]}${RESET}"
         done
         echo ""
 }

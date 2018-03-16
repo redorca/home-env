@@ -1,8 +1,0 @@
-#!/bin/bash -x
-
-[ -z "$1" ] && exit 1
-[ -z "${1#*nuttx*/.git}" ] && exit 1
-
-dirname $1
-echo "$(dirname $1)"
-
