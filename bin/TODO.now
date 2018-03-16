@@ -42,3 +42,7 @@ scripts:
         Setup profiles for gnome-terminal so I can choose between dark
         and light windows.
 
+    git:
+        Write some git commands, i.e. callable through git, to help
+        troubleshoot, combine actions, etc.
+
