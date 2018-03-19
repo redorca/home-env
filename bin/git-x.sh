@@ -164,6 +164,17 @@ PUSH="push"
 # ARGS_Begin
 while [ $# -ne 0 ] ; do
         case $1 in
+        -A) NEW_TIME_STAMP=$(date +"%a %b %d %T %Y %z")
+            echo "NEW_TIME_STAMP:  ($NEW_TIME_STAMP)"
+            DO_COMMIT=( "git" "commit" "--amend" "--date=${NEW_TIME_STAMP}" "--no-verify" )
+            myname="$(git config --get user.name)"
+            author=$(git log -1 --pretty=short | awk '/^Author:/ {print $2 " " $3}' )
+            if [ "$myname" != "$author" ] ; then
+                echo "Updating Author."
+                DO_COMMIT=( "${DO_COMMIT[@]}" "--reset-author" )
+                sleep 2
+            fi
+           ;;
         -a) NEW_TIME_STAMP=$(date +"%a %b %d %T %Y %z")
             echo "NEW_TIME_STAMP:  ($NEW_TIME_STAMP)"
             DO_COMMIT=( "git" "commit" "--amend" "--date=${NEW_TIME_STAMP}" )
