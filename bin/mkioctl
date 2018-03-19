@@ -1,0 +1,17 @@
+#!/bin/bash
+
+IOCTL_FNS=( $(grep "^[^(]*([^()]*);" include/fast_api.h | awk '{print $2}' | \
+        sed -e 's/(.*//'))
+IOCTL_CMDS=( $(grep "^[^(]*([^()]*);" include/fast_api.h | awk '{print $2}' | \
+                        sed -e 's/fast_/fast_ioctl_/' -e 's/(.*//') )
+
+
+if [ "${#IOCTL_FNS[@]}" -ne "${#IOCTL_CMDS[@]}" ] ; then
+        echo "Something's wrong here."
+fi
+
+for i in $(seq 1 1 ${#IOCTL_FNS[@]}) ; do
+
+        echo -n -e "IOCTL: ${IOCTL_CMDS[$i]^^}\t"
+        echo "Funcs: ${IOCTL_FNS[$i]}"
+done

@@ -1,0 +1,59 @@
+#!/bin/bash
+
+[ "$TRACE" = "1" ] && set -x
+
+#
+# Create a set of constants that will replace equivalent
+# constants in that file.
+#
+# E.G.  For the copyright comment block  any git root relative
+#       path will be replaced or a new one inserted.
+#
+#       For header files the gating ifndef will be set to
+#       the a processed version of the path in the comment
+#       block:   arch/arm/src/nrf52/xyz.h beomes
+#                __ARCH_ARM_SRC_NRF52_XYZ_H
+#
+gagh()
+{
+        local File=
+
+        File="$1"
+	fa=$(pwd)/"$File"
+	ga=$(git rev-parse --show-toplevel)
+	ha=${fa#$ga/}
+	ma=__$( echo ${ha^^} | sed -e 's:[/.]:_:g')
+	blocker=__$(echo ${fa#$ga/} | sed -e 's:[/.]:_:g' | tr [a-z] [A-Z])
+}
+
+foogue()
+{
+        local Ma=
+        local Ha=
+        local Var=
+        local File=
+
+        File="$1" ; shift
+        Ma="$1" ; shift
+        Ha="$1" ; shift
+
+        if ! grep "$Ha" "$File" >/dev/null ; then
+                echo "Processing embedded file path for $File" >&2
+                eval sed -i -e \'/@file/s:file.*:file ${Ha}:\' "$File"
+        fi
+        if ! grep "$Ma" $File >/dev/null ; then
+                echo "Processing blocking macro for $File" >&2
+                Var=$(grep "^#ifndef[]*[_]*[A-Z0-9_]*" "$File" | head -1 | awk '{print $NF}')
+                if [ -z "$Var" ] ; then
+                        Var=$(grep "\!defined[]*([_]*[A-Z0-9_]*" "$File" | head -1 | awk '{print $NF}' | sed -e 's/[()]*//')
+                fi
+                eval sed -i -e \'s:${Var}:${Ma}:g\' "$File"
+        fi
+}
+
+[ -z "$1" ] && echo "Specify a file for Arg1." >&2 && exit 1
+gagh "$1"
+
+foogue "$1" "$ma" "$ha"
+
+

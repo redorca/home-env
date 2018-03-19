@@ -6,10 +6,10 @@ declare -A comments
 
 comments["blank_line"]="\040*"
 comments["copyright"]="Copyright (C) xYEARx"
-comments["hdr_intro"]='#if !defined(xxx)\n#define xxx\n'
+comments["hdr_intro"]='#if !defined(xxx)\\n#define xxx\\n'
 comments["hdr_outro"]='#endif /* xxx */'
-comments["c+intro"]='#undef EXTERN\n#if ddefined(__cplusplus)\nn#define EXTERN extern "C"\nextern "C"\n{\n#else\n#define EXTERN extern\n#endif'
-comments["c+outro"]='#undef EXTERNa\n#if defined(__cplusplus)\n}\n#endif.'
+comments["c+intro"]='#undef EXTERN\\n#if ddefined(__cplusplus)\\nn#define EXTERN extern "C"\\nextern "C"\\n{\\n#else\\n#define EXTERN extern\\n#endif'
+comments["c+outro"]='#undef EXTERNa\\n#if defined(__cplusplus)\\n}\\n#endif.'
 comments["intro"]='/******************************************************************************'
 comments["outro"]='\040*****************************************************************************/'
 comments["section_name"]='\040* Name: xxx'
@@ -46,17 +46,17 @@ mk_func_comments()
         FuncName="$1" ; shift
 
 set -f
-        echo -e ${comments["intro"]}
-        echo -e ${comments["blank_line"]}
-        echo -e ${comments["section_name"]}  | eval sed -e 's/xxx/$FuncName/'
-        echo -e ${comments["blank_line"]}
-        echo -e ${comments["section_descr"]} 
-        echo -e ${comments["blank_line"]}
-        echo -e ${comments["section_params_in"]} 
-        echo -e ${comments["blank_line"]}
-        echo -e ${comments["section_returned_val"]} 
-        echo -e ${comments["blank_line"]}
-        echo -e ${comments["outro"]}
+        echo -e "${comments["intro"]}"
+        echo -e "${comments["blank_line"]}"
+        echo -e "${comments["section_name"]}"  | eval sed -e 's/xxx/$FuncName/'
+        echo -e "${comments["blank_line"]}"
+        echo -e "${comments["section_descr"]}"
+        echo -e "${comments["blank_line"]}"
+        echo -e "${comments["section_params_in"]}"
+        echo -e "${comments["blank_line"]}"
+        echo -e "${comments["section_returned_val"]}"
+        echo -e "${comments["blank_line"]}"
+        echo -e "${comments["outro"]}"
 set +f
 }
 
@@ -125,15 +125,16 @@ hdr_entry_block()
         File="$1" ; shift
 
         FName="${File#$Root}"
-        HeaderDef="__$( echo $FName | sed -e 's:[./]:_:g')"
+#       HeaderDef="__$( echo "$FName" | sed -e 's:[./]:_:g')"
+        HeaderDef="__${"$FName"/[/.]/_}"
 
-        echo -n -e "$FName\t"
+        echo -n -e "$FName\\t"
         echo -e "${HeaderDef^^}"
 }
 
 spacer()
 {
-        echo -e "\n\n"
+        echo -e "\\n\\n"
 }
 
 mk_header_file()
@@ -141,27 +142,26 @@ mk_header_file()
         local File=
         local Root=
 
-        [ ! -f "$1" ] && echo "Nope. No file here." >&2 && return 1
         File="$1" ; shift
         Root="$1" ; shift
         set -f
-        HEADER_INFO=( $(hdr_entry_block $Root $File) )
-        set_copyright | eval sed -e 's:xPATH:${HEADER_INFO[0]}:' -e \'s,xAUTHOR,Author: $OWNER,\'
+        HEADER_INFO=( $(hdr_entry_block "$Root" "$File") )
+        set_copyright | eval sed -e 's:xPATH:${HEADER_INFO[0]}:' -e \'s,xAUTHOR,Author: "$OWNER",\'
         spacer
         set +f
-        echo -e "${comments[hdr_intro]}" | eval sed -e \'s:xxx:${HEADER_INFO[1]}:g\'
-        base_includes nuttx/config sys/types stdint stdbool string  erno debug
+        echo -e "${comments[hdr_intro]}" | eval sed -e \'s:xxx:"${HEADER_INFO[1]}":g\'
+        base_includes nuttx/config sys/types stdint stdbool string  errno debug
 #       add_other_includes
         spacer
 
         for section in "${HEADER_SECTIONS[@]}" ; do
-                mk_comment_section  $section
+                mk_comment_section  "$section"
                 spacer
         done
 
         mk_func_comments "$SRCFILE" up_send
         spacer
-        echo -e "${comments[hdr_outro]}" | eval sed -e \'s:xxx:${HEADER_INFO[1]}:g\'
+        echo -e "${comments[hdr_outro]}" | eval sed -e \'s:xxx:"${HEADER_INFO[1]}":g\'
 }
 
 #
@@ -175,7 +175,7 @@ mk_comment_section()
 
         echo -e "${comments[intro]}"
         echo -e "${comments[$Key]}"
-        echo -e "${comments[outro]}\n"
+        echo -e "${comments[outro]}\\n"
 }
 
 #
@@ -193,7 +193,7 @@ base_includes()
         for entry in "${Incs[@]}" ; do
                 echo "#include <$entry.h>"
         done
-        echo -e "\n"
+        echo -e "\\n"
 }
 
 file="$1"
@@ -202,5 +202,5 @@ OWNER="$(git config --global user.name) <$(git config --global user.email)>"
 SRCFILE=/tmp/boo
 touch "$SRCFILE"
 
-mk_header_file $file $ROOT  > $SRCFILE
+mk_header_file "$file" "$ROOT"  > "$SRCFILE"
 
