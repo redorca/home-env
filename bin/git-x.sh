@@ -36,10 +36,11 @@ Help()
 Exec()
 {
         declare -a CMD=
-
         CMD=( "$@" )
+#       echo "${CMD[@]}" >&2
+#       echo "${CMD[*]}" >&2
         [ "$DRY_RUN"  = "1" ] && echo "${CMD[*]}"
-        [ "$DRY_RUN" != "1" ] && eval "${CMD[*]}"
+        [ "$DRY_RUN" != "1" ] && eval "${CMD[@]}"
 
         return 0
 }
@@ -260,7 +261,7 @@ fi
 FILTER="^[A-Z_][A-Z]"
 setup_mode_code
 if [ -n "$UNTRACK" ] && [ "$UNTRACK" -eq 1 ] ; then
-        GIT_MODE_CODE["?"]="git add"
+        GIT_MODE_CODE["Q"]="git add"
         FILTER="^[A-Z_?][A-Z?]"
 fi
 
@@ -273,7 +274,7 @@ fi
         fi
         # shellcheck disable=2162 # read without -r will mangle backslashes.
         git status --porcelain \
-                | sed -e 's/^ /_/' \
+                | sed -e 's/^ /_/' -e 's/\?/Q/g' \
                 | grep "$FILTER" \
                 | awk '{print $1 "  " $NF}' \
                 | while read line ; do
