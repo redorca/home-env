@@ -76,6 +76,7 @@ function dbg()
 #
 function find-fu()
 {
+        [ "$TRACE" = "2" ] && set -x
         ([ -z "$1" ] || [ -z "$2" ]) && echo "Missing an arg or two." >&2 && return 1
         local find_key=
         local Flag=
@@ -83,6 +84,7 @@ function find-fu()
         local ACTION_ARG=
         find_key="${1,,}"
         Flag="${dir_to_flag["$find_key"]}"; shift
+        [ -z "$Flag" ] && echo "Please supply a proper key" >&2 return 1
         regex="$1"; shift
         [ "$Flag" == "d" ] && OPTS="r"
 #       ACTION_ARG="-exec rm -${OPTS}f {} \;"
@@ -99,6 +101,7 @@ function find-fu()
         if ! eval $CMD ; then
                 eval echo "== $CMD" >&2
         fi
+        set +x
 }
 
 function pd()
@@ -184,10 +187,12 @@ function trace()
         local PUBLISH=
 
         PUBLISH=( "eval" "echo" "TRACE: [\$TRACE]" )
-        case "$1" in
-        1|on|ON)    export TRACE=1 && ${PUBLISH[@]}
+        case "${1,,}" in
+        on|ON)    export TRACE=1 && ${PUBLISH[@]}
         ;;
-        0|off|OFF)  TRACE=0 && ${PUBLISH[@]}
+        [0-9]*)  export TRACE="$1" && ${PUBLISH[@]}
+        ;;
+        off|OFF)  TRACE=0 && ${PUBLISH[@]}
         ;;
         *) [ -z "$1" ]  && ${PUBLISH[@]}
            [ ! -z "$1" ] && echo "WTF?! [ $1 ]"

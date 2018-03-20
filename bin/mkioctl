@@ -1,10 +1,53 @@
 #!/bin/bash
 
-IOCTL_FNS=( $(grep "^[^(]*([^()]*);" include/fast_api.h | awk '{print $2}' | \
-        sed -e 's/(.*//'))
-IOCTL_CMDS=( $(grep "^[^(]*([^()]*);" include/fast_api.h | awk '{print $2}' | \
-                        sed -e 's/fast_/fast_ioctl_/' -e 's/(.*//') )
 
+
+issue_case()
+{
+        local Ioctl_Fn=
+        local Ioctl_Cmd=
+
+        Ioctl_Fn="$1"
+        Ioctl_Cmd="${Ioctl_Fn%(.*}"
+        Ioctl_Cmd="fast_ioctl_${Ioctl_Fn#fast_}"
+        cat <<EOF
+        case "${Ioctl_Cmd^^}":
+                "$Ioctl_Fn";
+            break
+EOF
+}
+
+issue_switch()
+{
+        local -a Ioctl_Fns=
+
+        Ioctl_Fns=( $@ )
+        cat <<EOF
+        switch(cmd)
+         {
+EOF
+
+        for func in "${Ioctl_Fns[@]}" ; do
+                issue_case "$func"
+        done
+
+        cat <<EOF
+        }
+
+EOF
+}
+
+[ ! -f "$1" ] && echo "No file specified" >&2 && exit 1
+
+File="$1"
+IOCTL_FNS=( $(grep "^[^(]*([^()]*);" "$File" | awk '{print $2}' ) )
+# | sed -e 's/(.*//'))
+IOCTL_CMDS=( $(grep "^[^(]*([^()]*);" "$File" | awk '{print $2}' | \
+                         sed -e 's/fast_/fast_ioctl_/' -e 's/(.*//') )
+echo "=== ${#IOCTL_FNS[@]} commands" >&2
+issue_switch "${IOCTL_FNS[@]}"
+
+exit
 
 if [ "${#IOCTL_FNS[@]}" -ne "${#IOCTL_CMDS[@]}" ] ; then
         echo "Something's wrong here."
