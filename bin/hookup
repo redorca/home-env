@@ -166,7 +166,6 @@ refresh_hooks()
 
         RepoRoot=$(git rev-parse --show-toplevel)
   (
-        set -x
         rv=0
         cd "$RepoRoot"
         for hook in $HOOKS ; do
@@ -178,12 +177,13 @@ refresh_hooks()
                 $CMD && chmod +x .git/hooks/"${hook}"
                 rv=1
         done
-        set +X
         return $rv
   ) || msg_now="now"
 
         echo ""
-        echo -e "\\tAll hooks are ${msg_now}[ -n "${msg_now}" ] && echo -n " "current."
+        echo -n -e "\\tAll hooks are ${msg_now}"
+        [ -n "${msg_now}" ] && echo -n " "
+        echo -e "current."
         return
 }
 
