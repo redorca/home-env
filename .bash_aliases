@@ -35,7 +35,7 @@ board()
         Dir="$1"
         [ -d "$(git rev-parse --show-toplevel)/configs/$1" ] || return 1
 
-        export BOARD="$Dir"
+        [ -n "$Dir" ] && export BOARD="$Dir"
         echo "BOARD: [$BOARD]"
 }
 
@@ -76,15 +76,15 @@ function dbg()
 #
 function find-fu()
 {
-        [ "$TRACE" = "2" ] && set -x
         ([ -z "$1" ] || [ -z "$2" ]) && echo "Missing an arg or two." >&2 && return 1
         local find_key=
         local Flag=
         local regex=
         local ACTION_ARG=
         find_key="${1,,}"
-        Flag="${dir_to_flag["$find_key"]}"; shift
         [ -z "$Flag" ] && echo "Please supply a proper key" >&2 return 1
+        [ "$TRACE" = "2" ] && set -x
+        Flag="${dir_to_flag["$find_key"]}"; shift
         regex="$1"; shift
         [ "$Flag" == "d" ] && OPTS="r"
 #       ACTION_ARG="-exec rm -${OPTS}f {} \;"
