@@ -1,0 +1,144 @@
+#!/bin/bash
+
+debug()
+{
+        [ "$DEBUG" = "1" ] && return
+
+        return 1
+}
+
+echo_dbg()
+{
+        debug || return
+
+        echo -e "$@" >&2
+}
+
+
+File=h.fast_methods
+[ -f "$1" ] && File="$1"; shift
+
+# Strips the int16_t from the line
+mk_method()
+{
+        sed -e 's/^[^ ]* //' "$1"
+}
+
+# Strips (.* to end of line.
+mk_func_root()
+{
+        mk_method "$1" | sed -e 's/(.*//'
+}
+
+func_root()
+{
+        echo "$1" | sed -e 's/(.*//'
+}
+
+# Generates a lower case fast cmd name
+mk_cmd_name()
+{
+        mk_func_root "$1" | sed -e 's/fast_/fast_ioctl_/'
+}
+
+cmd_name()
+{
+        func_root "$1" | sed -e 's/fast_/fast_ioctl_/'
+}
+
+ioctl_cmd()
+{
+        cmd_name "$1" | tr [:lower:] [:upper:]
+}
+
+capitalize()
+{
+        mk_cmd_name "$1" | tr [:lower:] [:upper:]
+}
+
+find_current_FASTIOC_count()
+{
+        grep "_FASTIOC([0-9]*)" include/nuttx/drivers/fast_zeus.h | wc -l
+}
+
+mk_func_call()
+{
+        echo -n -e "\\t\\trv = ${Func%%(*}("
+        for key in "${!Vars[@]}" ; do
+                echo -n -e "${Vars[$key]#*@}, "
+        done
+        echo -e ");"
+}
+
+declare_vars()
+{
+        local Func=
+        local -a Vars=
+
+        Func="$@"
+        echo_dbg "== $Func"
+        Vars=( $(echo $Func | awk -F'(' '{print $2}' | awk -F')' '{print $1}' | sed -e 's:, :,:g' -e 's: :@:g' | sed -e 's:,: :g') )
+
+        for key in "${!Vars[@]}" ; do
+                echo -n -e "\\n\\t\\t${Vars[$key]};" | sed -e 's:@:    :'
+        done
+        echo -e "\n"
+        mk_func_call "$Func" | sed -e 's:, ):):'
+}
+
+issue_case()
+{
+        local Func=
+        local Cmd=
+
+        Func="$1"
+        Cmd="$(ioctl_cmd "$Func")"
+        CASE="case "
+        [ "$1" = "default" ] && CASE=
+        [ "$1" = "default" ] && Cmd="$( cmd_name "$Func")"
+        cat <<EOF
+        ${CASE}$Cmd:
+            {
+                $(declare_vars $Func)
+            }
+                break;
+EOF
+}
+
+mk_switch()
+{
+        echo -e "\\tswitch(cmd)"
+        echo -e "\\t  {"
+        mk_method "$1" | while read func ; do
+#               issue_case "$(ioctl_cmd "$func")" "$func"
+                issue_case "$func"
+        done
+        issue_case "default" "return -1;"
+        echo -e "\\t  }"
+}
+
+mk_header()
+{
+        local Count=
+
+        Count=$(( $(find_current_FASTIOC_count) + 1 ))
+#       capitalize "$1" | sed -e 's/^/#define /' -e 's/$/\t_FASTIOC()/'
+        capitalize "$1" | sed -e 's/^/#define /' | while read def var ; do
+                                echo_dbg -n ":: ${#var}\t"
+                                echo -n "$def  "
+                                echo -n "$var"
+                                [ "${#var}" -lt 40 ] && echo -n -e "\\t"
+                                [ "${#var}" -lt 31 ] && echo -n -e "\\t"
+                                [ "${#var}" -lt 23 ] && echo -n -e "\\t"
+                                [ "${#var}" -lt 16 ] && echo -n -e "\\t"
+                                [ "${#var}" -lt  8 ] && echo -n -e "\\t"
+                                echo " _FASTIO($Count)"
+                                Count=$(( Count + 1 ))
+                        done
+}
+
+[ "$1" = "--switch" ] && mk_switch $File | sed -e 's/\t/        /g' && exit
+[ "$1" = "--header" ] && mk_header $File && exit
+echo "Nothing done."
+
+# mk_cmds
