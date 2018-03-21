@@ -1,5 +1,7 @@
 #!/bin/bash
 
+IOCTL_HDR=include/nuttx/drivers/fast_zeus.h
+
 debug()
 {
         [ "$DEBUG" = "1" ] && return
@@ -58,7 +60,8 @@ capitalize()
 
 find_current_FASTIOC_count()
 {
-        grep "_FASTIOC([0-9]*)" include/nuttx/drivers/fast_zeus.h | wc -l
+#       grep "_FASTIOC([0-9]*)" include/nuttx/drivers/fast_zeus.h | wc -l
+        grep "_FASTIOC([0-9]*)" $IOCTL_HDR | wc -l
 }
 
 mk_func_call()
@@ -141,7 +144,7 @@ mk_header()
                                 [ "${#var}" -lt 23 ] && echo -n -e "\\t"
                                 [ "${#var}" -lt 16 ] && echo -n -e "\\t"
                                 [ "${#var}" -lt  8 ] && echo -n -e "\\t"
-                                echo " _FASTIO($Count)"
+                                echo " _FASTIOC($Count)"
                                 Count=$(( Count + 1 ))
                         done
 }
