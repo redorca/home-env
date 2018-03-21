@@ -45,9 +45,15 @@ Exec()
         return 0
 }
 
+debug()
+{
+        [ "$DEBUG" = "1" ] && return
+        return 1
+}
+
 echo_dbg()
 {
-        [ "$DEBUG" != "1" ] && return
+        debug || return
         echo -e "$*" >&2
 }
 
