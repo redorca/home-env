@@ -80,28 +80,37 @@ declare_vars()
         Vars=( $(echo $Func | awk -F'(' '{print $2}' | awk -F')' '{print $1}' | sed -e 's:, :,:g' -e 's: :@:g' | sed -e 's:,: :g') )
 
         for key in "${!Vars[@]}" ; do
-                echo -n -e "\\n\\t\\t${Vars[$key]};" | sed -e 's:@:    :'
+                echo    -e "\\t\\t${Vars[$key]};" | sed -e 's:@:    :'
         done
-        echo -e "\n"
+        echo  ""
         mk_func_call "$Func" | sed -e 's:, ):):'
 }
 
 issue_case()
 {
         local Func=
-        local Cmd=
+        local IoctlCmd=
+        local -a Cmd=
 
-        Func="$1"
-        Cmd="$(ioctl_cmd "$Func")"
+        Func="$1" ; shift
+        IoctlCmd="$(ioctl_cmd "$Func")"
         CASE="case "
-        [ "$1" = "default" ] && CASE=
-        [ "$1" = "default" ] && Cmd="$( cmd_name "$Func")"
+        Cmd=( "declare_vars" "$Func" )
+        [ "$Func" = "default" ] && CASE=
+        [ "$Func" = "default" ] && IoctlCmd="$(cmd_name "$Func")"
         cat <<EOF
-        ${CASE}$Cmd:
-            {
-                $(declare_vars $Func)
-            }
-            break;
+            ${CASE}$IoctlCmd:
+              {
+EOF
+        if [ "$Func" != "default" ] ; then
+                declare_vars "$Func"
+#               $(${Cmd[@]})
+        else
+                [ "$#" -gt 0 ] && echo -e "\\t\\t$1"
+        fi
+        cat <<EOF
+              }
+              break;
 EOF
 }
 
