@@ -101,7 +101,7 @@ issue_case()
             {
                 $(declare_vars $Func)
             }
-                break;
+            break;
 EOF
 }
 
