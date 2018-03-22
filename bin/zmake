@@ -316,6 +316,11 @@ if [ "$RUN_HELP" = "yes" ] || [ "$PRINT_KV" = "yes" ] ; then
         exit
 fi
 
+OBJS_FILE=/tmp/objs.built
+rm -f $OBJS_FILE
+declare -a CMD_ADDED
+CMD_ADDED=( "ls" "../../arch/arm/src/*.o" ">>" "$OBJS_FILE" "2>&1" )
+CMD_ADDED=()
 #
 # Main()
 #
@@ -342,13 +347,17 @@ fi
             CMD="make Q=\"$Q\"  $NO_ERRORS $build"
 
             echo_e "$_N"  "Building for $build: ... "
-            eval $CMD ${OUT_FILE[*]}
-            if [ $? -ne 0 ] ; then
+#           if [ $? -ne 0 ] ; then
+            if ! eval $CMD ${OUT_FILE[*]} ; then
                     echo_e "Failed.\n"
                     tail -15 ${OUT}.$build
                     continue
             fi
             echo_e "Succeeded."
+
+            [ -n "${CMD_ADDED[*]}" ] && echo "Tabulating objects"
+#           [ -n "${CMD_ADDED[*]}" ] && echo "== ${CMD_ADDED[*]} =="
+            eval ${CMD_ADDED[@]}
     done
 )
 
