@@ -37,8 +37,6 @@ Exec()
 {
         declare -a CMD=
         CMD=( "$@" )
-#       echo "${CMD[@]}" >&2
-#       echo "${CMD[*]}" >&2
         [ "$DRY_RUN"  = "1" ] && echo "${CMD[*]}"
         [ "$DRY_RUN" != "1" ] && eval "${CMD[@]}"
 
@@ -212,11 +210,6 @@ while [ $# -ne 0 ] ; do
            ;;
         -u) UNTRACK=1
            ;;
-#       -v) EDIT_WITH="$TMPFILE nvim-qt";
-#           set_helper "$TMPFILE"
-#           echo_dbg "${GIT_MODE_CODE["U"]} $(get_files)"
-#           EDIT_WITH="${GIT_MODE_CODE["U"]} $(get_files)&"
-#          ;;
         *) echo "Unknown argument: $1"; Help; exit 0
            ;;
         esac
@@ -268,7 +261,9 @@ FILTER="^[A-Z_][A-Z]"
 setup_mode_code
 if [ -n "$UNTRACK" ] && [ "$UNTRACK" -eq 1 ] ; then
         GIT_MODE_CODE["Q"]="git add"
-        FILTER="^[A-Z_?][A-Z?]"
+        echo_dbg "Resetting the FILTER ..."
+#       FILTER="^[A-Z_?][A-Z?]"
+        SED_FILTER_UNTRACKED="-e 's/\?/Q/g'"
 fi
 
 (
@@ -279,8 +274,7 @@ fi
                 add_patch
         fi
         # shellcheck disable=2162 # read without -r will mangle backslashes.
-        git status --porcelain \
-                | sed -e 's/^ /_/' -e 's/\?/Q/g' \
+        git status --porcelain | sed -e 's/^ /_/' ${SED_FILTER_UNTRACKED} \
                 | grep "$FILTER" \
                 | awk '{print $1 "  " $NF}' \
                 | while read line ; do
