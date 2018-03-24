@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+#
+# Given a file, find the Git commit that contains the file
+#
+# Can be run from inside a git repository,
+# or the directory to the .git/objects directory accepted.
+#
+# $ ./find_file_in_dir.sh /path/to/file
+
+_exit_on_error() {
+    if [[ $? -ne 0 ]]; then
+        echo -e "\n$(basename ${0}): Error: Couldn't find the file you were looking for"
+    fi
+}
+trap _exit_on_error EXIT
+
+_file=$1
+_dir=$2
+_git_dir=$(git rev-parse --git-dir 2>/dev/null)
+if [[ $? -eq 0 ]]; then
+    _dir="${_git_dir}/objects"
+fi
+if [[ ! -r $_file || ! -d $_dir ]]; then
+    echo "Usage: ./$(basename ${0}) FILE_TO_FIND [DIR_TO_SEARCH]" >&2 && exit 1
+fi
+for i in $(\find "$_dir" -type f); do
+    echo -en "\rSearching blob @ [${i}]"
+    first=$(echo "${i}" | rev | cut -d'/' -f2 | rev)
+    second=$(echo "${i}" | rev | cut -d'/' -f1 | rev)
+    \diff -q $_file <(git cat-file blob "${first}${second}" 2>/dev/null) >/dev/null 2>&1
+    if [[ $? -eq 0 ]]; then
+        _blob="${first}${second}"
+        echo -e "\nFound! Exact match of [${_file}] is [$(readlink -f ${i})]"
+        git rev-list --all |
+            while read commit; do
+                if git ls-tree -r $commit | grep -q $_blob; then
+                    echo -e "\nFound!!! Commit hash is [$commit]"
+                    exit 0
+                else
+                    echo -en "\rSearching commit [$commit]"
+                fi
+            done
+    fi
+done
+exit 1

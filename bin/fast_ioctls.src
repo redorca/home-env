@@ -1,0 +1,291 @@
+        switch(cmd)
+          {
+            case FAST_IOCTL_READ_ID:
+              {
+                uint8_t    *data_ptr;
+                uint8_t    number_of_bytes;
+
+                rv = fast_read_id(*data_ptr, number_of_bytes);
+              }
+              break;
+            case FAST_IOCTL_ENTER_POWER_STATE:
+              {
+                fast_power_state_t    power_state;
+
+                rv = fast_enter_power_state(power_state);
+              }
+              break;
+            case FAST_IOCTL_CONFIGURE_LED:
+              {
+                fast_led_id_t    led_id;
+                fast_led_duty_cycle_t    duty_cycle;
+                fast_led_period_t    led_period;
+                fast_led_intensity_control_t    intensity;
+                fast_led_brightness_range_control_t    brightness;
+                bool    invert_pwm;
+
+                rv = fast_configure_led(led_id, duty_cycle, led_period, intensity, brightness, invert_pwm);
+              }
+              break;
+            case FAST_IOCTL_ENABLE_LED:
+              {
+                fast_led_id_t    led_id;
+
+                rv = fast_enable_led(led_id);
+              }
+              break;
+            case FAST_IOCTL_DISABLE_LED:
+              {
+                fast_led_id_t    led_id;
+
+                rv = fast_disable_led(led_id);
+              }
+              break;
+            case FAST_IOCTL_REG_WRITE:
+              {
+                uint32_t    reg_addr;
+                uint16_t    reg_data;
+
+                rv = fast_reg_write(reg_addr, reg_data);
+              }
+              break;
+            case FAST_IOCTL_REG_READ:
+              {
+                uint32_t    reg_addr;
+                uint16_t    *reg_data;
+
+                rv = fast_reg_read(reg_addr, *reg_data);
+              }
+              break;
+            case FAST_IOCTL_READ_FAST_OTP:
+              {
+                uint32_t    start_addr;
+                uint8_t    *data_ptr;
+                uint32_t    number_of_bytes;
+
+                rv = fast_read_fast_otp(start_addr, *data_ptr, number_of_bytes);
+              }
+              break;
+            case FAST_IOCTL_READ_CUSTOMER_OTP:
+              {
+                uint32_t    start_addr;
+                uint8_t    *data_ptr;
+                uint32_t    number_of_bytes;
+
+                rv = fast_read_customer_otp(start_addr, *data_ptr, number_of_bytes);
+              }
+              break;
+            case FAST_IOCTL_PMIC_BOOST_CONFIGURE:
+              {
+                fast_pmic_boost_voltage_out_t    boost_voltage;
+                fast_pmic_bypass_mode_t    bypass_mode;
+                fast_pmic_boost_current_limit_t    current_limit;
+
+                rv = fast_pmic_boost_configure(boost_voltage, bypass_mode, current_limit);
+              }
+              break;
+            case FAST_IOCTL_PMIC_HVLDO_CONFIGURE:
+              {
+                fast_pmic_voltage_out_t    voltage_out;
+                fast_pmic_bypass_mode_t    bypass_mode;
+                bool    current_limit_enable;
+
+                rv = fast_pmic_hvldo_configure(voltage_out, bypass_mode, current_limit_enable);
+              }
+              break;
+            case FAST_IOCTL_PMIC_VRAIL_CONFIGURE:
+              {
+                fast_pmic_vrail_id_t    vrail_number;
+                fast_pmic_voltage_out_t    voltage_out;
+                bool    bypass_enable;
+                bool    current_limit_enable;
+
+                rv = fast_pmic_vrail_configure(vrail_number, voltage_out, bypass_enable, current_limit_enable);
+              }
+              break;
+            case FAST_IOCTL_PMIC_THERMAL_MONITOR_ENABLE:
+              {
+                fast_pmic_thermal_alarm_temp_t    alarm_temperature;
+                fast_pmic_thermal_shutdown_temp_t    shutdown_temperature;
+
+                rv = fast_pmic_thermal_monitor_enable(alarm_temperature, shutdown_temperature);
+              }
+              break;
+            case FAST_IOCTL_PMIC_THERMAL_MONITOR_DISABLE:
+              {
+                void;
+
+                rv = fast_pmic_thermal_monitor_disable(void);
+              }
+              break;
+            case FAST_IOCTL_CLEAR_FAULT_INTERRUPT:
+              {
+                void;
+
+                rv = fast_clear_fault_interrupt(void);
+              }
+              break;
+            case FAST_IOCTL_GET_FAULT_STATUS:
+              {
+                uint16_t    *data_ptr;
+
+                rv = fast_get_fault_status(*data_ptr);
+              }
+              break;
+            case FAST_IOCTL_ENABLE_FAULT_INTERRUPT:
+              {
+                fast_fault_status_mask_t    fault_status_mask;
+
+                rv = fast_enable_fault_interrupt(fault_status_mask);
+              }
+              break;
+            case FAST_IOCTL_GPIO_INIT:
+              {
+                fast_gpio_port_t    gpio_port;
+                uint16_t    gpio_pin_mask;
+                fast_gpio_pin_level_t    gpio_pin_level;
+
+                rv = fast_gpio_init(gpio_port, gpio_pin_mask, gpio_pin_level);
+              }
+              break;
+            case FAST_IOCTL_GPIO_CONFIGURE_PIN:
+              {
+                fast_gpio_port_t    gpio_port;
+                fast_gpio_pin_t    gpio_pin;
+                fast_gpio_functions_t    gpio_function;
+
+                rv = fast_gpio_configure_pin(gpio_port, gpio_pin, gpio_function);
+              }
+              break;
+            case FAST_IOCTL_GPIO_SET_PIN_LEVEL:
+              {
+                fast_gpio_port_t    gpio_port;
+                fast_gpio_pin_t    gpio_pin;
+                fast_gpio_pin_level_t    gpio_level;
+
+                rv = fast_gpio_set_pin_level(gpio_port, gpio_pin, gpio_level);
+              }
+              break;
+            case FAST_IOCTL_GPIO_GET_PIN_LEVEL:
+              {
+                fast_gpio_port_t    gpio_port;
+                fast_gpio_pin_t    gpio_pin;
+                uint8_t    *gpio_level;
+
+                rv = fast_gpio_get_pin_level(gpio_port, gpio_pin, *gpio_level);
+              }
+              break;
+            case FAST_IOCTL_GPIO_CLEAR_IRQ:
+              {
+                void;
+
+                rv = fast_gpio_clear_irq(void);
+              }
+              break;
+            case FAST_IOCTL_GPIO_ENABLE_IRQ:
+              {
+                fast_gpio_port_t    gpio_port;
+                fast_gpio_pin_t    gpio_pin;
+                fast_gpio_pin_irq_edge_t    gpio_pin_irq;
+
+                rv = fast_gpio_enable_irq(gpio_port, gpio_pin, gpio_pin_irq);
+              }
+              break;
+            case FAST_IOCTL_GPIO_DISABLE_IRQ:
+              {
+                fast_gpio_port_t    gpio_port;
+                fast_gpio_pin_t    gpio_pin;
+
+                rv = fast_gpio_disable_irq(gpio_port, gpio_pin);
+              }
+              break;
+            case FAST_IOCTL_GET_MAX_CONFIG_FILES:
+              {
+                uint8_t    *data_ptr;
+
+                rv = fast_get_max_config_files(*data_ptr);
+              }
+              break;
+            case FAST_IOCTL_GET_SYSTEM_INFORMATION_SIZE:
+              {
+                uint8_t    *data_ptr;
+
+                rv = fast_get_system_information_size(*data_ptr);
+              }
+              break;
+            case FAST_IOCTL_GET_SYSTEM_INFORMATION:
+              {
+                uint8_t    config_file_id;
+                uint8_t    *data_ptr;
+                uint32_t    data_size;
+
+                rv = fast_get_system_information(config_file_id, *data_ptr, data_size);
+              }
+              break;
+            case FAST_IOCTL_CONNECT_SYSTEM:
+              {
+                uint8_t    config_file_id;
+
+                rv = fast_connect_system(config_file_id);
+              }
+              break;
+            case FAST_IOCTL_DISCONNECT_SYSTEM:
+              {
+                uint8_t    config_file_id;
+
+                rv = fast_disconnect_system(config_file_id);
+              }
+              break;
+            case FAST_IOCTL_CONNECT_CHIP:
+              {
+                uint8_t    config_file_id;
+                uint8_t    chip_id;
+
+                rv = fast_connect_chip(config_file_id, chip_id);
+              }
+              break;
+            case FAST_IOCTL_DISCONNECT_CHIP:
+              {
+                uint8_t    config_file_id;
+                uint8_t    chip_id;
+
+                rv = fast_disconnect_chip(config_file_id, chip_id);
+              }
+              break;
+            case FAST_IOCTL_SET_DEBUG_LEVEL:
+              {
+                fast_debug_level_t    debug_level;
+
+                rv = fast_set_debug_level(debug_level);
+              }
+              break;
+            case FAST_IOCTL_SPI_CONFIGURE:
+              {
+                fast_spi_bit_order_t    bit_order;
+                fast_spi_bit_mode_t    bit_mode;
+                fast_spi_cpol_t    cpol;
+                fast_spi_cpha_t    cpha;
+
+                rv = fast_spi_configure(bit_order, bit_mode, cpol, cpha);
+              }
+              break;
+            case FAST_IOCTL_API_INIT:
+              {
+                uint8_t    config_file_id;
+
+                rv = fast_api_init(config_file_id);
+              }
+              break;
+            case FAST_IOCTL_API_CLOSE:
+              {
+                uint8_t    config_file_id;
+
+                rv = fast_api_close(config_file_id);
+              }
+              break;
+            default:
+              {
+                return -1;
+              }
+              break;
+          }
