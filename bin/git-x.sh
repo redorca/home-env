@@ -75,6 +75,7 @@ dump_env()
 stage_line()
 {
         local tmp=
+        local -a tmpa=
         local Key=
 
         #
@@ -85,10 +86,15 @@ stage_line()
         #
         # shellcheck disable=2206 #Quote to prevent word splitting, or split
                                   # robustly with mapfile or read -a
-        Key="$1"; shift
-        tmp="$1"
-        echo_dbg "target: ${tmp}  Key: $Key"
-
+#       Key="$1"; shift
+#       tmp="$1"
+#       echo_dbg "target: ${tmp}  Key: $Key"
+# ======
+        tmpa=( $@ )
+        Key="${tmpa[0]#?}"
+        echo_dbg "Raw Key: ${tmpa[0]}  Key: $Key"
+        tmp="${tmpa[1]}"
+# ======
         #
         # This will run the command if $DEBUG != 1, else
         # it will print the command string through stderr.

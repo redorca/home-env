@@ -1,3 +1,10 @@
+RESET="\033[0;39;49m"
+BLACK="\033[1;30m"
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+YELLOW="\033[1;33m"
+BLUE="\033[0;34m"
+PURPLE="\033[0;35m"
 
 #
 #  If this script is called then we know for sure we're in
@@ -59,9 +66,9 @@ function dbg()
 
         PUBLISH=( "eval" "echo" "DEBUG: [ \$DEBUG ]" )
         case "$1" in
-        1|on|ON)    export DEBUG=1 && ${PUBLISH[@]}
+        [1-9]*|on|ON)    export DEBUG=1 && ${PUBLISH[@]}
         ;;
-        0|off|OFF)  DEBUG=0 && ${PUBLISH[@]}
+        0|off|OFF)  DEBUG= && ${PUBLISH[@]}
         ;;
         *) [ -z "$1" ]  && ${PUBLISH[@]}
            [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
@@ -190,9 +197,9 @@ function trace()
         case "${1,,}" in
         on|ON)    export TRACE=1 && ${PUBLISH[@]}
         ;;
-        [0-9]*)  export TRACE="$1" && ${PUBLISH[@]}
+        [1-9]*)  export TRACE="$1" && ${PUBLISH[@]}
         ;;
-        off|OFF)  TRACE=0 && ${PUBLISH[@]}
+        off|OFF|0)  TRACE= && ${PUBLISH[@]}
         ;;
         *) [ -z "$1" ]  && ${PUBLISH[@]}
            [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
@@ -297,9 +304,33 @@ alias         cls="clear_console"
 alias        grep="grep --exclude=.git --exclude=cscope.out"
 alias        halt="sudo /sbin/shutdown -h -t now"
 
+italic()
+{
+        local Color=
+
+        Color="$1"
+        echo -n -e "${!Color}" | sed -e 's/\[./\[3/'
+}
+
+foo()
+{
+        local CLRA=
+        local CLRB=
+        local RST=
+
+        [ -z "$TRACE" -a -z "$DEBUG" ] && return
+        echo -n " "
+        RST="$RESET"
+        [ "$TRACE" != "0" ] && CLRA="$(italic RED)" && CLR_A="$(italic BLUE)"
+        [ "$DEBUG" != "0" ] && CLRB="$(italic RED)" && CLR_B="$(italic BLUE)"
+        [ -n "$TRACE" ] && echo -n -e "$(italic BLUE)trace[${CLRA}${TRACE}${CLR_A}] "
+        [ -n "$DEBUG" ] && echo -n -e "$(italic BLUE)debug[${CLRB}${DEBUG}${CLR_B}]"
+        echo -n "::"
+}
+
 if which apt-get >/dev/null 2>&1 ; then
         echo "Set prompt for Debian sys-arch"
-        PS1='${debian_chroot:+($debian_chroot)}\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+        PS1='${debian_chroot:+($debian_chroot)}$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
 else
         # disable gnome-ssh-askpass
         unset SSH_ASKPASS
