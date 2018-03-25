@@ -10,7 +10,7 @@
 
 _exit_on_error() {
     if [[ $? -ne 0 ]]; then
-        echo -e "\n$(basename ${0}): Error: Couldn't find the file you were looking for"
+        echo -e "\n$(basename ${0}): Error: Couldn't find the file you were looking for" >&2
     fi
 }
 trap _exit_on_error EXIT
