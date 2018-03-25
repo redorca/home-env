@@ -5,22 +5,26 @@
 # shellcheck disable=2034
 # YLWltBLU='\033[1;33;46m'
 # shellcheck disable=2034
-YLWGRN='\033[1;33;42m'
+YLWGRN='\033[0;33;42m'
 # shellcheck disable=2034
-YELLOW="\033[1;33m"
+YELLOW="\033[0;33m"
 # shellcheck disable=2034
-GREEN="\033[1;32m"
-BLUE="\033[1;34m"
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
 ## # shellcheck disable=2034
-LTBLUE="\033[1;36m"
+LTBLUE="\033[0;36m"
 ## # shellcheck disable=2034
-PURPLE="\033[1;35m"
+PURPLE="\033[0;35m"
 ## # shellcheck disable=2034
 RESET='\033[0;39;49m'
 # DEBUG=${DEBUG:-0}
 declare -A git_review
-# [ -f ~/bin/colors ] && source ~/bin/colors
-# [ -z "${RED}" ] && echo "No color support"
+declare -A git_change
+
+Func()
+{
+        is_active DEBUG  && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
+}
 
 am_I_lost()
 {
@@ -38,12 +42,48 @@ am_I_lost()
         fi
 }
 
+is_active()
+{
+        local Action=
+
+        Action="$1"
+        [ "${!Action}" = "1" ] && return 0
+        return 1
+}
+
+trace()
+{
+        is_active TRACE
+        return
+        [ "$TRACE" = "1" ] && return 0
+        return  1
+}
+
+debug()
+{
+        is_active DEBUG
+        return
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+get_branch_tuple()
+{
+        Func
+        git branch -vv | sed  -e '/^[^*]/d'  \
+                              -e 's/^.*\[//' \
+                              -e 's/.*\[//'  \
+                              -e 's/\].*//'  \
+                              -e 's/:.*//'   \
+                        | awk -F'/' '{print $1 " " $2}'
+}
+
 GERRIT_HOST_IP="${GERRIT_HOST_IP:-"101.132.142.37"}"
 GERRIT_HOST_PORT="${GERRIT_HOST_PORT:-"30149"}"
 GERRIT_USER="${GERRIT_USER:-"bill"}"
 # shellcheck disable=2207
 Repo=( $(git remote -v | grep fetch | awk -F'/' '{print $NF}') )
-Repo_Branch=( $(git branch -vv | grep ^* | sed  -e 's/:/ /' -e 's/\]/:/' -e 's/\[\(.*\)\/\(.*\):.*/\1 \2/' | awk '{print $4" " $5}') )
+Repo_Branch=( $(get_branch_tuple) )
 GERRIT_REPO="${Repo[0]}"
 GERRIT_REPO_BRANCH="${GERRIT_REPO_BRANCH:-${Repo_Branch[1]}}"
 LOCAL_REMOTE_NAME="${LOCAL_REMOTE_NAME:-${Repo_Branch[0]}}"
@@ -51,6 +91,7 @@ GERRIT_XFER_PROTO="${GERRT_XFER_PROTO:-"ssh"}"
 
 setup_gitreview()
 {
+        Func
 	git_review["section"]="gitreview"
 	git_review["host"]="$GERRIT_HOST_IP"
 	git_review["port"]="$GERRIT_HOST_PORT"
@@ -59,6 +100,21 @@ setup_gitreview()
 	git_review["branch"]="$GERRIT_REPO_BRANCH"
 	git_review["remote"]="$LOCAL_REMOTE_NAME"
 	git_review["scheme"]="$GERRIT_XFER_PROTO"
+}
+
+echo_e()
+{
+        echo -e "$@${RESET}"
+}
+
+setup_gitchange()
+{
+        Func
+        git_change["section"]="git-change"
+        git_change["gerrit-ssh-host"]="${GERRIT_HOST_IP}:${GERRIT_HOST_PORT}"
+
+        is_active DEBUG  && echo "[${git_change[*]}]"
+        is_active DEBUG  && echo "[${!git_change[@]}]"
 }
 
 print_gitrev_config()
@@ -79,16 +135,25 @@ print_section_defaults()
 {
         local Key=
 
+        Func
         echo ""
         for Key in "${!git_review[@]}" ; do
-                echo -e "Key: ${GREEN}$Key,\\t${BLUE}${git_review[$Key]}${RESET}"
+                echo_e "Key: ${GREEN}$Key,\\t${BLUE}${git_review[$Key]}"
+        done
+        [ -n "${git_change[*]}" ] && \
+                echo -e "\t============================================="
+        for Key in "${!git_change[@]}" ; do
+                echo_e "Key: ${GREEN}$Key,\\t${BLUE}${git_change[$Key]}"
         done
         echo ""
 }
 
 print_section_config()
 {
-        git config --local --get-regexp "gitreview.*" | sed -e 's/^/\t/'
+        Func
+        git config --local --get-regexp "${git_review["section"]}.*" | sed -e 's/^/\t/'
+        echo ""
+        git config --local --get-regexp "${git_change["section"]}.*" | sed -e 's/^/\t/'
 }
 
 print_array()
@@ -97,6 +162,7 @@ print_array()
         local Last=
         local Count=
 
+        Func
         Name="$1"; shift
         Count=0
         Array=( "$@" )
@@ -116,6 +182,7 @@ print_array()
 #
 current_branch()
 {
+        Func
         # shellcheck disable=2162
         git branch | while read one two; do
                 [ -z "$two" ] && continue
@@ -129,6 +196,17 @@ help()
         sed -n -e '/^#Help/,/^#Help/p' $0 | grep -v ^#Help | grep -v ";;"
 }
 
+reset_configs()
+{
+        Func
+        is_active DEBUG  || git config --local --remove-section ${git_review["section"]}
+        is_active DEBUG  || git config --local --remove-section ${git_change["section"]}
+
+        return 0
+}
+
+trace && set -x
+
 while [ $# -ne 0 ] ; do
         case "$1" in
 #Help Start
@@ -141,8 +219,7 @@ while [ $# -ne 0 ] ; do
         -l | --list) PRINT_CURRENT_CONFIG=yes     # Print current settings for the repo.
         ;;
         -r) # Remove the gitreview config info/section.
-            git config --local --remove-section gitreview
-            exit 0
+            RESET_CONFIGS=reset_configs
         ;;
         *)  echo "I have no idea what that argument ($1) means.";
             exit 1
@@ -153,20 +230,29 @@ while [ $# -ne 0 ] ; do
 done
 
 setup_gitreview
+setup_gitchange
 
+[ -n "$RESET_CONFIGS" ] && $RESET_CONFIGS && exit
 [ "$PRINT_CURRENT_CONFIG" = "yes" ] && print_section_config && exit
 [ "$PRINT_ENV" = "yes" ] && print_section_defaults && exit
 
 
-[ "$DEBUG" = "1" ] && \
-        msg="${YLWBLU}DEBUG mode: ($DEBUG), no changes  will be made.${RESET}"
-        echo -e "$msg" >&2
+is_active DEBUG  &&  \
+        msg="${YLWBLU}DEBUG mode: no changes will be made." \
+        && echo_e "$msg" >&2
 #
 # Set a config section for git to setup git-review
 #
 Section="${git_review["section"]}"
 for Key in "${!git_review[@]}" ; do
         Cmd="git config --local $Section.$Key ${git_review["$Key"]}"
-        [ "$DEBUG" = "1" ] && echo "  $Cmd" && continue
+        is_active DEBUG  && echo "  $Cmd" && continue
         $Cmd
 done
+Section="${git_change["section"]}"
+for Key in "${!git_change[@]}" ; do
+        Cmd="git config --local $Section.$Key ${git_change["$Key"]}"
+        is_active DEBUG  && echo "  $Cmd" && continue
+        $Cmd
+done
+
