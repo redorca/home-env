@@ -22,7 +22,7 @@ setup_mode_code()
         GIT_MODE_CODE["A"]="git add"
         GIT_MODE_CODE["D"]="git rm"
         GIT_MODE_CODE["C"]="git add"
-        GIT_MODE_CODE["?"]="echo Untracked: "
+        GIT_MODE_CODE["??"]="echo Untracked: "
         GIT_MODE_CODE["U"]="git add"
 }
 
@@ -74,7 +74,7 @@ dump_env()
 #
 stage_line()
 {
-        declare -a tmp=
+        local tmp=
         local Key=
 
         #
@@ -85,15 +85,15 @@ stage_line()
         #
         # shellcheck disable=2206 #Quote to prevent word splitting, or split
                                   # robustly with mapfile or read -a
-        tmp=( $@ )
-        Key="${tmp[0]#?}"
-        echo_dbg "Raw Key: ${tmp[0]}  Key: $Key"
+        Key="$1"; shift
+        tmp="$1"
+        echo_dbg "target: ${tmp}  Key: $Key"
 
         #
         # This will run the command if $DEBUG != 1, else
         # it will print the command string through stderr.
         #
-        Exec "${GIT_MODE_CODE[$Key]}" "${tmp[1]}"
+        [ -n "${GIT_MODE_CODE["$Key"]}" ] && Exec "${GIT_MODE_CODE[$Key]}" "${tmp}"
 }
 
 page_break()
@@ -260,10 +260,9 @@ fi
 FILTER="^[A-Z_][A-Z]"
 setup_mode_code
 if [ -n "$UNTRACK" ] && [ "$UNTRACK" -eq 1 ] ; then
-        GIT_MODE_CODE["Q"]="git add"
+        GIT_MODE_CODE["??"]="git add"
         echo_dbg "Resetting the FILTER ..."
-#       FILTER="^[A-Z_?][A-Z?]"
-        SED_FILTER_UNTRACKED="-e 's/\?/Q/g'"
+        FILTER="^[A-Z_?][A-Z?]"
 fi
 
 (
@@ -273,17 +272,19 @@ fi
         if [ "${DO_COMMIT[2]}" = "--amend" ] ; then
                 add_patch
         fi
+
         # shellcheck disable=2162 # read without -r will mangle backslashes.
-        git status --porcelain | sed -e 's/^ /_/' ${SED_FILTER_UNTRACKED} \
+        git status --porcelain | sed -e 's:^ :_:' \
                 | grep "$FILTER" \
                 | awk '{print $1 "  " $NF}' \
-                | while read line ; do
-                        if ! RESULTS="$(stage_line "$line") $RESULTS" ; then
+                | while read key file ; do
+                        if ! RESULTS="$(stage_line "$key" "$file") $RESULTS" ; then
                                 echo "Did not stage: [$line]"
                         fi
                         page_break count page_size "\\t======================================="
                 done
         echo "== ${DO_COMMIT[@]}"
+
         "${DO_COMMIT[@]}"
         [  "${#DO_COMMIT[@]}" -eq 0 ] && git status
 )
