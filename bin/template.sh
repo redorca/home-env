@@ -3,7 +3,12 @@
 TRACE=${TRACE:-0}
 DEBUG=${DEBUG:-0}
 SIGNALS=${SIGNALS:-}
-[ "$TRACE" = "1" ] && set -x
+
+#
+# Make sure the 'echo' command will process control sequences.
+#
+Bin=echo
+[ -z "$(echo -e "\t")" ] && Bin="/bin/echo -e"
 
 #
 # Trap all '$SIGNALS'.
@@ -16,6 +21,13 @@ on_exit()
         exit $RV
 }
 
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        is_active DEBUG  && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
+}
 
 #
 # Filter out everything but the while loop and the two boundary markers.
@@ -29,6 +41,37 @@ help_all()
                sed -e '/^### HELP/,/case/d' -e '/esac/,/^### HELP/d' -e '/;;/d'
 }
 
+#
+# test to see if the variable is "1". Used to key actions off of env vars.
+# e.g. if DEBUG=1 then 'is_active DEBUG && foo' will call foo.
+#
+is_active()
+{
+        local Action=
+
+        Action="$1"
+        [ "${!Action}" = "1" ] && return 0
+        return 1
+}
+
+#
+# Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
+# shell option forcing the script to run in tracing mode.
+#
+trace()
+{
+        is_active TRACE
+        return
+        [ "$TRACE" = "1" ] && return 0
+        return  1
+}
+
+#
+# Provide an in-line check for debug status to conditionally enable calls.
+# e.g. debug && echo "This is a test" will only fire if DEBUG=1 otherwise
+#      it is a no-op.
+#
+#
 debug()
 {
         [ "$DEBUG" = "1" ] && return 0
@@ -36,17 +79,13 @@ debug()
 }
 
 #
-# Wrap echo with echo_e() and use /bin/echo instead.  This allows invoking
-# this script using sh as in "sh $(basename $0)"
+# Wrap 'echo' to cleanly redirect all output to stderr.
 #
 echo_err()
 {
         local Bin=
 
-        Bin=echo
-        [ -z "$(echo -e "\t")" ] && Bin="/bin/echo -e"
         CMD="$Bin $@"
-        echo_dbg "$CMD"
         $CMD >&2
 }
 
@@ -55,17 +94,8 @@ echo_err()
 #
 echo_dbg()
 {
-        [ "$DEBUG" != "1" ] && return
-
-        local i=
-        local tmpe=
-        declare -a tmp=
-
-        #
-        # If the first character in $@ is a ':' then treat $@ as a string.
-        #
-        tmp=( "$@" )
-        echo "${tmp[@]}" >&2
+        debug || return
+        echo_err "$@"
 }
 
 ### HELP message start
@@ -85,6 +115,7 @@ process_args()
 }
 ### HELP message end
 
+trace && set -x
 [ -n "$SIGNALS" ] && trap on_exit "$SIGNALS"
 process_args "$@"
 
