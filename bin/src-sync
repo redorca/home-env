@@ -2,11 +2,128 @@
 
 declare -A comments
 
+TRACE=${TRACE:-0}
+DEBUG=${DEBUG:-0}
+SIGNALS=${SIGNALS:EXIT}
+
+#
+# Make sure the 'echo' command will process control sequences.
+#
+Bin=echo
+[ -z "$(echo -e "\t")" ] && Bin="/bin/echo -e"
+
+#
+# Trap all '$SIGNALS'.
+#
+on_exit()
+{
+        RV=$?
+
+        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit [$RV]: ${RESET}"
+        exit $RV
+}
+
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        is_active DEBUG  && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
+}
+
+#
+# Filter out everything but the while loop and the two boundary markers.
+# Then filter out anything that does not have a ')' in it.  Voila, instant
+# help message!
+#
+help_all()
+{
+
+        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" |
+               sed -e '/^### HELP/,/case/d' -e '/esac/,/^### HELP/d' -e '/;;/d'
+}
+
+#
+# test to see if the variable is "1". Used to key actions off of env vars.
+# e.g. if DEBUG=1 then 'is_active DEBUG && foo' will call foo.
+#
+is_active()
+{
+        local Action=
+
+        Action="$1"
+        [ "${!Action}" = "1" ] && return 0
+        return 1
+}
+
+#
+# Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
+# shell option forcing the script to run in tracing mode.
+#
+trace()
+{
+        is_active TRACE
+        return
+        [ "$TRACE" = "1" ] && return 0
+        return  1
+}
+
+#
+# Provide an in-line check for debug status to conditionally enable calls.
+# e.g. debug && echo "This is a test" will only fire if DEBUG=1 otherwise
+#      it is a no-op.
+#
+#
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+#
+# Wrap 'echo' to cleanly redirect all output to stderr.
+#
+echo_err()
+{
+        CMD="$Bin $@"
+        $CMD >&2
+}
+
+#
+# Shortcut to send output to stderr by default.
+#
+echo_dbg()
+{
+        debug || return
+        echo_err "$@"
+}
+
+### HELP message start
+process_args()
+{
+        Func
+        while [ $# -ne 0 ] ; do
+                echo_dbg "($#): [$1]"
+                case "$1" in
+                -h) help_all
+                    ;;
+                *) [ "${1:0:1}" = "-" ] && echo_err "[ "$1" ] :: Not yet implemented" && exit 1
+                   [ -f "$1" ] && FILE="$1"
+                   [ -z "$FILE" ] && [ "${1:0:1}" != "-" ] && echo_err "Not sure what to do with ["$1"]"
+                    ;;
+                esac
+                shift
+        done
+}
+### HELP message end
+
+
+
 [ "$TRACE" = "1" ] && set -x
 
 comments["blank_line"]="\040*"
 comments["copyright"]="Copyright (C) xYEARx"
-comments["hdr_intro"]='#if !defined(xxx)\\n#define xxx\\n'
+comments["hdr_intro"]="#if !defined(xxx)\\n#define xxx\\n"
 comments["hdr_outro"]='#endif /* xxx */'
 comments["c+intro"]='#undef EXTERN\\n#if ddefined(__cplusplus)\\nn#define EXTERN extern "C"\\nextern "C"\\n{\\n#else\\n#define EXTERN extern\\n#endif'
 comments["c+outro"]='#undef EXTERNa\\n#if defined(__cplusplus)\\n}\\n#endif.'
@@ -113,20 +230,22 @@ section_add()
 }
 
 ROOT="$(git rev-parse --show-toplevel)"/
-hdr_entry_block()
+hdr_preamble()
 {
         local File=
         local FName=
         local HeaderDef=
         local Root=
 
-        Root="$1" ; shift
+        Func
+        Root="$(echo $1 | sed -e 's/nuttx_apps/apps/')" ; shift
         [ ! -f "$1" ] && echo "Bad file: $1:" >&2 && return 1
         File="$1" ; shift
 
+        echo_dbg "File [$File], Root [$Root]"
         FName="${File#$Root}"
-#       HeaderDef="__$( echo "$FName" | sed -e 's:[./]:_:g')"
-        HeaderDef="__${"$FName"/[/.]/_}"
+        HeaderDef="__$( echo "$FName" | sed -e 's:[./]:_:g')"
+#       HeaderDef="__${"$FName"/[/.]/_}"
 
         echo -n -e "$FName\\t"
         echo -e "${HeaderDef^^}"
@@ -142,10 +261,12 @@ mk_header_file()
         local File=
         local Root=
 
+        Func
         File="$1" ; shift
         Root="$1" ; shift
         set -f
-        HEADER_INFO=( $(hdr_entry_block "$Root" "$File") )
+        HEADER_INFO=( $(hdr_preamble "$Root" "$File") )
+        echo_dbg "HEADER_INFO: ${#HEADER_INFO[@]}  [${HEADER_INFO[*]}]"
         set_copyright | eval sed -e 's:xPATH:${HEADER_INFO[0]}:' -e \'s,xAUTHOR,Author: "$OWNER",\'
         spacer
         set +f
@@ -196,11 +317,17 @@ base_includes()
         echo -e "\\n"
 }
 
-file="$1"
-[ ! -f "$file" ] && exit 1
+trace && set -x
+[ -n "$SIGNALS" ] && trap on_exit "$SIGNALS"
+process_args "$@"
+
+FILE="$1"
+[ ! -f "$FILE" ] && exit 1
+[ "${FILE:0:1}" != "/" ] &&  FILE="$(pwd)/$(basename $FILE)"
+
 OWNER="$(git config --global user.name) <$(git config --global user.email)>"
 SRCFILE=/tmp/boo
 touch "$SRCFILE"
 
-mk_header_file "$file" "$ROOT"  > "$SRCFILE"
+mk_header_file "$FILE" "$ROOT"  > "$SRCFILE"
 

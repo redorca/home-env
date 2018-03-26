@@ -2,6 +2,27 @@
 
 IOCTL_HDR=include/nuttx/drivers/fast_zeus.h
 
+#
+# test to see if the variable is "1". Used to key actions off of env vars.
+# e.g. if DEBUG=1 then 'is_active DEBUG && foo' will call foo.
+#
+is_active()
+{
+        local Action=
+
+        Action="$1"
+        [ "${!Action}" = "1" ] && return 0
+        return 1
+}
+
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        is_active DEBUG  && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
+}
+
 debug()
 {
         [ "$DEBUG" = "1" ] && return
@@ -17,7 +38,8 @@ echo_dbg()
 }
 
 
-File=h.fast_methods
+File=/tmp/h.fast_methods
+[ ! -f "$File" ] && echo "[$File] not found." >&2 && exit 2
 [ -f "$1" ] && File="$1"; shift
 
 # Strips the int16_t from the line
@@ -66,8 +88,9 @@ find_current_FASTIOC_count()
 
 mk_func_call()
 {
-        echo -n -e "\\t\\trv = ${Func%%(*}("
+        echo -n -e "\\t\\tret = ${Func%%(*}("
         for key in "${!Vars[@]}" ; do
+                [ "$key" = "void" ] && continue
                 echo -n -e "${Vars[$key]#*@}, "
         done
         echo -e ");"
@@ -83,6 +106,7 @@ declare_vars()
         Vars=( $(echo $Func | awk -F'(' '{print $2}' | awk -F')' '{print $1}' | sed -e 's:, :,:g' -e 's: :@:g' | sed -e 's:,: :g') )
 
         for key in "${!Vars[@]}" ; do
+                [ "$key" = "void" ] && continue
                 echo    -e "\\t\\t${Vars[$key]};" | sed -e 's:@:    :'
         done
         echo  ""

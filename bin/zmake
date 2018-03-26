@@ -350,6 +350,9 @@ CMD_ADDED=()
 #           if [ $? -ne 0 ] ; then
             if ! eval $CMD ${OUT_FILE[*]} ; then
                     echo_e "Failed.\n"
+                    echo_e "Running the build  incremental with Q=''"
+                    CMD="make Q=\"\"  $NO_ERRORS $build"
+                    eval $CMD ${OUT_FILE[*]}
                     tail -15 ${OUT}.$build
                     continue
             fi
