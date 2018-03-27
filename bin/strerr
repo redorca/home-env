@@ -1,6 +1,7 @@
 #!/bin/bash
 
 err_codes_to_text=(
+ENULL
 EPERM
 ENOENT
 ESRCH
@@ -35,14 +36,106 @@ EMLINK
 EPIPE
 EDOM
 ERANGE
+EDEADLK
+ENAMETOOLONG
+ENOLCK
+ENOSYS
+ENOTEMPTY
+ELOOP
+ENULL
+ENOMSG
+EIDRM
+ECHRNG
+EL2NSYNC
+EL3HLT
+EL3RST
+ELNRNG
+EUNATCH
+ENOCSI
+EL2HLT
+EBADE
+EBADR
+EXFULL
+ENOANO
+EBADRQC
+EBADSLT
+ENULL
+EBFONT
+ENOSTR
+ENODATA
+ETIME
+ENOSR
+ENONET
+ENOPKG
+EREMOTE
+ENOLINK
+EADV
+ESRMNT
+ECOMM
+EPROTO
+EMULTIHOP
+EDOTDOT
+EBADMSG
+EOVERFLOW
+ENOTUNIQ
+EBADFD
+EREMCHG
+ELIBACC
+ELIBBAD
+ELIBSCN
+ELIBMAX
+ELIBEXEC
+EILSEQ
+ERESTART
+ESTRPIPE
+EUSERS
+ENOTSOCK
+EDESTADDRREQ
+EMSGSIZE
+EPROTOTYPE
+ENOPROTOOPT
+EPROTONOSUPPORT
+ESOCKTNOSUPPORT
+EOPNOTSUPP
+EPFNOSUPPORT
+EAFNOSUPPORT
+EADDRINUSE
+EADDRNOTAVAIL
+ENETDOWN
+ENETUNREACH
+ENETRESET
+ECONNABORTED
+ECONNRESET
+ENOBUFS
+EISCONN
+ENOTCONN
+ESHUTDOWN
+ETOOMANYREFS
+ETIMEDOUT
+ECONNREFUSED
+EHOSTDOWN
+EHOSTUNREACH
+EALREADY
+EINPROGRESS
+ESTALE
+EUCLEAN
+ENOTNAM
+ENAVAIL
+EISNAM
+EREMOTEIO
+EDQUOT
+ENOMEDIUM
+EMEDIUMTYPE
+ECANCELED
 )
 
 declare -A errno
 
 setup_error_codes()
 {
-        for i in $(seq 0 33) ; do
+        for i in $(seq 1 126) ; do
                 name="${err_codes_to_text[$i]}"
+                [ -z "$name" -o "$NAME" = "ENULL" ] && break
                 errno["$name"]=$i
         done
 }
@@ -50,6 +143,7 @@ setup_error_codes()
 print_error_codes()
 {
 	for key in "${!errno[@]}" ; do
+echo "key: $key" >&2
 	        echo -e -n "$key\t"
 	        [ "${#errno[$key]}" -lt 7 ] && echo -e -n "\t:: "
 	        echo "${errno[$key]}"
@@ -74,7 +168,7 @@ print_code_to_name()
 
 list_err_map()
 {
-        for i in $(seq 0 33) ; do
+        for i in $(seq 1 126) ; do
                 key=${err_codes_to_text[$i]}
                 val=$i
                 echo -e -n "  $key\t"
@@ -90,11 +184,8 @@ arg_to_cmd()
         Arg="$1"
         if [ -z "$(echo $Arg | tr -d [:digit:])" ] ; then
                 echo "print_code_to_name"
-        elif [ -z "$(echo $Arg | tr -d [:alpha:])" ] ; then
-                echo "print_name_to_code"
         else
-                echo "Mixed letters and numbers in the argument." >&2
-                return 1
+                echo "print_name_to_code"
         fi
 }
 
