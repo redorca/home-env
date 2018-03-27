@@ -288,9 +288,9 @@ while [ $# -ne 0 ] ; do
                 ;;
         #
         # Specify build target. May specify multiple times.
-        *) if [ -n "${pseudo_targets["$1"]}" ] ; then
+        *) if [ -n "${pseudo_targets["${1%/}"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
-           elif [ -n "${make_targets["$1"]}" ] ; then
+           elif [ -n "${make_targets["${1%/}"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
            else
                 ARGS_UNXP="$ARGS_UNXP \"$1\""
