@@ -312,6 +312,14 @@ italic()
         echo -n -e "${!Color}" | sed -e 's/\[./\[3/'
 }
 
+#
+# Wrap grep to redirect stderr to /dev/null
+#
+grep1()
+{
+        /bin/grep "$@" 2>/dev/null
+}
+
 foo()
 {
         local CLRA=

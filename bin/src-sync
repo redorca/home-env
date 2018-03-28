@@ -5,7 +5,7 @@ declare -A comments
 TRACE=${TRACE:-0}
 DEBUG=${DEBUG:-0}
 SIGNALS=${SIGNALS:EXIT}
-
+ZGLUE_COPYRIGHT_LINE="Copyright (C) 2018 zGlue Inc. All rights reserved."
 #
 # Make sure the 'echo' command will process control sequences.
 #
@@ -19,7 +19,7 @@ on_exit()
 {
         RV=$?
 
-        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit [$RV]: ${RESET}"
+        [ $RV -ne 0 ] && echo_err "${RED}=============== Error exit [$RV]: ${RESET}"
         exit $RV
 }
 
@@ -28,7 +28,7 @@ on_exit()
 #
 Func()
 {
-        is_active DEBUG  && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
+        is_active DEBUG  && echo_dbg "${#FUNCNAME[@]} : ${FUNCNAME[1]}()"
 }
 
 #
@@ -39,6 +39,7 @@ Func()
 help_all()
 {
 
+        echo -e "$(basename $0):  [--header] | [--source] <file name>"
         sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" |
                sed -e '/^### HELP/,/case/d' -e '/esac/,/^### HELP/d' -e '/;;/d'
 }
@@ -62,6 +63,7 @@ is_active()
 #
 trace()
 {
+        Func
         is_active TRACE
         return
         [ "$TRACE" = "1" ] && return 0
@@ -85,7 +87,7 @@ debug()
 #
 echo_err()
 {
-        CMD="$Bin $@"
+        CMD="$Bin -e $@"
         $CMD >&2
 }
 
@@ -105,7 +107,15 @@ process_args()
         while [ $# -ne 0 ] ; do
                 echo_dbg "($#): [$1]"
                 case "$1" in
-                -h) help_all
+                --header) DO_IT="mk_c_header_file" ; shift
+                          [ ! -f "$1" ] && help_all && exit 1
+                          FILE="$1"
+                    ;;
+                --source) DO_IT="mk_c_source_file" ; shift
+                          [ -n "$1" ] && [ ! -f "$1" ] && touch $1
+                          FILE="$1"
+                    ;;
+                -h) help_all && exit 0
                     ;;
                 *) [ "${1:0:1}" = "-" ] && echo_err "[ "$1" ] :: Not yet implemented" && exit 1
                    [ -f "$1" ] && FILE="$1"
@@ -122,7 +132,7 @@ process_args()
 [ "$TRACE" = "1" ] && set -x
 
 comments["blank_line"]="\040*"
-comments["copyright"]="Copyright (C) xYEARx"
+comments["copyright"]="Copyright (C) xYEARx, All rights reserved."
 comments["hdr_intro"]="#if !defined(xxx)\\n#define xxx\\n"
 comments["hdr_outro"]='#endif /* xxx */'
 comments["c+intro"]='#undef EXTERN\\n#if ddefined(__cplusplus)\\nn#define EXTERN extern "C"\\nextern "C"\\n{\\n#else\\n#define EXTERN extern\\n#endif'
@@ -150,7 +160,8 @@ comments["public-funcs"]='\040* Public Functions'
 comments["public-type-defs"]='\040* Public Type Definitions'
 comments["type-decls"]='\040* Type Declarations'
 
-HEADER_SECTIONS=( "pre-proc-defs" "private-data" "private-types" "public-data" "public-types" )
+C_HEADER_SECTIONS=( "pre-proc-defs" "private-data" "private-types" "public-data" "public-types" )
+C_SOURCE_SECTIONS=( "pre-proc-defs" "private-data" "private-types" "public-data" "public-types" )
 
 mk_func_comments()
 {
@@ -158,6 +169,7 @@ mk_func_comments()
         local File=
         local FuncName=
 
+        Func
         [ ! -f "$1" ] && echo "No file specified" >&2 && return 1
         File="$1" ; shift
         FuncName="$1" ; shift
@@ -177,8 +189,26 @@ set -f
 set +f
 }
 
+#
+# Generate a copyright block with the correct
+# author and relative path info
+#
 set_copyright()
 {
+        local Path=
+
+        Func
+        Path=$1
+        FILE_P=${Path#${ROOT}}
+        echo_dbg "== \\n\\tPath: [$Path],\\n\\tFILE_P:  [$FILE_P],\\n\\t== ROOT: [$ROOT]"
+        show_copyright_txt | eval sed -e 's:xPATH:${FILE_P}:' \
+                                      -e \'s,xAUTHOR,Author: "$OWNER",\' \
+                                      -e \'/Copyright/s:Copyright.*:${ZGLUE_COPYRIGHT_LINE}:\'
+}
+
+show_copyright_txt()
+{
+        Func
 eval cat <<"EOF"
 /****************************************************************************
  * xPATH
@@ -224,9 +254,18 @@ section_add()
 {
         local Title=
 
+        Func
         if [ -z "${comments["$Title"]}" ] ; then
                 return 1
         fi
+}
+
+fixup_copyright_header()
+{
+        local File="$1"
+
+        Func
+        [ ! -f "$File" ] && echo_
 }
 
 ROOT="$(git rev-parse --show-toplevel)"/
@@ -253,10 +292,30 @@ hdr_preamble()
 
 spacer()
 {
+        Func
         echo -e "\\n\\n"
 }
 
-mk_header_file()
+mk_c_source_file()
+{
+        local Path=
+
+        Func
+        Path="$1" ; shift
+        echo_dbg "== Path : ($Path)"
+#       set_copyright | eval sed -e 's:xPATH:${Path}:' -e \'s,xAUTHOR,Author: "$OWNER",\'
+        set_copyright "${Path}"
+        spacer
+        base_includes nuttx/config sys/types stdint stdbool string  errno debug
+        spacer
+
+        for section in "${C_HEADER_SECTIONS[@]}" ; do
+                mk_comment_section  "$section"
+                spacer
+        done
+}
+
+mk_c_header_file()
 {
         local File=
         local Root=
@@ -275,7 +334,7 @@ mk_header_file()
 #       add_other_includes
         spacer
 
-        for section in "${HEADER_SECTIONS[@]}" ; do
+        for section in "${C_HEADER_SECTIONS[@]}" ; do
                 mk_comment_section  "$section"
                 spacer
         done
@@ -292,6 +351,7 @@ mk_comment_section()
 {
         local Key=
 
+        Func
         Key="$1" ; shift
 
         echo -e "${comments[intro]}"
@@ -307,6 +367,7 @@ base_includes()
         declare -a Incs=
         local entry=
 
+        Func
         Incs=( "$@" )
 
         mk_comment_section "included-files"
@@ -321,13 +382,16 @@ trace && set -x
 [ -n "$SIGNALS" ] && trap on_exit "$SIGNALS"
 process_args "$@"
 
-FILE="$1"
-[ ! -f "$FILE" ] && exit 1
+[ ! -f "$FILE" ] && help_all && exit 1
 [ "${FILE:0:1}" != "/" ] &&  FILE="$(pwd)/$(basename $FILE)"
 
 OWNER="$(git config --global user.name) <$(git config --global user.email)>"
 SRCFILE=/tmp/boo
 touch "$SRCFILE"
 
-mk_header_file "$FILE" "$ROOT"  > "$SRCFILE"
+[ -z "$DO_IT" ] && echo_err "No action specified:" && help_all && exit 1
+# mk_c_header_file "$FILE" "$ROOT"  > "$SRCFILE"
+# mk_c_source_file "$FILE" "$ROOT"  > "$SRCFILE"
+$DO_IT $FILE $ROOT > $FILE
+
 
