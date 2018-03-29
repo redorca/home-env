@@ -92,9 +92,40 @@ BLUE='\033[1;34m'
 # shellcheck disable=2034
 RESET='\033[0;39;49m'
 
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        [ "$DEBUG" = "1" ]   && echo_dbg "${#FUNCNAME[@]} : ${FUNCNAME[1]}()"
+}
+
+#
+# Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
+# shell option forcing the script to run in tracing mode.
+#
+trace()
+{
+        Func
+        [ "$TRACE" = "1" ] && return 0
+        return  1
+}
+
+#
+# Provide an in-line check for debug status to conditionally enable calls.
+# e.g. debug && echo "This is a test" will only fire if DEBUG=1 otherwise
+#      it is a no-op.
+#
+#
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
 echo_dbg()
 {
-        [ "$DEBUG" != "1" -a "$DEBUG" != "2" -a "$DEBUG" != "3" ] && return
+        debug && return
 
         echo -e "${FUNCNAME[1]} ::   $@" >&2
 }
@@ -121,6 +152,7 @@ setup_repo_table()
 	Repo2Host["nordic"]=$SDK_13_1@$repo_host_url/3rd_Party_SDK
 	Repo2Host["dialog"]=$DIALOG_SDK@$repo_host_url/3rd_Party_SDK
 	Repo2Host["nuttx"]=zdk@$repo_host_url/nuttx.git
+	Repo2Host["nuttx-ext"]=zdk@$repo_host_url/nuttx.git,zdk@$repo_host_url/external.git,zdk@$repo_host_url/nuttx_apps.git
 	Repo2Host["nuttx_apps"]=zdk@$repo_host_url/nuttx_apps.git
 	Repo2Host["apps"]=zdk@$repo_host_url/nuttx_apps.git
 	Repo2Host["external"]=zdk@$repo_host_url/external.git
@@ -211,6 +243,26 @@ setup_repo()
 # }
 
 #
+# Given a user/branch/host/repo tuple break it apart
+# and output back to the caller over stdout.
+#
+function break_apart()
+{
+        local Branch=
+
+        Func
+        Branch="$@"
+
+        # The branch name
+        echo -n "${Branch%%@*}"
+        echo -n "  "
+        # The uri pointing to the repo
+        echo -n "${Repo2Host[$Key]#*@}"
+        echo -n "  "
+        # The repo directory
+        echo    "${Repo2Host[$Key]##*/}"
+}
+#
 # Given a repo id figure out the branch and url to clone
 #
 get_info()
@@ -219,6 +271,7 @@ get_info()
         local Branch=
         local Uri=
 
+        Func
         [ -z "$1" ] && return 1
         Key=${1%%.git}
         echo_dbg "-n Key: (${Key})"
@@ -233,21 +286,14 @@ get_info()
                 Branch=${Repo2Host[$Key]}
         fi
 
-        # The branch name
-        echo -n "${Branch%%@*}"
-        echo -n "  "
-        # The uri pointing to the repo
-        echo -n "${Repo2Host[$Key]#*@}"
-        echo -n "  "
-        # The repo directory
-        echo    "${Repo2Host[$Key]##*/}"
+        break_apart "$Branch"
 }
 
 #
 # Given a keyword or hint from the user find the branch,
 # repo, and URI associated and clone.
 #
-function clone()
+function clone_one()
 {
         local CMD=
         local Proto=
@@ -259,7 +305,6 @@ function clone()
 
         [ -z "$1" ] && return 1
         Info=( $(get_info $1) )
-
         Proto=ssh
         Uri=${Info[$URL]}
         tmp="${Uri#*://}"
@@ -272,6 +317,18 @@ function clone()
                 echo "Repo built: ${Info[2]}"
                 setup_repo "${Info[2]%.git}"
         fi
+}
+
+function clone()
+{
+        [ -z "$1" ] && return 1
+
+        local cell_line=
+        local Key=
+
+        Key=${1%%.git}
+
+        clone_one "$@"
 }
 
 dual_source_repos()
@@ -298,12 +355,6 @@ while [ $# -ne 0 ] ; do
                 ;;
         *) TARGET="$1"; # The repo name to clone.
                 [ -z "$TARGET" ] && help && exit
-#               if [ -z "${RepoRename[$1]}" ] && [ -z "${Repo2Host[$1]}" ] ; then
-#                       if [ -n "$1" ] ; then
-#                               echo -e "==  Not a supported target: ["$1"]" >&2
-#                       fi
-#                       help && exit
-#               fi
                 ;;
         esac
         shift
@@ -313,10 +364,6 @@ done
 if ! setup_repo_table $SRC_REPO_URL ; then
         exit 1
 fi
-# repo=
-# if [ -n "${CONFIGS[$branch]}" ] ; then
-#         "${CONFIGS[$branch]}"
-# fi
 
 [ "$PRINT" = "YES" ] && dump_Repo2Host && exit 0
 

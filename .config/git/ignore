@@ -28,3 +28,5 @@ micro-ecc*
 cscope.out
 bitbang-jtag
 external/
+copyright.*
+
