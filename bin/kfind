@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 on_exit()
 {
         RV=$?
@@ -27,11 +28,11 @@ while [ $# -ne 0 ] ; do
         ;;
         -D) DEBUG="yes"
         ;;
-        -f) [ -b "$2" ] && Name="$2" ; shift
+        -f) [ -n "$2" ] && Name="$2" ; shift
         ;;
         -k|--key) [ -n "$2" ] && Key="$2"; shift
         ;;
-        *) echo "Not implemented, no matter what you asked for." >&2
+        *) echo "($1) Not implemented, no matter what you asked for." >&2
            exit 1
         ;;
         esac
@@ -39,5 +40,9 @@ while [ $# -ne 0 ] ; do
 done
 
 ( [ -z "$Dir" ] || [ -z "$Key" ] ) && exit 2
-find $Dir -type f -name "$Name" -exec grep "$Key" {} \; -print
+CMD="find \"$Dir\" -type f -name \"$Name\" -exec grep \"$Key\" {} \; -print"
+# find $Dir -type f -name "$Name" -exec grep "$Key" {} \; -print
+eval echo "$CMD"
+eval $CMD
+
 

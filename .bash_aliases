@@ -66,9 +66,9 @@ function dbg()
 
         PUBLISH=( "eval" "echo" "DEBUG: [ \$DEBUG ]" )
         case "$1" in
-        [1-9]*|on|ON)    export DEBUG=1 && ${PUBLISH[@]}
+        [1-9]*|on)    export DEBUG=1 && ${PUBLISH[@]}
         ;;
-        0|off|OFF)  DEBUG= && ${PUBLISH[@]}
+        0|off)  DEBUG= && ${PUBLISH[@]}
         ;;
         *) [ -z "$1" ]  && ${PUBLISH[@]}
            [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
@@ -185,6 +185,26 @@ function tag()
 }
 
 #
+# Check status of $TRACE and return TRUE if its
+# value is 1 else return false.
+#
+function chk_debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+#
+# Check status of $TRACE and return TRUE if its
+# value is 1 else return false.
+#
+function chk_trace()
+{
+        [ "$TRACE" = "1" ] && return 0
+        return 1
+}
+
+#
 # Set exported variable TRACE to 1 (on) or 0 (off).
 # Pertains mostly to shell scripts who check for
 # TRACE and "set -x" when TRACE=1.
@@ -195,11 +215,9 @@ function trace()
 
         PUBLISH=( "eval" "echo" "TRACE: [\$TRACE]" )
         case "${1,,}" in
-        on|ON)    export TRACE=1 && ${PUBLISH[@]}
+        [1-9]*|on)    export TRACE=1 && ${PUBLISH[@]}
         ;;
-        [1-9]*)  export TRACE="$1" && ${PUBLISH[@]}
-        ;;
-        off|OFF|0)  TRACE= && ${PUBLISH[@]}
+        off|0)  TRACE= && ${PUBLISH[@]}
         ;;
         *) [ -z "$1" ]  && ${PUBLISH[@]}
            [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
@@ -234,7 +252,7 @@ function vim_color_setup()
 #
 # ssh into one of the z servers: 1 - 6.
 #
-zee()
+function zee()
 {
         local ZSERVER=
         local Msg=
@@ -304,7 +322,7 @@ alias         cls="clear_console"
 alias        grep="grep --exclude=.git --exclude=cscope.out"
 alias        halt="sudo /sbin/shutdown -h -t now"
 
-italic()
+function italic()
 {
         local Color=
 
@@ -315,25 +333,35 @@ italic()
 #
 # Wrap grep to redirect stderr to /dev/null
 #
-grep1()
+function grep1()
 {
         /bin/grep "$@" 2>/dev/null
 }
 
-foo()
+function foo()
 {
         local CLRA=
         local CLRB=
         local RST=
 
-        [ -z "$TRACE" -a -z "$DEBUG" ] && return
+        (chk_trace || chk_debug) || return
         echo -n " "
         RST="$RESET"
-        [ "$TRACE" != "0" ] && CLRA="$(italic RED)" && CLR_A="$(italic BLUE)"
-        [ "$DEBUG" != "0" ] && CLRB="$(italic RED)" && CLR_B="$(italic BLUE)"
-        [ -n "$TRACE" ] && echo -n -e "$(italic BLUE)trace[${CLRA}${TRACE}${CLR_A}] "
-        [ -n "$DEBUG" ] && echo -n -e "$(italic BLUE)debug[${CLRB}${DEBUG}${CLR_B}]"
+        chk_trace || CLRA="$(italic RED)" && CLR_A="$(italic BLUE)"
+        chk_debug || CLRB="$(italic RED)" && CLR_B="$(italic BLUE)"
+        chk_trace && echo -n -e "$(italic BLUE)trace[${CLRA}${TRACE}${CLR_A}] "
+        chk_debug && echo -n -e "$(italic BLUE)debug[${CLRB}${DEBUG}${CLR_B}]"
         echo -n "::"
+}
+
+function branch()
+{
+        git branch | sed -e '/^ /d' -e 's/^.*  *//'
+}
+
+function repo()
+{
+        git remote get-url  origin | sed -e 's/^.*\///' -e 's/\.git//'
 }
 
 if which apt-get >/dev/null 2>&1 ; then
