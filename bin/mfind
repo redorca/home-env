@@ -1,0 +1,45 @@
+#!/bin/bash
+
+on_exit()
+{
+        RV=$?
+        case "$RV" in
+        0)
+        ;;
+        1) echo "Bad argument." >&2
+        ;;
+        2) echo "One of -d (key is a dir) or -k (key to grep for)  was not supplied as an argument." >&2
+        ;;
+        *) echo "You really  did a NUMBER  here. but I don't know what." >&2
+        ;;
+        esac
+
+        exit $RV
+}
+
+trap on_exit EXIT
+
+Name=Makefile
+Dir=./
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        -d|--dir) [ -d "$2" ] && Dir="$2"; shift
+        ;;
+        -D) DEBUG="yes"
+        ;;
+        -f) [ -b "$2" ] && Name="$2" ; shift
+        ;;
+        -k|--key) [ -n "$2" ] && Key="$2"; shift
+        ;;
+        -m)  Name=Make.defs
+        ;;
+        *) echo "Not implemented, no matter what you asked for." >&2
+           exit 1
+        ;;
+        esac
+        shift
+done
+
+( [ -z "$Dir" ] || [ -z "$Key" ] ) && exit 2
+find $Dir -type f -name "$Name" -exec grep "$Key" {} \; -print
+

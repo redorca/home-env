@@ -35,7 +35,7 @@ function add_path()
 #
 # Set a BOARD env var used by zmake to determine which configs dir to use.
 #
-board()
+function board()
 {
         local Dir=
 
@@ -180,7 +180,7 @@ function tag()
         START_DIR="./"
         [ -n "$1" ] && [ -d "$1" ] && START_DIR="$1"
         CSCOPE_OPTS="-R -k -b -s"
-        [ -f "$CSCOPE_DBFILE" ] && rm "$CSCOPE_DBFILE"
+        [ -f "$CSCOPE_DBFILE" ] && echo "Removing current cscope.out" >&2 && rm "$CSCOPE_DBFILE"
         cscope $CSCOPE_OPTS "$START_DIR"
 }
 
@@ -333,7 +333,7 @@ function italic()
 #
 # Wrap grep to redirect stderr to /dev/null
 #
-function grep1()
+function Grep()
 {
         /bin/grep "$@" 2>/dev/null
 }

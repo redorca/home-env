@@ -1,0 +1,402 @@
+#!/bin/bash
+
+declare -A comments
+
+TRACE=${TRACE:-0}
+DEBUG=${DEBUG:-0}
+SIGNALS=${SIGNALS:EXIT}
+ZGLUE_COPYRIGHT_LINE="Copyright (C) 2018 zGlue Inc. All rights reserved."
+#
+# Make sure the 'echo' command will process control sequences.
+#
+Bin=echo
+[ -z "$(echo -e "\t")" ] && Bin="/bin/echo -e"
+
+#
+# Trap all '$SIGNALS'.
+#
+on_exit()
+{
+        RV=$?
+
+        [ $RV -ne 0 ] && echo_err "${RED}=============== Error exit [$RV]: ${RESET}"
+        exit $RV
+}
+
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        is_active DEBUG  && echo_dbg "${#FUNCNAME[@]} : ${FUNCNAME[1]}()"
+}
+
+#
+# Filter out everything but the while loop and the two boundary markers.
+# Then filter out anything that does not have a ')' in it.  Voila, instant
+# help message!
+#
+help_all()
+{
+
+        echo -e "$(basename $0):  [--header] | [--source] <file name>"
+        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" |
+               sed -e '/^### HELP/,/case/d' -e '/esac/,/^### HELP/d' -e '/;;/d'
+}
+
+#
+# test to see if the variable is "1". Used to key actions off of env vars.
+# e.g. if DEBUG=1 then 'is_active DEBUG && foo' will call foo.
+#
+is_active()
+{
+        local Action=
+
+        Action="$1"
+        [ "${!Action}" = "1" ] && return 0
+        return 1
+}
+
+#
+# Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
+# shell option forcing the script to run in tracing mode.
+#
+trace()
+{
+        Func
+        is_active TRACE
+        return
+        [ "$TRACE" = "1" ] && return 0
+        return  1
+}
+
+#
+# Provide an in-line check for debug status to conditionally enable calls.
+# e.g. debug && echo "This is a test" will only fire if DEBUG=1 otherwise
+#      it is a no-op.
+#
+#
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+#
+# Wrap 'echo' to cleanly redirect all output to stderr.
+#
+echo_err()
+{
+        CMD="$Bin -e $@"
+        $CMD >&2
+}
+
+#
+# Shortcut to send output to stderr by default.
+#
+echo_dbg()
+{
+        debug || return
+        echo_err "$@"
+}
+
+### HELP message start
+process_args()
+{
+        Func
+        while [ $# -ne 0 ] ; do
+                echo_dbg "($#): [$1]"
+                case "$1" in
+                --header) DO_IT="mk_c_header_file" ; shift
+                          [ ! -f "$1" ] && help_all && exit 1
+                          FILE="$1"
+                    ;;
+                --source) DO_IT="mk_c_source_file" ; shift
+                          [ -n "$1" ] && [ ! -f "$1" ] && touch $1
+                          FILE="$1"
+                    ;;
+                .c|.h) DO_ACTION="mk_c_source_file"
+                       DO_FILE_TYPE="${1#.}"
+                       [ "${1}" = ".h" ] && DO_ACTION="mk_c_header_file"
+                       echo_dbg "Action: [$DO_ACTION], File Type: [$DO_FILE_TYPE]"
+                    ;;
+                -h) help_all && exit 0
+                    ;;
+                *) [ "${1:0:1}" = "-" ] && echo_err "[ "$1" ] :: Not yet implemented" && exit 1
+                   [ -f "$1" ] && FILE="$1"
+                   [ -z "$FILE" ] && [ "${1:0:1}" != "-" ] && echo_err "Not sure what to do with ["$1"]"
+                    ;;
+                esac
+                shift
+        done
+}
+### HELP message end
+
+
+
+[ "$TRACE" = "1" ] && set -x
+
+comments["blank_line"]="\040*"
+comments["copyright"]="Copyright (C) xYEARx, All rights reserved."
+comments["hdr_intro"]="#if !defined(xxx)\\n#define xxx\\n"
+comments["hdr_outro"]='#endif /* xxx */'
+comments["c+intro"]='#undef EXTERN\\n#if ddefined(__cplusplus)\\nn#define EXTERN extern "C"\\nextern "C"\\n{\\n#else\\n#define EXTERN extern\\n#endif'
+comments["c+outro"]='#undef EXTERNa\\n#if defined(__cplusplus)\\n}\\n#endif.'
+comments["intro"]='/******************************************************************************'
+comments["outro"]='\040*****************************************************************************/'
+comments["section_name"]='\040* Name: xxx'
+comments["section_descr"]='\040* Description:'
+comments["section_params_in"]='\040* Input Parameters:'
+comments["section_returned_val"]='\040* Returned Value:'
+comments["pre-proc-defs"]='\040* Pre-processor Definitions'
+comments["public-types"]='\040* Public Types'
+comments["public-data"]='\040* Public Data'
+comments["public-func-prot"]='\040* Public Function Prototypes'
+comments["included-files"]='\040* Included Files'
+comments["assembly-macros"]='\040* Assembly Macros'
+comments["driver-func-proto"]='\040* Driver Function Prototypes'
+comments["inline-funcs"]='\040* Inline Functions'
+comments["lib-func-protos"]='\040* Library Function Prototypes'
+comments["pre-proc-decls"]='\040* Pre-processor Declarations'
+comments["private-data"]='\040* Private Data'
+comments["private-funcs"]='\040* Private Functions'
+comments["private-types"]='\040* Private Types'
+comments["public-funcs"]='\040* Public Functions'
+comments["public-type-defs"]='\040* Public Type Definitions'
+comments["type-decls"]='\040* Type Declarations'
+
+C_HEADER_SECTIONS=( "pre-proc-defs" "private-data" "private-types" "public-data" "public-types" )
+C_SOURCE_SECTIONS=( "pre-proc-defs" "private-data" "private-types" "public-data" "public-types" )
+
+mk_func_comments()
+{
+
+        local File=
+        local FuncName=
+
+        Func
+        [ ! -f "$1" ] && echo "No file specified" >&2 && return 1
+        File="$1" ; shift
+        FuncName="$1" ; shift
+
+set -f
+        echo -e "${comments["intro"]}"
+        echo -e "${comments["blank_line"]}"
+        echo -e "${comments["section_name"]}"  | eval sed -e 's/xxx/$FuncName/'
+        echo -e "${comments["blank_line"]}"
+        echo -e "${comments["section_descr"]}"
+        echo -e "${comments["blank_line"]}"
+        echo -e "${comments["section_params_in"]}"
+        echo -e "${comments["blank_line"]}"
+        echo -e "${comments["section_returned_val"]}"
+        echo -e "${comments["blank_line"]}"
+        echo -e "${comments["outro"]}"
+set +f
+}
+
+#
+# Generate a copyright block with the correct
+# author and relative path info
+#
+set_copyright()
+{
+        local Path=
+
+        Func
+        Path=$1
+        FILE_P=${Path#${ROOT}}
+        echo_dbg "== \\n\\tPath: [$Path],\\n\\tFILE_P:  [$FILE_P],\\n\\t== ROOT: [$ROOT]"
+        show_copyright_txt | eval sed -e 's:xPATH:${FILE_P}:' \
+                                      -e \'s,xAUTHOR,Author: "$OWNER",\' \
+                                      -e \'/Copyright/s:Copyright.*:${ZGLUE_COPYRIGHT_LINE}:\'
+}
+
+show_copyright_txt()
+{
+        Func
+eval cat <<"EOF"
+/****************************************************************************
+ * xPATH
+ *
+ *   Copyright (C) 2007-2017 Gregory Nutt. All rights reserved.
+ *   xAUTHOR
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name NuttX nor the names of its contributors may be
+ *    used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ ****************************************************************************/
+EOF
+}
+
+#
+# Output text to label a code section in the file.
+#
+section_add()
+{
+        local Title=
+
+        Func
+        if [ -z "${comments["$Title"]}" ] ; then
+                return 1
+        fi
+}
+
+fixup_copyright_header()
+{
+        local File="$1"
+
+        Func
+        [ ! -f "$File" ] && echo_
+}
+
+ROOT="$(git rev-parse --show-toplevel)"/
+hdr_preamble()
+{
+        local File=
+        local FName=
+        local HeaderDef=
+        local Root=
+
+        Func
+        Root="$(echo $1 | sed -e 's/nuttx_apps/apps/')" ; shift
+        [ ! -f "$1" ] && echo "Bad file: $1:" >&2 && return 1
+        File="$1" ; shift
+
+        echo_dbg "File [$File], Root [$Root]"
+        FName="${File#$Root}"
+        HeaderDef="__$( echo "$FName" | sed -e 's:[./]:_:g')"
+#       HeaderDef="__${"$FName"/[/.]/_}"
+
+        echo -n -e "$FName\\t"
+        echo -e "${HeaderDef^^}"
+}
+
+spacer()
+{
+        Func
+        echo -e "\\n\\n"
+}
+
+mk_c_source_file()
+{
+        local Path=
+
+        Func
+        Path="$1" ; shift
+        echo_dbg "== Path : ($Path)"
+#       set_copyright | eval sed -e 's:xPATH:${Path}:' -e \'s,xAUTHOR,Author: "$OWNER",\'
+        set_copyright "${Path}"
+        spacer
+        base_includes nuttx/config sys/types stdint stdbool string  errno debug
+        spacer
+
+        for section in "${C_HEADER_SECTIONS[@]}" ; do
+                mk_comment_section  "$section"
+                spacer
+        done
+}
+
+mk_c_header_file()
+{
+        local File=
+        local Root=
+
+        Func
+        File="$1" ; shift
+        Root="$1" ; shift
+        set -f
+        HEADER_INFO=( $(hdr_preamble "$Root" "$File") )
+        echo_dbg "HEADER_INFO: ${#HEADER_INFO[@]}  [${HEADER_INFO[*]}]"
+        set_copyright | eval sed -e 's:xPATH:${HEADER_INFO[0]}:' -e \'s,xAUTHOR,Author: "$OWNER",\'
+        spacer
+        set +f
+        echo -e "${comments[hdr_intro]}" | eval sed -e \'s:xxx:"${HEADER_INFO[1]}":g\'
+        base_includes nuttx/config sys/types stdint stdbool string  errno debug
+#       add_other_includes
+        spacer
+
+        for section in "${C_HEADER_SECTIONS[@]}" ; do
+                mk_comment_section  "$section"
+                spacer
+        done
+
+        mk_func_comments "$SRCFILE" up_send
+        spacer
+        echo -e "${comments[hdr_outro]}" | eval sed -e \'s:xxx:"${HEADER_INFO[1]}":g\'
+}
+
+#
+# Output a header section header.
+#
+mk_comment_section()
+{
+        local Key=
+
+        Func
+        Key="$1" ; shift
+
+        echo -e "${comments[intro]}"
+        echo -e "${comments[$Key]}"
+        echo -e "${comments[outro]}\\n"
+}
+
+#
+# Output a set of base include directives"
+#
+base_includes()
+{
+        declare -a Incs=
+        local entry=
+
+        Func
+        Incs=( "$@" )
+
+        mk_comment_section "included-files"
+
+        for entry in "${Incs[@]}" ; do
+                echo "#include <$entry.h>"
+        done
+        echo -e "\\n"
+}
+
+trace && set -x
+[ -n "$SIGNALS" ] && trap on_exit "$SIGNALS"
+process_args "$@"
+
+[ ! -f "$FILE" ] && help_all && exit 1
+[ "${FILE:0:1}" != "/" ] &&  FILE="$(pwd)/$(basename $FILE)"
+
+OWNER="$(git config --global user.name) <$(git config --global user.email)>"
+SRCFILE=/tmp/boo
+touch "$SRCFILE"
+
+[ -z "$DO_IT" ] && echo_err "No action specified:" && help_all && exit 1
+# mk_c_header_file "$FILE" "$ROOT"  > "$SRCFILE"
+# mk_c_source_file "$FILE" "$ROOT"  > "$SRCFILE"
+$DO_IT $FILE $ROOT > $FILE
+
+
