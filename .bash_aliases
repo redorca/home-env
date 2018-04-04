@@ -5,7 +5,14 @@ GREEN="\033[0;32m"
 YELLOW="\033[1;33m"
 BLUE="\033[0;34m"
 PURPLE="\033[0;35m"
+LTBLUE="\033[0;36m"
+UNKNOWN="\033[0;37m"
 
+ITALIC=3
+BOLD=1
+UNDERL=4
+STRIKE=9
+INVERT=7
 #
 #  If this script is called then we know for sure we're in
 #  an interactive (login?) environment.  So, any code added
@@ -322,12 +329,40 @@ alias         cls="clear_console"
 alias        grep="grep --exclude=.git --exclude=cscope.out"
 alias        halt="sudo /sbin/shutdown -h -t now"
 
-function italic()
+function set_attrib()
 {
         local Color=
+        local ATTR=
 
-        Color="$1"
-        echo -n -e "${!Color}" | sed -e 's/\[./\[3/'
+        ( [ -z "$1" ] || [ -z "$2" ] ) && return
+        Color="${1^^}" ; shift
+        ATTR="${1^^}" ; shift
+        echo -e "${!Color}" | eval sed -e \'s:\\[.:\\[${!ATTR}:\'
+}
+
+function invert()
+{
+        set_attrib "${1^^}" INVERT
+}
+
+function uline()
+{
+        set_attrib "${1^^}" UNDERL
+}
+
+function strike()
+{
+        set_attrib "${1^^}" STRIKE
+}
+
+function bold()
+{
+        set_attrib "${1^^}" BOLD
+}
+
+function italic()
+{
+        set_attrib "${1^^}" ITALIC
 }
 
 #
@@ -356,17 +391,37 @@ function foo()
 
 function branch()
 {
-        git branch | sed -e '/^ /d' -e 's/^.*  *//'
+        local Length=
+        local TMP=
+        local Kolor=
+
+        Kolor=PURPLE
+        Length="$1" ; shift
+        [ "${#Length}" -eq 0 ] &&  Length=0
+        [ -n "$(echo $Length | sed -e 's:[0-9]::g')" ] && Length=0
+
+        TMP="$(git branch | sed -e '/^ /d' -e 's/^.*  *//')"
+        if [ "$Length" -gt 0 ] && [ "${#TMP}" -gt "$Length" ] ; then
+                TMP=$(echo "${TMP: -$Length}")
+        fi
+        echo -e "$(invert $Kolor)${TMP#*/}${RESET}"
 }
 
 function repo()
 {
-        git remote get-url  origin | sed -e 's/^.*\///' -e 's/\.git//'
+        local Remote=
+        local Repo=
+        local Kolor=
+
+        Kolor=BLACK
+        Remote=$(git remote)
+        Repo="$(git remote get-url  $Remote | sed -e 's/^.*\///' -e 's/\.git//')"
+        echo -n -e "$(bold $Kolor)$Repo${RESET}"
 }
 
 if which apt-get >/dev/null 2>&1 ; then
         echo "Set prompt for Debian sys-arch"
-        PS1='${debian_chroot:+($debian_chroot)}$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+        PS1='${debian_chroot:+($debian_chroot)}$(branch 15)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
 else
         # disable gnome-ssh-askpass
         unset SSH_ASKPASS
