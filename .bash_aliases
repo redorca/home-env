@@ -414,8 +414,8 @@ function repo()
         local Kolor=
 
         Kolor=BLACK
-        Remote=$(git remote)
-        Repo="$(git remote get-url  $Remote | sed -e 's/^.*\///' -e 's/\.git//')"
+        Remote=( $(git branch -vv | awk '/^\*/ {print $4}' | sed -e 's:\[::' -e 's,[:/], ,g') )
+        Repo="$(git remote get-url  ${Remote[0]} | sed -e 's/^.*\///' -e 's/\.git//')"
         echo -n -e "$(bold $Kolor)$Repo${RESET}"
 }
 
