@@ -1,0 +1,19 @@
+#!/bin/bash -x
+
+
+
+declare -A reference
+
+[ ! -f "$1" ] && echo "No file found: ($1)" >&2 && exit 1
+File="$1"  ; shift
+
+sift_for_key()
+{
+        local KEY=
+
+        KEY="$1"
+        eval sed -n -e \'/${KEY}$/,/^\}/p\' "$File"
+}
+
+sift_for_key enum
+
