@@ -1,0 +1,94 @@
+#!/bin/bash
+
+BUILD_DIR=build/gcc
+BRANCH=fast_api_dev
+REPO=fast_api.git
+OUTPUT_DIR=output
+GERRIT_HOST_IP=101.132.142.37
+GERRIT_HOST_PORT=30149
+USER="$(git config user.email | sed 's/@.*//')"
+DO_TRACE=
+
+trace()
+{
+        [ "$TRACE" != "1" ] && return 1
+        set -x
+        DO_TRACE="-d --trace Q="
+        return 0
+}
+
+clone()
+{
+        local Repo=
+        local User=
+        local Branch=
+
+        User="$1" ; shift
+        Branch="$1" ; shift
+        Repo="$1" ; shift
+        ( [ -z "$User" ] || [ -z "$Branch" ] || [ -z "$Repo" ] ) && \
+                                echo "Bad arg somewhere." >&2 && return 1
+        [ -d "${Repo%.git}" ] && rm -rf "${Repo%.git}"
+
+        git clone -b "$Branch" \
+                "ssh://${User}@${GERRIT_HOST_IP}:${GERRIT_HOST_PORT}/${Repo}"
+}
+
+build()
+{
+        local Target=
+        local WorkDir=
+
+        WorkDir="$1" ; shift
+        Target="$1" ; shift
+
+        (
+          cd "$WorkDir"
+          make ${DO_TRACE} "$Target"
+        )
+}
+
+cleanup()
+{
+        local Rv=
+
+        Rv="$?"
+        [ "$Rv" -eq 0 ] && rm -rf "/tmp/${REPO%.git}"
+
+        return "$Rv"
+}
+
+trap cleanup EXIT
+trace
+
+while [ "$#" -ne 0 ] ; do
+        case "$1" in
+        -t) [ -n "$2" ] && TARGET="$2"; shift
+        ;;
+        esac
+        shift
+done
+[ -z "$TARGET" ] && echo "No target specified. Use '-t <target>'" >&2 && exit 1
+OUTPUT=out.${TARGET}
+LIB=libfastapi_${TARGET}.a
+  (
+    cd /tmp
+    echo "Pulling sources ..."
+    if ! clone "$USER" "$BRANCH" "$REPO" >/dev/null 2>&1; then
+             echo "Failure while clone $REPO" >&2
+             exit 1
+    fi
+
+    echo "Making ${LIB}"
+    if ! build "${REPO%.git}/${BUILD_DIR}" "$TARGET" >$OUTPUT 2>&1 ; then
+            echo "Failure while building $TARGET" >&2
+            exit 1
+    fi
+    echo "Copying ${LIB} to /tmp/${LIB%_*}.a"
+    if ! cp -a "${REPO%.git}/$OUTPUT_DIR/${TARGET}/$LIB" "/tmp/${LIB%_*}.a" ; then
+        echo "Unable to copy $LIB to /tmp/${LIB%_$TARGET.a}.a" >&2
+        exit 1
+    fi
+  ) || exit $1
+
+
