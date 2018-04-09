@@ -8,6 +8,7 @@ GERRIT_HOST_IP=101.132.142.37
 GERRIT_HOST_PORT=30149
 USER="$(git config user.email | sed 's/@.*//')"
 DO_TRACE=
+DESTINATION=
 
 trace()
 {
@@ -65,12 +66,18 @@ while [ "$#" -ne 0 ] ; do
         case "$1" in
         -t) [ -n "$2" ] && TARGET="$2"; shift
         ;;
+        -o) [ -n "$2" ] && DESTINATION="$2"
+        ;;
         esac
         shift
 done
 [ -z "$TARGET" ] && echo "No target specified. Use '-t <target>'" >&2 && exit 1
 OUTPUT=out.${TARGET}
 LIB=libfastapi_${TARGET}.a
+if [ "${DESTINATION:0:1}" != "/" ] ; then
+        DESTINATION="$(pwd)/${DESTINATION}"
+fi
+
   (
     cd /tmp
     echo "Pulling sources ..."
@@ -84,11 +91,10 @@ LIB=libfastapi_${TARGET}.a
             echo "Failure while building $TARGET" >&2
             exit 1
     fi
-    echo "Copying ${LIB} to /tmp/${LIB%_*}.a"
-    if ! cp -a "${REPO%.git}/$OUTPUT_DIR/${TARGET}/$LIB" "/tmp/${LIB%_*}.a" ; then
-        echo "Unable to copy $LIB to /tmp/${LIB%_$TARGET.a}.a" >&2
+    echo "Copying ${LIB} to ${DESTINATION}/${LIB%_*}"
+    if ! cp -a "${REPO%.git}/$OUTPUT_DIR/${TARGET}/$LIB" "${DESTINATION}/${LIB%_*}" ; then
+        echo "Unable to copy $LIB to ${DESTINATION}/${LIB%_$TARGET.a}.a" >&2
         exit 1
     fi
   ) || exit $1
-
 
