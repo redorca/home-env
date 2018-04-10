@@ -1,0 +1,68 @@
+diff --git a/arch/arm/src/Makefile b/arch/arm/src/Makefile
+index 517ce875ed..b647bd38ec 100755
+--- a/arch/arm/src/Makefile
++++ b/arch/arm/src/Makefile
+@@ -139,10 +139,10 @@ ZGLUE_LIB=$(TOPDIR)/lib/${NRF52_LIB:%.a=%}
+ # Libraries need to be placed in arch/arm/src along with the rest of the
+ # arch specific objects so they may all be linked at the same time.
+ #
+-$(shell [ -f "$(ZGLUE_LIB)" ] && cp $(ZGLUE_LIB) $(NRF52_LIBDIR)/$(NRF52_LIB).a)
+-$(shell [ -f "$(TOPDIR)/lib/$(FAST_LIB)" ] && cp $(TOPDIR)/lib/$(FAST_LIB) $(NRF52_LIBDIR)/$(FAST_LIB).a)
+-EXTRA_LIBS += -l${NRF52_LIB:lib%=%}
+-EXTRA_LIBS += -l${FAST_LIB:lib%=%}
++# $(shell [ -f "$(ZGLUE_LIB)" ] && cp $(ZGLUE_LIB) $(NRF52_LIBDIR)/$(NRF52_LIB).a)
++# $(shell [ -f "$(TOPDIR)/lib/$(FAST_LIB)" ] && cp $(TOPDIR)/lib/$(FAST_LIB) $(NRF52_LIBDIR)/$(FAST_LIB).a)
++# EXTRA_LIBS += $(NRF52_LIB)$(LIBEXT)
++# EXTRA_LIBS += $(FAST_LIB)$(LIBEXT)
+ endif
+ 
+ # Override in Make.defs if linker is not 'ld'
+@@ -218,6 +218,7 @@ board$(DELIM)libboard$(LIBEXT):
+ 	$(Q) $(MAKE) -C board TOPDIR="$(TOPDIR)" libboard$(LIBEXT) EXTRADEFINES=$(EXTRADEFINES)
+ 
+ nuttx$(EXEEXT): $(HEAD_OBJ) board$(DELIM)libboard$(LIBEXT)
++	$(Q)  echo "======== CFLAGS: ($(CFLAGS))"
+ 	$(Q) $(LD) --entry=__start $(LDFLAGS) $(LIBPATHS) $(EXTRA_LIBPATHS) \
+ 		-o $(NUTTX) $(HEAD_OBJ) $(EXTRA_OBJS) \
+ 		$(LDSTARTGROUP) $(LDLIBS) $(EXTRA_LIBS) $(LIBGCC) $(LDENDGROUP)
+diff --git a/arch/arm/src/nrf52/Make.defs b/arch/arm/src/nrf52/Make.defs
+index e1c8a669ca..7001ae42d3 100644
+--- a/arch/arm/src/nrf52/Make.defs
++++ b/arch/arm/src/nrf52/Make.defs
+@@ -258,3 +258,7 @@ ifeq ($(CONFIG_NRF52_PROCFS_DEVID),y)
+ CHIP_CSRCS += nrf52_procfs_devid.c
+ endif
+ 
++ifneq ($(CONFIG_SYSTEM_LIB_FASTAPI),)
++        CFLAGS += -lfastapi
++endif
++
+diff --git a/configs/fast_api_debug/defaults.mk b/configs/fast_api_debug/defaults.mk
+index d79916be9b..d9b49a6061 100644
+--- a/configs/fast_api_debug/defaults.mk
++++ b/configs/fast_api_debug/defaults.mk
+@@ -166,6 +166,12 @@ endif
+ ifeq ($(CONFIG_FAST_API_ZEUS1),y)
+ CFLAGS += -DZEUS1_BOARD
+ endif
++ifneq ($(CONFIG_SYSTEM_LIB_FASTAPI),)
++$(info ============================================================)
++$(shell cp $(TOPDIR)/lib/libfastapi $(TOPDIR)/arch/arm/src/libfastapi.a)
++CFLAGS += -lfastapi
++$(info ============================================================)
++endif
+ 
+ # for pre-define the ble device name  macro
+ ifneq ($(_BLE_DEV_NAME),)
+diff --git a/configs/fast_api_debug/nsh/defconfig b/configs/fast_api_debug/nsh/defconfig
+index 54e028a5be..e4fad14466 100644
+--- a/configs/fast_api_debug/nsh/defconfig
++++ b/configs/fast_api_debug/nsh/defconfig
+@@ -485,7 +485,6 @@ CONFIG_ARCH_FAST=y
+ #
+ CONFIG_FAST_API_HEADERS_DIR=""
+ CONFIG_FAST_API_LIBRARY_DIR=""
+-CONFIG_FAST_API_LIBRARY_DIR="$(TOPDIR)/../../fast_api/output/"
+ CONFIG_ARCH_JTAG=y
+ CONFIG_ARCH_HAVE_FAST=y
+ CONFIG_ARCH_HAVE_JTAG=y
