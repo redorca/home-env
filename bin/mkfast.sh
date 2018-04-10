@@ -17,12 +17,23 @@ echo_dbg()
         echo -e ":: $@" >&2
 }
 
+retrieve_configs()
+{
+        local Hash=
+
+        Hash="$1"
+        if ! git checkout "$Hash" build/configs >/dev/null 2>&1 ; then
+                echo "Could not checkout config directory." >&2
+                return 1
+        fi
+}
+
 #
 # Wrap make to generalize an interface that automatically captures the output
 #
 do_make()
 {
-        local Config=
+        local CommitHash=
         local Target=
         local Arch=
 
@@ -31,13 +42,13 @@ do_make()
                 return 1
         fi
 
-        Config="$1" ; shift
+        CommitHash="$1" ; shift
         Target="$1" ; shift
         Results="$1"   ; shift
 
-        cp "$TMPDIR/$Config" .config
+#       cp "$TMPDIR/$Config" .config
 #       make ${MAKE_OPTS} deliverables $Target | tee $Results | sed -e '/=/s/^.*=//'
-        make ${MAKE_OPTS} deliverables $Target | tee $Results
+        make ${MAKE_OPTS} $Target | tee $Results
 }
 
 #
@@ -112,19 +123,22 @@ FOOFILE=/tmp/foo
 [ "$DEBUG" = "1" ] && MAKE_OPTS='Q='
 sed -e '1,/^## ::/d' "$0" > ${TARFILE}.xxd
 xxd -r ${TARFILE}.xxd > ${TARFILE}
-TARGETS=( $(tar -C "$TMPDIR" -zxvf $TARFILE) )
+# TARGETS=( $(tar -C "$TMPDIR" -zxvf $TARFILE) )
+TARGETS=$(
 echo_dbg "Number of targets: [${#TARGETS[@]}]"
 echo_dbg "Targets are:"
 print_array "${TARGETS[@]}"
 CLEAR=clean
 CLEAR=distclean
 CONFIG=.config
+COMMIT_HASH=056ac757144fc5d008c7141a50e31e1fcc9e8233
 
 eval rm -f "${TARFILE%_*}*"
     (
+        cd $ROOT && retrieve_configs "$CommitHash"
         cd "$ROOT/build/gcc" || exit 1
 
-        do_make config.zeus1.sim distclean /tmp/foo >/dev/null 2>&1
+        do_make "$COMMIT_HASH" distclean /tmp/foo >/dev/null 2>&1
         rm -f "$ROOT/test.zeus*.txt"
         for i in $(seq 0 1 3) ; do
                 echo_dbg "TARGETS[$i] :: ${TARGETS[$i]}"

@@ -1,5 +1,3 @@
-
-
 #
 # The file name is in a format to specify what
 # filename should this template be copied to,
@@ -35,8 +33,8 @@ help:
 $(PROG_NAME): %:%.sh
 
 mkfast: %:%.tgz
-mkfast.sh:
-	$(Q) cp $@ $@ && chmod +x $@
+mkfast:
+	$(Q) cp $@.sh $@ && chmod +x $@
 	$(Q) xxd $@.tgz >> $@
 
 %.tgz: $(CONFIG_TEMPLATES)
