@@ -38,11 +38,13 @@ scripts:
         simple hooks install that clones from auto_test, runs sudo hookup -p
         asks for repo locations and updates the local hook scripts.
 
-    profiles:
+X   profiles:
         Setup profiles for gnome-terminal so I can choose between dark
         and light windows.
 
     git:
         Write some git commands, i.e. callable through git, to help
         troubleshoot, combine actions, etc.
+
+
 
