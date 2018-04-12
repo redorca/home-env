@@ -1,0 +1,35 @@
+fast_set_timeout(uint16_t time_ms);
+fast_read_id(uint8_t *data_ptr, uint8_t number_of_bytes);
+fast_enter_power_state(fast_power_state_t power_state);
+        set power state
+fast_get_current_power_state(fast_power_state_t *power_state);
+        get power state
+fast_configure_led(fast_led_id_t led_id, fast_led_duty_cycle_t duty_cycle, fast_led_period_t led_period, fast_led_intensity_control_t intensity, fast_led_brightness_range_control_t brightness, bool invert_pwm);
+        set led
+fast_enable_led(fast_led_id_t led_id);
+        set led
+fast_disable_led(fast_led_id_t led_id);
+        set led
+fast_read_customer_otp(uint32_t start_addr, uint32_t *data_ptr, uint32_t number_of_words);
+fast_pmic_boost_configure(fast_pmic_boost_voltage_out_t boost_voltage, fast_pmic_bypass_mode_t bypass_mode, fast_pmic_boost_current_limit_t current_limit);
+fast_pmic_hvldo_configure(fast_pmic_voltage_out_t voltage_out, fast_pmic_bypass_mode_t bypass_mode, bool current_limit_enable);
+fast_pmic_vrail_configure(fast_pmic_vrail_id_t vrail_number, fast_pmic_voltage_out_t voltage_out, bool bypass_enable, bool current_limit_enable);
+fast_pmic_thermal_monitor_enable(fast_pmic_thermal_alarm_temp_t alarm_temperature, fast_pmic_thermal_shutdown_temp_t shutdown_temperature);
+fast_pmic_thermal_monitor_disable(void);
+fast_clear_fault_interrupt(void);
+fast_get_fault_status(uint16_t *data_ptr);
+fast_enable_fault_interrupt(fast_fault_status_mask_u fault_status_mask);
+fast_gpio_configure_pin(fast_gpio_port_t gpio_port, fast_gpio_pin_t gpio_pin, fast_gpio_functions_t gpio_function, fast_gpio_pin_level_t gpio_pin_level);
+fast_gpio_set_pin_level(fast_gpio_port_t gpio_port, fast_gpio_pin_t gpio_pin, fast_gpio_pin_level_t gpio_level);
+fast_gpio_get_pin_level(fast_gpio_port_t gpio_port, fast_gpio_pin_t gpio_pin, fast_gpio_pin_level_t *gpio_level);
+fast_gpio_clear_irq(fast_gpio_interrupt_status_u *fast_int_mask);
+fast_gpio_enable_irq(fast_gpio_port_t gpio_port, fast_gpio_pin_t gpio_pin, fast_gpio_pin_irq_edge_t gpio_pin_irq);
+fast_gpio_disable_irq(fast_gpio_port_t gpio_port, fast_gpio_pin_t gpio_pin);
+fast_get_system_information(fast_system_information_t *data_ptr);
+fast_get_system_chips_information(fast_system_chips_information_t *system_chips_data);
+fast_connect_system(uint8_t config_file_id);
+fast_disconnect_system(uint8_t config_file_id);
+fast_connect_chip(uint8_t config_file_id, uint8_t chip_id);
+fast_disconnect_chip(uint8_t config_file_id, uint8_t chip_id);
+fast_set_debug_level(fast_debug_level_t debug_level);
+fast_spi_configure(fast_spi_bit_order_t bit_order, fast_spi_bit_mode_t bit_mode, fast_spi_cpol_t cpol, fast_spi_cpha_t cpha);

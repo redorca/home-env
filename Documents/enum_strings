@@ -1,0 +1,404 @@
+typedef enum
+{
+  FAST_OK                                = 0,
+
+  FAST_FAILURE                           = 1000,
+  FAST_NULL_POINTER,
+  FAST_PERMISSION_DENIED,
+  FAST_INVALID_ARGUMENT,
+  FAST_INVALID_OPERATION,
+  FAST_INVALID_OTP_ADDRESS,
+  FAST_OTP_OPERATION_FAILURE,
+  FAST_SYSTEM_ID_MISTMATCH,
+  FAST_OPERATION_TIMED_OUT,
+  FAST_INVALID_OPERATION_CHIP_IN_LPM,
+  FAST_INVALID_OPERATION_CHIP_IN_ULPM,
+  FAST_INVALID_OPERATION_CHIP_IN_RCM,
+
+  FAST_POWERON_FAILURE                   = 2000,
+  FAST_CHECKSUM_FAILURE,
+  FAST_BOOT_CONFIG_INVALID,
+  FAST_INVALID_ID,
+  FAST_RDY_FAILURE,
+  FAST_HVLDO_OVER_CURRENT_FAILURE,
+  FAST_VRAIL1_OVER_CURRENT_FAILURE,
+  FAST_VRAIL2_OVER_CURRENT_FAILURE,
+  FAST_VRAIL3_OVER_CURRENT_FAILURE,
+  FAST_BOOST_CURRENT_LIMIT_FAILIRE,
+  FAST_BOOST_UVLO_FAILIRE,
+  FAST_THERMAL_ALARM_FAILIRE,
+  FAST_API_INIT_FAIL,
+  FAST_MALLOC_FAIL,
+
+  FAST_INVALID_POWER_STATE               = 3000,
+  FAST_INVALID_POWER_STATE_TRANSITION,
+  FAST_POWER_MANAGEMENT_TIMEOUT,
+  FAST_ALREADY_IN_SAME_POWER_STATE,
+  FAST_INVALID_POWER_STATE_OPERATION,
+  FAST_ULPM_WAKEUP_ERROR,
+
+  FAST_NO_CONFIG_FILE_PRESENT            = 4000,
+  FAST_INVALID_CONFIG_FILE,
+  FAST_CONFIG_FILE_READ_FAILURE,
+  FAST_CONFIG_FILE_WRITE_FAILURE,
+  FAST_INVALID_CONFIG_FILE_ID,
+  FAST_INVALID_CHIP_ID,
+  FAST_CHIP_CONNECT_FAILURE,
+  FAST_SYSTEM_CONNECT_FAILURE,
+  FAST_CHIP_DISCONNECT_FAILURE,
+  FAST_SYSTEM_DISCONNECT_FAILURE,
+
+  FAST_INVALID_REGISTER_ADDRESS         = 5000,
+  FAST_REG_WRITE_FAILURE,
+  FAST_REG_READ_FAILURE,
+
+  FAST_INVALID_GPIO_PORT                = 6000,
+  FAST_INVALID_GPIO_PIN,
+  FAST_INVALID_PIN_FUNCTION,
+  FAST_INVALID_PIN_LEVEL,
+  FAST_PIN_WRONG_CONFIGURATION,
+  FAST_SPI_CONFIG_INVALID_BIT_ORDER,
+  FAST_SPI_CONFIG_INVALID_BIT_MODE,
+  FAST_SPI_CONFIG_INVALID_POLARITY,
+  FAST_SPI_CONFIG_INVALID_PHASE,
+
+  FAST_INVALID_BOOST_VOLTAGE_OUT        = 7000,
+  FAST_INVALID_BOOST_BYPASS_MODE,
+  FAST_INVALID_BOOST_CURRENT_LIMIT,
+  FAST_INVALID_HVLDO_VOLTAGE_OUT,
+  FAST_INVALID_HVLDO_BYPASS_MODE,
+  FAST_INVALID_VRAIL_VOLTAGE_OUT,
+  FAST_INVALID_VRAIL_NUMBER,
+  FAST_INVALID_THERMAL_MONITOR_ALARM_TEMP,
+  FAST_INVALID_THERMAL_MONITOR_SHUTDOWN_TEMP,
+
+  FAST_INVALID_LED_ID                   = 8000,
+  FAST_INVALID_DUTY_CYCLE,
+  FAST_INVALID_PERIOD,
+  FAST_INVALID_INTENSITY,
+  FAST_INVALID_BRIGHTNESS,
+}   fast_api_error_codes_t;
+
+typedef enum
+{
+  FAST_FULL_PROGRAMMABLE   = 0,
+  FAST_REGISTER_CONFIGURATION_MODE,
+  FAST_LPM,
+  FAST_ULPM,
+} fast_power_state_t;
+
+typedef enum
+{
+  FAST_DEBUG_LEVEL_0    = 0,
+  FAST_DEBUG_LEVEL_1,
+  FAST_DEBUG_LEVEL_2,
+} fast_debug_level_t;
+
+typedef enum
+{
+  FAST_GPIO_FUNCTION_OUTPUT = 0,
+  FAST_GPIO_FUNCTION_INPUT
+} fast_gpio_functions_t;
+
+typedef enum
+{
+  FAST_GPIO_PORT0 = 0,
+} fast_gpio_port_t;
+
+typedef enum
+{
+  FAST_GPIO_PIN0  = 0,
+  FAST_GPIO_PIN1,
+  FAST_GPIO_PIN2,
+  FAST_GPIO_PIN3,
+  FAST_GPIO_PIN4,
+  FAST_GPIO_PIN5,
+  FAST_GPIO_PIN6,
+  FAST_GPIO_PIN7,
+} fast_gpio_pin_t;
+
+typedef enum
+{
+  FAST_GPIO_PIN_LEVEL_LOW   = 0,
+  FAST_GPIO_PIN_LEVEL_HIGH,
+} fast_gpio_pin_level_t;
+
+typedef enum
+{
+  FAST_GPIO_PIN_RISING_EDGE   = 1,
+  FAST_GPIO_PIN_FALLING_EDGE,
+  FAST_GPIO_PIN_BOTH_EDGES,
+} fast_gpio_pin_irq_edge_t;
+
+typedef union __attribute__((packed)) _fast_gpio_interrupt_status_u
+{
+  struct __attribute__((packed))
+  {
+    uint8_t    pin0_lvl_sts     : 1;
+    uint8_t    pin1_lvl_sts     : 1;
+    uint8_t    pin2_lvl_sts     : 1;
+    uint8_t    pin3_lvl_sts     : 1;
+    uint8_t    pin4_lvl_sts     : 1;
+    uint8_t    pin5_lvl_sts     : 1;
+    uint8_t    pin6_lvl_sts     : 1;
+    uint8_t    pin7_lvl_sts     : 1;
+  } m_bits;
+  uint16_t data_uint8_t;
+} fast_gpio_interrupt_status_u;
+
+typedef enum
+{
+  FAST_LED1   = 0,
+  FAST_LED2,
+  FAST_LED3,
+} fast_led_id_t;
+
+typedef enum
+{
+  FAST_LED_BRIGHTNESS_3_125  = 0,
+  FAST_LED_BRIGHTNESS_6_25,
+  FAST_LED_BRIGHTNESS_9_375,
+  FAST_LED_BRIGHTNESS_12_5,
+  FAST_LED_BRIGHTNESS_15_625,
+  FAST_LED_BRIGHTNESS_18_75,
+  FAST_LED_BRIGHTNESS_21_875,
+  FAST_LED_BRIGHTNESS_25,
+  FAST_LED_BRIGHTNESS_28_125,
+  FAST_LED_BRIGHTNESS_31_25,
+  FAST_LED_BRIGHTNESS_34_375,
+  FAST_LED_BRIGHTNESS_37_5,
+  FAST_LED_BRIGHTNESS_40_625,
+  FAST_LED_BRIGHTNESS_43_75,
+  FAST_LED_BRIGHTNESS_46_875,
+  FAST_LED_BRIGHTNESS_50,
+  FAST_LED_BRIGHTNESS_53_125,
+  FAST_LED_BRIGHTNESS_56_25,
+  FAST_LED_BRIGHTNESS_59_375,
+  FAST_LED_BRIGHTNESS_62_5,
+  FAST_LED_BRIGHTNESS_65_625,
+  FAST_LED_BRIGHTNESS_68_75,
+  FAST_LED_BRIGHTNESS_71_875,
+  FAST_LED_BRIGHTNESS_75,
+  FAST_LED_BRIGHTNESS_78_125,
+  FAST_LED_BRIGHTNESS_81_25,
+  FAST_LED_BRIGHTNESS_84_375,
+  FAST_LED_BRIGHTNESS_87_5,
+  FAST_LED_BRIGHTNESS_90_625,
+  FAST_LED_BRIGHTNESS_93_75,
+  FAST_LED_BRIGHTNESS_96_875,
+  FAST_LED_BRIGHTNESS_100,
+} fast_led_brightness_range_control_t;
+
+typedef enum
+{
+  FAST_LED_SCALE_DISABLED  = 0,
+  FAST_LED_SCALE_3_2_mA,
+  FAST_LED_SCALE_6_4_mA,
+  FAST_LED_SCALE_12_8_mA,
+} fast_led_intensity_control_t;
+
+typedef enum
+{
+  FAST_LED_DUTY_CYCLE_6_25  = 0,
+  FAST_LED_DUTY_CYCLE_12_5,
+  FAST_LED_DUTY_CYCLE_18_75,
+  FAST_LED_DUTY_CYCLE_25_0,
+  FAST_LED_DUTY_CYCLE_31_25,
+  FAST_LED_DUTY_CYCLE_37_5,
+  FAST_LED_DUTY_CYCLE_43_75,
+  FAST_LED_DUTY_CYCLE_50_0,
+  FAST_LED_DUTY_CYCLE_56_25,
+  FAST_LED_DUTY_CYCLE_62_5,
+  FAST_LED_DUTY_CYCLE_68_75,
+  FAST_LED_DUTY_CYCLE_75_0,
+  FAST_LED_DUTY_CYCLE_81_25,
+  FAST_LED_DUTY_CYCLE_87_5,
+  FAST_LED_DUTY_CYCLE_93_75,
+  FAST_LED_DUTY_CYCLE_100,
+} fast_led_duty_cycle_t;
+
+typedef enum
+{
+  FAST_LED_PERIOD_0_5_S = 0,
+  FAST_LED_PERIOD_1_0_S,
+  FAST_LED_PERIOD_1_5_S,
+  FAST_LED_PERIOD_2_0_S,
+  FAST_LED_PERIOD_2_5_S,
+  FAST_LED_PERIOD_3_0_S,
+  FAST_LED_PERIOD_3_5_S,
+  FAST_LED_PERIOD_4_0_S,
+  FAST_LED_PERIOD_4_5_S,
+  FAST_LED_PERIOD_5_0_S,
+  FAST_LED_PERIOD_5_5_S,
+  FAST_LED_PERIOD_6_0_S,
+  FAST_LED_PERIOD_6_5_S,
+  FAST_LED_PERIOD_7_0_S,
+  FAST_LED_PERIOD_7_5_S,
+  FAST_LED_PERIOD_8_0_S,
+} fast_led_period_t;
+
+typedef enum
+{
+  FAST_PMIC_BOOST_VOUT_2_5V = 0,
+  FAST_PMIC_BOOST_VOUT_2_8V,
+  FAST_PMIC_BOOST_VOUT_2_9V,
+  FAST_PMIC_BOOST_VOUT_3_0V,
+  FAST_PMIC_BOOST_VOUT_3_3V,
+  FAST_PMIC_BOOST_VOUT_3_4V,
+  FAST_PMIC_BOOST_VOUT_3_5V,
+  FAST_PMIC_BOOST_VOUT_3_6V,
+  FAST_PMIC_BOOST_VOUT_3_7V,
+  FAST_PMIC_BOOST_VOUT_3_8V,
+  FAST_PMIC_BOOST_VOUT_3_9V,
+  FAST_PMIC_BOOST_VOUT_4_0V,
+  FAST_PMIC_BOOST_VOUT_4_2V,
+  FAST_PMIC_BOOST_VOUT_4_3V,
+  FAST_PMIC_BOOST_VOUT_4_4V,
+  FAST_PMIC_BOOST_VOUT_4_5V,
+} fast_pmic_boost_voltage_out_t;
+
+typedef enum
+{
+  FAST_PMIC_BYPASS_DISABLED  = 0,
+  FAST_PMIC_BYPASS_FORCE_BYPASS,
+  FAST_PMIC_BYPASS_AUTO_BYPASS,
+} fast_pmic_bypass_mode_t;
+
+typedef enum
+{
+  FAST_PMIC_CURRENT_LIMIT_200mA  = 0,
+  FAST_PMIC_CURRENT_LIMIT_300mA,
+  FAST_PMIC_CURRENT_LIMIT_400mA,
+  FAST_PMIC_CURRENT_LIMIT_500mA
+} fast_pmic_boost_current_limit_t;
+
+typedef enum
+{
+  FAST_PMIC_VRAIL1  = 0,
+  FAST_PMIC_VRAIL2,
+  FAST_PMIC_VRAIL3,
+} fast_pmic_vrail_id_t;
+
+typedef enum
+{
+  FAST_PMIC_VOLTAGE_OUT_0_5V  = 0,
+  FAST_PMIC_VOLTAGE_OUT_0_6V,
+  FAST_PMIC_VOLTAGE_OUT_0_7V,
+  FAST_PMIC_VOLTAGE_OUT_0_8V,
+  FAST_PMIC_VOLTAGE_OUT_0_9V,
+  FAST_PMIC_VOLTAGE_OUT_1_0V,
+  FAST_PMIC_VOLTAGE_OUT_1_1V,
+  FAST_PMIC_VOLTAGE_OUT_1_2V,
+  FAST_PMIC_VOLTAGE_OUT_1_3V,
+  FAST_PMIC_VOLTAGE_OUT_1_4V,
+  FAST_PMIC_VOLTAGE_OUT_1_5V,
+  FAST_PMIC_VOLTAGE_OUT_1_6V,
+  FAST_PMIC_VOLTAGE_OUT_1_7V,
+  FAST_PMIC_VOLTAGE_OUT_1_8V,
+  FAST_PMIC_VOLTAGE_OUT_1_9V,
+  FAST_PMIC_VOLTAGE_OUT_2_0V,
+  FAST_PMIC_VOLTAGE_OUT_2_1V,
+  FAST_PMIC_VOLTAGE_OUT_2_2V,
+  FAST_PMIC_VOLTAGE_OUT_2_3V,
+  FAST_PMIC_VOLTAGE_OUT_2_4V,
+  FAST_PMIC_VOLTAGE_OUT_2_5V,
+  FAST_PMIC_VOLTAGE_OUT_2_6V,
+  FAST_PMIC_VOLTAGE_OUT_2_7V,
+  FAST_PMIC_VOLTAGE_OUT_2_8V,
+  FAST_PMIC_VOLTAGE_OUT_2_9V,
+  FAST_PMIC_VOLTAGE_OUT_3_0V,
+  FAST_PMIC_VOLTAGE_OUT_3_1V,
+  FAST_PMIC_VOLTAGE_OUT_3_2V,
+  FAST_PMIC_VOLTAGE_OUT_3_3V,
+  FAST_PMIC_VOLTAGE_OUT_3_4V,
+  FAST_PMIC_VOLTAGE_OUT_3_5V,
+  FAST_PMIC_VOLTAGE_OUT_3_6V,
+} fast_pmic_voltage_out_t;
+
+typedef enum
+{
+  FAST_PMIC_THERMAL_ALARM_TEMP_45C  = 0,
+  FAST_PMIC_THERMAL_ALARM_TEMP_65C,
+  FAST_PMIC_THERMAL_ALARM_TEMP_85C,
+  FAST_PMIC_THERMAL_ALARM_TEMP_105C,
+  FAST_PMIC_THERMAL_ALARM_TEMP_125C,
+  FAST_PMIC_THERMAL_ALARM_TEMP_145C,
+  FAST_PMIC_THERMAL_ALARM_TEMP_165C,
+} fast_pmic_thermal_alarm_temp_t;
+
+typedef enum
+{
+  FAST_PMIC_THERMAL_SHUTDOWN_TEMP_110C  = 0,
+  FAST_PMIC_THERMAL_SHUTDOWN_TEMP_135C,
+  FAST_PMIC_THERMAL_SHUTDOWN_TEMP_150C,
+  FAST_PMIC_THERMAL_SHUTDOWN_TEMP_165C,
+} fast_pmic_thermal_shutdown_temp_t;
+
+typedef union __attribute__((packed)) _fast_fault_status_mask_u
+{
+  struct __attribute__((packed))
+  {
+                                            * Deassrted when temp falls below
+                                            * (programmable_temperature - hysteresis) (falling edge)
+                                            */
+                                            * as set by boost_uvlo_th
+                                            */
+                                            * Enabled when LDO is in regulation mode (byp=0, enb=0)
+                                            */
+                                            * Enabled when LDO is in regulation mode (byp=0, enb=0)
+                                            */
+                                            * Enabled when LDO is in regulation mode (byp=0, enb=0)
+                                            */
+                                            * Enabled when LDO is in regulation mode (byp=0, enb=0)
+                                            */
+    uint16_t    reserved         : 9;
+  } m_bits;
+  uint16_t data_uint16_t;
+} fast_fault_status_mask_u;
+
+typedef enum
+{
+  FAST_SPI_8_BIT_MODE  = 0,
+  FAST_SPI_16_BIT_MODE,
+  FAST_SPI_32_BIT_MODE,
+} fast_spi_bit_mode_t;
+
+typedef enum
+{
+  FAST_SPI_MSB_FIRST  = 0,
+  FAST_SPI_LSB_FIRST,
+} fast_spi_bit_order_t;
+
+typedef enum
+{
+  FAST_SPI_CPOL_0  = 0,
+  FAST_SPI_CPOL_1,
+} fast_spi_cpol_t;
+
+typedef enum
+{
+  FAST_SPI_CPHA_0  = 0,
+  FAST_SPI_CPHA_1,
+} fast_spi_cpha_t;
+
+typedef enum
+{
+  FAST_PROGRAM_TILE  = 0,
+  FAST_CLEAR_TILE,
+  FAST_CLEAR_TILE_COMPLETELY,
+} fast_tile_program_mode_t;
+
+
+typedef struct __attribute__((packed)) fast_system_information_t
+{
+  uint32_t    config_file_id            : 8;
+  uint32_t    config_file_version       : 4;
+  uint16_t    number_of_chiplets_on_fast        : 8;
+  uint16_t    supported_zeus                    : 4;
+} fast_system_information_t;
+
+typedef struct __attribute__((packed)) fast_system_chips_information_t
+{
+  uint16_t    chip_global_id;
+  uint8_t     chip_description[CHIP_DESCRIPTOR_SIZE * 2];
+} fast_system_chips_information_t;
