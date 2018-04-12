@@ -389,6 +389,27 @@ function foo()
         echo -n "::"
 }
 
+#
+# Returns TRUE if run from within a working tree.
+#
+function gitchk()
+{
+        git rev-parse 2>/dev/null
+}
+
+foo_git()
+{
+        pushd ./ >/dev/null
+        DIRPATH=$(pwd)
+        while [ $DIRPATH != "/" ] ; do
+                [ -d "$DIRPATH/.git" ] && return 0
+                DIRPATH=$(dirname $DIRPATH)
+                echo "DIRPATH:  ($DIRPATH)"
+                sleep 1
+        done
+        popd >/dev/null
+}
+
 function branch()
 {
         local Length=
@@ -400,7 +421,9 @@ function branch()
         [ "${#Length}" -eq 0 ] &&  Length=0
         [ -n "$(echo $Length | sed -e 's:[0-9]::g')" ] && Length=0
 
-        TMP="$(git branch | sed -e '/^ /d' -e 's/^.*  *//')"
+        ! gitchk && echo -n -e "$(invert BLACK)===${RESET}" && return
+
+        TMP="$(git branch | sed -e '/^ /d' -e 's/^.*  *//')" 2>/dev/null
         if [ "$Length" -gt 0 ] && [ "${#TMP}" -gt "$Length" ] ; then
                 TMP=$(echo "${TMP: -$Length}")
         fi
@@ -414,8 +437,12 @@ function repo()
         local Kolor=
 
         Kolor=BLACK
-        Remote=( $(git branch -vv | awk '/^\*/ {print $4}' | sed -e 's:\[::' -e 's,[:/], ,g') )
-        Repo="$(git remote get-url  ${Remote[0]} | sed -e 's/^.*\///' -e 's/\.git//')"
+        Remote=()
+        Repo=XXXX
+        ! gitchk && echo -n -e "$(invert BLACK)$Repo${RESET}" && return
+
+        Remote=( $(git status -sb | head -1 | sed -e 's/^.*\.\.\.//' -e 's/ //g' | awk -F'/' '{print $1 "  " $2}') ) 2>/dev/null
+        [ "${#Remote[@]}" -eq 2 ] && Repo="${Remote[0]}"
         echo -n -e "$(bold $Kolor)$Repo${RESET}"
 }
 
