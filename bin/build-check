@@ -1,0 +1,10 @@
+#!/bin/bash
+
+
+for board in nrf52832_dk fast_api_debug ; do
+        export BOARD=$board
+        if ! zmake -Q ; then
+                exit 1
+        fi
+done
+

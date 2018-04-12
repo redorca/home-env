@@ -394,6 +394,7 @@ CMD_ADDED=()
             echo_e "$_N"  "Building for $build: ... "
 #           if [ $? -ne 0 ] ; then
             if ! eval $CMD ${OUT_FILE[*]} ; then
+                    [ -z "$Q" ] && continue
                     echo_e "Failed.\n"
                     echo_e "Running an incremental build with Q=''"
                     CMD="make Q=\"\"  $NO_ERRORS $build"
