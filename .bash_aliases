@@ -12,6 +12,7 @@ ITALIC=3
 BOLD=1
 UNDERL=4
 STRIKE=9
+HIDE=8
 INVERT=7
 #
 #  If this script is called then we know for sure we're in
@@ -365,6 +366,11 @@ function italic()
         set_attrib "${1^^}" ITALIC
 }
 
+function hide()
+{
+        set_attrib "${1^^}" HIDE
+}
+
 #
 # Wrap grep to redirect stderr to /dev/null
 #
@@ -436,10 +442,10 @@ function repo()
         local Repo=
         local Kolor=
 
-        Kolor=BLACK
+        Kolor=PURPLE
         Remote=()
         Repo=XXXX
-        ! gitchk && echo -n -e "$(invert BLACK)$Repo${RESET}" && return
+        ! gitchk && echo -n -e "$(hide BLACK)$Repo${RESET}" && return
 
         Remote=( $(git status -sb | head -1 | sed -e 's/^.*\.\.\.//' -e 's/ //g' | awk -F'/' '{print $1 "  " $2}') ) 2>/dev/null
         [ "${#Remote[@]}" -eq 2 ] && Repo="${Remote[0]}"
