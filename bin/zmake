@@ -366,6 +366,7 @@ rm -f $OBJS_FILE
 declare -a CMD_ADDED
 CMD_ADDED=( "ls" "../../arch/arm/src/*.o" ">>" "$OBJS_FILE" "2>&1" )
 CMD_ADDED=()
+Fails=0
 #
 # Main()
 #
@@ -392,22 +393,21 @@ CMD_ADDED=()
             CMD="make Q=\"$Q\"  $NO_ERRORS $build"
 
             echo_e "$_N"  "Building for $build: ... "
-#           if [ $? -ne 0 ] ; then
             if ! eval $CMD ${OUT_FILE[*]} ; then
-                    [ -z "$Q" ] && continue
+                    [ -z "$Q" ] && echo "Build failed see ${OUT}.$build." >&2 && continue
                     echo_e "Failed.\n"
                     echo_e "Running an incremental build with Q=''"
                     CMD="make Q=\"\"  $NO_ERRORS $build"
                     eval $CMD ${OUT_FILE[*]}
                     tail -15 ${OUT}.$build
+                    Fails=$(( Fails + 1 ))
                     continue
             fi
             echo_e "Succeeded."
 
             [ -n "${CMD_ADDED[*]}" ] && echo "Tabulating objects"
-#           [ -n "${CMD_ADDED[*]}" ] && echo "== ${CMD_ADDED[*]} =="
             eval ${CMD_ADDED[@]}
     done
 )
 
-
+exit $Fails

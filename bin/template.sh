@@ -85,7 +85,8 @@ echo_err()
 {
         local Bin=
 
-        CMD="$Bin $@"
+        Bin=echo
+        CMD="$Bin -e $@"
         $CMD >&2
 }
 
