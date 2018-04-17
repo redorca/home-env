@@ -1,15 +1,10 @@
 fast_set_timeout(uint16_t time_ms);
 fast_read_id(uint8_t *data_ptr, uint8_t number_of_bytes);
 fast_enter_power_state(fast_power_state_t power_state);
-        set power state
 fast_get_current_power_state(fast_power_state_t *power_state);
-        get power state
 fast_configure_led(fast_led_id_t led_id, fast_led_duty_cycle_t duty_cycle, fast_led_period_t led_period, fast_led_intensity_control_t intensity, fast_led_brightness_range_control_t brightness, bool invert_pwm);
-        set led
 fast_enable_led(fast_led_id_t led_id);
-        set led
 fast_disable_led(fast_led_id_t led_id);
-        set led
 fast_read_customer_otp(uint32_t start_addr, uint32_t *data_ptr, uint32_t number_of_words);
 fast_pmic_boost_configure(fast_pmic_boost_voltage_out_t boost_voltage, fast_pmic_bypass_mode_t bypass_mode, fast_pmic_boost_current_limit_t current_limit);
 fast_pmic_hvldo_configure(fast_pmic_voltage_out_t voltage_out, fast_pmic_bypass_mode_t bypass_mode, bool current_limit_enable);
