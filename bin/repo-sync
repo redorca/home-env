@@ -1,22 +1,53 @@
 #!/bin/bash
 
-declare -A reponame_to_path
+FUCHSIA_REPO_URL=https://fuchsia.googlesource.com/
+[ "$TRACE" = "1" ] && set -x
 
-reponame_to_path["auto_test"]=${HOME}/${TARGET_DIR}/
-reponame_to_path["nuttx_apps"]=${HOME}/${TARGET_DIR}/
-reponame_to_path["apps"]=${HOME}/${TARGET_DIR}/
-reponame_to_path["fast-api"]=${HOME}/${TARGET_DIR}/
-reponame_to_path["3rd_Party_SDK"]=${HOME}/${TARGET_DIR}/
-reponame_to_path["home-env"]=${HOME}/
+clone()
+{
+        local RepoPath=
 
-REPOS_TO_UPDATE=(
-        "master@auto_test"
-        "zdk@nuttx.gcc-version-7"
-        "zdk@nuttx_apps"
-        "zdk@apps"
-        "fast_api_dev@fast_api"
-        "dialog_585_sdk@3rd_Party_SDK"
-        "master@home-env"
-)
+        [ -z "$1" ] && return 1
 
+        RepoPath="$1"
+        git clone "${FUCHSIA_REPO_URL}${RepoPath}"
+}
+
+sync()
+{
+        local RepoPath=
+
+        [ -z "$1" ] && return 1
+        RepoPath="$1"
+        if [ -d "$(basename $RepoPath)/.git" ] ; then
+                pushd "$(basename $RepoPath)" >/dev/null
+                git pull
+                popd >/dev/null
+        else
+                clone "$RepoPath"
+        fi
+}
+
+
+mk_path()
+{
+        local Repo=
+
+        [ -z "$1" ] && return 1
+        Repo="$1"
+        mkdir -p "$(dirname $1)"
+}
+
+[ -f "$1" ] && FILE="$1"
+[ -z "$FILE" ] && echo "No file specified." >&2 && exit 1
+
+cat "$FILE" | while read path ; do
+        if ! mk_path "$path" ; then
+                echo "Failed creating path [$path]" >&2
+                exit 2
+        fi
+        pushd "$(dirname $path)" >/dev/null
+        sync "$path"
+        popd >/dev/null
+done
 

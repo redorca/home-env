@@ -37,24 +37,28 @@ EOF
 EOF
 }
 
+list_ioctl_funcs()
+{
+        for i in $(seq 1 1 ${#IOCTL_FNS[@]}) ; do
+
+                echo -n -e "IOCTL: ${IOCTL_CMDS[$i]^^}\t"
+                echo "Funcs: ${IOCTL_FNS[$i]}"
+        done
+}
+
 [ ! -f "$1" ] && echo "No file specified" >&2 && exit 1
 
 File="$1"
-IOCTL_FNS=( $(grep "^[^(]*([^()]*);" "$File" | awk '{print $2}' ) )
+# IOCTL_FNS=( $(grep "^[^(]*([^()]*);" "$File" | awk '{print $2}' ) )
 # | sed -e 's/(.*//'))
-IOCTL_CMDS=( $(grep "^[^(]*([^()]*);" "$File" | awk '{print $2}' | \
-                         sed -e 's/fast_/fast_ioctl_/' -e 's/(.*//') )
+# IOCTL_CMDS=( $(grep "^[^(]*([^()]*);" "$File" | awk '{print $2}' | \
+#                          sed -e 's/fast_/fast_ioctl_/' -e 's/(.*//') )
+IOCTL_FNS=( $(cat $File | sed -e 's:(.*::') )
 echo "=== ${#IOCTL_FNS[@]} commands" >&2
 issue_switch "${IOCTL_FNS[@]}"
-
-exit
 
 if [ "${#IOCTL_FNS[@]}" -ne "${#IOCTL_CMDS[@]}" ] ; then
         echo "Something's wrong here."
 fi
 
-for i in $(seq 1 1 ${#IOCTL_FNS[@]}) ; do
-
-        echo -n -e "IOCTL: ${IOCTL_CMDS[$i]^^}\t"
-        echo "Funcs: ${IOCTL_FNS[$i]}"
-done
+exit
