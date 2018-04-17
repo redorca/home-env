@@ -111,4 +111,5 @@ git-hub/
 warnings/
 Pictures/
 scripts/
+/.vim/.netrwhist
 
