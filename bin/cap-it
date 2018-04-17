@@ -66,6 +66,8 @@ foo()
 [ $# -lt 1 ] && help_msg && exit 1
 while [ $# -ne 0 ] ; do
         case "$1" in
+        -a) LIMIT="none"
+        ;;
         -h) help_msg && exit
         ;;
         -l) CASE=lc
