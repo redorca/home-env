@@ -10,6 +10,11 @@ USER="$(git config user.email | sed 's/@.*//')"
 DO_TRACE=
 DESTINATION=
 
+on_exit()
+{
+        rm -rf $
+}
+
 trace()
 {
         [ "$TRACE" != "1" ] && return 1
@@ -64,9 +69,11 @@ trace
 
 while [ "$#" -ne 0 ] ; do
         case "$1" in
-        -t) [ -n "$2" ] && TARGET="$2"; shift
+        -d) [ -n "$2" ] && DESTINATION="$2"
         ;;
-        -o) [ -n "$2" ] && DESTINATION="$2"
+         #   Targets as of 0401-2018 are zeus1 and zeus2
+         #   Target branch is "fast_api_dev"
+        -t) [ -n "$2" ] && TARGET="$2"; shift
         ;;
         *)
                 echo "???? [$1]"
@@ -95,8 +102,8 @@ fi
             echo "Failure while building $TARGET" >&2
             exit 1
     fi
-    echo "Copying ${LIB} to ${DESTINATION}/${LIB%_*}"
-    if ! cp -a "${REPO%.git}/$OUTPUT_DIR/${TARGET}/$LIB" "${DESTINATION}/${LIB%_*}" ; then
+    echo "Copying ${LIB} to ${DESTINATION}/${LIB%_*}.a"
+    if ! cp -a "${REPO%.git}/$OUTPUT_DIR/${TARGET}/$LIB" "${DESTINATION}/${LIB%_*}.a" ; then
         echo "Unable to copy $LIB to ${DESTINATION}/${LIB%_$TARGET.a}.a" >&2
         exit 1
     fi
