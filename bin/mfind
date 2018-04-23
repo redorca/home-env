@@ -56,5 +56,7 @@ while [ $# -ne 0 ] ; do
 done
 
 ( [ -z "$Dir" ] || [ -z "$Key" ] ) && exit 2
-find $Dir -type f -name "$Name" -o -name "*.mk" -o -name "Make.defs" -exec grep "$Key" {} \; -print
+find $Dir -type f -name "$Name" -exec grep "$Key" {} \; -print
+find $Dir -type f -name "*.mk" -exec grep "$Key" {} \; -print
+find $Dir -type f -name "Make.defs" -exec grep "$Key" {} \; -print
 
