@@ -16,7 +16,7 @@ DEBUG="${DEBUG:-0}"
 V="${V:-0}"
 Q="${Q:-@}"
 # BOARD=zeus-austin
-BOARD="${BOARD:-nrf52832_dk}"
+# BOARD="${BOARD:-nrf52832_dk}"
 ESC="\033[;"
 #
 # The filename key searched for when determing
@@ -24,7 +24,6 @@ ESC="\033[;"
 # will server as the set of make targets.
 #
 FILE_KEY=defconfig
-BOARDS_LIST=( nrf52832_dk fast_api_debug pca10056 )
 ARG_LIST=( DEBUG BOARD FILE_KEY TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE )
 ### COLORS Begin
 RESET="\033[0;39;49m"
@@ -254,20 +253,21 @@ run_output()
 select_board()
 {
         local Val=
+        local BOARD_LIST=
 
-        [ $# -lt 3 ] && echo "Not enough choices." >&2 && return 1
+        BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') )
 
-        Var="$1" ; shift
-        select Val in "$@" ; do
+        select Val in "${BOARD_LIST[@]}" ; do
                 [ -n "$Val" ] && break
         done
 
         echo "$Val"
 }
 
+
 trace && set -x
 
-[ -z "$BOARD" ] && BOARD=$(select_board "${BOARDS_LIST[@]}")
+[ -z "$BOARD" ] && echo "?????????????????????" >&2 && BOARD=$(select_board "${BOARDS_LIST[@]}")
 for target in $(set_app_list $BOARD $FILE_KEY); do
         make_targets["$target"]=1
 done
@@ -278,7 +278,9 @@ while [ $# -ne 0 ] ; do
         case "$1" in
         #
         # Specify the directory to build from
-        -b) BOARD="$2"; shift
+        -b) [ -n "$2" ] && BOARD="$2";
+            [ -z "$BOARD" ] && BOARD=choose
+                shift
                 ;;
         #
         ## Enhanced background suitable for screens with
