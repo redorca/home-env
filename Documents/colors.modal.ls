@@ -1,36 +1,67 @@
 # Configuration file for dircolors, a utility to help you set the
 # LS_COLORS environment variable used by GNU ls with the --color option.
-# Copyright (C) 1996-2016 Free Software Foundation, Inc.
+# Copyright (C) 1996-2013 Free Software Foundation, Inc.
 # Copying and distribution of this file, with or without modification,
 # are permitted provided the copyright notice and this notice are preserved.
 # The keywords COLOR, OPTIONS, and EIGHTBIT (honored by the
 # slackware version of dircolors) are recognized but ignored.
-# Below are TERM entries, which can be a glob patterns, to match
-# against the TERM environment variable to determine if it is colorizable.
+# Below, there should be one TERM entry for each termtype that is colorizable
 TERM Eterm
 TERM ansi
-TERM *color*
-TERM con[0-9]*x[0-9]*
+TERM color-xterm
+TERM con132x25
+TERM con132x30
+TERM con132x43
+TERM con132x60
+TERM con80x25
+TERM con80x28
+TERM con80x30
+TERM con80x43
+TERM con80x50
+TERM con80x60
 TERM cons25
 TERM console
 TERM cygwin
 TERM dtterm
+TERM eterm-color
 TERM gnome
+TERM gnome-256color
 TERM hurd
 TERM jfbterm
 TERM konsole
 TERM kterm
 TERM linux
 TERM linux-c
+TERM mach-color
 TERM mlterm
 TERM putty
-TERM rxvt*
-TERM screen*
+TERM putty-256color
+TERM rxvt
+TERM rxvt-256color
+TERM rxvt-cygwin
+TERM rxvt-cygwin-native
+TERM rxvt-unicode
+TERM rxvt-unicode-256color
+TERM rxvt-unicode256
+TERM screen
+TERM screen-256color
+TERM screen-256color-bce
+TERM screen-bce
+TERM screen-w
+TERM screen.Eterm
+TERM screen.rxvt
+TERM screen.linux
 TERM st
+TERM st-256color
 TERM terminator
 TERM tmux*
 TERM vt100
-TERM xterm*
+TERM xterm
+TERM xterm-16color
+TERM xterm-256color
+TERM xterm-88color
+TERM xterm-color
+TERM xterm-debian
 # Below are the color init strings for the basic file types. A color init
 # string consists of one or more of the following numeric codes:
 # Attribute codes:
@@ -42,6 +73,8 @@ TERM xterm*
 #NORMAL 00 # no color code at all
 #FILE 00 # regular file: use no color at all
 RESET 0 # reset to "normal" color
+# XX DIR 01;34 # directory
+# XX LINK 01;36 # symbolic link. (If you set this to 'target' instead of a
 DIR 04;34 # directory
 LINK 03;36 # symbolic link. (If you set this to 'target' instead of a
  # numerical value, the color is as for the file pointed to.)
@@ -51,8 +84,8 @@ SOCK 01;35 # socket
 DOOR 01;35 # door
 BLK 40;33;01 # block device driver
 CHR 40;33;01 # character device driver
-ORPHAN 40;31;01 # symlink to nonexistent file, or non-stat'able file ...
 MISSING 00 # ... and the files they point to
+ORPHAN 40;31;01 # symlink to nonexistent file, or non-stat'able file
 SETUID 37;41 # file that is setuid (u+s)
 SETGID 30;43 # file that is setgid (g+s)
 CAPABILITY 30;41 # file with capability
@@ -60,7 +93,7 @@ STICKY_OTHER_WRITABLE 30;42 # dir that is sticky and other-writable (+t,o+w)
 OTHER_WRITABLE 34;42 # dir that is other-writable (o+w) and not sticky
 STICKY 37;44 # dir with the sticky bit set (+t) and not other-writable
 # This is for files with execute permission:
-EXEC 00;33
+EXEC 00;32
 # List any file extensions like '.gz' or '.tar' that you would like ls
 # to colorize below. Put the extension, a space, and the color init string.
 # (and any comments you want to add after a '#')
@@ -167,6 +200,8 @@ EXEC 00;33
 .cgm 01;35
 .emf 01;35
 # http://wiki.xiph.org/index.php/MIME_Types_and_File_Extensions
+.axv 01;35
+.anx 01;35
 .ogv 01;35
 .ogx 01;35
 # audio formats
@@ -183,6 +218,7 @@ EXEC 00;33
 .ra 00;36
 .wav 00;36
 # http://wiki.xiph.org/index.php/MIME_Types_and_File_Extensions
+.axa 00;36
 .oga 00;36
 .opus 00;36
 .spx 00;36
