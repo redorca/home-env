@@ -31,6 +31,9 @@ RepoRename["nordic"]=SDK_13.0.0-1@3rd_Party_SDK
 RepoRename["sdk_13_1"]=SDK_13.1.0@3rd_Party_SDK
 RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
 
+Repo2Host["oclint"]=master@git@github.com/oclint/oclint.git
+Repo2Host["tinyara"]=master@git@github.com/Samsung/TinyAra.git
+Repo2Host["tizen"]=master@git@github.com/Samsung/TizenRT.git
 Repo2Host["blah"]=z@git@github.com/zglue-bill/blah.git
 Repo2Host["blah_apps"]=zapps@git@github.com/zglue-bill/blah_apps.git
 Repo2Host["texworks"]=master@git@github.com/Texworks/texworks.git,manual.git,website.git
@@ -329,9 +332,11 @@ function clone()
         local cell_line=
         local Key=
 
-        Key=${1%%.git}
+        for Target in "$@" ; do
+                Key=${Target%%.git}
 
-        clone_one "$@"
+                clone_one "$Target"
+        done
 }
 
 dual_source_repos()
@@ -356,7 +361,7 @@ while [ $# -ne 0 ] ; do
         # set a particular url to clone the desired repo from.
         -R | --repo ) SRC_REPO_URL="$2"; shift # set the repo to init with.
                 ;;
-        *) TARGET="$1"; # The repo name to clone.
+        *) TARGET[${#TARGET[@]}]="$1"; # The repo name to clone.
                 [ -z "$TARGET" ] && help && exit
                 ;;
         esac
@@ -370,7 +375,7 @@ fi
 
 [ "$PRINT" = "YES" ] && dump_Repo2Host && exit 0
 
-clone $TARGET
+clone "${TARGET[@]}"
 
 $CONFIG_TWO_REPOS
 
