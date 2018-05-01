@@ -1,0 +1,13 @@
+diff --git a/include/nuttx/drivers/zglue_fast.h b/include/nuttx/drivers/zglue_fast.h
+index 013cf255ec..b488a90144 100755
+--- a/include/nuttx/drivers/zglue_fast.h
++++ b/include/nuttx/drivers/zglue_fast.h
+@@ -120,6 +120,8 @@
+ #define  FAST_IOCTL_I2C_CONFIGURE                 _FASTIOC(42)
+ #define  FAST_IOCTL_INTERFACE_SET                 _FASTIOC(43)
+ #define  FAST_IOCTL_INTERFACE_GET                 _FASTIOC(44)
++#define  FAST_IOCTL_READ_REGISTER                 _FASTIOC(45)
++#define  FAST_IOCTL_WRITE_REGISTER                _FASTIOC(46)
+ 
+ #if defined(CONFIG_FAST_STRINGS_MAP)
+ static strings_ioctl_cmds[] =

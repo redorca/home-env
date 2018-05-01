@@ -102,8 +102,8 @@ set +x
 }
 
 if ! ROOT=$(git rev-parse --show-toplevel) ; then
-        echo "This directory is not in a git repo or maybe within the .git dir." >&2
-        echo "Please run this script from anwyhere within the fast_api repo." >&2
+        echo "This directory is not in a git repo or maybe it's within the .git dir." >&2
+        echo "Please run this script from anwyhere within the fast_api repo prroper." >&2
         echo "" >&2
         exit 1
 fi
@@ -113,6 +113,7 @@ if [ ! -f "$ROOT"/build/gcc/Makefile ] ; then
         echo "" >&2
         exit 2
 fi
+
 TMPDIR=/tmp
 TARFILE=$(mktemp -p "$TMPDIR" .config_XXX)
 # echo "TARFILE  :: ($TARFILE)"
@@ -131,7 +132,7 @@ print_array "${TARGETS[@]}"
 CLEAR=clean
 CLEAR=distclean
 CONFIG=.config
-COMMIT_HASH=056ac757144fc5d008c7141a50e31e1fcc9e8233
+# COMMIT_HASH=056ac757144fc5d008c7141a50e31e1fcc9e8233
 
 eval rm -f "${TARFILE%_*}*"
     (

@@ -1,0 +1,58 @@
+diff --git a/include/system/fast_cmd.h b/include/system/fast_cmd.h
+index 80ca969d..5d2843a9 100644
+--- a/include/system/fast_cmd.h
++++ b/include/system/fast_cmd.h
+@@ -56,8 +56,8 @@
+ #include <strings.h>
+ #include <errno.h>
+ #include <debug.h>
+-#include <nuttx/fast_api/fast_api.h>
+-#include <nuttx/drivers/fast_zeus.h>
++#include <nuttx/zglue_fast/fast_api.h>
++#include <nuttx/drivers/zglue_fast.h>
+ 
+ 
+ 
+diff --git a/system/fast/Makefile b/system/fast/Makefile
+index 654b6708..491d565f 100755
+--- a/system/fast/Makefile
++++ b/system/fast/Makefile
+@@ -43,6 +43,8 @@ ifeq ($(CONFIG_SYSTEM_FASTAPI),y)
+ MAINSRC = fast_main.c
+ endif
+ 
++LIB_FASTNSH_CMDS = libnshfast_cmds
++
+ ASRCS   =
+ #
+ # Psuedo library sources for other apps to reference
+@@ -96,22 +98,27 @@ APPNAME = fast
+ PRIORITY = SCHED_PRIORITY_DEFAULT
+ STACKSIZE = 2048
+ 
+-CFLAGS  += -I$(APPDIR)/include/system
++CFLAGS  += -I$(APPDIR)/include/system -l$(LIB_FASTNSH_CMDS:lib%=%)
+ # Build targets
+ 
+ all: .built
+ .PHONY: context .depend depend clean distclean
+ 
++$(PROGNAME): $(LIB_FASTNSH_CMDS)$(LIBEXT)
++
+ $(AOBJS): %$(OBJEXT): %.S
+ 	$(call ASSEMBLE, $<, $@)
+ 
+-$(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
++$(LOBJS) $(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
+ 	$(call COMPILE, $<, $@)
+ 
+ .built: $(OBJS)
+ 	$(call ARCHIVE, $(BIN), $(OBJS))
+ 	$(Q) touch .built
+ 
++$(LIB_FASTNSH_CMDS)$(LIBEXT): $(LOBJS)
++	$(Q) $(call ARCHIVE,$@,$(LOBJS))
++
+ ifeq ($(CONFIG_BUILD_KERNEL),y)
+ $(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+ 	@echo "LD: $(PROGNAME)"

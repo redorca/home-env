@@ -14,7 +14,8 @@
 #	        done
 #	}
 #
-	
+# git status -sb | head -1 | sed -e 's/^.*\.//' | awk -F'/' '{print $1}'
+# git status -sb | head -1 | sed -e 's/^.*\.//' -e 's/\/.*//'
 #
 # Great.  Finds remote rather than repo or branch
 #
@@ -34,6 +35,22 @@
 #	        done
 #	}
 #
+
+find_repo_root()
+{
+}
+
+find_repo()
+{
+        local RepoRoot=
+
+        RepoRoot=$(find_repo_root)
+        (
+                [ ! -d "$RepoRoot" ] && return 1
+                cd "$RepoRoot" || return 1
+                git status -sb | head -1 | sed -e 's/^.*\.//' -e 's/\/.*//'
+        )
+}
 
 quick_find_repo()
 {

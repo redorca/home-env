@@ -15,7 +15,7 @@ SHELL_TEMPLATE = template.sh
 ifeq ($(CONFIG_TEMPLATES),)
 $(error Empty config templates)
 endif
-PROG_NAME = mkfast
+PROG_NAME = mkfast-verify
 
 help:
 	@echo ""
@@ -24,7 +24,7 @@ help:
 	@echo "\tMake a self-installing shell script for test building"
 	@echo "\tthe fast code."
 	@echo ""
-	@echo "\tmake mkfast\" will create a shell script based on mkfast"
+	@echo "\tmake $(PROG_NAME)\" will create a shell script based on $(PROG_NAME)"
 	@echo "\tthat contains a tar file of config.zeus* appended to it."
 	@echo ""
 	@echo ""
@@ -32,8 +32,8 @@ help:
 
 $(PROG_NAME): %:%.sh
 
-mkfast: %:%.tgz
-mkfast:
+$(PROG_NAME): %:%.tgz
+$(PROG_NAME):
 	$(Q) cp $@.sh $@ && chmod +x $@
 	$(Q) xxd $@.tgz >> $@
 
