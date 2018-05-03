@@ -1,0 +1,482 @@
+#!/bin/bash
+
+#
+# This script will run make from the configs/nrf52832_dk
+# directory against every example directory contiaining
+# the file defconfig.
+#
+# Standard practice is to peform a distclean,
+# <example app> > out.<example>, and to cycle
+# through each of the possible examples.
+#
+
+CONTRAST="${CONTRAST:-0}"
+COLOR="${COLOR:-1}"
+DEBUG="${DEBUG:-0}"
+V="${V:-0}"
+Q="${Q:-@}"
+# BOARD=zeus-austin
+# BOARD="${BOARD:-nrf52832_dk}"
+ESC="\033[;"
+#
+# The filename key searched for when determing
+# which directories in configs/$BOARD/*/$FILE_KEY
+# will server as the set of make targets.
+#
+FILE_KEY=defconfig
+ARG_LIST=( DEBUG BOARD FILE_KEY TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE )
+### COLORS Begin
+RESET="\033[0;39;49m"
+BLACK="\033[1;30m"
+RED="\033[1;31m"
+GREEN="\033[2;32m"
+YELLOW="\033[2;33m"
+BLUE="\033[1;34m"
+LTBLUE="\033[2;36m"
+PURPLE="\033[2;35m"
+REDBLK="\033[2;31;40m"
+REDYLW="\033[2;31;43m"
+REDBLU="\033[2;31;46m"
+GRNBLK="\033[2;32;40m"
+GRNGRN="\033[2;32;42m"
+YLWBLK="\033[2;33;40m"
+YLWRED="\033[2;33;41m"
+YLWGRN="\033[2;33;42m"
+YLWBLU="\033[2;33;44m"
+YLWLTBLU="\033[2;33;46m"
+### COLORS End
+OUT=/tmp/out
+declare -A make_targets
+#
+# Setup targets that are not actual apps but
+# are still directives to make.
+#
+declare -A pseudo_targets
+pseudo_targets["cscope"]=1
+pseudo_targets["help"]=1
+pseudo_targets["config"]=1
+pseudo_targets["download"]=1
+pseudo_targets["clean"]=1
+pseudo_targets["distclean"]=1
+pseudo_targets["clean_cscope"]=1
+pseudo_targets["clean_cruft"]=1
+pseudo_targets["clean_env"]=1
+
+#
+# Trap all exits.
+#
+on_exit()
+{
+        RV=$?
+
+        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit [$RV]: ${RESET}"
+        exit $RV
+}
+
+trap on_exit EXIT
+
+#
+# Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
+# shell option forcing the script to run in tracing mode.
+#
+trace()
+{
+        [ "$TRACE" = "1" ] && return 0
+        return  1
+}
+
+#
+# Provide an in-line check for debug status to conditionally enable calls.
+# e.g. debug && echo "This is a test" will only fire if DEBUG=1 otherwise
+#      it is a no-op.
+#
+#
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+#
+# Shortcut to send output to stderr by default.
+#
+echo_dbg()
+{
+        debug || return
+        echo_err "$@"
+}
+
+
+#
+# Wrap echo with echo_e() and use /bin/echo instead.  This allows invoking
+# this script using sh as in "sh $(basename $0)"
+#
+echo_e()
+{
+        local Bin=
+
+        Bin="/bin/echo -e"
+        $Bin "$@" >&2
+}
+
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        [ "$DEBUG" = "1" ] && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
+}
+
+
+#
+# Filter out everything but the while loop and the two boundary markers.
+# Then filter out anything that does not have a ')' in it.  Voila, instant
+# help message!
+#
+help_msg()
+{
+        local CLR0=
+
+        CLR0="${!1}" ; shift
+        echo -e "${CLR0}"
+        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" |
+               sed -e '/^### HELP/,/case/d' -e '/esac/,/^### HELP/d' -e '/;;/d'
+        echo -e "${RESET}"
+}
+
+#
+# Print the list of default apps.
+#
+list_apps()
+{
+        for i in "$@" ; do
+                echo -e "\t$i"
+        done
+        echo ""
+}
+
+#
+# Output var and contents and
+# do some modest alignment by
+# adding a space at the beginning
+# and an extra tab for shorter
+# vars.
+#
+print_keyval()
+{
+        declare -a Arg_List=
+        local CLR0=
+        local CLR1=
+
+        CLR0="${!1}" ; shift
+        CLR1="${!1}" ; shift
+
+        Arg_List=( "$@" )
+
+        for var in "${Arg_List[@]}" ; do
+                echo_e -n " ${CLR0}$var${RESET}\t"
+                [ "${#var}" -lt 7 ]  && echo_e -n "\t"
+                echo_e "(${CLR1}${!var}${RESET})"
+        done
+}
+
+#
+# Print the list of colors available along with illustrative text.
+#
+print_colors()
+{
+        local key=
+        local akey=
+        local Fore=
+
+        Fore="$1"; shift
+
+        for key in RED BLUE LTBLUE YELLOW GREEN PURPLE; do
+                aKey="${!key}"
+                [ "$Fore" = "0" ] && aKey="$(echo $aKey | sed -e 's/;3/;37;4/')"
+                echo -n -e "$key:\t"
+                [ "${#key}" -lt 8 ] && echo -n -e "\t"
+                echo -e "${aKey}Some sample text.${RESET}"
+        done
+}
+
+find_repo_root()
+{
+        if ! git rev-parse >/dev/null 2>&1 ; then
+                echo_e "Not running within the git repo proper.  Please relocate."
+                return 1
+        fi
+        git rev-parse --show-toplevel
+}
+
+find_repo()
+{
+        local RepoRoot=
+        [ ! -d "$1" ] && return 1
+        RepoRoot="$1"
+        (
+                [ ! -d "$RepoRoot" ] && return 1
+                cd "$RepoRoot" || return 1
+                Remote=$(git status -sb | head -1 | sed -e 's/^.*\.//' -e 's/\/.*//')
+                git remote show "$Remote" | grep Fetch | sed -e 's/^.*\///' -e 's/\.git//'
+        )
+}
+
+run_nuttx()
+{
+        Func
+        TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
+        [ -z "$BOARD" ] && echo "?????????????????????" >&2 && BOARD=$(select_board "${BOARD_LIST[@]}")
+        for target in $(set_app_list $BOARD $FILE_KEY); do
+                make_targets["$target"]=1
+        done
+        DEFAULT_APPS="${!make_targets[@]}"
+
+}
+
+run_fastapi()
+{
+        Func
+}
+
+run_hooks()
+{
+        Func
+}
+
+set_app_list()
+{
+        local Board_Cfg=
+        local File_Key=
+        local count=
+        local fresults=
+        declare -a pieces=
+
+   (
+        cd $(find_repo_root) || return 1
+        [ "$#" -ne 2 ] && return 1
+        Board_Cfg="$1" ; shift
+        File_Key="$1" ; shift
+
+        fresults="$(find configs -type d -name $Board_Cfg)"
+        [ -z "$fresults" ] && return 1
+
+        pieces=( $(echo $fresults | sed -e 's/\// /g') )
+        count=$(( "${#pieces[@]}" + 1 ))
+        [ "$DEBUG" = "1" ] && echo_e "== fresults: ($fresults), count: [$count]"
+
+        pieces=( $(ls $fresults/*/$File_Key | cut --delim='/' -f $count) )
+        echo "${pieces[@]}"
+   )
+}
+
+#
+# Take care of generating the requested output.
+#
+run_output()
+{
+        local COLOR0=
+        local COLOR1=
+
+        [ -n "$1" ] && COLOR0="${!1}" ; shift
+        [ -n "$1" ] && COLOR1="${!1}" ; shift
+
+        if [ "$RUN_HELP" = "yes" ] ; then
+                help_msg COLOR0
+        fi
+        if [ "$PRINT_KV" = "yes" ] ; then
+                print_keyval  COLOR0 COLOR1 "${ARG_LIST[@]}"
+        fi
+}
+
+#
+# Assemble a list of configs directories available for builds
+# and if it is more than 1 generate a menu selection and have
+# the use spec which board config to use.
+#
+select_board()
+{
+        local Val=
+        local BOARD_LIST=
+
+        BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') )
+
+        select Val in "${BOARD_LIST[@]}" ; do
+                [ -n "$Val" ] && break
+        done
+
+        echo "$Val"
+}
+
+
+trace && set -x
+
+# if [ "${RELOCATE["nuttx"]}" ] ; then
+# fi
+### HELP message start
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        #
+        # Specify the directory to build from
+        -b) [ -n "$2" ] && BOARD="$2";
+            [ -z "$BOARD" ] && BOARD=choose
+                shift
+                ;;
+        #
+        ## Enhanced background suitable for screens with
+        ## light backgrounds
+        #
+        -c) CONTRAST=1
+                ;;
+        #
+        # Demonstrate the list of colors available to this script. Any
+        # following arg determines whether the coloring is in the
+        # background (0), or anything else for the foreground.
+        #
+        --colors*) print_colors "${1#*=}"; exit 0
+                ;;
+        #
+        # The arg paired with --bg and --fg is the
+        # name of the color as shown by --colors
+        --bg) BACKGROUND="$1"
+                ;;
+        --fg) FOREGROUND="$1"
+                ;;
+        -d) DBG_OPTS="--trace --debug=j"
+                ;;
+        #
+        # Disable -Werror (warnings are errors)
+        -e) NO_ERRORS="NO_ERRORS=1"
+        #
+                ;;
+        -h) RUN_HELP="yes";
+                ;;
+        --list=*) [ "${1#*=}" = "make" ] && list_apps $DEFAULT_APPS && exit 0
+                  echo "Misunderstood: ($1), (${1#*=})" && exit 1
+                ;;
+        -i) INCREMENTAL_BUILD="yes"; # Don't do a distclean first.  Start from last stop.
+                ;;
+        -p) PRINT_KV="yes";
+                ;;
+        #
+        # Expose the raw commands that make issues.
+        -Q) Q="";
+                ;;
+        #
+        # Specify build target. May specify multiple times.
+        -t) TARGET_DIRS="$TARGET_DIRS ${2%/}"; shift
+                ;;
+        #
+        # Print info beyond success/failure. May specify multiple times.
+        -v) VERBOSE="${VERBOSE}V"
+                ;;
+        #
+        # More info on make processing
+        -V) V=2
+                ;;
+        #
+        # Specify build target. May specify multiple times.
+        *) if [ -n "${pseudo_targets["${1%/}"]}" ] ; then
+                TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
+           elif [ -n "${make_targets["${1%/}"]}" ] ; then
+                TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
+           else
+                ARGS_UNXP="$ARGS_UNXP \"$1\""
+           fi
+                ;;
+        esac
+        shift
+done
+
+### HELP message end
+if [ -n "$ARGS_UNXP" ] ; then
+        echo_e -n "Unexpected args were encountered. Stop.  "
+        echo_e "$ARGS_UNXP"
+        echo_e "Perhaps you need to prefix this with '-t'. See help (-h)"
+        exit 1
+fi
+
+if [ "$RUN_HELP" = "yes" ] || [ "$PRINT_KV" = "yes" ] ; then
+        ARG1=
+        ARG2=
+        [ "$COLOR" = "1" ] && [ "$CONTRAST" = "0" ] && ARG1="LTBLUE" && ARG2="GREEN"
+        [ "$COLOR" = "1" ] && [ "$CONTRAST" = "1" ] && ARG1="BLUE" && ARG2="PURPLE"
+        run_output  "$ARG1"  "$ARG2"
+        exit
+fi
+
+declare -A RUNFUNCS
+declare -A RELOCATE
+declare -A TARGETS
+
+OBJS_FILE=/tmp/objs.built
+rm -f $OBJS_FILE
+declare -a CMD_ADDED
+CMD_ADDED=( "ls" "../../arch/arm/src/*.o" ">>" "$OBJS_FILE" "2>&1" )
+CMD_ADDED=()
+Fails=0
+RUNFUNCS["auto_test"]="run_hooks"
+RUNFUNCS["nuttx"]="run_nuttx"
+RUNFUNCS["fast_api"]="run_fastapi"
+
+RELOCATE["nuttx"]="configs/$BOARD"
+RELOCATE["fast_api"]="build/gcc"
+RELOCATE["auto_test"]="hooks"
+TARGETS["nuttx"]="nsh fast_api_demo"
+TARGETS["fast_api"]="zeus1 zeus2 sim"
+TARGETS["auto_test"]=""
+
+
+if ! REPO_ROOT="$(find_repo_root)" ; then
+        echo "Unable to find the repo's root directory." >&2
+        exit 1
+fi
+if ! REPO="$(find_repo $REPO_ROOT)" ; then
+        echo "Unable to discover the repo." >&2
+        exit 1
+fi
+
+#
+# Main()
+#
+(
+
+    [ ! -d "$REPO_ROOT/${RELOCATE["$REPO_ROOT"]}" ] && exit 2
+    cd "$REPO_ROOT/${RELOCATE["$REPO_ROOT"]}"||  exit 3
+
+    declare -a REDIR_FILE=
+
+    OUT_FILE="${OUT}.${REPO}.$build"
+    [ "${VERBOSE:0:1}" = "V" ] && print_keyval
+
+    echo_e "Compiling for $BOARD"
+    for build in "${TARGETS[$REPO]}" ; do
+            CMD="make distclean"
+            ftmp="${pseudo_targets[$build]}"
+            if [ -z "$ftmp" ] && [ "$INCREMENTAL_BUILD" != "yes" ] ; then
+                   echo_e -n "Make distclean ...\r"
+                   $CMD > ${OUT}.distclean 2>&1
+            fi
+            [ -z "$ftmp" ] && REDIR_FILE=( ">" ${OUT}.$build "2>&1"  ) && _N="-n"
+
+            CMD="make Q=\"$Q\"  $NO_ERRORS $DBG_OPTS $build"
+
+            echo_e "$_N"  "Building for $build: ... "
+            if ! eval $CMD ${REDIR_FILE[*]} ; then
+                    [ -z "$Q" ] && echo "Build failed see ${OUT}.$build." >&2 && continue
+                    echo_e "Failed.\n"
+                    echo_e "Running an incremental build with Q=''"
+                    CMD="make Q=\"\"  $NO_ERRORS $build"
+                    eval $CMD ${REDIR_FILE[*]}
+                    tail -15 "$OUT_FILE"
+                    Fails=$(( Fails + 1 ))
+                    continue
+            fi
+            echo_e "Succeeded."
+
+            [ -n "${CMD_ADDED[*]}" ] && echo "Tabulating objects"
+            eval ${CMD_ADDED[@]}
+    done
+)
+
+exit $Fails
