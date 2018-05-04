@@ -1,5 +1,5 @@
 ##/usr/bin/env bash
-#!/binbash -x
+#!/bin/bash -x
 
 #
 # Attempt to collapse multiple commits of a common author
