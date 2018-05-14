@@ -188,7 +188,7 @@ function tag()
         START_DIR="./"
         [ -n "$1" ] && [ -d "$1" ] && START_DIR="$1"
         CSCOPE_OPTS="-R -k -b -s"
-        [ -f "$CSCOPE_DBFILE" ] && echo "Removing current cscope.out" >&2 && rm "$CSCOPE_DBFILE"
+        [ -f "$CSCOPE_DBFILE" ] && echo "Removed current cscope.out" >&2 && rm "$CSCOPE_DBFILE"
         cscope $CSCOPE_OPTS "$START_DIR"
 }
 
