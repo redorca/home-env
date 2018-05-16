@@ -242,17 +242,20 @@ while [ $# -gt 0 ] ; do
         ;;
         -x) DO_FIX='git add ${GIT_ADD_FILES[@]}'
         ;;
-        *) echo "What is this: [$1]?" >&2
-           help_msg
-           exit 1
+        *) [ ! -f "$1" ] && echo "What is this: [$1]?" >&2 && help_msg && exit 1
+           [ -f "$1" ] && FILES[${#FILES[@]}]="$1"
         ;;
         esac
         shift
 done
 ### HELP message end
 
+
 # echo "GIT_ADD_FILES:  ($GIT_ADD_FILES)"
-GIT_ADD_FILES=( $(find_executable_files "$ALL" "./" ) )
+if [ "${#FILES[@]}" -gt 0 ] ; then
+        eval $(declare -p FILES | sed -e 's/FILES/GIT_ADD_FILES/')
+fi
+[ "${#GIT_ADD_FILES[@]}" -eq 0 ] && GIT_ADD_FILES=( $(find_executable_files "$ALL" "./" ) )
 echo "(${GIT_ADD_FILES[*]})" >&2
 
 [ -z "${GIT_ADD_FILES[*]}" ] && echo "Nothing to chmod" >&2 && exit
