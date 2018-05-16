@@ -30,7 +30,7 @@ RepoRename["dallas"]=dialog_585_sdk_dev@3rd_Party_SDK
 RepoRename["nordic"]=SDK_13.0.0-1@3rd_Party_SDK
 RepoRename["sdk_13_1"]=SDK_13.1.0@3rd_Party_SDK
 RepoRename["sdk_14"]=SDK_14.0.0@3rd_Party_SDK
-
+Repo2Host["qemu"]=master@git://git.qemu.org/qemu.git
 Repo2Host["oclint"]=master@git@github.com/oclint/oclint.git
 Repo2Host["tinyara"]=master@git@github.com/Samsung/TinyAra.git
 Repo2Host["tizen"]=master@git@github.com/Samsung/TizenRT.git
