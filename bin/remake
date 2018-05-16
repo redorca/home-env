@@ -166,20 +166,30 @@ list_apps()
 print_keyval()
 {
         Func
-        declare -a Arg_List=
+        local Arg_List=
+        local AName=
+        declare -a CMD=
         local CLR0=
         local CLR1=
 
+
         CLR0="${!1}" ; shift
         CLR1="${!1}" ; shift
+        AName="$1"   ; shift
 
-        Arg_List=( "$@" )
-        echo_dbg "arg count:  (${#Arg_List[@]})"
+        CMD=( $(declare -p ${AName} | eval sed -e \'s/${AName}/Arg_List/\') )
+        eval "${CMD[@]}"
+        if [ "${CMD[1]:0:2}" = "-a" ] ; then
+                echo_dbg "This is a regular array"
+        fi
+        if [ "${CMD[1]:0:2}" = "-A" ] ; then
+                echo_dbg "This is an associative array"
+        fi
 
-        for var in "${Arg_List[@]}" ; do
+        for var in "${!Arg_List[@]}" ; do
                 echo_err -n " ${CLR0}$var\t"
                 [ "${#var}" -lt 7 ]  && echo_err -n "\t"
-                echo_err "(${CLR1}${var} ::\t${Arg_List[$var]})"
+                echo_err "(${CLR1}${Arg_List[$var]})"
         done
 }
 
@@ -224,7 +234,7 @@ find_repo()
                 [ ! -d "$RepoRoot" ] && return 1
                 cd "$RepoRoot" || return 1
                 Remote=$(git status -sb | head -1 | sed -e 's/^.*\.//' -e 's/\/.*//')
-                git remote show "$Remote" | grep Fetch | sed -e 's/^.*\///' -e 's/\.git//'
+                git remote show -n "$Remote" | grep Fetch | sed -e 's/^.*\///' -e 's/\.git//'
         )
 }
 
@@ -232,20 +242,37 @@ run_nuttx()
 {
     Func
     local FILE_KEY=
+    local Target=
 
     FILE_KEY=defconfig
     [ -z "$BOARD" ] && echo -e "\t????????????????" >&2 && BOARD=$(select_board)
     for target in $(set_app_list $BOARD $FILE_KEY); do
       make_targets["$target"]="distclean"
     done
-    DEFAULT_APPS="${!make_targets[@]}"
+    for target in "${!make_targets[@]}" ; do
+        echo_dbg "build target: $target"
+        OUTFILE=${OUT}.$target
+        [ -z "$ftmp" ] && REDIR_FILE=( ">" "${OUTFILE}" "2>&1"  ) && _N="-n"
+        CMD="make Q=\"$Q\"  $NO_ERRORS $DBG_OPTS ${make_targets[$target]} $target"
+        echo_dbg "CMD:  $CMD"
+        [ -n "${make_targets[$target]}" ] && echo_err -n "Make ${make_targets[$target]} ...\r"
+        echo_err "$_N"  "Building for $target: ... "
+        if ! eval $CMD ${REDIR_FILE[*]} ; then
+                echo_err "Failed.\n"
+                tail -15 "$OUT_FILE"
+                Fails=$(( Fails + 1 ))
+                continue
+        fi
+        echo_err "Successfull"
+    done
+
+#   DEFAULT_APPS="${!make_targets[@]}"
 }
 
 run_fastapi()
 {
         Func
-}
-
+} 
 run_hooks()
 {
         Func
@@ -480,8 +507,10 @@ fi
         echo "${RUNFUNCS[$REPO]} failed." >&2
         exit 4
     fi
+exit
     echo_dbg "make targets: ${!make_targets[@]}"
-    print_keyval  GREEN YELLOW "${!make_targets[@]}"
+#   print_keyval  GREEN YELLOW "${!make_targets[@]}"
+    print_keyval  GREEN YELLOW make_targets
 
     OUT_FILE="${OUT}.${REPO}.$build"
     [ "${VERBOSE:0:1}" = "V" ] && print_keyval
