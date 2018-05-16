@@ -23,7 +23,7 @@ ESC="\033[;"
 # which directories in configs/$BOARD/*/$FILE_KEY
 # will server as the set of make targets.
 #
-FILE_KEY=defconfig
+# FILE_KEY=defconfig
 ARG_LIST=( DEBUG BOARD FILE_KEY TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE )
 ### COLORS Begin
 RESET="\033[0;39;49m"
@@ -51,29 +51,16 @@ declare -A make_targets
 # Setup targets that are not actual apps but
 # are still directives to make.
 #
-declare -A pseudo_targets
-pseudo_targets["cscope"]=1
-pseudo_targets["help"]=1
-pseudo_targets["config"]=1
-pseudo_targets["download"]=1
-pseudo_targets["clean"]=1
-pseudo_targets["distclean"]=1
-pseudo_targets["clean_cscope"]=1
-pseudo_targets["clean_cruft"]=1
-pseudo_targets["clean_env"]=1
-
-#
-# Trap all exits.
-#
-on_exit()
-{
-        RV=$?
-
-        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit [$RV]: ${RESET}"
-        exit $RV
-}
-
-trap on_exit EXIT
+declare -A virtual_targets
+virtual_targets["cscope"]=1
+virtual_targets["help"]=1
+virtual_targets["config"]=1
+virtual_targets["download"]=1
+virtual_targets["clean"]=1
+virtual_targets["distclean"]=1
+virtual_targets["clean_cscope"]=1
+virtual_targets["clean_cruft"]=1
+virtual_targets["clean_env"]=1
 
 #
 # Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
@@ -98,6 +85,31 @@ debug()
 }
 
 #
+# Wrap echo with echo_e() and use /bin/echo instead.  This allows invoking
+# this script using sh as in "sh $(basename $0)"
+#
+echo_err()
+{
+        local Bin=
+
+#       Bin="/bin/echo -e"
+        echo -e "$@${RESET}" >&2
+}
+
+#
+# Trap all exits.
+#
+on_exit()
+{
+        RV=$?
+
+        [ $RV -ne 0 ] && echo_err "${RED}=============== Error exit [$RV]:"
+        exit $RV
+}
+
+trap on_exit EXIT
+
+#
 # Shortcut to send output to stderr by default.
 #
 echo_dbg()
@@ -106,25 +118,12 @@ echo_dbg()
         echo_err "$@"
 }
 
-
-#
-# Wrap echo with echo_e() and use /bin/echo instead.  This allows invoking
-# this script using sh as in "sh $(basename $0)"
-#
-echo_e()
-{
-        local Bin=
-
-        Bin="/bin/echo -e"
-        $Bin "$@" >&2
-}
-
 #
 # Print the name of the function and how deeply nested.
 #
 Func()
 {
-        [ "$DEBUG" = "1" ] && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
+        debug && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
 }
 
 
@@ -135,6 +134,7 @@ Func()
 #
 help_msg()
 {
+        Func
         local CLR0=
 
         CLR0="${!1}" ; shift
@@ -149,6 +149,7 @@ help_msg()
 #
 list_apps()
 {
+        Func
         for i in "$@" ; do
                 echo -e "\t$i"
         done
@@ -164,6 +165,7 @@ list_apps()
 #
 print_keyval()
 {
+        Func
         declare -a Arg_List=
         local CLR0=
         local CLR1=
@@ -172,11 +174,12 @@ print_keyval()
         CLR1="${!1}" ; shift
 
         Arg_List=( "$@" )
+        echo_dbg "arg count:  (${#Arg_List[@]})"
 
         for var in "${Arg_List[@]}" ; do
-                echo_e -n " ${CLR0}$var${RESET}\t"
-                [ "${#var}" -lt 7 ]  && echo_e -n "\t"
-                echo_e "(${CLR1}${!var}${RESET})"
+                echo_err -n " ${CLR0}$var\t"
+                [ "${#var}" -lt 7 ]  && echo_err -n "\t"
+                echo_err "(${CLR1}${var} ::\t${Arg_List[$var]})"
         done
 }
 
@@ -185,6 +188,7 @@ print_keyval()
 #
 print_colors()
 {
+        Func
         local key=
         local akey=
         local Fore=
@@ -196,14 +200,15 @@ print_colors()
                 [ "$Fore" = "0" ] && aKey="$(echo $aKey | sed -e 's/;3/;37;4/')"
                 echo -n -e "$key:\t"
                 [ "${#key}" -lt 8 ] && echo -n -e "\t"
-                echo -e "${aKey}Some sample text.${RESET}"
+                echo -e "${aKey}Some sample text.}"
         done
 }
 
 find_repo_root()
 {
+        Func
         if ! git rev-parse >/dev/null 2>&1 ; then
-                echo_e "Not running within the git repo proper.  Please relocate."
+                echo_err "Not running within the git repo proper.  Please relocate."
                 return 1
         fi
         git rev-parse --show-toplevel
@@ -211,6 +216,7 @@ find_repo_root()
 
 find_repo()
 {
+        Func
         local RepoRoot=
         [ ! -d "$1" ] && return 1
         RepoRoot="$1"
@@ -224,14 +230,15 @@ find_repo()
 
 run_nuttx()
 {
-        Func
-        TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
-        [ -z "$BOARD" ] && echo "?????????????????????" >&2 && BOARD=$(select_board "${BOARD_LIST[@]}")
-        for target in $(set_app_list $BOARD $FILE_KEY); do
-                make_targets["$target"]=1
-        done
-        DEFAULT_APPS="${!make_targets[@]}"
+    Func
+    local FILE_KEY=
 
+    FILE_KEY=defconfig
+    [ -z "$BOARD" ] && echo -e "\t????????????????" >&2 && BOARD=$(select_board)
+    for target in $(set_app_list $BOARD $FILE_KEY); do
+      make_targets["$target"]="distclean"
+    done
+    DEFAULT_APPS="${!make_targets[@]}"
 }
 
 run_fastapi()
@@ -245,6 +252,32 @@ run_hooks()
 }
 
 set_app_list()
+{
+        Func
+        local Board_Cfg=
+        local File_Key=
+        declare -a Targets
+        declare -a TargetDirs
+        declare -a TargetPaths
+
+        [ "$#" -ne 2 ] && return 1
+        Board_Cfg="$1" ; shift
+        File_Key="$1" ; shift
+
+        fresults="$(find configs -type d -name $Board_Cfg)"
+        [ -z "$fresults" ] && return 1
+
+        TargetPaths=( $(ls $fresults/*/$File_Key) )
+#       echo_dbg "TargetPaths :  ${TargetPaths[@]}"
+        TargetDirs=( $(echo ${TargetPaths[@]%/$File_Key}) )
+#       echo_dbg "TargetDirs :  ${TargetDirs[@]}"
+        Targets=( $(echo ${TargetDirs[@]##*/}) )
+        echo_dbg "Targets: ${Targets[@]}"
+
+        echo "${Targets[@]}"
+}
+
+SetAppList()
 {
         local Board_Cfg=
         local File_Key=
@@ -263,7 +296,7 @@ set_app_list()
 
         pieces=( $(echo $fresults | sed -e 's/\// /g') )
         count=$(( "${#pieces[@]}" + 1 ))
-        [ "$DEBUG" = "1" ] && echo_e "== fresults: ($fresults), count: [$count]"
+        debug && echo_err "== fresults: ($fresults), count: [$count]"
 
         pieces=( $(ls $fresults/*/$File_Key | cut --delim='/' -f $count) )
         echo "${pieces[@]}"
@@ -275,6 +308,7 @@ set_app_list()
 #
 run_output()
 {
+        Func
         local COLOR0=
         local COLOR1=
 
@@ -296,6 +330,7 @@ run_output()
 #
 select_board()
 {
+        Func
         local Val=
         local BOARD_LIST=
 
@@ -354,7 +389,7 @@ while [ $# -ne 0 ] ; do
         --list=*) [ "${1#*=}" = "make" ] && list_apps $DEFAULT_APPS && exit 0
                   echo "Misunderstood: ($1), (${1#*=})" && exit 1
                 ;;
-        -i) INCREMENTAL_BUILD="yes"; # Don't do a distclean first.  Start from last stop.
+        -i) INCREMENTAL_BUILD="$1"; # Don't do a distclean first.  Start from last stop.
                 ;;
         -p) PRINT_KV="yes";
                 ;;
@@ -376,7 +411,7 @@ while [ $# -ne 0 ] ; do
                 ;;
         #
         # Specify build target. May specify multiple times.
-        *) if [ -n "${pseudo_targets["${1%/}"]}" ] ; then
+        *) if [ -n "${virtual_targets["${1%/}"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
            elif [ -n "${make_targets["${1%/}"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
@@ -390,9 +425,9 @@ done
 
 ### HELP message end
 if [ -n "$ARGS_UNXP" ] ; then
-        echo_e -n "Unexpected args were encountered. Stop.  "
-        echo_e "$ARGS_UNXP"
-        echo_e "Perhaps you need to prefix this with '-t'. See help (-h)"
+        echo_err -n "Unexpected args were encountered. Stop.  "
+        echo_err "$ARGS_UNXP"
+        echo_err "Perhaps you need to prefix this with '-t'. See help (-h)"
         exit 1
 fi
 
@@ -422,15 +457,12 @@ RUNFUNCS["fast_api"]="run_fastapi"
 RELOCATE["nuttx"]="configs/$BOARD"
 RELOCATE["fast_api"]="build/gcc"
 RELOCATE["auto_test"]="hooks"
-TARGETS["nuttx"]="nsh fast_api_demo"
-TARGETS["fast_api"]="zeus1 zeus2 sim"
-TARGETS["auto_test"]=""
-
 
 if ! REPO_ROOT="$(find_repo_root)" ; then
         echo "Unable to find the repo's root directory." >&2
         exit 1
 fi
+[ ! -d "$REPO_ROOT/${RELOCATE["$REPO_ROOT"]}" ] && exit 2
 if ! REPO="$(find_repo $REPO_ROOT)" ; then
         echo "Unable to discover the repo." >&2
         exit 1
@@ -441,41 +473,47 @@ fi
 #
 (
 
-    [ ! -d "$REPO_ROOT/${RELOCATE["$REPO_ROOT"]}" ] && exit 2
     cd "$REPO_ROOT/${RELOCATE["$REPO_ROOT"]}"||  exit 3
 
     declare -a REDIR_FILE=
+    if ! ${RUNFUNCS["$REPO"]} ; then
+        echo "${RUNFUNCS[$REPO]} failed." >&2
+        exit 4
+    fi
+    echo_dbg "make targets: ${!make_targets[@]}"
+    print_keyval  GREEN YELLOW "${!make_targets[@]}"
 
     OUT_FILE="${OUT}.${REPO}.$build"
     [ "${VERBOSE:0:1}" = "V" ] && print_keyval
 
-    echo_e "Compiling for $BOARD"
+    echo_err "Compiling for $BOARD"
     for build in "${TARGETS[$REPO]}" ; do
+            [ -z "$build" ] && echo_dbg "Empty build target." && continue
             CMD="make distclean"
-            ftmp="${pseudo_targets[$build]}"
+            ftmp="${virtual_targets[$build]}"
             if [ -z "$ftmp" ] && [ "$INCREMENTAL_BUILD" != "yes" ] ; then
-                   echo_e -n "Make distclean ...\r"
+                   echo_err -n "Make distclean ...\r"
                    $CMD > ${OUT}.distclean 2>&1
             fi
             [ -z "$ftmp" ] && REDIR_FILE=( ">" ${OUT}.$build "2>&1"  ) && _N="-n"
 
             CMD="make Q=\"$Q\"  $NO_ERRORS $DBG_OPTS $build"
 
-            echo_e "$_N"  "Building for $build: ... "
+            echo_err "$_N"  "Building for $build: ... "
             if ! eval $CMD ${REDIR_FILE[*]} ; then
                     [ -z "$Q" ] && echo "Build failed see ${OUT}.$build." >&2 && continue
-                    echo_e "Failed.\n"
-                    echo_e "Running an incremental build with Q=''"
+                    echo_err "Failed.\n"
+                    echo_err "Running an incremental build with Q=''"
                     CMD="make Q=\"\"  $NO_ERRORS $build"
                     eval $CMD ${REDIR_FILE[*]}
                     tail -15 "$OUT_FILE"
                     Fails=$(( Fails + 1 ))
                     continue
             fi
-            echo_e "Succeeded."
+            echo_err "Succeeded."
 
             [ -n "${CMD_ADDED[*]}" ] && echo "Tabulating objects"
-            eval ${CMD_ADDED[@]}
+            eval "${CMD_ADDED[@]}"
     done
 )
 
