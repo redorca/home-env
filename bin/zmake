@@ -208,8 +208,6 @@ set_app_list()
         local fresults=
         declare -a pieces=
 
-   (
-        cd $(git rev-parse --show-toplevel) || return 1
         [ "$#" -ne 2 ] && return 1
         Board_Cfg="$1" ; shift
         File_Key="$1" ; shift
@@ -223,7 +221,6 @@ set_app_list()
 
         pieces=( $(ls $fresults/*/$File_Key | cut --delim='/' -f $count) )
         echo "${pieces[@]}"
-   )
 }
 
 #
@@ -267,6 +264,7 @@ select_board()
 
 trace && set -x
 
+cd $(git rev-parse --show-toplevel) || exit 1
 [ -z "$BOARD" ] && echo "?????????????????????" >&2 && BOARD=$(select_board "${BOARDS_LIST[@]}")
 for target in $(set_app_list $BOARD $FILE_KEY); do
         make_targets["$target"]=1
