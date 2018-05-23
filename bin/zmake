@@ -15,16 +15,16 @@ COLOR="${COLOR:-1}"
 DEBUG="${DEBUG:-0}"
 V="${V:-0}"
 Q="${Q:-@}"
-# BOARD=zeus-austin
-# BOARD="${BOARD:-nrf52832_dk}"
+# BOARDS=zeus-austin
+# BOARDS="${BOARDS:-nrf52832_dk}"
 ESC="\033[;"
 #
 # The filename key searched for when determing
-# which directories in configs/$BOARD/*/$FILE_KEY
+# which directories in configs/$BOARDS/*/$FILE_KEY
 # will server as the set of make targets.
 #
 FILE_KEY=defconfig
-ARG_LIST=( DEBUG BOARD FILE_KEY TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE )
+ARG_LIST=( DEBUG BOARDS FILE_KEY TARGET_DIRS NO_ERRORS Q V VERBOSE RELOCATE )
 ### COLORS Begin
 RESET="\033[0;39;49m"
 BLACK="\033[1;30m"
@@ -56,8 +56,8 @@ pseudo_targets["cscope"]=1
 pseudo_targets["help"]=1
 pseudo_targets["config"]=1
 pseudo_targets["download"]=1
-pseudo_targets["clean"]=1
-pseudo_targets["distclean"]=1
+# pseudo_targets["clean"]=1
+# pseudo_targets["distclean"]=1
 pseudo_targets["clean_cscope"]=1
 pseudo_targets["clean_cruft"]=1
 pseudo_targets["clean_env"]=1
@@ -69,7 +69,7 @@ on_exit()
 {
         RV=$?
 
-        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit [$RV]: ${RESET}"
+        [ $RV -ne 0 ] && echo_err "${RED}=============== Error exit [$RV]: ${RESET}"
         exit $RV
 }
 
@@ -108,10 +108,10 @@ echo_dbg()
 
 
 #
-# Wrap echo with echo_e() and use /bin/echo instead.  This allows invoking
+# Wrap echo with echo_err() and use /bin/echo instead.  This allows invoking
 # this script using sh as in "sh $(basename $0)"
 #
-echo_e()
+echo_err()
 {
         local Bin=
 
@@ -165,9 +165,9 @@ print_keyval()
         Arg_List=( "$@" )
 
         for var in "${Arg_List[@]}" ; do
-                echo_e -n " ${CLR0}$var${RESET}\t"
-                [ "${#var}" -lt 7 ]  && echo_e -n "\t"
-                echo_e "(${CLR1}${!var}${RESET})"
+                echo_err -n " ${CLR0}$var${RESET}\t"
+                [ "${#var}" -lt 7 ]  && echo_err -n "\t"
+                echo_err "(${CLR1}${!var}${RESET})"
         done
 }
 
@@ -194,7 +194,7 @@ print_colors()
 find_repo_root()
 {
         if ! git rev-parse >/dev/null 2>&1 ; then
-                echo_e "Not running within a git repo.  Please relocate."
+                echo_err "Not running within a git repo.  Please relocate."
                 exit 1
         fi
         git rev-parse --show-toplevel
@@ -217,7 +217,7 @@ set_app_list()
 
         pieces=( $(echo $fresults | sed -e 's/\// /g') )
         count=$(( "${#pieces[@]}" + 1 ))
-        [ "$DEBUG" = "1" ] && echo_e "== fresults: ($fresults), count: [$count]"
+        [ "$DEBUG" = "1" ] && echo_err "== fresults: ($fresults), count: [$count]"
 
         pieces=( $(ls $fresults/*/$File_Key | cut --delim='/' -f $count) )
         echo "${pieces[@]}"
@@ -243,6 +243,35 @@ run_output()
 }
 
 #
+# Make an application for this board.
+#
+make_one_target()
+{
+        local Verbose=
+        local Incremental=
+        local Target=
+
+        Target="$1" ; shift
+        Incremental="$1" ; shift
+        Verbose="$1" ; shift
+
+        echo_dbg "Target is $Target"
+        CMD=( "make" "Q=@" "$NO_ERRORS" "distclean" "$Target" )
+
+        [ "${1,,}" = "verb" ] && Verbose="" ; shift
+        [ "${Incremental,,}" = "yes" ] && CMD[1]="Q="
+
+        echo_dbg "${#CMD[@]} :: ${CMD[@]}"
+        echo_dbg "CMD[0] : ${CMD[0]}"
+        echo_dbg "CMD[1] : ${CMD[1]}"
+        echo_dbg "CMD[2] : ${CMD[2]}"
+        echo_dbg "CMD[3] : ${CMD[3]}"
+        echo_dbg "CMD[4] : ${CMD[4]}"
+
+        eval ${CMD[@]}
+}
+
+#
 # Assemble a list of configs directories available for builds
 # and if it is more than 1 generate a menu selection and have
 # the use spec which board config to use.
@@ -264,20 +293,14 @@ select_board()
 
 trace && set -x
 
-cd $(git rev-parse --show-toplevel) || exit 1
-[ -z "$BOARD" ] && echo "?????????????????????" >&2 && BOARD=$(select_board "${BOARDS_LIST[@]}")
-for target in $(set_app_list $BOARD $FILE_KEY); do
-        make_targets["$target"]=1
-done
-DEFAULT_APPS="${!make_targets[@]}"
+cd $(find_repo_root) || exit 1
 
 ### HELP message start
 while [ $# -ne 0 ] ; do
         case "$1" in
         #
         # Specify the directory to build from
-        -b) [ -n "$2" ] && BOARD="$2";
-            [ -z "$BOARD" ] && BOARD=choose
+        -b) [ -n "$2" ] && [ -d "configs/$2" ] && BOARDS[${#BOARDS[@]}]="$2";
                 shift
                 ;;
         #
@@ -345,9 +368,9 @@ done
 
 ### HELP message end
 if [ -n "$ARGS_UNXP" ] ; then
-        echo_e -n "Unexpected args were encountered. Stop.  "
-        echo_e "$ARGS_UNXP"
-        echo_e "Perhaps you need to prefix this with '-t'. See help (-h)"
+        echo_err -n "Unexpected args were encountered. Stop.  "
+        echo_err "$ARGS_UNXP"
+        echo_err "Perhaps you need to prefix this with '-t'. See help (-h)"
         exit 1
 fi
 
@@ -366,47 +389,43 @@ declare -a CMD_ADDED
 CMD_ADDED=( "ls" "../../arch/arm/src/*.o" ">>" "$OBJS_FILE" "2>&1" )
 CMD_ADDED=()
 Fails=0
+
+[ "${#BOARDS[@]}" -eq 0 ] && echo "?????????????????????" >&2 && BOARDS=( $(select_board "${BOARDS_LIST[@]}") )
+for target in $(set_app_list $BOARDS $FILE_KEY); do
+        make_targets["$target"]=1
+done
+DEFAULT_APPS="${!make_targets[@]}"
+
 #
 # Main()
 #
 (
-    RELOCATE="$(find_repo_root)/configs/$BOARD"
-    [ ! -d "$RELOCATE" ] && exit 1
-
-    cd $RELOCATE >/dev/null
-    declare -a OUT_FILE=
-
     TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
     [ "${VERBOSE:0:1}" = "V" ] && print_keyval
 
-    echo_e "Compiling for $BOARD"
-    for build in $TARGET_DIRS ; do
-            CMD="make distclean"
-            ftmp="${pseudo_targets[$build]}"
-            if [ -z "$ftmp" ] && [ "$INCREMENTAL_BUILD" != "yes" ] ; then
-                   echo_e -n "Make distclean ...\r"
-                   $CMD > ${OUT}.distclean 2>&1
-            fi
-            [ -z "$ftmp" ] && OUT_FILE=( ">" ${OUT}.$build "2>&1"  ) && _N="-n"
+    echo_err "Compiling for ${BOARDS[*]}"
+    for board in "${BOARDS[@]}" ; do
+        TARGET_DIRS="$(set_app_list $board $FILE_KEY)"
+        [ ! -d "configs/$board" ] && echo "Not found: $board" && continue
+        (
+        cd configs/$board >/dev/null
+        for build in $TARGET_DIRS ; do
+            [ -z "${pseudo_targets[$build]}" ] && OUTOUT="${OUT}.${board}.${build}"
+                echo_err "Building in $board for $build: ... "
+                if ! make_one_target $build > $OUTOUT  2>&1 ; then
+                        [ -z "$Q" ] && echo "Build failed see ${OUTOUT}." >&2 && continue
+                        echo_err "Failed.\n"
+                        echo_err "Running an incremental verbose build ::"
+                        make_one_target $build "yes" "verb" > $OUTOUT 2>&1
+                        tail -15 ${OUTOUT}
+                        Fails=$(( Fails + 1 ))
+                fi
+#          echo_err "Succeeded."
 
-            CMD="make Q=\"$Q\"  $NO_ERRORS $build"
-
-            echo_e "$_N"  "Building for $build: ... "
-            if ! eval $CMD ${OUT_FILE[*]} ; then
-                    [ -z "$Q" ] && echo "Build failed see ${OUT}.$build." >&2 && continue
-                    echo_e "Failed.\n"
-                    echo_e "Running an incremental build with Q=''"
-                    CMD="make Q=\"\"  $NO_ERRORS $build"
-                    eval $CMD ${OUT_FILE[*]}
-                    tail -15 ${OUT}.$build
-                    Fails=$(( Fails + 1 ))
-                    continue
-            fi
-            echo_e "Succeeded."
-
-            [ -n "${CMD_ADDED[*]}" ] && echo "Tabulating objects"
-            eval ${CMD_ADDED[@]}
+#           [ -n "${CMD_ADDED[*]}" ] && echo "Tabulating objects"
+#           eval ${CMD_ADDED[@]}
+        done
+        )
     done
-)
+) || exit $Fails
 
-exit $Fails
