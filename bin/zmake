@@ -359,7 +359,8 @@ while [ $# -ne 0 ] ; do
            elif [ -n "${make_targets["${1%/}"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
            else
-                ARGS_UNXP="$ARGS_UNXP \"$1\""
+#               ARGS_UNXP="$ARGS_UNXP \"$1\""
+                TARGETS[${#TARGETS[@]}]="$1"
            fi
                 ;;
         esac
@@ -390,26 +391,26 @@ CMD_ADDED=( "ls" "../../arch/arm/src/*.o" ">>" "$OBJS_FILE" "2>&1" )
 CMD_ADDED=()
 Fails=0
 
+[ "${#BOARDS[@]}" -eq 0 ] && [ -n "$BOARD" ] && BOARDS=( "$BOARD" )
 [ "${#BOARDS[@]}" -eq 0 ] && echo "?????????????????????" >&2 && BOARDS=( $(select_board "${BOARDS_LIST[@]}") )
-for target in $(set_app_list $BOARDS $FILE_KEY); do
-        make_targets["$target"]=1
-done
-DEFAULT_APPS="${!make_targets[@]}"
+# for target in $(set_app_list $BOARDS $FILE_KEY); do
+#         make_targets["$target"]=1
+# done
+# DEFAULT_APPS="${!make_targets[@]}"
 
 #
 # Main()
 #
-(
-    TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
-    [ "${VERBOSE:0:1}" = "V" ] && print_keyval
+TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
+[ "${VERBOSE:0:1}" = "V" ] && print_keyval
 
-    echo_err "Compiling for ${BOARDS[*]}"
-    for board in "${BOARDS[@]}" ; do
-        TARGET_DIRS="$(set_app_list $board $FILE_KEY)"
-        [ ! -d "configs/$board" ] && echo "Not found: $board" && continue
-        (
+echo_err "Compiling for ${BOARDS[*]}"
+for board in "${BOARDS[@]}" ; do
+    [ ${#TARGETS[@]} -eq 0 ] && TARGET_DIRS="$(set_app_list $board $FILE_KEY)"
+    [ ! -d "configs/$board" ] && echo "Not found: $board" && continue
+    (
         cd configs/$board >/dev/null
-        for build in $TARGET_DIRS ; do
+        for build in $TARGET_DIRS "${TARGETS[@]}" ; do
             [ -z "${pseudo_targets[$build]}" ] && OUTOUT="${OUT}.${board}.${build}"
                 echo_err "Building in $board for $build: ... "
                 if ! make_one_target $build > $OUTOUT  2>&1 ; then
@@ -425,7 +426,6 @@ DEFAULT_APPS="${!make_targets[@]}"
 #           [ -n "${CMD_ADDED[*]}" ] && echo "Tabulating objects"
 #           eval ${CMD_ADDED[@]}
         done
-        )
-    done
-) || exit $Fails
+    )
+done
 
