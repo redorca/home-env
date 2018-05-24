@@ -412,7 +412,7 @@ for board in "${BOARDS[@]}" ; do
         cd configs/$board >/dev/null
         for build in $TARGET_DIRS "${TARGETS[@]}" ; do
             [ -z "${pseudo_targets[$build]}" ] && OUTOUT="${OUT}.${board}.${build}"
-                echo_err "Building in $board for $build: ... "
+                echo_err -n "Building $board/$build: ... "
                 if ! make_one_target $build > $OUTOUT  2>&1 ; then
                         [ -z "$Q" ] && echo "Build failed see ${OUTOUT}." >&2 && continue
                         echo_err "Failed.\n"
