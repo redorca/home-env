@@ -420,8 +420,9 @@ for board in "${BOARDS[@]}" ; do
                         make_one_target $build "yes" "verb" > $OUTOUT 2>&1
                         tail -15 ${OUTOUT}
                         Fails=$(( Fails + 1 ))
+                        continue
                 fi
-#          echo_err "Succeeded."
+                echo_err "Succeeded."
 
 #           [ -n "${CMD_ADDED[*]}" ] && echo "Tabulating objects"
 #           eval ${CMD_ADDED[@]}
