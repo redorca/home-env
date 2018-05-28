@@ -1,27 +1,40 @@
 #!/bin/bash
+CMD=
 
+echo "# is $#" >&2
 while [ $# -ne 0 ] ; do
         case "$1" in
         -d) DEBUG="1"
         ;;
-        -i) FLAG="inverted"
+        -g) CMD="filter_files_by_group"
         ;;
-        -s) FLAG="straight"
+        -m) CMD="filter_files_by_mime"
+        ;;
+        -n) CMD="filter_files_by_negation"
+        ;;
+        -s) CMD="filter_files_by_straight"
         ;;
         -x) set -x
         ;;
-        *) echo "Hmmm, what in the world is this for: ["$1"]?"
+        *) echo "Hmmm, what in the world is this for: [$1]?"
            exit 1
         ;;
         esac
         shift
 done
 
+ [ -z "$CMD" ] && echo "No command specified" >&2 && exit 1
+echo "Using command $CMD"
+
 RV=0
 
 filter_files_by_mime()
 {
-        file -i $file  | sed -n -e '/ text\/plain/p'   \
+        local File=
+
+        File="$1"
+        file -i $File  | sed -n -e '/ text\/plain/p'   \
+                                -e '/ text\/x-diff/p'        \
                                 -e '/ text\/x-makefile/p'\
                                 -e '/ text\/x-c++/p'     \
                                 -e '/ text\/x-c/p'       \
@@ -33,7 +46,11 @@ filter_files_by_mime()
 
 filter_files_by_group()
 {
-        file -i $file  | grep ": text/" | sed -n -e '/\/plain/p'   \
+        local File=
+
+        File="$1"
+        file -i $File  | grep ": text/" | sed -n -e '/\/plain/p'   \
+                                -e '\/text\/x-diff/p'        \
                                 -e '/\/x-makefile/p'\
                                 -e '/\/x-c++/p'     \
                                 -e '/\/x-c/p'       \
@@ -45,7 +62,11 @@ filter_files_by_group()
 
 filter_files_by_negation()
 {
-        file -i $file  | grep ": text/" | sed -n -e '/plain/p'   \
+        local File=
+
+        File="$1"
+        file -i $File  | grep ": text/" | sed -n -e '/plain/p'   \
+                                -e '/x-diff/p'    \
                                 -e '/x-makefile/p'\
                                 -e '/x-c++/p'     \
                                 -e '/x-c/p'       \
@@ -54,31 +75,53 @@ filter_files_by_negation()
                                 -e '/x-asm/p'     \
                                 -e '/x-tex/p'
 }
-while read file ; do
-if [ ! -f "$file" ] ; then
-        echo "=== Not a file: [$file]" >&2
-        continue
-fi
-[ "$DEBUG" = "1" ] && echo " $FLAG :: $file" >&2
-if [ "$FLAG" = "straight" ] ; then
-        file -i $file | sed -e '/text\/x-shellscript/d'  \
-                             -e '/text\/x-diff/d'        \
+
+filter_files_by_straight()
+{
+        local File=
+
+        File="$1"
+        file -i $File | sed -e '/text\/x-shellscript/d'  \
                              -e '/text\/x-perl/d'        \
                              -e '/text\/x-msdos-batch/d' \
                              -e '/text\/x-python/d'      \
                              -e '/application\//d'     \
                              -e '/image\//d'     \
-                             -e '/inode\//d'     \
+                             -e '/inode\//d'
+}
 
-elif [ "$FLAG" = "inverted" ] ; then
+pipe_in()
+{
+        while read one two ; do
+                if [ ! -f "$one" ] ; then
+                        echo "=== Not a file: [$one]" >&2
+                        continue
+                fi
 
-        filter_files_by_mime $file
-#       filter_files_by_group $file
-#       filter_files_by_negation $file
+                eval ${CMD} $one
+        done
+}
 
-else
-        echo "What does this mean? [$FLAG]" >&2
-        RV=1
-fi
+batch_em()
+{
+        local File=
+
+        for File in $@ ; do
+                ecal ${CMD} $File
+        done
+}
+
+# batch_em $@
+
+pipe_in
+exit
+while read one two ; do
+        if [ ! -f "$one" ] ; then
+                echo "=== Not a file: [$one]" >&2
+                continue
+        fi
+
+#       echo "${CND}  $one"
+        eval ${CMD} $one
+#       sleep 3
 done
-
