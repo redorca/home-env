@@ -1,0 +1,37 @@
+[user]
+	email = bill@zglue.com
+	name = Bill Rees
+[color]
+	branch = auto
+	diff = auto
+	interactive = auto
+        review = auto
+
+[color "log"]
+        Date = red
+
+[color "status"]
+        added = magenta
+        changed = green
+        untracked = cyan
+
+[color "git-review"]
+        branch = blue
+        topic = white
+        subject = cyan
+#	status = auto
+[core]
+[foo]
+	who = me
+[credential]
+[pull]
+
+#[color "branch"]
+#  current = yellow reverse
+#  local = yellow
+#  remote = green
+#[color "diff"]
+#  meta = yellow bold
+#  frag = magenta bold
+#  old = red bold
+#  new = green bold
