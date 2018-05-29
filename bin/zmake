@@ -283,11 +283,14 @@ select_board()
 
         BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') )
 
-        select Val in "${BOARD_LIST[@]}" ; do
+        select Val in "${BOARD_LIST[@]}" all ; do
                 [ -n "$Val" ] && break
         done
 
-        echo "$Val"
+        [ "$Val" != "all" ] && echo "$Val" && return
+        echo "${BOARD_LIST[@]}"
+
+        return
 }
 
 
