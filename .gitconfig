@@ -11,8 +11,8 @@
         Date = red
 
 [color "status"]
-        added = magenta
-        changed = green
+        added = green
+        changed = red
         untracked = cyan
 
 [color "git-review"]

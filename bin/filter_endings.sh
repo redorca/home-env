@@ -7,9 +7,9 @@ IGNORE_ENDS[".unk"]=1
 IGNORE_ENDS[".src"]=1
 IGNORE_ENDS[".a"]=1
 
-IGNORING_ENDS=".hex .txt .grep .unk .src .a"
-IGNORE_ENDS=( $(echo $IGNORING_ENDS | sed -e 's/\./[/g' ) )
-echo "IGNORE # ${#IGNORE_ENDS[@]}"
+# IGNORING_ENDS=".hex .txt .grep .unk .src .a"
+# IGNORE_ENDS=( $(echo $IGNORING_ENDS | sed -e 's/\./[/g' ) )
+# echo "IGNORE # ${#IGNORE_ENDS[@]}"
 
 filter_out_endings()
 {
