@@ -1,0 +1,88 @@
+#!/bin/bash
+
+declare -A SYNC_REPOS
+SYNC_REPOS["git"]="git_sync_if"
+SYNC_REPOS["svn"]="svn_sync_if"
+
+trace()
+{
+        [ "$TRACE" = "1" ] && set -x
+        return 1
+}
+
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+echo_dbg()
+{
+        debug || return 1
+        echo -e "$@" >&2
+}
+
+git_sync_if()
+{
+        echo_dbg "=== ${FUNCNAME[0]}()"
+        trace && set -x
+        if ! RemoteHash=$(git ls-remote --exit-code 2>&1 | sed -n -e '2p' -e 's/  *.*//') ; then
+                # it is possible the remote repo no longer exists
+                return 0
+        fi
+        LocalHash=$(git reflog -1)
+        Ahh=$(cat .git/HEAD)
+        LocalHash=$(cat .git/${Ahh#* })
+        echo_dbg "RemoteHash: ${RemoteHash%[ 	]*}"
+        echo_dbg "LocalHash:  ${LocalHash}"
+        trace && set +x
+        [ "${RemoteHash%[ 	]*}" = "$LocalHash" ] && echo "Nothing to do." && return
+        git pull
+}
+
+svn_sync_if()
+{
+        echo_dbg "=== ${FUNCNAME[0]}()"
+        svn  log -r BASE:HEAD
+}
+
+trace
+PUSHD=( "pushd" ">" "/dev/null" "2>&1" )
+POPD=( "popd" ">" "/dev/null" "2>&1" )
+TMPFILE=$(mktemp -p /tmp -t .$(basename $0).XXXX)
+
+echo "Find all .git and .svn repos ..."
+find -L . -type d -name .svn -o -type d -name .git | while read Path ; do
+                repo_type="$(basename $Path)"
+                echo_dbg "repo_type:  $repo_type"
+                Repo="$(basename ${Path%/$repo_type})"
+                echo -n "Sync $Repo ... "
+                if ! eval "${PUSHD[@]}" "${Path%/*}" ; then
+                        echo "Failed for ${Path%/*}"
+                        sleep 2
+                        continue
+                fi
+                echo_dbg ${SYNC_REPOS["${Path##*.}"]}
+#               if ! debug ; then
+                        echo_dbg "==== repo type: $repo_type" >&2
+#                       if [ "$repo_type" = ".git" ] && git_sync_if ; then
+#                               echo " Failed git_sync_if"
+#                               exit 3
+#                       fi
+#                       if [ "$repo_type" = ".svn" ] && svn_sync_if ; then
+#                               echo " Failed svn_sync_if"
+#                               exit 3
+#                       fi
+                        if ! eval ${SYNC_REPOS["${Path##*.}"]} >> $TMPFILE 2>&1 ; then
+                                echo "Failed to sync repo $Repo  " >&2
+                                echo "Path: $Path, $(pwd) cmd=${SYNC_REPOS["${Path##*.}"]}" >&2
+                                tail -20 $TMPFILE
+                                exit 3
+                        fi
+#               fi
+                echo ""
+                debug && dirs -v
+                eval ${POPD[*]}
+                sleep 1
+done
+
