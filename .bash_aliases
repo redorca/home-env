@@ -329,6 +329,7 @@ alias        diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.pat
 alias         cls="clear_console"
 alias        grep="grep --exclude=.git --exclude=cscope.out"
 alias        halt="sudo /sbin/shutdown -h -t now"
+alias        sudo="sudo -H"
 
 function set_attrib()
 {
