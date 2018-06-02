@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 DEBUG=${DEBUG:-0}
 TMPFILE_EXEC=/tmp/.setup
@@ -20,8 +20,35 @@ if [ ! -d  ~/bin/home-env/bin ] ; then
         echo "that the repo, home-env.git, is cloned into ~/bin." >&2
 fi
 
+trace()
+{
+        [ "$TRACE" = "1" ] && return 0
+        return 1
+}
+
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+echo_dbg()
+{
+        debug || return
+
+        echo -e "$@" >&2
+}
+
+Func()
+{
+        debug || return
+
+        echo "[${#FUNCNAME[@]}]  ${FUNCNAME[1]}::"
+}
+
 mk_vimrc_color()
 {
+        Func
         local File=
         local VimShareDir=
 
@@ -44,23 +71,39 @@ EOF
                         -e 's:\.vim$::' >> $File
         sed -i -e '/pablo$/s/^\" //' $File
 
-        [ "$DEBUG" = "1" ] && cat $File
+        debug && cat $File
+}
+
+git_config_key_init()
+{
+        Func
+        local Key=
+        local Val=
+
+        Key="$1" ; shift
+        Val="$1" ; shift
+
+        if [ -z "$(git config $Key)" ] ; then
+                echo_dbg "Set config $Key to $Val"
+                git config "$Key" "$Val"
+        fi
 }
 
 git_config_for_use()
 {
+        Func
         local Name=
         local Email=
 
         Name="$1" ; shift
         Email="$1" ; shift
 
-        git config --global user.name="$Name"
-        git config --global user.email="$Email"
-        git config --global color.status auto
-        git config --global color.status.staged green
-        git config --global color.status.unstaged red
-#       git config --global color.status.untracked yellow
+        git_config_key_init user.name "$Name"
+        git_config_key_init user.email "$Email"
+        git_config_key_init color.status auto
+        git_config_key_init color.status.staged green
+        git_config_key_init color.status.unstaged red
+#       git config_key_init color.status.untracked yellow
 }
 
 # shellcheck disable=2164 pushd ~ >/dev/null
@@ -80,12 +123,10 @@ mk_vimrc_color
 BASHRC=~/.bashrc
 
 if ! grep bash_aliases $BASHRC >/dev/null ; then
+        echo_dbg "Setting up bash aliases."
         # shellcheck disable=2129
         echo -e "\\nif [ -f ~/.bash_aliases ] ; then" >> $BASHRC
         echo -e "\\tsource ~/.bash_aliases" >> $BASHRC
         echo -e "fi\\n" >> $BASHRC
 fi
-
-# shellcheck disable=2164
-popd >/dev/null
 
