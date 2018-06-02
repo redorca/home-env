@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 DEBUG=${DEBUG:-0}
 TMPFILE_EXEC=/tmp/.setup
