@@ -47,14 +47,31 @@ EOF
         [ "$DEBUG" = "1" ] && cat $File
 }
 
-# shellcheck disable=2164
-pushd ~ >/dev/null
+git_config_for_use()
+{
+        local Name=
+        local Email=
+
+        Name="$1" ; shift
+        Email="$1" ; shift
+
+        git config --global user.name="$Name"
+        git config --global user.email="$Email"
+        git config --global color.status auto
+        git config --global color.status.staged green
+        git config --global color.status.unstaged red
+#       git config --global color.status.untracked yellow
+}
+
+# shellcheck disable=2164 pushd ~ >/dev/null
 
 _DIR=.git
 _DIR=git
 
 [ ! -d bin/home-env/.git ] && echo "No $_DIR found in bin/set-home" && exit 1
 ln -sf bin/home-env/.git
+git_config_for_use "Bill" "bill@zglue.com"
+
 git checkout .
 mk_vimrc_color
 
