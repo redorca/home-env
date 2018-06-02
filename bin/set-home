@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 DEBUG=${DEBUG:-0}
 TMPFILE_EXEC=/tmp/.setup
@@ -67,6 +67,8 @@ git_config_for_use()
 
 _DIR=.git
 _DIR=git
+
+cd $HOME
 
 [ ! -d bin/home-env/.git ] && echo "No $_DIR found in bin/set-home" && exit 1
 ln -sf bin/home-env/.git
