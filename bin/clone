@@ -392,7 +392,7 @@ while [ $# -ne 0 ] ; do
         -R | --repo ) SRC_REPO_URL="$2"; shift # set the repo to init with.
                 ;;
         *) TARGET[${#TARGET[@]}]="$1"; # The repo name to clone.
-                [ -z "$TARGET" ] && help && exit
+                [ -z "$1" ] && help && exit
                 ;;
         esac
         shift
@@ -405,7 +405,7 @@ fi
 
 [ "$PRINT" = "YES" ] && dump_Repo2Host && exit 0
 
-[ -z "${TARGET[@]}" ] && echo "Nothing to clone." >&2 && exit
+[ -z "${TARGET[*]}" ] && echo "Nothing to clone." >&2 && exit
 
 clone "${TARGET[@]}"
 
