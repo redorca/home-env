@@ -258,8 +258,6 @@ add_patch()
         git diff --cached >> "$PATCH_FILE"
 }
 
-echo "$# args passed:  $@"
-echo "$# args passed:  $@" >&2
 if ! var_sanity_check page_size ; then
         echo "page_size has a bad value: ($page_size)" >&2
         exit 1
