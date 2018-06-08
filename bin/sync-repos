@@ -3,6 +3,12 @@
 declare -A SYNC_REPOS
 SYNC_REPOS["git"]="git_sync_if"
 SYNC_REPOS["svn"]="svn_sync_if"
+SYNC_REPOS["hg"]="hg_sync_if"
+
+Func()
+{
+        echo_dbg "=== ${FUNCNAME[1]}()"
+}
 
 trace()
 {
@@ -22,9 +28,39 @@ echo_dbg()
         echo -e "$@" >&2
 }
 
+#
+# Find the remote branch name backing this local branch.
+#
+get_tracking_ref()
+{
+        Func
+        local Foo=
+        local Goo=
+
+        Foo=$(git branch -vv | sed -e '/^[ 	]\+/d' | awk '{print $4}')
+        Goo=$(echo ${Foo#*/})
+        echo ${Goo:0:-1}
+}
+
+#
+# See if there are any files staged or waiting to be staged.
+#
+changes_in_flight()
+{
+        Func
+        [ -n "$(git status -sb | sed -n -e '2p' -e 's/\?//g')" ] && return 0
+        return 1
+}
+
 git_sync_if()
 {
-        echo_dbg "=== ${FUNCNAME[0]}()"
+        Func
+        local Tracker=
+        local RemoteHash=
+        local LocalHash=
+        local Ahh=
+
+        Func
         trace && set -x
         if ! RemoteHash=$(git ls-remote --exit-code 2>&1 | sed -n -e '2p' -e 's/  *.*//') ; then
                 # it is possible the remote repo no longer exists
@@ -37,13 +73,22 @@ git_sync_if()
         echo_dbg "LocalHash:  ${LocalHash}"
         trace && set +x
         [ "${RemoteHash%[ 	]*}" = "$LocalHash" ] && echo "Nothing to do." && return
+        Tracker=$(get_tracking_ref)
+        changes_in_flight && git stash save "Temp save while switching to $Tracker and pulling"
+        git checkout $Tracker
         git pull
 }
 
 svn_sync_if()
 {
-        echo_dbg "=== ${FUNCNAME[0]}()"
+        Func
         svn  log -r BASE:HEAD
+}
+
+hg_sync_if()
+{
+        Func
+        hg  log -r BASE:HEAD
 }
 
 trace
@@ -57,32 +102,31 @@ find -L . -type d -name .svn -o -type d -name .git | while read Path ; do
                 echo_dbg "repo_type:  $repo_type"
                 Repo="$(basename ${Path%/$repo_type})"
                 echo -n "Sync $Repo ... "
+                echo -n "Sync $Repo ... " >> $TMPFILE
+                echo_dbg "pushd to ${Path}"
+                echo_err "pushd to ${Path}" >> $TMPFILE
                 if ! eval "${PUSHD[@]}" "${Path%/*}" ; then
                         echo "Failed for ${Path%/*}"
+                        echo "Failed for ${Path%/*}" >> $TMPFILE
                         sleep 2
                         continue
                 fi
                 echo_dbg ${SYNC_REPOS["${Path##*.}"]}
-#               if ! debug ; then
-                        echo_dbg "==== repo type: $repo_type" >&2
-#                       if [ "$repo_type" = ".git" ] && git_sync_if ; then
-#                               echo " Failed git_sync_if"
-#                               exit 3
-#                       fi
-#                       if [ "$repo_type" = ".svn" ] && svn_sync_if ; then
-#                               echo " Failed svn_sync_if"
-#                               exit 3
-#                       fi
-                        if ! eval ${SYNC_REPOS["${Path##*.}"]} >> $TMPFILE 2>&1 ; then
-                                echo "Failed to sync repo $Repo  " >&2
-                                echo "Path: $Path, $(pwd) cmd=${SYNC_REPOS["${Path##*.}"]}" >&2
-                                tail -20 $TMPFILE
-                                exit 3
-                        fi
-#               fi
+                echo_err ${SYNC_REPOS["${Path##*.}"]} >> $TMPFILE
+                echo_dbg "==== repo type: $repo_type"
+                echo_err "==== repo type: $repo_type" >> $TMPFILE
+                if ! eval ${SYNC_REPOS["${Path##*.}"]} >> $TMPFILE 2>&1 ; then
+                        echo "Failed to sync repo $Repo  " >&2
+                        echo "Failed to sync repo $Repo  " >> $TMPFILE
+                        echo "Path: $Path, $(pwd) cmd=${SYNC_REPOS["${Path##*.}"]}" >&2
+                        echo "Path: $Path, $(pwd) cmd=${SYNC_REPOS["${Path##*.}"]}" >> $TMPFILE
+                        tail -20 $TMPFILE
+                        exit 3
+                fi
                 echo ""
                 debug && dirs -v
                 eval ${POPD[*]}
+                echo -e "\n=========================================================\n" >> $TMPFILE
                 sleep 1
 done
 
