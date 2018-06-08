@@ -17,7 +17,18 @@ DIALOG_SDK=dialog_585_sdk_dev
 declare -A Repo2Host
 declare -A RepoRename
 declare -A CONFIGS
+declare -A svn_backed
 
+#
+# Repos which are svn based are added here along with the command
+# required to "clone" them.
+#
+svn_backed["astyle-code"]="svn checkout"
+
+#
+# Hash to match informal repo names to the canonical ones.
+#
+RepoRename["astyle"]="astyle-code"
 RepoRename["review"]="git-review"
 RepoRename["mynewt"]="mynewt-core"
 RepoRename["fast"]="fast_api"
@@ -31,6 +42,13 @@ RepoRename["dallas"]="dialog_585_sdk_dev@3rd_Party_SDK"
 RepoRename["nordic"]="SDK_13.0.0-1@3rd_Party_SDK"
 RepoRename["sdk_13_1"]="SDK_13.1.0@3rd_Party_SDK"
 RepoRename["sdk_14"]="SDK_14.0.0@3rd_Party_SDK"
+
+#
+# Hash translation from canonical repo target to  URI crafted to
+# hold enough info to clone/checkout the source.
+#
+Repo2Host["astyle-code"]="https://svn.code.sf.net/p/astyle/code/trunk astyle-code"
+Repo2Host["mbed-os"]="master@git@github.com/ARMmbed/mbed-os.git"
 Repo2Host["qemu"]="master@git://git.qemu.org/qemu.git"
 Repo2Host["oclint"]="master@git@github.com/oclint/oclint.git"
 Repo2Host["tinyara"]="master@git@github.com/Samsung/TinyAra.git"
@@ -101,6 +119,13 @@ BLUE='\033[1;34m'
 # shellcheck disable=2034
 RESET='\033[0;39;49m'
 
+echo_dbg()
+{
+        debug || return
+
+        echo_err "${FUNCNAME[1]} ::   $@"
+}
+
 #
 # Print the name of the function and how deeply nested.
 #
@@ -134,15 +159,6 @@ debug()
 echo_err()
 {
         echo -e "$@" >&2
-}
-
-
-echo_dbg()
-{
-        debug || return
-
-#       echo_err "${FUNCNAME[2]} ::   $@"
-        echo_err "${FUNCNAME[1]} ::   $@"
 }
 
 help()
@@ -302,7 +318,6 @@ get_info()
                 $ASTYLE_CO
                 return
         fi
-        [ -n "${RepoRename[$Key]}" ] && Key=${RepoRename[$Key]}
         if [ "${Key%%@*}" != "${Key}" ] ; then
                 Branch=${Key##@*}
         else
@@ -311,6 +326,46 @@ get_info()
         [ -z "$Branch" ] && echo_err "No repo info found." && return 1
 
         break_apart "$Branch"
+}
+
+#
+# Check RepoRename[] for any translation of the target repo
+# provided on the cli.
+#
+resolve_clone_id()
+{
+        Func $@
+        local Target=
+
+        Target="$1"
+        ALTNAME=${RepoRename[$Target]}
+        if [ -n "$ALTNAME" ] ; then
+                echo "$ALTNAME"
+        else
+                echo "$Target"
+        fi
+}
+
+#
+# Assemble the complete git command for cloning
+#
+set_cmd_git()
+{
+        local target=
+
+        target="$1"
+        if ! Info=( $(get_info $target) ) ; then
+                echo_err "Repo not found"
+                return 1
+        fi
+
+        Proto=ssh
+        Uri=${Info[$URL]}
+        tmp="${Uri#*://}"
+        [ "$tmp" != "${Uri}" ] && Proto="${Uri%://*}"
+        Uri="${Uri#*://}"
+        [ -z "$Proto" ] && Proto=ssh
+        echo "git clone -b "${Info[$Branch]}" $Proto://$Uri"
 }
 
 #
@@ -326,27 +381,26 @@ clone_one()
         local URL=1
         local Uri=
         local tmp=
+        local TrueTarget=
         declare -a Info=
 
         [ -z "$1" ] && return 1
-        if ! Info=( $(get_info $1) ) ; then
-                echo_err "Repo not found"
-                return 1
+        TrueTarget="$(resolve_clone_id $1)"
+        echo_dbg "Target to clone: $TrueTarget"
+        if [ -n "${svn_backed[$TrueTarget]}" ] ; then
+                CMD="${svn_backed[$TrueTarget]} ${Repo2Host[$TrueTarget]}"
+        else
+                CMD="$(set_cmd_git $TrueTarget)"
         fi
-        Proto=ssh
-        Uri=${Info[$URL]}
-        tmp="${Uri#*://}"
-        [ "$tmp" != "${Uri}" ] && Proto="${Uri%://*}"
-        Uri="${Uri#*://}"
-        [ -z "$Proto" ] && Proto=ssh
-        CMD="git clone -b "${Info[$Branch]}" $Proto://$Uri"
-        echo "$CMD"
+        echo_dbg "$CMD"
         if ! $CMD ; then
                 echo_err "Not cloned."
                 return 1
         fi
-        echo "Repo built: ${Info[2]}"
-        setup_repo "${Info[2]%.git}"
+        if [ "${CMD:0:3}" = "git" ] ; then
+                echo "Repo built: ${Info[2]}"
+                setup_repo "${Info[2]%.git}"
+        fi
 }
 
 clone()
