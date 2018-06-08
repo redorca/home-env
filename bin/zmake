@@ -293,7 +293,6 @@ select_board()
         return
 }
 
-
 trace && set -x
 
 cd $(find_repo_root) || exit 1
