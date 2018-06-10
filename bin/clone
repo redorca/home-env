@@ -24,6 +24,7 @@ declare -A svn_backed
 # required to "clone" them.
 #
 svn_backed["astyle-code"]="svn checkout"
+svn_backed["xpra"]="svn checkout"
 
 #
 # Hash to match informal repo names to the canonical ones.
@@ -47,6 +48,7 @@ RepoRename["sdk_14"]="SDK_14.0.0@3rd_Party_SDK"
 # Hash translation from canonical repo target to  URI crafted to
 # hold enough info to clone/checkout the source.
 #
+Repo2Host["xpra"]="https://www.xpra.org/svn/Xpra/trunk xpra"
 Repo2Host["astyle-code"]="https://svn.code.sf.net/p/astyle/code/trunk astyle-code"
 Repo2Host["mbed-os"]="master@git@github.com/ARMmbed/mbed-os.git"
 Repo2Host["qemu"]="master@git://git.qemu.org/qemu.git"
