@@ -11,57 +11,11 @@ Bin=echo
 [ -z "$(echo -e "\t")" ] && Bin="/bin/echo -e"
 
 #
-# Trap all '$SIGNALS'.
-#
-on_exit()
-{
-        RV=$?
-
-        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit [$RV]: ${RESET}"
-        exit $RV
-}
-
-#
-# Print the name of the function and how deeply nested.
-#
-Func()
-{
-        is_active DEBUG  && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
-}
-
-#
-# Filter out everything but the while loop and the two boundary markers.
-# Then filter out anything that does not have a ')' in it.  Voila, instant
-# help message!
-#
-help_all()
-{
-
-        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" |
-               sed -e '/^### HELP/,/case/d' -e '/esac/,/^### HELP/d' -e '/;;/d'
-}
-
-#
-# test to see if the variable is "1". Used to key actions off of env vars.
-# e.g. if DEBUG=1 then 'is_active DEBUG && foo' will call foo.
-#
-is_active()
-{
-        local Action=
-
-        Action="$1"
-        [ "${!Action}" = "1" ] && return 0
-        return 1
-}
-
-#
 # Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
 # shell option forcing the script to run in tracing mode.
 #
 trace()
 {
-        is_active TRACE
-        return
         [ "$TRACE" = "1" ] && return 0
         return  1
 }
@@ -76,6 +30,14 @@ debug()
 {
         [ "$DEBUG" = "1" ] && return 0
         return 1
+}
+
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        debug  && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
 }
 
 #
@@ -97,6 +59,29 @@ echo_dbg()
 {
         debug || return
         echo_err "$@"
+}
+
+#
+# Filter out everything but the while loop and the two boundary markers.
+# Then filter out anything that does not have a ')' in it.  Voila, instant
+# help message!
+#
+help_all()
+{
+
+        sed -n -e '/^### HELP.*start/,/^### HELP.*end/p' "$0" |
+               sed -e '/^### HELP/,/case/d' -e '/esac/,/^### HELP/d' -e '/;;/d'
+}
+
+#
+# Trap all '$SIGNALS'.
+#
+on_exit()
+{
+        RV=$?
+
+        [ $RV -ne 0 ] && echo_e "${RED}=============== Error exit [$RV]: ${RESET}"
+        exit $RV
 }
 
 ### HELP message start

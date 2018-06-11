@@ -2,7 +2,56 @@
 
 declare -A VARTYPES
 
-[ "$TRACE" = "1" ] && set -x && echo "set X"
+#
+# Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
+# shell option forcing the script to run in tracing mode.
+#
+trace()
+{
+        [ "$TRACE" = "1" ] && return 0
+        return  1
+}
+
+#
+# Provide an in-line check for debug status to conditionally enable calls.
+# e.g. debug && echo "This is a test" will only fire if DEBUG=1 otherwise
+#      it is a no-op.
+#
+#
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        debug  && echo_dbg "  ===>  ${FUNCNAME[1]}() $@"
+}
+
+#
+# Wrap 'echo' to cleanly redirect all output to stderr.
+#
+echo_err()
+{
+        local Bin=
+
+        Bin=echo
+        CMD="$Bin -e $@"
+        $CMD >&2
+}
+
+#
+# Shortcut to send output to stderr by default.
+#
+echo_dbg()
+{
+        debug || return
+        echo_err "$@"
+}
 
 help_msg()
 {
@@ -27,27 +76,41 @@ EOF
 #
 re_case()
 {
+        Func "$1"
         local Case=
         local File=
         local Stem=
         local CMD=
 
         Case="$1" ; shift
-	Stem=${1%_[tu]} ; shift
+        Stem="$1" ; shift
         [ -f "$1" ] || return 1
         File="$1" ; shift
 
 	if [ "$Case" = "uc" ] ; then
-	        echo "Converting type variable to upper case." >&2
-	        CMD=( "sed" "-i" "-e" "'s/${Stem}_t/${Stem^^}_t/g'" "$File" )
+	        echo_err "Converting $Stem variable to upper case."
+	        CMD=( "sed" "-i" "-e" "'s/${Stem}/${Stem^^}/g'" "$File" )
 	elif [ "$Case" = "lc" ] ; then
-	        echo "Converting type variable to lower case." >&2
-	        CMD=( "sed" "-i" "-e" "'s/${Stem}_t/${Stem,,}_t/g'" "$File" )
+	        echo_err "Converting $Stem variable to lower case."
+	        CMD=( "sed" "-i" "-e" "'s/${Stem}/${Stem,,}/g'" "$File" )
 	else
-                echo "Huh?  How did we get here?" >&2
+                echo_err "Huh?  How did we get here?"
                 exit 2
 	fi
 	eval "${CMD[@]}"
+}
+
+goo()
+{
+        local File=
+        File="$1"
+
+        grep "^} *[a-zA-Z_0-9]*;" $File | sed -n -e 's/^} *\([a-zA-Z_0-9]\+\) *;/\1/p' | \
+                        while read Type ; do
+                                STEM=${Type%_t}
+                                echo_dbg "Convert $Type"
+                                echo "VARTYPES[$STEM]=$Type"
+                        done
 }
 
 foo()
@@ -57,11 +120,25 @@ foo()
 
         File=$1
         grep "[a-zA-Z_0-9]\+_t" $File | sed -e 's/[u]*int[0-9]*_t//g' \
-                -n -e 's/.*[ 	]\([a-zA-Z0-9_][a-zA-Z0-9_]\+_t\)[^a-zA-Z0-9_].*/\1/p' | while read Type ; do
+                -n -e 's/.*[ 	]\([a-zA-Z0-9_][a-zA-Z0-9_]\+_t\)[^a-zA-Z0-9_].*/\1/p' | \
+                        while read Type ; do
+                                [ "${Type}" = "${Type,,}" ] && echo_dbg ": $Type" && continue
                                 STEM=${Type%_t}
+                                echo_dbg "Convert $Type"
                                 echo "VARTYPES[$STEM]=$Type"
+                        done
+}
+
+dump_vartypes()
+{
+        Func
+        echo_dbg "===================================="
+        for Key in "${!VARTYPES[@]}" ; do
+                echo_err  "VARTYPES[$Key]\t${VARTYPES[$Key]}"
         done
 }
+
+trace && set -x && echo_err "set X"
 
 [ $# -lt 1 ] && help_msg && exit 1
 while [ $# -ne 0 ] ; do
@@ -74,12 +151,15 @@ while [ $# -ne 0 ] ; do
         ;;
         -u) CASE=uc
         ;;
-        *) [ ! -f "$1" ] && echo "File not found:[$1]" && help_msg && exit 1
-           FILES=( "$1" "${FILES[@]}" )
+        *) [   -d "$1" ] && echo_err "Not a file but a dir:[$1]"
+#          [ -f "$1" ] && [ "${1:0:-2}" = ".[ch]" ] && FILES=( "$1" "${FILES[@]}" )
+           [ -f "$1" ] && FILES=( "$1" "${FILES[@]}" )
         ;;
         esac
         shift
 done
+echo_dbg "Number of Files: ${#FILES[@]}"
+# echo_dbg "Number of Types: ${#VARTYPES[@]}"
 ( [ -z "$CASE" ] || [ -z "${FILES[*]}" ] ) && help_msg && exit 1
 
 #
@@ -89,17 +169,18 @@ for File in "${FILES[@]}" ; do
 	#
 	# Establish VARTYPES hash
 	#
-	eval $(foo "$File")
-        for Key in "${!VARTYPES[@]}" ; do
-                [ "$DEBUG" = "1" ] && echo -e "VARTYPES[$Key]\t${VARTYPES[$Key]}"
-        done
+	eval $(goo "$File")
+        debug && dump_vartypes
 done
+
+[ "${#VARTYPES[@]}" -eq 0 ] && echo_err "No types need conversion." && exit
+echo_dbg "Number of vars to convert: ${#VARTYPES[@]}"
 
 #
 # Apply hash table to each file.
 #
 for File in "${FILES[@]}" ; do
-        echo "Processing $File"
+        echo_err "Processing $File"
         for Key in "${!VARTYPES[@]}" ; do
                 re_case "$CASE" "${VARTYPES[$Key]}" "$File"
         done
