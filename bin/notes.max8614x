@@ -1,0 +1,336 @@
+
+
+typedef struct _reg_seq_ctrl
+{
+        uint8_t upper   : 4;
+        uint8_t led_cr  : 4;
+} reg_seq_ctrl_t;
+
+
+union opt_led
+{
+        reg_seq_ctrl_t  bits;
+        uint8_t         data;
+};
+
+
+
+addresses:
+0x20    sequence control reg led 1/2    ledc 1 ---> [0:3], ledc 2 ---> [4:7]
+0x21    sequence control reg led 3/4    ledc 3 ---> [0:3], ledc 4 ---> [4:7]
+0x22    sequence control reg led 5/6    ledc 5 ---> [0:3], ledc 6 ---> [4:7]
+
+LED SEQUENCE CODES::
+Sequence register data type
+
+ Code:          Action:
+   0            NONE
+   1   pulse    led1
+   2   pulse    led2
+   3   pulse    led3
+   4   pulse    led1 & led2 together
+   5   pulse    led1 & led3 together
+   6   pulse    led2 & led3 together
+   7   pulse    led1 & led2 & led3 together
+   8            Pilot on LED1
+   9            Direct Ambient
+   A            LED4 (external mux)
+   B            LED5 (external mux)
+   C            LED6 (external mux)
+   D            Reserved
+   E            Reserved
+   F            Reserved
+
+
+====================================================================
+
+FIFO Data and Tag:
+
+struct _fifo_tag_data
+{
+        uint8_t nada : 3;
+        uint8_t tag  : 5;
+} fifo_tag_data_t;
+
+struct _fifo_data
+{
+
+} fifo_data_t;
+
+
+
+29 bits in use (3 MSbits are ignored).
+
+TAG[4:0] DATA TYPE FIFO_DATA[23:0] COMMENTS
+00000 ILLEGAL
+00001 PPG1_LEDC1_DATA LEDC1_DATA[18:0] If LEDC1 is non-zero
+00010 PPG1_LEDC2_DATA LEDC2_DATA[18:0] If LEDC1 and LEDC2 are non-zero
+00011 PPG1_LEDC3_DATA LEDC3_DATA[18:0] If LEDC1, LEDC2 and LEDC3 are non-zero
+00100 PPG1_LEDC4_DATA LEDC4_DATA[18:0] If LEDC1, LEDC2, LEDC3, and LEDC4 are non-zero
+00101 PPG1_LEDC5_DATA LEDC5_DATA[18:0] If LEDC1, LEDC2, LEDC3, LEDC4, and LEDC5 are non-zero
+00110 PPG1_LEDC6_DATA LEDC6_DATA[18:0] If LEDC1, LEDC2, LEDC3, LEDC4, LEDC5, and LEDC6 are non-zero
+
+00111 PPG2_LEDC1_DATA LEDC1_DATA[18:0] If LEDC1 is non-zero
+01000 PPG2_LEDC2_DATA LEDC2_DATA[18:0] If LEDC1 and LEDC2 are non-zero
+01001 PPG2_LEDC3_DATA LEDC3_DATA[18:0] If LEDC1, LEDC2, and LEDC3 are non-zero
+01010 PPG2_LEDC4_DATA LEDC4_DATA[18:0] If LEDC1, LEDC2, LEDC3, and LEDC4 are non-zero
+01011 PPG2_LEDC5_DATA LEDC5_DATA[18:0] If LEDC1, LEDC2, LEDC3, LEDC4, and LEDC5 are non-zero
+01100 PPG2_LEDC6_DATA LEDC6_DATA[18:0] If LEDC1, LEDC2, LEDC3, LEDC4, LEDC5, and LEDC6 are non-zero
+
+01101 PPF1_LEDC1_DATA LEDC1_DATA[18:0] If LEDC1 is non-zero (Picket Fence Event)
+01110 PPF1_LEDC2_DATA LEDC2_DATA[18:0] If LEDC1 and LEDC2 are non-zero (Picket Fence Event)
+01111 PPF1_LEDC3_DATA LEDC3_DATA[18:0] If LEDC1, LEDC2, and LEDC3 are non-zero (Picket Fence Event)
+10000 Reserved –
+10001 Reserved –
+10010 Reserved –
+
+10011 PPF2_LEDC1_DATA LEDC1_DATA[18:0] If LEDC1 is non-zero (Picket Fence Event)
+10100 PPF2_LEDC2_DATA LEDC2_DATA[18:0] If LEDC1 and LEDC2 are non-zero (Picket Fence Event)
+10101 PPF2_LEDC3_DATA LEDC3_DATA[18:0] If LEDC1, LEDC2, and LEDC3 are non-zero (Picket Fence Event)
+10110 Reserved –
+10111 Reserved –
+11000 Reserved –
+
+11001 PROX1_DATA PROX1_DATA[18:0] Only PILOT LED1 for LEDC1 is used
+11010 PROX2_DATA PROX2_DATA[18:0] Only PILOT LED1 for LEDC1 is used
+11011 Reserved –
+11100 Reserved –
+11101 Reserved –
+11110 INVALID_DATA Don’t_care[18:0]
+11111 TIME_STAMP TIME_STAMP[18:0]
+
+
+PPG Configuration:
+
+Interrupt
+0x00 Int Status 1  A_FULL[7] DATA_RDY[6] ALC_OVF[5] PROX_INT[4] LED_COMPB[3] DIE_TMP_RDY[2] VDD_OOR[1] PWR_RDY[0]
+0x01 Int Status 2  RSRV[7:1] SHA_DONE[0]
+0x02 Int Enable 1  A_FULL_EN[7] DATA_RDY_EN[6] ALC_OVF_EN[5] PROX_INT_EN[4] LED_COMPB_EN[3] DIE_TEMP_RDY[2] VDD_OOR_EN[1] RSRV[0]
+0x03 Int Enable 2  RSRV[7:1] SHA_DONE_EN[0]
+
+FIFO
+0x04 Write Pointer      RSRV[7] FIFO_WR_PTR[6:0]
+0x05 Read  Pointer      RSRV[7] FIFO_RD_PTR[6:0]
+0x06 OVF Counter        RSRV[7] OVF_COUNTER[6:0]
+0x07 Data Counter       FIFO_COUNT[7:0]
+0x08 Data Register      FIFO_DATA[7:0]
+0x09 FIFO 1 Config      RSRV[7]   FIFO_A_FULL[6:0]
+0x0A FIFO 2 Config      RSRV[7:5] FIFO_FLUSH[4] FIFO_STAT_CLR[3] A_FULL_TYPE[2] FIFO_RO[1] RSRV[0]
+
+==============================================================================
+==============   Start filling out details of register bits @20:20 ===========
+==============================================================================
+
+
+=======
+System Control
+0x0D Sys Cntrl          RSRV[7:4] SINGLE_PPG[3] LP_MODE[2] SHDN[1] RESET[0]
+                        SINGLE_PPG 0 == dual channel
+                        LP_MODE 0 == disabled, 1 == enabled iff Samples/sec <= 256
+                        SHDN    0 == normal ops, 1 == immediate transition to power-save mode
+                        RESET   0 == nop, 1 == forced power-on-reset sequence & auto clears.
+
+=======
+PPG Configuration
+0x10 Sync Control       TIME_STAMP_EN[7] RSRV[6:5] SW_FORCE_SYNC[4] GPIO_CTRL[3:0]
+                        TIME_STAMP_EN 0 == no stamping.  1 == fifo time stamp entry @8 smpls.
+                        SW_FORCE_SYNC 0 == noop, 1 == force a sample regardless of current cycle. 
+   *** XXX *** Skipped: GPIO_CTRL
+
+
+=======
+0x11 PPG1 Config   ALC_DISABLE[7] ADD_OFFSET[6] PPG2_ADC_RNGE[5:4] PPG1_ADC_RNGE[3:2] PPG_TINT[1:0]
+                   ALC_DISABLE  0 == enable ALC, 1 == disable ALC
+                   ADD_OFFSET   0 == no offset,  1 == +8k counts/single pulse mode, +4k @ dual pulse
+
+PPG2_ADC_RNGE
+PPG_ADC_RGE<1:0> LSB [pA] FULL SCALE [nA]
+           00     78125          4096
+           01     15.625         8192
+           10     31.25          16384
+           11     62.5           32768
+
+PPG1_ADC_RNGE
+PPG_ADC_RGE<1:0> LSB [pA] FULL SCALE [nA]
+           00     7,8125         4096
+           01     15.625         8192
+           10     31.25          16384
+           11     62.5           32768
+
+PPG1_TINT
+        Sets the integration time of the ADC & the pulse width of the led driver.
+
+    PPG_TINT<1:0> TPW, PULSE WIDTH [μS] TTINT, INTEGRATION TIME [μS] RESOLUTION BITS
+        00              21.3                    14.8                    19
+        01              35.9                    29.4                    19
+        10              65.2                    58.7                    19
+        11              123.8                   117.3                   19
+
+=======
+0x12 PPG2 Config   PPG_SR[7:3] SMP_AVG[2:0]
+        PPG_SR
+SAMPLING CLOCK FREQUENCY:
+                32768HZ         32000HZ
+PPG_SR<4:0> Samples per Second  Samples per Second    Pulses Per Sample, N
+   0x00         24.995                  24.409              1
+   0x01         50.027                  48.855              1
+   0x02         84.021                  82.051              1
+   0x03         99.902                  97.561              1
+   0x04         199,805                195.122              1
+   0x05         399.610                390.244              1
+   0x06         24.995                  24.409              2
+   0x07         50.027                  48.855              2
+   0x08         84.021                  82.051              2
+   0x09         99.902                  97.561              2
+   0x0A         8.000                   7.8125              1
+   0x0B         16.000                  15.625              1
+   0x0C         32.000                  31.250              1
+   0x0D         64.000                  62.500              1
+   0x0E         128.000                125.000              1
+   0x0F         256.000                250.000              1
+   0x10         512.000                500.000              1
+   0x11         1024.000               1000.000             1
+   0x12         2048.000               2000.000             1
+   0x13         4096.000               4000.000             1
+0x14-1F Reserved Reserved Reserved
+
+SMP_AVE[2:0] SAMPLE AVERAGE
+    000           1 (no averaging)
+    001           2
+    010           4
+    011           8
+    100          16
+    101          32
+    110          64
+    111         128
+
+See note RE BURST_EN & Sample averaging p70
+
+=======
+0x13 PPG3 Config   LED_SETTLNG[7:6] DIG_FILT_SEL[5] RSRV[4:3] BURST[2:1]  BURST_EN[0]
+TLED_SETLNG:
+  LED_SETLNG<1:0> DELAY (μS)
+        00           4.0
+        01           6.0 (default)
+        10           8.0
+        11          12.0
+
+  DIG_FILT_SEL
+     0     USE CDM
+     1     USE FDM
+
+  BURST rate
+    0x0     8Hz
+    0x1    32Hz
+    0x2    84Hz
+    0x3   256Hz
+
+  BURST_EN
+    0    Disable burst conversion mode
+    1    Enable  burst conversion mode
+See note RE BURST_EN p72
+
+=======
+Prox Int Threshold
+    0x14            PROX_INT_THRESH[7:0]
+
+This register sets the LED1 ADC count that will trigger the transition between proximity mode and normal mode. The threshold is defined as the 8 MSB bits of the ADC count. For example, if PROX_INT_THRESH[7:0] = 0x01, then an ADC value of 2048 (decimal) or higher triggers the PROX interrupt. If PROX_INT_THRESH[7:0] = 0xFF, then only a saturated ADC triggers the interrupt.
+
+
+=======
+Photo Diode Bias
+  0x15            RSRV[7] PDBIAS[6:4] RSRV[3] PDBIAS[2:0]
+        PDBIAS2<2:0>    PHOTO DIODE CAPACITANCE
+             0x001                0pF to 65pF
+             0x101               65pF to 130pF
+             0x110              130pF to 260pF
+             0x111              260pF to 520pF
+             All other values Not recommended
+
+=======
+PPG Picket Fence Detect and Replace
+  0x16    Picket Fence    PF_ENABLE[7] PF_ORDER[6] IIR_TC[5:4] IIR_INIT_VAL[3:2] THRESH_SIGMA[1:0]
+        PF_ENABLE 1 = enable the picket fence detect and replace method.
+        PF_ORDER
+                determines which prediction method is used: the last
+                sample or a linear fit to the previous four samples.
+                0 OFF   Last Sample (1 point)
+                1 ON    Fit 4 points to a line for prediction (default)
+
+        IIR_TC<1:0> determines the IIR filter bandwidth where the lowest
+                    setting has the narrowest bandwidth of a first-order filter.
+See note RE Picket Fence Detect-and-Replace Function for details. p74
+        IIR_TC<1:0> COEFFICIENT   SAMPLES TO 90%
+                00      1/64            146
+                01      1/32            72
+                10      1/16            35
+                11      1/8             17
+        The IIR filter estimates the true standard deviation between the
+        actual and predicted sample and tracks the ADC Range setting.
+
+        IIR_INIT_VALUE<1:0>     CODE
+                        00        64
+                        01        48
+                        10        32
+                        11        24
+
+        THRESHOLD_SIGMA_MULT<1:0>       GAIN
+                             00           4
+                             01           8
+                             10          16
+                             11          32
+        GAIN resulting from the SIGMA_MULT<1:0> setting determines the number
+        of standard deviations of the delta between the actual and predicted
+        sample beyond which a picket-fence event is triggered.
+
+=======
+LED Sequence Control
+0x20 - 0x22             LEDC(x + 1)[7:4]  :   LEDC(x)[3:0]
+
+See "LED SEQUENCE CODES::" above.
+
+=======
+LED Pulse Amplitude. [7:0]
+0x23 -- 0x28            LED_DRV[7:0]
+
+
+=======
+LED Pilot [7:0]
+0x29                    PILOT_PA[7:0]
+
+
+=======
+LED Rangea [7:0]
+0x2A - 0x2B             RESERVED[1:0] LEDS_RNGE[5:0]
+
+LEDS_RNGE       RESERVED[1:0] LED_RNGE[1:0] LED_RNGE[1:0] LED_RNGE[1:0]
+
+
+
+
+=======
+PPG_HI_RES_DAC
+0x2C -- 0x31  PPG1   S1-S3  HI_RES_DAC(1)[7:0]  HRES_DAC_OVR(1)[7] RESERVED[6] DATA(1)[5:0]
+0x32 -- 0x37  PPG2   S4-S6  HI_RES_DAC(2)[7:0]  HRES_DAC_OVR(2)[7] RESERVED[6] DATA(2)[5:0]
+
+
+
+=======
+Die Temp
+0x40 config     RESERVED[7:1]  TEMP_EN[0]
+0x41 whole      TEMP_INTGR[7:0]
+0x42 fraction   TEMP_FRAC[3:0]
+
+SHA256
+0xF0 command    SHA_CMD[7:0]
+0xF1 config     SHA_EN[1] : SHA_START[0]
+
+
+Memory
+0xF2  Control   MEM_WR_EN[1] BANK_SEL[0]
+0xF3  Index     MEM_IDX[7:0]
+0xF4  Data      MEM_DATA[7:0]
+
+Part ID
+0xFF ID         PART_ID[7:0]
+
