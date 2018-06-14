@@ -28,15 +28,48 @@ DBG_LVL="${DBG_LVL:-$ZERO}"
 unset TRACE
 unset DEBUG
 
+function dbg_echo()
+{
+        [ "$DEBUG" != "1" ] && return
+        echo -e "$@" >&2
+}
+
+function prune_path()
+{
+        declare -a foo
+        local Repath=
+        local Path=
+        local Limit=
+
+        Paths=()
+        foo=( $(echo $PATH | sed -e 's/:/  /g') )
+        Path="${foo[0]}"
+        Paths[${Path}]=1
+        Repath="${Path}"
+        dbg_echo "Start Repath with $Path"
+        dbg_echo "foo has ${#foo[@]} entries"
+        Limit=$(( ${#foo[@]} -1 ))
+        for i in $(seq 1 1 $Limit); do
+                Path="${foo[$i]}" && dbg_echo "$Path @$i"
+                [ -z "$Path" ] && dbg_echo "Empty path at $i" && continue
+                [ -n "${Paths[$Path]}" ] && dbg_echo "Already in Paths: ($Path)" && continue
+                Paths[$Path]=1
+                Repath="${Repath}:$Path"
+        done
+        echo "$Repath"
+}
+
+declare -A Paths
+PATH=$(prune_path)
+
 function add_path()
 {
-        if echo $PATH | sed -e 's/:/ /g' | grep -w "$1" >/dev/null ; then
-               return
-        fi
+        echo "Add $1" >&2
         if [ ! -d "$1" ] ; then
-                [ "$BASH_DBG" = "1" ] && echo "No such path exists: ($1)" >&2
+                dbg_echo "No such path exists: ($1)"
                 return
         fi
+        [ -n ${Paths[$1]} ] && echo "Wont add path. Already present: $1" >&2 && return
         PATH=$1:$PATH
 }
 
@@ -317,7 +350,7 @@ alias     vimtodo="vim ~/bin/TODO.now"
 # alias    vimbin="vim ~/bin/\$1"
 alias   bincommit="bash -c 'cd ~/bin && git-x.sh -c'"
 alias     binpush="bash -c 'cd ~/bin && git-x.sh -p'"
-alias        path="echo \$PATH"
+# alias        path="echo \$PATH"
 alias       asize="arm-none-eabi-size"
 alias        relf="arm-none-eabi-readelf"
 alias      status="git status | sed -n -e '1,/^Untracked/p'"
@@ -330,6 +363,16 @@ alias         cls="clear_console"
 alias        grep="grep --exclude=.git --exclude=cscope.out"
 alias        halt="sudo /sbin/shutdown -h -t now"
 alias        sudo="sudo -H"
+
+function path()
+{
+        case "$1" in
+        -l) eval $(echo "$PATH" 2>/dev/null | sed -e 's/^/echo "/' -e 's/:/"; echo "/g' -e 's/$/"/')
+        ;;
+        *) echo "$PATH"
+        ;;
+        esac
+}
 
 function set_attrib()
 {
@@ -453,6 +496,7 @@ function repo()
         echo -n -e "$(bold $Kolor)$Repo${RESET}"
 }
 
+
 if which apt-get >/dev/null 2>&1 ; then
         echo "Set prompt for Debian sys-arch"
         PS1='${debian_chroot:+($debian_chroot)}$(branch 15)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
@@ -473,7 +517,7 @@ LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
 [ -f $LS_COLOR_DATA_FILE ] && eval $(dircolors -b $LS_COLOR_DATA_FILE)
 
 #
-# To satisfy .vimrc's need for a file to source until I know
+# To satisfy .vimrcs need for a file to source until I know
 # more .vimrc coding and can check for its existence first.
 #
 touch ~/.vimrc_color
