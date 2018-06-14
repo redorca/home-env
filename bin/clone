@@ -125,7 +125,7 @@ echo_dbg()
 {
         debug || return
 
-        echo_err "${FUNCNAME[1]} ::   $@"
+        echo_err "$@"
 }
 
 #
@@ -395,13 +395,13 @@ clone_one()
                 CMD="$(set_cmd_git $TrueTarget)"
         fi
         echo_dbg "$CMD"
-        if ! $CMD ; then
+        if ! $CMD >/dev/null 2>&1; then
                 echo_err "Not cloned."
                 return 1
         fi
         if [ "${CMD:0:3}" = "git" ] ; then
-                echo "Repo built: ${Info[2]}"
-                setup_repo "${Info[2]%.git}"
+                echo "Repo built: $TrueTarget"
+                setup_repo "${TrueTarget%.git}"
         fi
 }
 
