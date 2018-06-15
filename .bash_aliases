@@ -1,7 +1,7 @@
-declare -A Paths
-Paths=()
+# declare -A -g Paths
 
 export DEBUG="$DEBUG"
+export DEBUG=1
 RESET="\033[0;39;49m"
 BLACK="\033[1;30m"
 RED="\033[0;31m"
@@ -38,45 +38,70 @@ function dbg_echo()
         echo -e "$@" >&2
 }
 
-function prune_path()
+set_display_resolution()
 {
-        declare -a foo
-        local Repath=
-        local Path=
-        local Limit=
+        local IPaddr=
 
-        foo=( $(echo $PATH | sed -e 's/:/  /g') )
-        Path="${foo[0]}"
-        Paths[${Path}]=1
-        Repath="${Path}"
-        dbg_echo "Start Repath with $Path"
-        dbg_echo "foo has ${#foo[@]} entries"
-        Limit=$(( ${#foo[@]} -1 ))
-        for i in $(seq 1 1 $Limit); do
-                Path="${foo[$i]}" && dbg_echo "$Path @$i"
-                [ -z "$Path" ] && dbg_echo "Empty path at $i" && continue
-                [ -n "${Paths[$Path]}" ] && dbg_echo "Already in Paths: ($Path)" && continue
-                Paths[$Path]=1
-                Repath="${Repath}:$Path"
-        done
-        echo "$Repath"
-        dbg_echo "${FUNCNAME[0]}: Paths has ${#Paths[@]} entries" >&2
+        ip addr | grep 192.168.168 >/dev/null 2>&1 && xrandr -s 2048x1152
+        ip addr | grep 192.168.183 >/dev/null 2>&1 && xrandr -s 1680x1050
 }
 
-PATH=$(prune_path)
-echo "Paths has ${#Paths[@]} entries"
+set_assoc_array()
+{
+        local Name=
+        local foo=
+
+        Name=$1 ; shift
+        echo -n "declare -g -A "
+        for foo in $@ ; do
+                echo -n "$Name[$foo]=1  "
+        done
+}
+
+function prune_path()
+{
+        declare -a Foo
+        local Limit=
+        local Path=
+        declare -g -A Paths
+
+        Foo=( $(echo $PATH | sed -e 's/:/  /g') )
+        echo -n "${Foo[0]}"
+        dbg_echo "Foo has ${#Foo[@]} entries"
+        Limit=$(( ${#Foo[@]} -1 ))
+        for i in $(seq 1 1 $Limit); do
+                dbg_echo "\${Paths[${Foo[$i]}]}   ${Paths[${Foo[$i]}]}"
+                [ -z "${Paths[${Foo[$i]}]}" ] && continue
+                [ -n "${Paths[${Foo[$i]}]}" ] && dbg_echo "Already in Paths: ($Path)" && continue
+                echo -n ":${Foo[$i]}"
+        done
+        echo ""
+        dbg_echo "${FUNCNAME[0]}: Paths has ${#Paths[@]} entries"
+}
+
+eval $(set_assoc_array Paths $(echo $PATH | sed -e 's/:/ /g'))
+prune_path
+# PATH=$(prune_path)
 
 function add_path()
 {
-        dbg_echo "Add $1"
-        dbg_echo "${FUNCNAME[0]}: Paths has ${#Paths[@]} entries" >&2
+        export DEBUG=0
+        local Dir=
 
-        if [ ! -d "$1" ] ; then
-                dbg_echo "No such path exists: ($1)"
-                return
-        fi
-        [ -n ${Paths[$1]} ] && dbg_echo "Won't add path. Already present: $1" && return
-        PATH=$1:$PATH
+#       set -x
+
+        Dir="$1"
+        dbg_echo "Add $Dir"
+
+        [ ! -d "$Dir" ] && dbg_echo "No such path exists: ($Dir)" && return
+#       [  -d "$Dir" ] && echo "[  -d $Dir ]"
+#       dbg_echo "::({Paths[$Dir]}) (${Paths[$Dir]})"
+
+        [ -n "${Paths[$Dir]}" ] && dbg_echo "Won't add path. Already present: $Dir" && return
+        ([ -z "$PATH" ] && echo "Starting with empty PATH." >&2)
+        PATH="$Dir:$PATH"
+        DEBUG=
+        set +x
 }
 
 #
@@ -526,7 +551,7 @@ LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
 # To satisfy .vimrcs need for a file to source until I know
 # more .vimrc coding and can check for its existence first.
 #
+prune_path
+PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
+
 touch ~/.vimrc_color
-
-echo "### ${!Paths[@]}"
-
