@@ -1,3 +1,7 @@
+declare -A Paths
+Paths=()
+
+export DEBUG="$DEBUG"
 RESET="\033[0;39;49m"
 BLACK="\033[1;30m"
 RED="\033[0;31m"
@@ -41,7 +45,6 @@ function prune_path()
         local Path=
         local Limit=
 
-        Paths=()
         foo=( $(echo $PATH | sed -e 's/:/  /g') )
         Path="${foo[0]}"
         Paths[${Path}]=1
@@ -57,19 +60,22 @@ function prune_path()
                 Repath="${Repath}:$Path"
         done
         echo "$Repath"
+        dbg_echo "${FUNCNAME[0]}: Paths has ${#Paths[@]} entries" >&2
 }
 
-declare -A Paths
 PATH=$(prune_path)
+echo "Paths has ${#Paths[@]} entries"
 
 function add_path()
 {
-        echo "Add $1" >&2
+        dbg_echo "Add $1"
+        dbg_echo "${FUNCNAME[0]}: Paths has ${#Paths[@]} entries" >&2
+
         if [ ! -d "$1" ] ; then
                 dbg_echo "No such path exists: ($1)"
                 return
         fi
-        [ -n ${Paths[$1]} ] && echo "Wont add path. Already present: $1" >&2 && return
+        [ -n ${Paths[$1]} ] && dbg_echo "Won't add path. Already present: $1" && return
         PATH=$1:$PATH
 }
 
@@ -147,7 +153,7 @@ function find-fu()
                 && echo     " -name \"${regex}\" $ACTION_ARG"
         CMD='find . -type $Flag -name \"${regex}\" "$ACTION_ARG"'
         if ! eval $CMD ; then
-                eval echo "== $CMD" >&2
+                eval dbg_echo "== $CMD"
         fi
         set +x
 }
@@ -185,7 +191,7 @@ function rm-fu()
                 && echo     " -name \"${regex}\" $ACTION_ARG"
         CMD='find . -type $Flag -name \"${regex}\" "$ACTION_ARG"'
         if ! eval $CMD ; then
-                eval echo "== $CMD" >&2
+                eval dbg_echo "== $CMD"
         fi
 }
 
@@ -521,4 +527,6 @@ LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
 # more .vimrc coding and can check for its existence first.
 #
 touch ~/.vimrc_color
+
+echo "### ${!Paths[@]}"
 
