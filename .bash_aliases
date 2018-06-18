@@ -554,4 +554,9 @@ LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
 prune_path
 PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 
+#
+# Set display resolution according to ip addr /24
+#
+set_display_resolution
+
 touch ~/.vimrc_color
