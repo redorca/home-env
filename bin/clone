@@ -25,10 +25,12 @@ declare -A svn_backed
 #
 svn_backed["astyle-code"]="svn checkout"
 svn_backed["xpra"]="svn checkout"
+svn_backed["FreeImage-svn"]="svn checkout"
 
 #
 # Hash to match informal repo names to the canonical ones.
 #
+# RepoRename["freeimage"]="FreeImage-git"
 RepoRename["astyle"]="astyle-code"
 RepoRename["review"]="git-review"
 RepoRename["mynewt"]="mynewt-core"
@@ -48,8 +50,6 @@ RepoRename["sdk_14"]="SDK_14.0.0@3rd_Party_SDK"
 # Hash translation from canonical repo target to  URI crafted to
 # hold enough info to clone/checkout the source.
 #
-Repo2Host["xpra"]="https://www.xpra.org/svn/Xpra/trunk xpra"
-Repo2Host["astyle-code"]="https://svn.code.sf.net/p/astyle/code/trunk astyle-code"
 Repo2Host["mbed-os"]="master@git@github.com/ARMmbed/mbed-os.git"
 Repo2Host["qemu"]="master@git://git.qemu.org/qemu.git"
 Repo2Host["oclint"]="master@git@github.com/oclint/oclint.git"
@@ -72,6 +72,10 @@ Repo2Host["apps-local"]="zdk@$ZGLUE_BILL_HOST/apps-local.git"
 Repo2Host["linux"]="master@git@github.com/torvalds/linux.git"
 Repo2Host["git-review"]="master@https://github.com/openstack-infra/git-review.git"
 Repo2Host["poppler"]="master@https://anongit.freedesktop.org/git/poppler/poppler.git"
+Repo2Host["xpra"]="https://www.xpra.org/svn/Xpra/trunk xpra"
+Repo2Host["astyle-code"]="https://svn.code.sf.net/p/astyle/code/trunk astyle-code"
+Repo2Host["FreeImage-svn"]="https://svn.code.sf.net/p/freeimage/svn/ freeimage-svn"
+# Repo2Host["FreeImage-git"]="master@https://git.code.sf.net/p/freeimage/git freeimage-git"
 
 #
 # Table of color codes for vt100.  To be imported
