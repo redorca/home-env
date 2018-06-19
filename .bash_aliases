@@ -85,7 +85,6 @@ prune_path
 
 function add_path()
 {
-        export DEBUG=0
         local Dir=
 
 #       set -x
@@ -100,7 +99,6 @@ function add_path()
         [ -n "${Paths[$Dir]}" ] && dbg_echo "Won't add path. Already present: $Dir" && return
         ([ -z "$PATH" ] && echo "Starting with empty PATH." >&2)
         PATH="$Dir:$PATH"
-        DEBUG=
         set +x
 }
 

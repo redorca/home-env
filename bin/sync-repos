@@ -108,7 +108,9 @@ git_sync_if()
         echo_dbg "RemoteHash: ${RemoteHash%[ 	]*}"
         echo_dbg "LocalHash:  ${LocalHash}"
         trace && set +x
-        [ "${RemoteHash%[ 	]*}" = "$LocalHash" ] && echo_err "Nothing to do.${RESET}" && return
+        [ "${RemoteHash%[ 	]*}" = "$LocalHash" ] && \
+                                        echo_err "Nothing to do.${RESET}" && \
+                                        return 0
         if ! Tracker=$(get_tracking_ref) ; then
                 echo_err "Unable to determine tracking branch."
                 debug && echo_err "Exit.${RESET}" && exit 2
@@ -116,10 +118,12 @@ git_sync_if()
         fi
         changes_in_flight && git stash save "Temp save while switching to $Tracker and pulling"
         if ! git checkout $Tracker ; then
+                echo_dbg "Checkout of $Tracker ... Failed."
                 color_on RESET
                 return 1
         fi
         if ! git pull ; then
+                echo_dbg "git pull failed."
                 color_on RESET
                 return 1
         fi
