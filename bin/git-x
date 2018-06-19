@@ -2,7 +2,7 @@
 
 [ "$TRACE" = "1" ] && set -x
 
-DO_COMMIT=()
+POST_ACTION=()
 DRY_RUN=${DRY_RUN:-0}
 DEBUG=${DEBUG:-0}
 VAR_LIST="LOOP_SET_COUNT count"
@@ -169,61 +169,6 @@ EOF
         [ -f "$1" ] && chmod +x "$1"
 }
 
-PUSH="push"
-# PUSH="review -D"
-
-# ARGS_Begin
-while [ $# -ne 0 ] ; do
-        case $1 in
-        -A) NEW_TIME_STAMP=$(date +"%a %b %d %T %Y %z")
-            echo "NEW_TIME_STAMP:  ($NEW_TIME_STAMP)"
-            DO_COMMIT=( "git" "commit" "--amend" "--date=${NEW_TIME_STAMP}" "--no-verify" )
-            myname="$(git config --get user.name)"
-            author=$(git log -1 --pretty=short | awk '/^Author:/ {print $2 " " $3}' )
-            if [ "$myname" != "$author" ] ; then
-                echo "Updating Author."
-                DO_COMMIT=( "${DO_COMMIT[@]}" "--reset-author" )
-                sleep 2
-            fi
-           ;;
-        -a) NEW_TIME_STAMP=$(date +"%a %b %d %T %Y %z")
-            echo "NEW_TIME_STAMP:  ($NEW_TIME_STAMP)"
-            DO_COMMIT=( "git" "commit" "--amend" "--date=${NEW_TIME_STAMP}" )
-            myname="$(git config --get user.name)"
-            author=$(git log -1 --pretty=short | awk '/^Author:/ {print $2 " " $3}' )
-            if [ "$myname" != "$author" ] ; then
-                echo "Updating Author."
-                DO_COMMIT=( "${DO_COMMIT[@]}" "--reset-author" )
-                sleep 2
-            fi
-           ;;
-        -c) DO_COMMIT=( "git" "commit" )
-           ;;
-        -d) DEBUG=1; echo "DEBUG = $DEBUG"
-           ;;
-        -e) dump_env; exit 0
-           ;;
-        -h) Help; exit 0
-           ;;
-        -n) DRY_RUN=1; echo "DRY_RUN = $DRY_RUN"
-           ;;
-        -P) page_size=$2; echo "page size: $page_size"
-           ;;
-        -p|--push) DO_COMMIT=( "eval" "git" "commit" "&&" "git" "$PUSH" )
-           ;;
-        -r) PUSH="review -D"
-            DO_COMMIT=( "eval" "git" "commit" "&&" "git" "$PUSH" )
-           ;;
-        -u) UNTRACK=1
-           ;;
-        *) echo "Unknown argument: $1"; Help; exit 0
-           ;;
-        esac
-        shift
-done
-# ARGS_End"
-
-
 add_patch()
 {
         [ ! -d .git ] && echo "No local .git/" >&2 && return 1
@@ -258,11 +203,22 @@ add_patch()
         git diff --cached >> "$PATCH_FILE"
 }
 
-if ! var_sanity_check page_size ; then
-        echo "page_size has a bad value: ($page_size)" >&2
-        exit 1
-fi
+list_files()
+{
+        local Filter=
 
+        Filter="${!1}"
+        echo_dbg "Filter ($Filter) ($1)"
+
+        # shellcheck disable=2162 # read without -r will mangle backslashes.
+        git status --porcelain | sed -e 's:^ :_:' \
+                | grep "$Filter" \
+                | awk '{print $1 "  " $NF}'
+}
+
+
+PUSH="push"
+# PUSH="review -D"
 FILTER="^[A-Z_][A-Z]"
 setup_mode_code
 if [ -n "$UNTRACK" ] && [ "$UNTRACK" -eq 1 ] ; then
@@ -271,27 +227,85 @@ if [ -n "$UNTRACK" ] && [ "$UNTRACK" -eq 1 ] ; then
         FILTER="^[A-Z_?][A-Z?]"
 fi
 
+
+# ARGS_Begin
+while [ $# -ne 0 ] ; do
+        case $1 in
+        -A) NEW_TIME_STAMP=$(date +"%a %b %d %T %Y %z")
+            echo "NEW_TIME_STAMP:  ($NEW_TIME_STAMP)"
+            POST_ACTION=( "git" "commit" "--amend" "--date=${NEW_TIME_STAMP}" "--no-verify" )
+            myname="$(git config --get user.name)"
+            author=$(git log -1 --pretty=short | awk '/^Author:/ {print $2 " " $3}' )
+            if [ "$myname" != "$author" ] ; then
+                echo "Updating Author."
+                POST_ACTION=( "${POST_ACTION[@]}" "--reset-author" )
+                sleep 2
+            fi
+           ;;
+        -a) NEW_TIME_STAMP=$(date +"%a %b %d %T %Y %z")
+            echo "NEW_TIME_STAMP:  ($NEW_TIME_STAMP)"
+            POST_ACTION=( "git" "commit" "--amend" "--date=${NEW_TIME_STAMP}" )
+            myname="$(git config --get user.name)"
+            author=$(git log -1 --pretty=short | awk '/^Author:/ {print $2 " " $3}' )
+            if [ "$myname" != "$author" ] ; then
+                echo "Updating Author."
+                POST_ACTION=( "${POST_ACTION[@]}" "--reset-author" )
+                sleep 2
+            fi
+           ;;
+        -c) POST_ACTION=( "git" "commit" )
+           ;;
+        -d) DEBUG=1; echo "DEBUG = $DEBUG"
+           ;;
+        -e) dump_env; exit 0
+           ;;
+        -h) Help; exit 0
+           ;;
+        -l) list_files FILTER && exit
+           ;;
+        -n) DRY_RUN=1; echo "DRY_RUN = $DRY_RUN"
+           ;;
+        -P) page_size=$2; echo "page size: $page_size"
+           ;;
+        -p|--push) POST_ACTION=( "eval" "git" "commit" "&&" "git" "$PUSH" )
+           ;;
+        -r) PUSH="review -D"
+            POST_ACTION=( "eval" "git" "commit" "&&" "git" "$PUSH" )
+           ;;
+        -u) UNTRACK=1
+           ;;
+        --vim) POST_ACTION=( "vim" )
+           ;;
+        *) echo "Unknown argument: $1"; Help; exit 0
+           ;;
+        esac
+        shift
+done
+# ARGS_End"
+
+if ! var_sanity_check page_size ; then
+        echo "page_size has a bad value: ($page_size)" >&2
+        exit 1
+fi
+
 (
         Dir="$(git rev-parse --show-toplevel)" || exit 1
         echo_dbg "cd to $Dir"
         cd "$Dir" || exit 1
-        if [ "${DO_COMMIT[2]}" = "--amend" ] ; then
+        if [ "${POST_ACTION[2]}" = "--amend" ] ; then
                 add_patch
         fi
 
-        # shellcheck disable=2162 # read without -r will mangle backslashes.
-        git status --porcelain | sed -e 's:^ :_:' \
-                | grep "$FILTER" \
-                | awk '{print $1 "  " $NF}' \
-                | while read key file ; do
+
+       list_files FILTER | while read key file ; do
                         if ! RESULTS="$(stage_line "$key" "$file") $RESULTS" ; then
                                 echo "Did not stage: [$line]"
                         fi
                         page_break count page_size "\\t======================================="
                 done
-        echo "== ${DO_COMMIT[@]}"
+        echo "== ${POST_ACTION[@]}"
 
-        "${DO_COMMIT[@]}"
-        [  "${#DO_COMMIT[@]}" -eq 0 ] && git status
+        "${POST_ACTION[@]}"
+        [  "${#POST_ACTION[@]}" -eq 0 ] && git status
 )
 
