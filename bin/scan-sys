@@ -1,0 +1,37 @@
+#!/bin/bash
+
+
+cd /sys/class/net
+
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+dbg_echo()
+{
+        debug || return
+        echo -e "$@" >&2
+}
+
+dump_tuple()
+{
+        debug || return
+
+        dbg_echo -e "Idx:\tvalue"
+        dbg_echo -e "===:\t================"
+        for i in ${!tuple[@]} ; do
+                dbg_echo -e " $i\t${tuple[$i]}"
+        done
+}
+
+
+        link=( $(ip -f inet -o link show $iface) )
+
+IDX_BRD=3
+ip -f inet -o addr show | awk '{print $2 "  " $3 "   " $4 ", " $5}' | while read iface ; do
+                        tuple=( $iface )
+                        dump_tuple
+                done
+
