@@ -5,6 +5,7 @@ SYNC_REPOS["git"]="git_sync_if"
 SYNC_REPOS["svn"]="svn_sync_if"
 SYNC_REPOS["hg"]="hg_sync_if"
 
+COLOR=1
 RESET="\033[0;39;49m"
 BLACK="\033[1;30m"
 RED="\033[1;31m"
@@ -64,10 +65,34 @@ color_on()
         color && echo -n -e "${!1}"
 }
 
+POS_TRACKING_REF=3
+
 #
 # Find the remote branch name backing this local branch.
 #
 get_tracking_ref()
+{
+        Func
+        local Foo=
+        local Goo=
+
+        #
+        # List all the working branches and deleting anything with leading ws.
+        #
+        WorkBranch=( $(git branch -vv | sed -e '/^[      ]\+/d' -e 's/^\*/\[*\]/') )
+        debug && dump_array "${WorkBranch[@]}"
+        if [ "${WorkBranch[$POS_TRACKING_REF]:0:1}" != "[" ] ; then
+                echo "This branch has no tracker." >&2
+                return 1
+        fi
+        echo "${WorkBranch[$POS_TRACKING_REF]:1:-1}" | awk -F'/' '{print $2}'
+}
+
+
+#
+# Find the remote branch name backing this local branch.
+#
+Get_tracking_ref()
 {
         Func
         local Foo=
@@ -87,6 +112,14 @@ changes_in_flight()
         return 1
 }
 
+#
+# Operating within the targeted repo check the remote's hash for HEAD
+# and compare it with the local's hash for HEAD.  If matched move on.
+# 
+# If not matched then prepare the local tree to sync with the remote
+# by changing branches to the default branch, stashing anything waiting,
+# pulling and then changing back to the initial branch popping the stash 
+# 
 git_sync_if()
 {
         Func
@@ -99,6 +132,7 @@ git_sync_if()
 
         if ! RemoteHash=$(git ls-remote --exit-code 2>&1 | sed -n -e '2p' -e 's/  *.*//') ; then
                 # it is possible the remote repo no longer exists
+                echo_dbg "No remote hash found so return 0 given there's nothing to be done."
                 color_on RESET
                 return 0
         fi
@@ -107,13 +141,13 @@ git_sync_if()
         LocalHash=$(cat .git/${Ahh#* })
         echo_dbg "RemoteHash: ${RemoteHash%[ 	]*}"
         echo_dbg "LocalHash:  ${LocalHash}"
-        trace && set +x
+
         [ "${RemoteHash%[ 	]*}" = "$LocalHash" ] && \
                                         echo_err "Nothing to do.${RESET}" && \
                                         return 0
         if ! Tracker=$(get_tracking_ref) ; then
                 echo_err "Unable to determine tracking branch."
-                debug && echo_err "Exit.${RESET}" && exit 2
+                echo_dbg ""
                 return 1
         fi
         changes_in_flight && git stash save "Temp save while switching to $Tracker and pulling"
@@ -134,7 +168,6 @@ svn_sync_if()
 {
         Func
         color_on GRNPRPL
-#       svn  log -r BASE:HEAD
         svn update
         color_on RESET
 }
@@ -144,7 +177,6 @@ hg_sync_if()
         Func
         color_on GRNPRPL
         hg  update
-#       hg  log -r BASE:HEAD
         color_on RESET
 }
 
