@@ -31,6 +31,7 @@ ZERO="0"
 DBG_LVL="${DBG_LVL:-$ZERO}"
 unset TRACE
 unset DEBUG
+
 declare -A ip_to_display
 ip_to_display["192.168.168"]="2048x1152"
 ip_to_display["192.168.183"]="1680x1050"
@@ -41,17 +42,52 @@ function dbg_echo()
         echo -e "$@" >&2
 }
 
-set_display_resolution()
+function get_home_ip()
 {
-        local IPaddr=
-        declare -a CurrentRes=
+        local IP=
+        local foo=
+        local faa=
+        local Count=
+        declare -a Candidates
 
-        CurrentRes=( $(xdpyinfo | grep dimension) )
-        ip addr | grep 192.168.168 >/dev/null 2>&1 && xrandr -s 2048x1152
-        ip addr | grep 192.168.183 >/dev/null 2>&1 && xrandr -s 1680x1050
+        Candidates=( $(ls $(find /sys/devices/pci0000\:00/ -type d -name net)) )
+
+        Count=$(( ${#Candidates[@]} - 1 ))
+        for i in $(seq 0 1 $Count) ; do
+                if [ -n "$(ip -4 -o link show "${Candidates[$i]}" up)" ] ; then
+                        foo=( $(ip -4 -o addr show ${Candidates[$i]}) )
+                        faa=( $(echo ${foo[3]} | sed -e 's:\.: :g') )
+                        IP="${faa[0]}.${faa[1]}.${faa[2]}"
+                        dbg_echo "=== IP found is $IP"
+                        echo "$IP"
+                        break
+                fi
+        done
 }
 
-set_assoc_array()
+function set_display_resolution()
+{
+        local IPaddr=
+        local TargetRes=
+        local CurrentRes=
+        declare -a XDPYinfoRes=
+        local POS_XRANDR_GEOM=1
+        local IP_ADDR=
+
+        [ $# -eq 1 ] &&  TargetRes="$1"
+
+        IP_ADDR=$(get_home_ip)
+        dbg_echo "Found IP_ADDR: $IP_ADDR"
+        [ -z "$TargetRes" ] && TargetRes=${ip_to_display["$IP_ADDR"]}
+        [ -z "$TargetRes" ] && TargetRes=1600x900
+
+        XDPYinfoRes=( $(xdpyinfo | grep dimension) )
+        CurrentRes="${XDPYinfoRes[$POS_XRANDR_GEOM]}"
+        dbg_echo " TargetRes : ($TargetRes), CurrentRes : ($CurrentRes)"
+        [ "$TargetRes" != "$CurrentRes" ] && xrandr -s $TargetRes
+}
+
+function set_assoc_array()
 {
         local Name=
         local foo=
@@ -560,6 +596,6 @@ PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 #
 # Set display resolution according to ip addr /24
 #
-set_display_resolution
+chk_debug || set_display_resolution
 
 touch ~/.vimrc_color
