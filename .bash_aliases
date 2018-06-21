@@ -84,7 +84,8 @@ function set_display_resolution()
         XDPYinfoRes=( $(xdpyinfo | grep dimension) )
         CurrentRes="${XDPYinfoRes[$POS_XRANDR_GEOM]}"
         dbg_echo " TargetRes : ($TargetRes), CurrentRes : ($CurrentRes)"
-        [ "$TargetRes" != "$CurrentRes" ] && xrandr -s $TargetRes
+        [ "$TargetRes" = "$CurrentRes" ] && return 0
+        echo "Reset display " && xrandr -s $TargetRes
 }
 
 function set_assoc_array()
