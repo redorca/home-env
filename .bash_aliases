@@ -31,6 +31,9 @@ ZERO="0"
 DBG_LVL="${DBG_LVL:-$ZERO}"
 unset TRACE
 unset DEBUG
+declare -A ip_to_display
+ip_to_display["192.168.168"]="2048x1152"
+ip_to_display["192.168.183"]="1680x1050"
 
 function dbg_echo()
 {
@@ -41,7 +44,9 @@ function dbg_echo()
 set_display_resolution()
 {
         local IPaddr=
+        declare -a CurrentRes=
 
+        CurrentRes=( $(xdpyinfo | grep dimension) )
         ip addr | grep 192.168.168 >/dev/null 2>&1 && xrandr -s 2048x1152
         ip addr | grep 192.168.183 >/dev/null 2>&1 && xrandr -s 1680x1050
 }
