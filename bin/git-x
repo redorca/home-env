@@ -272,6 +272,10 @@ while [ $# -ne 0 ] ; do
         -r) PUSH="review -D"
             POST_ACTION=( "eval" "git" "commit" "&&" "git" "$PUSH" )
            ;;
+        --rebase) git stash save "====" && git pull --rebase && git stash pop && exit
+                echo "Failed somewhere along stash, pull (rebase), and pop." >&2
+                exit 1
+           ;;
         -u) UNTRACK=1
            ;;
         --vim) vim $(list_files FILTER | awk '{print $NF}') ; exit 0
