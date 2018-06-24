@@ -42,8 +42,14 @@ function dbg_echo()
         echo -e "$@" >&2
 }
 
+function funame()
+{
+        dbg_echo "==> ${FUNCNAME[1]} ($@)"
+}
+
 function get_home_ip()
 {
+        funame $@
         local IP=
         local foo=
         local faa=
@@ -67,6 +73,7 @@ function get_home_ip()
 
 function set_display_resolution()
 {
+        funame $@
         local IPaddr=
         local TargetRes=
         local CurrentRes=
@@ -90,6 +97,7 @@ function set_display_resolution()
 
 function set_assoc_array()
 {
+        funame $@
         local Name=
         local foo=
 
@@ -102,37 +110,36 @@ function set_assoc_array()
 
 function prune_path()
 {
+        funame $@
         declare -a Foo
         local Limit=
         local Path=
         declare -g -A Paths
 
         Foo=( $(echo $PATH | sed -e 's/:/  /g') )
-        echo -n "${Foo[0]}"
-        dbg_echo "Foo has ${#Foo[@]} entries"
+#       echo -n "${Foo[0]}"
+
         Limit=$(( ${#Foo[@]} -1 ))
         for i in $(seq 1 1 $Limit); do
                 dbg_echo "\${Paths[${Foo[$i]}]}   ${Paths[${Foo[$i]}]}"
                 [ -z "${Paths[${Foo[$i]}]}" ] && continue
                 [ -n "${Paths[${Foo[$i]}]}" ] && dbg_echo "Already in Paths: ($Path)" && continue
-                echo -n ":${Foo[$i]}"
+#               echo -n ":${Foo[$i]}"
         done
         echo ""
-        dbg_echo "${FUNCNAME[0]}: Paths has ${#Paths[@]} entries"
 }
 
 eval $(set_assoc_array Paths $(echo $PATH | sed -e 's/:/ /g'))
-prune_path
-# PATH=$(prune_path)
+prune_path A::a
 
 function add_path()
 {
+        funame $@
         local Dir=
 
 #       set -x
 
         Dir="$1"
-        dbg_echo "Add $Dir"
 
         [ ! -d "$Dir" ] && dbg_echo "No such path exists: ($Dir)" && return
 #       [  -d "$Dir" ] && echo "[  -d $Dir ]"
@@ -149,6 +156,7 @@ function add_path()
 #
 function board()
 {
+        funame $@
         local Dir=
 
         Dir="$1"
@@ -160,6 +168,7 @@ function board()
 
 function del_path()
 {
+        funame $@
         if [ -z "$1" ] ; then
                 return
         fi
@@ -195,6 +204,7 @@ function dbg()
 #
 function find-fu()
 {
+        funame $@
         ([ -z "$1" ] || [ -z "$2" ]) && echo "Missing an arg or two." >&2 && return 1
         local find_key=
         local Flag=
@@ -236,6 +246,7 @@ function pd()
 #
 function rm-fu()
 {
+        funame $@
         ([ -z "$1" ] || [ -z "$2" ]) && echo "Missing an arg or two." >&2 && return 1
         local find_key=
         local Flag=
@@ -266,6 +277,7 @@ function rm-fu()
 #
 function show()
 {
+        funame $@
         local Func=
 
         case "$1" in
@@ -284,6 +296,7 @@ function show()
 #
 function tag()
 {
+        funame $@
         local  START_DIR=
         local  CSCOPE_OPTS=
         local  CSCOPE_DBFILE=
@@ -342,6 +355,7 @@ function trace()
 #
 function vimbin()
 {
+        funame $@
         local -a Files=
 
         Files="$*"
@@ -350,6 +364,7 @@ function vimbin()
 
 function vim_color_setup()
 {
+        funame $@
         local new_color=
 
         [ -z "$1" ] && return 1
@@ -366,6 +381,7 @@ function vim_color_setup()
 #
 function zee()
 {
+        funame $@
         local ZSERVER=
         local Msg=
 
@@ -437,6 +453,7 @@ alias        sudo="sudo -H"
 
 function path()
 {
+        funame $@
         case "$1" in
         -l) eval $(echo "$PATH" 2>/dev/null | sed -e 's/^/echo "/' -e 's/:/"; echo "/g' -e 's/$/"/')
         ;;
@@ -520,6 +537,7 @@ function gitchk()
 
 foo_git()
 {
+        funame $@
         pushd ./ >/dev/null
         DIRPATH=$(pwd)
         while [ $DIRPATH != "/" ] ; do
@@ -591,7 +609,7 @@ LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
 # To satisfy .vimrcs need for a file to source until I know
 # more .vimrc coding and can check for its existence first.
 #
-prune_path
+prune_path A::b
 PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 
 #
