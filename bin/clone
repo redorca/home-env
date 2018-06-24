@@ -31,6 +31,7 @@ svn_backed["FreeImage-svn"]="svn checkout"
 # Hash to match informal repo names to the canonical ones.
 #
 # RepoRename["freeimage"]="FreeImage-git"
+RepoRename["repo"]="git-repo"
 RepoRename["astyle"]="astyle-code"
 RepoRename["review"]="git-review"
 RepoRename["mynewt"]="mynewt-core"
@@ -76,6 +77,7 @@ Repo2Host["xpra"]="https://www.xpra.org/svn/Xpra/trunk xpra"
 Repo2Host["astyle-code"]="https://svn.code.sf.net/p/astyle/code/trunk astyle-code"
 Repo2Host["FreeImage-svn"]="https://svn.code.sf.net/p/freeimage/svn/ freeimage-svn"
 # Repo2Host["FreeImage-git"]="master@https://git.code.sf.net/p/freeimage/git freeimage-git"
+Repo2Host["git-repo"]="master@https://gerrit.googlesource.com/git-repo.git"
 
 #
 # Table of color codes for vt100.  To be imported
@@ -404,8 +406,12 @@ clone_one()
                 return 1
         fi
         if [ "${CMD:0:3}" = "git" ] ; then
-                echo "Repo built: $TrueTarget"
+                echo "Cloned: $TrueTarget"
                 setup_repo "${TrueTarget%.git}"
+        elif [ "${CMD:0:3}" = "svn" ] ; then
+                echo "Checked out: $TrueTarget"
+        elif [ "${CMD:0:2}" = "hg" ] ; then
+                echo "Checked out: $TrueTarget"
         fi
 }
 
