@@ -1,5 +1,7 @@
 # declare -A -g Paths
 
+ulimit -c unlimited
+
 export DEBUG="$DEBUG"
 export DEBUG=1
 RESET="\033[0;39;49m"
