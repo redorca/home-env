@@ -491,5 +491,7 @@ TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
 # Corner Case: empty value (no mapping set)
 # Corner Case: illegal command (nonsense text)
 #
+echo_dbg "REPO_BUILD_CMDS[$(find_repo_type)] ${REPO_BUILD_CMDS[$(find_repo_type)]}"
+
 $(${REPO_BUILD_CMDS["$(find_repo_type)"]})
 
