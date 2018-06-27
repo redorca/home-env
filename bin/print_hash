@@ -40,7 +40,7 @@ print_error_codes()
 
 # print_hash Array_assoc
 # foo=$(declare -p Array_assoc | sed -e 's/^.*(//' -e 's/)//' -e 's/\[/\\tArray_assoc\[/g' -e 's/ /\\n/g')
-copy()
+array_copy()
 {
         local AName=
         local BName=
@@ -86,10 +86,10 @@ declare -a Array_ordered  Yoo
 Array_assoc=(["a"]="Antelope"  ["b"]="Bertrand" ["c"]="Charlie" ["x"]="X-Ray")
 Array_ordered=( "a" "b" "c" "x")
 
-copy Array_assoc Goo
+array_copy Array_assoc Goo
 echo ",, Goo ${Goo[@]}"
 
-copy Array_ordered Hoo
+array_copy Array_ordered Hoo
 echo ",, Hoo ${Hoo[@]}"
 # echo -e $foo
 

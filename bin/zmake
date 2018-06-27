@@ -359,8 +359,11 @@ build_nuttx()
 
     Fails=0
     [ "${#BOARDS[@]}" -eq 0 ] && [ -n "$BOARD" ] && BOARDS=( "$BOARD" )
-    [ "${#BOARDS[@]}" -eq 0 ] && echo "?????????????????????" >&2 && \
-                BOARDS=( $(select_board "${BOARDS_LIST[@]}") )
+    [ "${#BOARDS[@]}" -eq 0 ] && echo_err "No board config specified, chose among these:" && \
+                if ! BOARDS=( $(select_board "${BOARDS_LIST[@]}") ) ; then
+                        echo_err "\nExit selected."
+                        exit 1
+                fi
 
     echo_err "Compiling for ${BOARDS[*]}"
     for board in "${BOARDS[@]}" ; do
@@ -392,24 +395,30 @@ build_nuttx()
 #
 # Assemble a list of configs directories available for builds
 # and if it is more than 1 generate a menu selection and have
-# the use spec which board config to use.
+# the user spec which board config to use.
 #
 select_board()
 {
         funcname $@
         local Val=
         local BOARD_LIST=
+        local Exit=
+        local All=
 
-        BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') )
+        Exit=exit
+        All=all
+        BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') "${All}" "${Exit}" )
 
-        select Val in "${BOARD_LIST[@]}" all ; do
+        select Val in "${BOARD_LIST[@]}" ; do
+                echo_dbg "Val = <$Val>"
+                [ "$Val" = "exit" ] && return 1
                 [ -n "$Val" ] && break
         done
 
-        [ "$Val" != "all" ] && echo "$Val" && return
+        [ "$Val" != "all" ] && echo "$Val" && return 0
         echo "${BOARD_LIST[@]}"
 
-        return
+        return 0
 }
 
 trace && set -x

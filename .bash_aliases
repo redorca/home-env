@@ -475,31 +475,49 @@ function set_attrib()
         echo -e "${!Color}" | eval sed -e \'s:\\[.:\\[${!ATTR}:\'
 }
 
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
 function invert()
 {
         set_attrib "${1^^}" INVERT
 }
 
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
 function uline()
 {
         set_attrib "${1^^}" UNDERL
 }
 
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
 function strike()
 {
         set_attrib "${1^^}" STRIKE
 }
 
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
 function bold()
 {
         set_attrib "${1^^}" BOLD
 }
 
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
 function italic()
 {
         set_attrib "${1^^}" ITALIC
 }
 
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
 function hide()
 {
         set_attrib "${1^^}" HIDE

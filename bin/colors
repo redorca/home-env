@@ -18,42 +18,6 @@
 # E.G.  YLWLtBLU == Yellow lettering on a light blue background.
 #
 # shellcheck disable=2034
-RESET="\033[0;39;49m"
-# shellcheck disable=2034
-BLACK="\033[1;30m"
-# shellcheck disable=2034
-## RED="\033[1;31m"
-## # shellcheck disable=2034
-## GREEN="\033[1;32m"
-## # shellcheck disable=2034
-## YELLOW="\033[1;33m"
-## # shellcheck disable=2034
-## BLUE="\033[1;34m"
-## # shellcheck disable=2034
-## LTBLUE="\033[1;36m"
-## # shellcheck disable=2034
-## PURPLE="\033[1;35m"
-## # shellcheck disable=2034
-## REDBLK="\033[1;31;40m"
-## # shellcheck disable=2034
-## REDYLW="\033[1;31;43m"
-## # shellcheck disable=2034
-## REDBLU="\033[1;31;46m"
-## # shellcheck disable=2034
-## GRNBLK="\033[1;32;40m"
-## # shellcheck disable=2034
-## GRNGRN="\033[1;32;42m"
-## # shellcheck disable=2034
-## YLWBLK="\033[1;33;40m"
-## # shellcheck disable=2034
-## YLWRED="\033[1;33;41m"
-## # shellcheck disable=2034
-## YLWGRN="\033[1;33;42m"
-## # shellcheck disable=2034
-## YLWBLU="\033[1;33;44m"
-## # shellcheck disable=2034
-## YLWLTBLU="\033[1;33;46m"
-#
 
 BLACK="0"
 RED="1"
@@ -65,15 +29,76 @@ LTBLUE="6"
 WHITE="7"
 DEF=""
 
-declare -A clrs_seq
-declare -A clrs_id
-declare -a clr_names
-declare -a test_it
+declare -A Colors
+declare -A Codes
 
-test_it["a"]=0
-test_it["b"]=1
-test_it["c"]=2
-test_it["d"]=3
+declare -A clrs_seq
+declare -a clr_names
+
+## Colors["BLACK"]="\033[1;30m"
+## Colors["RED"]="\033[1;31m"
+## Colors["GREEN"]="\033[1;32m"
+## Colors["YELLOW"]="\033[1;33m"
+## Colors["BLUE"]="\033[1;34m"
+## Colors["PURPLE"]="\033[1;35m"
+## Colors["LTBLUE"]="\033[1;36m"
+## Colors["REDBLK"]="\033[1;31;40m"
+## Colors["REDYLW"]="\033[1;31;43m"
+## Colors["REDBLU"]="\033[1;31;46m"
+## Colors["GRNBLK"]="\033[1;32;40m"
+## Colors["GRNGRN"]="\033[1;32;42m"
+## Colors["YLWBLK"]="\033[1;33;40m"
+## Colors["YLWRED"]="\033[1;33;41m"
+## Colors["YLWGRN"]="\033[1;33;42m"
+## Colors["YLWBLU"]="\033[1;33;44m"
+## Colors["YLWLTBLU"]="\033[1;33;46m"
+
+Colors["RESET"]="39;49"
+Colors["BLACK"]="30"
+Colors["RED"]="31"
+Colors["GREEN"]="32"
+Colors["YELLOW"]="33"
+Colors["BLUE"]="34"
+Colors["PURPLE"]="35"
+Colors["LTBLUE"]="36"
+Colors["WHITE"]="37"
+
+#
+# The following colors can be derived from the
+# color mapping above.
+#
+## Colors["LTBLUE"]="36"
+## Colors["REDBLK"]="31;40"
+## Colors["REDYLW"]="31;43"
+## Colors["REDBLU"]="31;46"
+## Colors["GRNBLK"]="32;40"
+## Colors["GRNGRN"]="32;42"
+## Colors["YLWBLK"]="33;40"
+## Colors["YLWRED"]="33;41"
+## Colors["YLWGRN"]="33;42"
+## Colors["YLWBLU"]="33;44"
+## Colors["YLWLTBLU"]="33"
+## Colors["RESET"]="39;49"
+
+Codes["39;49"]="RESET"
+Codes["30"]="BLACK"
+Codes["31"]="RED"
+Codes["32"]="GREEN"
+Codes["33"]="YELLOW"
+Codes["34"]="BLUE"
+Codes["35"]="PURPLE"
+Codes["36"]="LTBLUE"
+Codes["37"]="WHITE"
+Codes["31;40"]="REDBLK"
+Codes["31;43"]="REDYLW"
+Codes["31;46"]="REDBLU"
+Codes["32;40"]="GRNBLK"
+Codes["32;42"]="GRNGRN"
+Codes["33;40"]="YLWBLK"
+Codes["33;41"]="YLWRED"
+Codes["33;42"]="YLWGRN"
+Codes["33;44"]="YLWBLU"
+Codes["33;46"]="YLWLTBLU"
 
 clr_names=( BLACK RED GREEN YELLOW BLUE LTBLUE PURPLE WHITE DEF )
 attr_names=( BRIGHT DIM UNDERSCORE BLINK REVERSE HIDDEN )
@@ -143,4 +168,137 @@ setup_one_color_sequence()
  
         clrs_seq["$NAME"]="${ESC}${TEXT_ATTR}${COLOR_FG}${$COLOR_BG}m"
 }
+
+array_copy()
+{
+        local AName=
+        local BName=
+        local Tmp=
+
+        AName="$1" ; shift
+        BName="$1" ; shift
+
+        echo "================================================="
+        declare -p ${AName} | eval sed -e 's/${AName}/${BName}/'
+        echo ":: " $Tmp
+        eval ${BName}=\([0]="a" [1]="b" [2]="c" [3]="x"\)
+#       declare -a Hoo=([0]="a" [1]="b" [2]="c" [3]="x")
+#       echo "=== ${BName[@]}"
+}
+
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
+function set_attrib()
+{
+        local Color=
+        local ATTR=
+
+        ( [ -z "$1" ] || [ -z "$2" ] ) && return
+        Color="${1^^}" ; shift
+        ATTR="${1^^}" ; shift
+        echo -e "${!Color}" | eval sed -e \'s:\\[.:\\[${!ATTR}:\'
+}
+
+#
+# Set the attibute names to values
+#
+RESET=0
+ITALIC=3
+BOLD=1
+UNDERL=4
+STRIKE=9
+HIDE=8
+INVERT=7
+
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
+function invert()
+{
+        set_attrib "${1^^}" INVERT
+}
+
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
+function uline()
+{
+        set_attrib "${1^^}" UNDERL
+}
+
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
+function strike()
+{
+        set_attrib "${1^^}" STRIKE
+}
+
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
+function bold()
+{
+        set_attrib "${1^^}" BOLD
+}
+
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
+function italic()
+{
+        set_attrib "${1^^}" ITALIC
+}
+
+#
+# Take a color arg passed in and set the appropriate attribute.
+#
+function hide()
+{
+        set_attrib "${1^^}" HIDE
+}
+
+#
+# Given a color create the escape sequence or the terminal
+#
+term_codes()
+{
+        local attrib=
+        local code=
+
+        attrib="${BOLD};"
+        code=${Colors[$1]}
+
+        [ "${code:0:1}" -eq 0 ] && attrib=$UNDERL
+        echo -e "\\033[${attrib}${Colors[$1]}m"
+}
+
+xlate_color_to_id()
+{
+        echo ${Colors["$1"]}
+}
+
+xlate_id_to_color()
+{
+        echo ${Codes["$1"]}
+}
+
+help()
+{
+        [ -n "$1" ] && echo "$1 is not a valid value." >&2
+        echo "Please enter a color (red, green, ... ) or a code (31, 32, ... )" >&2
+        echo -e "Valid    COLORS CODES:"
+        for color in ${!Colors[@]} ; do
+                [ "$color" = "RESET" ] && continue
+                code=${Colors[$color]}
+#               echo -e "color <$(term_codes ${Colors[$color]})>" >&2
+                echo -e "\t$(term_codes $color) $color\t $code$(term_codes RESET)::"
+        done
+}
+
+[ $# -eq 0 ] && help && exit
+[ -n "${Colors["${1^^}"]}" ] && xlate_color_to_id "${1^^}"
+[ -n "${Codes["$1"]}" ] && xlate_id_to_color "$1"
+( [ -z "${Colors[${1^^}]}" ] && [ -z "${Codes[$1]}" ] ) && help "$1" && exit 1
 
