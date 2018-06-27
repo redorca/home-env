@@ -127,6 +127,15 @@ echo_err()
 }
 
 #
+# Display name of function calling this routine.
+#
+funcname()
+{
+        debug || return
+        echo_err "${FUNCNAME[1]} ==> < $@ >"
+}
+
+#
 # Filter out everything but the while loop and the two boundary markers.
 # Then filter out anything that does not have a ')' in it.  Voila, instant
 # help message!
@@ -147,6 +156,7 @@ help_msg()
 #
 list_apps()
 {
+        funcname $@
         for i in "$@" ; do
                 echo -e "\t$i"
         done
@@ -162,6 +172,7 @@ list_apps()
 #
 print_keyval()
 {
+        funcname $@
         declare -a Arg_List=
         local CLR0=
         local CLR1=
@@ -183,6 +194,7 @@ print_keyval()
 #
 print_colors()
 {
+        funcname $@
         local key=
         local akey=
         local Fore=
@@ -206,11 +218,13 @@ print_colors()
 #
 find_repo_type()
 {
+        funcname
         git remote -v | grep fetch | sed -e 's/^.*\///' -e 's/ *(.*)//' -e 's/\.git//'
 }
 
 find_repo_root()
 {
+        funcname
         if ! git rev-parse >/dev/null 2>&1 ; then
                 echo_err "Not running within a git repo.  Please relocate."
                 exit 1
@@ -223,11 +237,13 @@ find_repo_root()
 #
 set_fastapi_targets()
 {
+        funcname $@
         echo "zeus1 clean sim zeus2 clean sim"
 }
 
 set_nuttx_app_list()
 {
+        funcname $@
         local Board_Cfg=
         local File_Key=
         local count=
@@ -243,7 +259,7 @@ set_nuttx_app_list()
 
         pieces=( $(echo $fresults | sed -e 's/\// /g') )
         count=$(( "${#pieces[@]}" + 1 ))
-        [ "$DEBUG" = "1" ] && echo_err "== fresults: ($fresults), count: [$count]"
+        echo_dbg "fresults: ($fresults), count: [$count]"
 
         pieces=( $(ls $fresults/*/$File_Key | cut --delim='/' -f $count) )
         echo "${pieces[@]}"
@@ -254,6 +270,7 @@ set_nuttx_app_list()
 #
 run_output()
 {
+        funcname $@
         local COLOR0=
         local COLOR1=
 
@@ -273,6 +290,7 @@ run_output()
 #
 make_one_target()
 {
+        funcname $@
         local Verbose=
         local Incremental=
         local Target=
@@ -298,6 +316,7 @@ make_one_target()
 
 build_fastapi()
 {
+        funcname $@
         declare -a Targets=
         local OutFile=
         local repo_type=
@@ -311,7 +330,7 @@ build_fastapi()
 
         for target in ${Targets[@]} ; do
             OutFile="${OUT}.${repo_type}.${target}"
-            echo_err -n "Building $target ... "
+            echo_err -n "\tBuilding $target ... "
             if ! make_one_target $target > $OutFile  2>&1 ; then
                 echo_err "Build failed: $target. Rebuilding with verbose flag" > $OutFile 2>&1 
                 make_one_target $target "yes" "verb" > $OutFile 2>&1
@@ -330,25 +349,34 @@ build_fastapi()
 
 build_nuttx()
 {
+        funcname $@
+        local OutFile=
+        local repo_type=
+        local Fails=
+
+    Fails=0
     [ "${#BOARDS[@]}" -eq 0 ] && [ -n "$BOARD" ] && BOARDS=( "$BOARD" )
     [ "${#BOARDS[@]}" -eq 0 ] && echo "?????????????????????" >&2 && \
                 BOARDS=( $(select_board "${BOARDS_LIST[@]}") )
 
     echo_err "Compiling for ${BOARDS[*]}"
     for board in "${BOARDS[@]}" ; do
+        echo_err ":::: Compiling for $board"
         [ ${#TARGETS[@]} -eq 0 ] && TARGET_DIRS="$(set_nuttx_app_list $board $FILE_KEY)"
         [ ! -d "configs/$board" ] && echo "Not found: $board" && continue
         (
             cd configs/$board >/dev/null
             for build in distclean $TARGET_DIRS "${TARGETS[@]}" ; do
-                [ -z "${pseudo_targets[$build]}" ] && OUTOUT="${OUT}.${board}.${build}"
-                    echo_err -n "Building $board/$build: ... "
-                    if ! make_one_target $build > $OUTOUT  2>&1 ; then
-                            [ -z "$Q" ] && echo "Build failed see ${OUTOUT}." >&2 && continue
+                [ -z "${pseudo_targets[$build]}" ] && OutFile="${OUT}.${board}.${build}"
+                    echo_err -n "\tBuilding $board/$build: ... "
+                    if ! make_one_target $build > $OutFile  2>&1 ; then
+                            set -x
+                            [ -z "$Q" ] && echo "Build failed see ${OutFile}." >&2 && continue
                             echo_err "Failed.\n"
                             echo_err "Running an incremental verbose build ::"
-                            make_one_target $build "yes" "verb" > $OUTOUT 2>&1
-                            tail -15 ${OUTOUT}
+                            make_one_target $build "yes" "verb" > $OutFile 2>&1
+
+                            tail -15 ${OutFile}
                             Fails=$(( Fails + 1 ))
                             continue
                     fi
@@ -365,6 +393,7 @@ build_nuttx()
 #
 select_board()
 {
+        funcname $@
         local Val=
         local BOARD_LIST=
 
@@ -475,7 +504,6 @@ fi
 
 OBJS_FILE=/tmp/objs.built
 rm -f $OBJS_FILE
-Fails=0
 
 #         make_targets["$target"]=1
 # done
