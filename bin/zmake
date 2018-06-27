@@ -132,7 +132,7 @@ echo_err()
 funcname()
 {
         debug || return
-        echo_err "${FUNCNAME[1]} ==> < $@ >"
+        echo_err "===> ${FUNCNAME[1]} < $@ >"
 }
 
 #
@@ -329,6 +329,7 @@ build_fastapi()
         echo_dbg "Targets are: ${Targets[*]}"
 
         for target in ${Targets[@]} ; do
+            echo_dbg "\tbuild target <$target>"
             OutFile="${OUT}.${repo_type}.${target}"
             echo_err -n "\tBuilding $target ... "
             if ! make_one_target $target > $OutFile  2>&1 ; then
@@ -337,11 +338,13 @@ build_fastapi()
                 [ -z "$Q" ] && echo_err "Failed building $target.  See $OutFile"
                 tail -25 ${OutFile}
                 Fails=$(( Fails + 1 ))
+                echo_dbg "\tFails:  <$Fails>, continue"
+                echo_err "\t\tFailed."
                 continue
             fi
-            echo_err "Succeeded."
+            echo_err "\t\tSucceeded."
         done
-        [ "$Fails" -ne 0 ] && echo_drr "$Fails builds failed."
+        [ "$Fails" -ne 0 ] && echo_err "$Fails builds failed."
 
 
         return $Fails
