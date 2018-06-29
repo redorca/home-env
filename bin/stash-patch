@@ -1,0 +1,148 @@
+#!/bin/bash
+
+
+#
+# Trap all exits.
+#
+on_exit()
+{
+        RV=$?
+
+        [ $RV -ne 0 ] && echo_err "${RED}=============== Error exit [$RV]: ${RESET}"
+        exit $RV
+}
+
+trap on_exit EXIT
+
+#
+# Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
+# shell option forcing the script to run in tracing mode.
+#
+trace()
+{
+        [ "$TRACE" = "1" ] && return 0
+        return  1
+}
+
+#
+# Provide an in-line check for debug status to conditionally enable calls.
+# e.g. debug && echo "This is a test" will only fire if DEBUG=1 otherwise
+#      it is a no-op.
+#
+#
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+#
+# Shortcut to send output to stderr by default.
+#
+echo_dbg()
+{
+        debug || return
+        echo_err "$@"
+}
+
+
+#
+# Wrap echo with echo_err() and use /bin/echo instead.  This allows invoking
+# this script using sh as in "sh $(basename $0)"
+#
+echo_err()
+{
+        local Bin=
+
+        Bin="/bin/echo -e"
+        $Bin "$@" >&2
+}
+
+#
+# Display name of function calling this routine.
+#
+funcname()
+{
+        debug || return
+        echo_err "===> ${FUNCNAME[1]} ( $@ )"
+}
+
+#
+# Find out what kind of source tree we're in. Builds are configured
+# one way for say, nuttx, and another for fast_api.
+#
+# Assumes already in the repo tree.
+#
+find_repo_type()
+{
+        funcname
+        git remote -v | grep fetch | sed -e 's/^.*\///' -e 's/ *(.*)//' -e 's/\.git//'
+}
+
+find_repo_root()
+{
+        funcname
+        if ! git rev-parse >/dev/null 2>&1 ; then
+                echo_err "Not running within a git repo.  Please relocate."
+                exit 1
+        fi
+        git rev-parse --show-toplevel
+}
+
+date_stamp()
+{
+        date +"%B,%d_%Y_@%H:%M__%A"
+}
+
+list_stashes()
+{
+        local Name=
+        local List=
+        local Count=
+
+
+        [ -z "$1" ] && return 1
+        Name="$1"
+        Count=0
+        echo -n "declare -a "
+        git stash list | while read line ; do
+                echo -n $Name[$Count]=\"$line\"
+                Count=$(( Count + 1 ))
+                echo -n "  "
+        done
+        echo ""
+}
+
+trace && set -x
+
+
+REPO_ROOT=$(find_repo_root)
+([ -d "$REPO_ROOT" ] || echo "Not a directory <$REPO_ROOT>" >&2) || exit 1
+pushd $REPO_ROOT >/dev/null
+
+dump_stash()
+{
+        local Stash_List=
+        local Count=
+        local CMD=
+        local PatchDir=
+        local FileName=
+
+        PatchDir=patches
+        [ ! -d "$PatchDir" ] && mkdir $PatchDir
+
+        eval $(list_stashes Foo)
+        TimeStamp=$(date_stamp)
+        Count=$(( ${#Stash_List[@]} -1 ))
+        for i in ${!Foo[@]} ; do
+                FileName="$PatchDir/patch.${Foo[$i]%%:*}.$TimeStamp"
+                CMD=( "git" "stash" "show" "-v" "${Foo[$i]%%:*}" ">>" "$FileName" )
+                echo_dbg "CMD: :: ${CMD[*]} ::"
+                eval ${CMD[*]}
+                sed -i -e "/^diff/aTitle: \"${Foo[$i]#*:}\"" $FileName
+        done
+}
+
+dump_stash
+popd >/dev/null
+
