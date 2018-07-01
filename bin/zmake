@@ -376,10 +376,9 @@ build_nuttx()
                 [ -z "${pseudo_targets[$build]}" ] && OutFile="${OUT}.${board}.${build}"
                     echo_err -n "\tBuilding $board/$build: ... "
                     if ! make_one_target $build > $OutFile  2>&1 ; then
-                            set -x
                             [ -z "$Q" ] && echo "Build failed see ${OutFile}." >&2 && continue
                             echo_err "Failed.\n"
-                            echo_err "Running an incremental verbose build ::"
+                            echo_err "\tRunning an incremental verbose build ::"
                             make_one_target $build "yes" "verb" > $OutFile 2>&1
 
                             tail -45 ${OutFile}
@@ -388,6 +387,8 @@ build_nuttx()
                     fi
                     echo_err "Succeeded."
             done
+            [ "$Fails" -ne 0 ] && set -x
+        return 0
         )
     done
 }
