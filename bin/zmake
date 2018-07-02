@@ -365,18 +365,17 @@ build_nuttx()
                         exit 1
                 fi
 
-    echo_err "Compiling for ${BOARDS[*]}"
     for board in "${BOARDS[@]}" ; do
-        echo_err ":::: Compiling for $board"
+        echo_err ":::: Compiling for Board $board"
         [ ${#TARGETS[@]} -eq 0 ] && TARGET_DIRS="$(set_nuttx_app_list $board $FILE_KEY)"
-        [ ! -d "configs/$board" ] && echo "Not found: $board" && continue
+        [ ! -d "configs/$board" ] && echo_err "Not found: $board" && continue
         (
             cd configs/$board >/dev/null
             for build in distclean $TARGET_DIRS "${TARGETS[@]}" ; do
                 [ -z "${pseudo_targets[$build]}" ] && OutFile="${OUT}.${board}.${build}"
                     echo_err -n "\tBuilding $board/$build: ... "
                     if ! make_one_target $build > $OutFile  2>&1 ; then
-                            [ -z "$Q" ] && echo "Build failed see ${OutFile}." >&2 && continue
+                            [ -z "$Q" ] && echo_err "Build failed see ${OutFile}." && continue
                             echo_err "Failed.\n"
                             echo_err "\tRunning an incremental verbose build ::"
                             make_one_target $build "yes" "verb" > $OutFile 2>&1

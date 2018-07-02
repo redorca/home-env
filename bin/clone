@@ -148,7 +148,7 @@ echo_err()
 
 echo_dbg()
 {
-        debug || return
+        debug || return 0
 
         echo_err "$@"
 }
@@ -158,7 +158,7 @@ echo_dbg()
 #
 Func()
 {
-        echo_dbg "${#FUNCNAME[@]} : ${FUNCNAME[1]}() :: $@"
+        echo_dbg "${#FUNCNAME[@]} : ${FUNCNAME[1]}( $@ )"
 }
 
 #
@@ -281,7 +281,7 @@ setup_repo()
         local Repo=
         local tmp=
 
-        [ ! -d "$1" ] && return 1
+        [ ! -d "$1" ] && echo_err "No directory specified to setup." && return 1
         Repo="$1"
     (
         cd "$Repo" || return 1
@@ -415,22 +415,29 @@ clone_one()
         else
                 CMD="$(set_cmd_git $TrueTarget)"
         fi
+
+        #
+        # Setup message to output for success.
+        #
+        if [ "${CMD:0:3}" = "git" ] ; then
+                MSG="Cloned:"
+        elif [ "${CMD:0:3}" = "svn" ] ; then
+                MSG="Checked out:"
+        elif [ "${CMD:0:2}" = "hg" ] ; then
+                MSG="Checked out:"
+        fi
+
         echo_dbg "$CMD"
         if ! $CMD >/dev/null 2>&1; then
                 echo_err "Not cloned."
                 return 1
         fi
-        if [ "${CMD:0:3}" = "git" ] ; then
-                echo "Cloned: $TrueTarget"
-                $CMD "${TrueTarget%.git}"
-        elif [ "${CMD:0:3}" = "svn" ] ; then
-                echo "Checked out: $TrueTarget"
-        elif [ "${CMD:0:2}" = "hg" ] ; then
-                echo "Checked out: $TrueTarget"
-        fi
-        CMD=${FinalCmds["${TrueTarget%.git}"]}
-        [ -n "$CMD" ] && echo_dbg "Final Command: <$CMD>"
-        [ -z "$CMD" ] && echo_dbg "No final command to run: <$CMD>"
+        [ -n "$MSG" ] && echo "${MSG} $TrueTarget"
+
+        CMD="${FinalCmds["${TrueTarget%.git}"]} ${TrueTarget%.git}"
+        [ -z "$CMD" ] && echo_dbg "No final command to run: <$CMD>" && return 0
+        echo_dbg "Final Command: <$CMD>"
+        $CMD
 }
 
 clone()
@@ -447,6 +454,7 @@ clone()
 
                 if ! clone_one "$Target" ; then
                         echo_err "Not cloned: [$Target]"
+                        exit 5
                 fi
         done
         set +x
