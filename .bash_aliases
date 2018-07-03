@@ -73,6 +73,19 @@ function get_home_ip()
         done
 }
 
+function display_geo()
+{
+        xdpyinfo | grep dimension
+}
+
+function what()
+{
+        case "$1" in
+        reso*) diplay_geo ; exit ;;
+        *);;
+        esac
+}
+
 function set_display_resolution()
 {
         funame $@
@@ -90,8 +103,18 @@ function set_display_resolution()
         [ -z "$TargetRes" ] && TargetRes=${ip_to_display["$IP_ADDR"]}
         [ -z "$TargetRes" ] && TargetRes=1600x900
 
-        XDPYinfoRes=( $(xdpyinfo | grep dimension) )
+        XDPYinfoRes=( $(display_geo) )
         CurrentRes="${XDPYinfoRes[$POS_XRANDR_GEOM]}"
+
+#         Geometry=( $(echo $CurrentRes | awk -F'x' '{print $1 "  " $2}') )
+#         if [ "${Geometry[0]}" -gt 1440 ] && [ "${Geometry[1]}" -gt 900 ] ; then
+#                 Geometry[0]=1680
+#                 Geometry[1]=1050
+#         elif [ "${Geometry[0]}" -gt 1600 ] && [ "${Geometry[1]}" -gt 900 ] ; then
+#                 Geometry[0]=2048
+#                 Geometry[1]=1152
+#         fi
+
         dbg_echo " TargetRes : ($TargetRes), CurrentRes : ($CurrentRes)"
         [ "$TargetRes" = "$CurrentRes" ] && return 0
         echo "Reset display " && xrandr -s $TargetRes
