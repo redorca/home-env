@@ -39,6 +39,8 @@ ip_to_display["192.168.168"]="2048x1152"
 ip_to_display["192.168.183"]="1680x1050"
 
 declare -A Geometry
+x=0
+y=1
 #
 # Set to default minimum resolution.
 #
@@ -97,21 +99,21 @@ function set_display_resolution()
 {
         funame $@
         local TargetRes=
-        local CurrentRes=
+        declare -a  CurrentRes=
         declare -a XDPYinfoRes=
 
         [ $# -eq 1 ] &&  TargetRes="$1"
 
-        if [ "${Geometry[x]}" -gt 1440 ] ; then
+        CurrentRes=( $(display_geo | awk -F'x' '{print $1 "  " $2}') )
+        if [ "${CurrentRes[$x]}" -gt 1440 ] ; then
                 Geometry[x]=2048
                 Geometry[y]=1152
         fi
 
-        CurrentRes="$(display_geo)"
         [ -z "$TargetRes" ] && TargetRes="${Geometry[x]}x${Geometry[y]}"
         dbg_echo " TargetRes : ($TargetRes), CurrentRes : ($CurrentRes)"
         [ "$TargetRes" = "$CurrentRes" ] && dbg_echo " No need to reset the display" && return 0
-        echo "Reset display " && xrandr -s $TargetRes
+        echo "Reset display to $TargetRes." && xrandr -s $TargetRes
 }
 
 function set_assoc_array()
