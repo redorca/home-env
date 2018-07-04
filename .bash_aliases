@@ -38,15 +38,6 @@ declare -A ip_to_display
 ip_to_display["192.168.168"]="2048x1152"
 ip_to_display["192.168.183"]="1680x1050"
 
-declare -A Geometry
-x=0
-y=1
-#
-# Set to default minimum resolution.
-#
-Geometry["x"]="1680"
-Geometry["y"]="1050"
-
 function dbg_echo()
 {
         [ "$DEBUG" != "1" ] && return
@@ -84,7 +75,7 @@ function get_home_ip()
 
 function display_geo()
 {
-        xdpyinfo | grep dimension | awk '{print $2}'
+        xdpyinfo | grep dimension
 }
 
 function what()
@@ -98,22 +89,35 @@ function what()
 function set_display_resolution()
 {
         funame $@
+        local IPaddr=
         local TargetRes=
-        declare -a  CurrentRes=
+        local CurrentRes=
         declare -a XDPYinfoRes=
+        local POS_XRANDR_GEOM=1
+        local IP_ADDR=
 
         [ $# -eq 1 ] &&  TargetRes="$1"
 
-        CurrentRes=( $(display_geo | awk -F'x' '{print $1 "  " $2}') )
-        if [ "${CurrentRes[$x]}" -gt 1440 ] ; then
-                Geometry[x]=2048
-                Geometry[y]=1152
-        fi
+        IP_ADDR=$(get_home_ip)
+        dbg_echo "Found IP_ADDR: $IP_ADDR"
+        [ -z "$TargetRes" ] && TargetRes=${ip_to_display["$IP_ADDR"]}
+        [ -z "$TargetRes" ] && TargetRes=1600x900
 
-        [ -z "$TargetRes" ] && TargetRes="${Geometry[x]}x${Geometry[y]}"
+        XDPYinfoRes=( $(display_geo) )
+        CurrentRes="${XDPYinfoRes[$POS_XRANDR_GEOM]}"
+
+#         Geometry=( $(echo $CurrentRes | awk -F'x' '{print $1 "  " $2}') )
+#         if [ "${Geometry[0]}" -gt 1440 ] && [ "${Geometry[1]}" -gt 900 ] ; then
+#                 Geometry[0]=1680
+#                 Geometry[1]=1050
+#         elif [ "${Geometry[0]}" -gt 1600 ] && [ "${Geometry[1]}" -gt 900 ] ; then
+#                 Geometry[0]=2048
+#                 Geometry[1]=1152
+#         fi
+
         dbg_echo " TargetRes : ($TargetRes), CurrentRes : ($CurrentRes)"
-        [ "$TargetRes" = "$CurrentRes" ] && dbg_echo " No need to reset the display" && return 0
-        echo "Reset display to $TargetRes." && xrandr -s $TargetRes
+        [ "$TargetRes" = "$CurrentRes" ] && return 0
+        echo "Reset display " && xrandr -s $TargetRes
 }
 
 function set_assoc_array()

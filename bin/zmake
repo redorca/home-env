@@ -525,6 +525,7 @@ rm -f $OBJS_FILE
 # Main()
 #
 TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
+echo     "Targets : (${TARGET_DIRS[*]})"
 [ "${VERBOSE:0:1}" = "V" ] && print_keyval
 
 #
