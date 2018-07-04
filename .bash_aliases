@@ -117,7 +117,7 @@ function set_display_resolution()
 
         dbg_echo " TargetRes : ($TargetRes), CurrentRes : ($CurrentRes)"
         [ "$TargetRes" = "$CurrentRes" ] && return 0
-        echo "Reset display " && xrandr -s $TargetRes
+        echo "Reset display to $TargetRes." && xrandr -s $TargetRes
 }
 
 function set_assoc_array()
