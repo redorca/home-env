@@ -1,0 +1,55 @@
+#!/bin/bash
+
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+dbg_echo()
+{
+        debug || return 0
+
+        echo -e "$@" >&2
+}
+
+BFD_TARGETS="elf64-x86-64 elf32-i386 elf32-iamcu elf32-x86-64 a.out-i386-linux pei-i386
+             pei-x86-64 elf64-l1om elf64-k1om elf64-little elf64-big elf32-little elf32-big
+             pe-x86-64 pe-bigobj-x86-64 pe-i386 plugin srec symbolsrec verilog tekhex binary
+             ihex elf32-littlearm elf32-bigarm elf32-little elf32-big plugin srec symbolsrec
+             verilog tekhex binary ihex "
+
+declare -a BFD_TARGETS
+BFD_TARGETS=( $(echo $BFD_TARGETS) )
+dbg_echo "BFDTARGETS: ${#BFD_TARGETS[@]},  ${BFD_TARGETS[*]}"
+
+while [ $# -ne 0 ] ; do
+        case "$1"   in
+        -b) IBIN_TYPE="$2"  ; shift
+        ;;
+        -o) OBIN_TYPE="$2"  ; shift
+        ;;
+        -s) SNAME="$2" ; shift
+        ;;
+        *) [ ! -f "$1" ] && echo "This is not a file: <$1>" >&2 && exit 1
+           SRC="$1"
+        ;;
+        esac
+        shift
+done
+
+for var in IBIN_TYPE OBIN_TYPE SNAME SRC ; do
+        [ -z "${!var}" ] && echo "Missing an arg: $var" && continue
+done
+BFD_ARCH=i386:x86-64
+BFD_ARCH=arm
+ff=23
+THE_CMD=("objcopy" "--input" "$IBIN"\
+    "--output" "${BFD_TARGET[$ff]} "\
+    "--binary-architecture" "$BFD_ARCH "\
+    "--rename-section" ".data=.${SNAME},CONTENTS,ALLOC,LOAD,READONLY,DATA" \
+    "$SRCS" "$OFILE" )
+
+
+echo "THE_CMD: ${THE_CMD[*]}"
+
