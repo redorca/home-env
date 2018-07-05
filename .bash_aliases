@@ -476,6 +476,25 @@ alias        grep="grep --exclude=.git --exclude=cscope.out"
 alias        halt="sudo /sbin/shutdown -h -t now"
 alias        sudo="sudo -H"
 
+
+#
+# Map a standard tool to an arm directed tool name.
+#
+function arm()
+{
+        local Prefix=
+        local Cmd=
+
+        Prefix="arm-none-eabi-"
+        Cmd=${Prefix}${1} ; shift
+        if ! type $Cmd >/dev/null ; then
+                echo "Apparently no such binary can be found: <$Cmd>" >&2
+                return 3
+        fi
+
+        $Cmd $@
+}
+
 function path()
 {
         funame $@
