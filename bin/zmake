@@ -300,7 +300,7 @@ make_one_target()
         Verbose="$1" ; shift
 
         echo_dbg "Target is $Target"
-        CMD=( "make" "Q=@" "$NO_ERRORS" "$Target" )
+        CMD=( "make" "Q=$Q" "$NO_ERRORS" "$Target" )
 
         [ "${1,,}" = "verb" ] && Verbose="" ; shift
         [ "${Incremental,,}" = "yes" ] && CMD[1]="Q="
