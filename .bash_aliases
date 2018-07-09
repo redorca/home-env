@@ -75,7 +75,7 @@ function get_home_ip()
 
 function display_geo()
 {
-        xdpyinfo | grep dimension
+        xdpyinfo | grep dimension | awk '{print $2}'
 }
 
 function what()
@@ -92,8 +92,6 @@ function set_display_resolution()
         local IPaddr=
         local TargetRes=
         local CurrentRes=
-        declare -a XDPYinfoRes=
-        local POS_XRANDR_GEOM=1
         local IP_ADDR=
 
         [ $# -eq 1 ] &&  TargetRes="$1"
@@ -103,8 +101,7 @@ function set_display_resolution()
         [ -z "$TargetRes" ] && TargetRes=${ip_to_display["$IP_ADDR"]}
         [ -z "$TargetRes" ] && TargetRes=1600x900
 
-        XDPYinfoRes=( $(display_geo) )
-        CurrentRes="${XDPYinfoRes[$POS_XRANDR_GEOM]}"
+        CurrentRes=$(display_geo)
 
 #         Geometry=( $(echo $CurrentRes | awk -F'x' '{print $1 "  " $2}') )
 #         if [ "${Geometry[0]}" -gt 1440 ] && [ "${Geometry[1]}" -gt 900 ] ; then
