@@ -647,9 +647,18 @@ function repo()
 function restart_time()
 {
         local Time=ntp
+        local Time_Canonical="--user restart indicator-datetime"
 
         dbg_echo "Restarting system time service."
-        sudo systemctl restart $Time
+        if ! sudo systemctl restart $Time >/dev/null 2>&1; then
+                dbg_echo "Unable to restart ntpd so try indicator-datetime."
+                if ! systemctl $Time_Canonical >/dev/null 2>&1 ; then
+                        echo "Unable to restart any time services." >&2
+                        return 1
+                fi
+        fi
+
+        return 0
 }
 
 
