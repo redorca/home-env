@@ -332,6 +332,38 @@ function tag()
 }
 
 #
+#
+# Simplify creating a cscope tag database
+#
+function rtag()
+{
+        funame $@
+        local  START_DIR=
+        local  CSCOPE_OPTS=
+        local  CSCOPE_DBFILE=
+
+        CSCOPE_DBFILE=cscope.out
+        Path=$(pwd)
+        while [ ! -d $Path/.git ] ; do
+                if [ -d "$Path/home" ] && [ -d "$Path/boot" ] ; then
+                        dbg_echo "Hit the root dir, not .git dir found."
+                        return 1
+                fi
+                Path=$(dirname $Path)
+        done
+        dbg_echo "==========================="
+        chk_debug && ls -d $Path/../*/.git
+        dbg_echo "==========================="
+        if [ $(ls -d $Path/../*/.git | wc -l) -gt 1 ] ; then
+                Path=$(dirname $Path)
+        fi
+        dbg_echo "Would run cscope from $Path"
+        CSCOPE_OPTS="-R -k -b -s"
+        [ -f "$CSCOPE_DBFILE" ] && echo "Removed current cscope.out" >&2 && rm "$CSCOPE_DBFILE"
+        cscope $CSCOPE_OPTS "$Path"
+}
+
+#
 # Check status of $TRACE and return TRUE if its
 # value is 1 else return false.
 #
