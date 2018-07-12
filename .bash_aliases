@@ -644,6 +644,12 @@ function repo()
         echo -n -e "$(bold $Kolor)$Repo${RESET}"
 }
 
+function restart_time()
+{
+        local Time=ntp
+        sudo systemctl restart $Time
+}
+
 
 if which apt-get >/dev/null 2>&1 ; then
         echo "Set prompt for Debian sys-arch"
