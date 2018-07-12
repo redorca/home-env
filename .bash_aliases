@@ -576,7 +576,7 @@ function foo()
         local CLRB=
         local RST=
 
-        (chk_trace || chk_debug) || return
+        (chk_trace || chk_debug) || return 0
         echo -n " "
         RST="$RESET"
         chk_trace || CLRA="$(italic RED)" && CLR_A="$(italic BLUE)"
@@ -647,6 +647,8 @@ function repo()
 function restart_time()
 {
         local Time=ntp
+
+        dbg_echo "Restarting system time service."
         sudo systemctl restart $Time
 }
 
@@ -681,5 +683,5 @@ PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 # Set display resolution according to ip addr /24
 #
 chk_debug || set_display_resolution
-
+restart_time
 touch ~/.vimrc_color
