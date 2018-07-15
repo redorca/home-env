@@ -35,6 +35,7 @@ unset TRACE
 unset DEBUG
 
 declare -A ip_to_display
+ip_to_display["default"]="1920x1080"
 ip_to_display["192.168.168"]="2048x1152"
 ip_to_display["192.168.183"]="1680x1050"
 
@@ -98,8 +99,9 @@ function set_display_resolution()
 
         IP_ADDR=$(get_home_ip)
         dbg_echo "Found IP_ADDR: $IP_ADDR"
-        [ -z "$TargetRes" ] && TargetRes=${ip_to_display["$IP_ADDR"]}
-        [ -z "$TargetRes" ] && TargetRes=1600x900
+        TargetRes=${ip_to_display["$IP_ADDR"]}
+        [ -z "$TargetRes" ] && dbg_echo "No resolution matches that ip addr, use default." \
+                           && TargetRes="${ip_to_display[default]}"
 
         CurrentRes=$(display_geo)
 
@@ -112,6 +114,7 @@ function set_display_resolution()
 #                 Geometry[1]=1152
 #         fi
 
+        [ -z "$TargetRes" ] && echo "No target resolution set, keep the current one." && return 1
         dbg_echo " TargetRes : ($TargetRes), CurrentRes : ($CurrentRes)"
         [ "$TargetRes" = "$CurrentRes" ] && return 0
         echo "Reset display to $TargetRes." && xrandr -s $TargetRes
