@@ -407,9 +407,9 @@ select_board()
 
         Exit=exit
         All=all
-        BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') "${All}" "${Exit}" )
+        BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') )
 
-        select Val in "${BOARD_LIST[@]}" ; do
+        select Val in "${BOARD_LIST[@]}" all Exit ; do
                 echo_dbg "Val = <$Val>"
                 [ "$Val" = "exit" ] && return 1
                 [ -n "$Val" ] && break
