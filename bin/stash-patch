@@ -37,16 +37,6 @@ debug()
 }
 
 #
-# Shortcut to send output to stderr by default.
-#
-echo_dbg()
-{
-        debug || return
-        echo_err "$@"
-}
-
-
-#
 # Wrap echo with echo_err() and use /bin/echo instead.  This allows invoking
 # this script using sh as in "sh $(basename $0)"
 #
@@ -56,6 +46,15 @@ echo_err()
 
         Bin="/bin/echo -e"
         $Bin "$@" >&2
+}
+
+#
+# Shortcut to send output to stderr by default.
+#
+echo_dbg()
+{
+        debug || return
+        echo_err "$@"
 }
 
 #
@@ -106,7 +105,8 @@ list_stashes()
         Count=0
         echo -n "declare -a "
         git stash list | while read line ; do
-                echo -n $Name[$Count]=\"$line\"
+                echo_dbg "list $list"
+                echo -n $Name[$Count]=\'$line\'
                 Count=$(( Count + 1 ))
                 echo -n "  "
         done
