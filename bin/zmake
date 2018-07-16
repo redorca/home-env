@@ -356,14 +356,16 @@ build_nuttx()
         local OutFile=
         local repo_type=
         local Fails=
+        declare -a BOARDS
 
+    BOARDS=()
     Fails=0
-    [ "${#BOARDS[@]}" -eq 0 ] && [ -n "$BOARD" ] && BOARDS=( "$BOARD" )
-    [ "${#BOARDS[@]}" -eq 0 ] && echo_err "No board config specified, chose among these:" && \
-                if ! BOARDS=( $(select_board "${BOARDS_LIST[@]}") ) ; then
-                        echo_err "\nExit selected."
-                        exit 1
-                fi
+    [ "${#BOARDS[@]}" -eq 0 ] && [ -n "$BOARD" ] && BOARDS=( "$BOARD" ) && echo_dbg "BOARD: $BOARD"
+    [ "${#BOARDS[@]}" -eq 0 ] && echo_err "No board config specified, chose among these:"  &&
+    if ! BOARDS=( $(select_board) ) ; then
+        echo_dbg "\nExit selected."
+        exit 1
+    fi
 
     for board in "${BOARDS[@]}" ; do
         echo_err ":::: Compiling for Board $board"
@@ -401,17 +403,42 @@ select_board()
 {
         funcname $@
         local Val=
-        local BOARD_LIST=
+        declare -a BOARD_LIST=
+        declare -a BOARD_SET=
         local Exit=
         local All=
+        local idx=
 
         Exit=exit
         All=all
+        BOARD_LIST=()
+        BOARD_SET=()
         BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') )
+        for board_id in ${!BOARD_LIST[@]} ; do
+                echo_dbg -n "Looking in: ${BOARD_LIST[$board_id]}"
+                for idx in ${!TARGETS[@]} ; do
+                        echo_dbg "\t\tfor target: ${TARGETS[$idx]}"
+                        Path="configs/${BOARD_LIST[$board_id]}/${TARGETS[$idx]}"
+                        if ls -d $Path >/dev/null 2>&1  ; then
+                                bidx="${#BOARD_SET[@]}"
+                                echo_dbg "@ $bidx, Suitable config: ${BOARD_LIST[$board_id]}"
+                                BOARD_SET[$bidx]=${BOARD_LIST[$board_id]}
+                                echo_dbg "${BOARD_LIST[$board_id]} added to BOARD_SET"
+                                break
+                        fi
+                done
+        done
 
-        select Val in "${BOARD_LIST[@]}" all Exit ; do
+        echo_dbg "Board set to select from: ${BOARD_SET[*]}"
+        if [ "${#BOARD_SET[@]}" -eq 1 ] ; then
+                echo_dbg "One board to build in: ${BOARD_SET[@]}"
+                echo "${BOARD_SET[@]}"
+                return 0
+        fi
+
+        select Val in "${BOARD_SET[@]}" $ALL $Exit ; do
                 echo_dbg "Val = <$Val>"
-                [ "$Val" = "exit" ] && return 1
+                [ "${Val,,}" = "exit" ] && return 1
                 [ -n "$Val" ] && break
         done
 
@@ -532,7 +559,8 @@ echo     "Targets : (${TARGET_DIRS[*]})"
 # Corner Case: empty value (no mapping set)
 # Corner Case: illegal command (nonsense text)
 #
-echo_dbg "REPO_BUILD_CMDS[$(find_repo_type)] ${REPO_BUILD_CMDS[$(find_repo_type)]}"
+REPO_TYPE=$(find_repo_type)
+echo_dbg "REPO_BUILD_CMDS[$REPO_TYPE] ${REPO_BUILD_CMDS[$REPO_TYPE]}"
 
-${REPO_BUILD_CMDS["$(find_repo_type)"]}
+${REPO_BUILD_CMDS["$REPO_TYPE"]}
 
