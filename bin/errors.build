@@ -1,0 +1,75 @@
+CC:  nrf52_autoleds.c
+arm-none-eabi-gcc -c -fno-builtin -std=c99 -Werror -Wall -Wstrict-prototypes -Wshadow -Wundef -g "-O0" -fno-strict-aliasing -fno-strength-reduce -fomit-frame-pointer -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -I/home/zglue/src/zglue/nuttx/arch/arm/src/nrf52 -I/home/zglue/src/zglue/nuttx/arch/arm/src/board -I. -isystem /home/zglue/src/zglue/nuttx/include -I/home/zglue/src/zglue/nuttx/arch/arm/src/nrf52/hal -I/home/zglue/src/zglue/nuttx/arch/arm/src/nrf52/hal/device   -D__KERNEL__ -pipe -ffunction-sections -fdata-sections -I/home/zglue/src/zglue/nuttx/sched -I/home/zglue/src/zglue/nuttx/arch/arm/src/chip -I/home/zglue/src/zglue/nuttx/arch/arm/src/common -I/home/zglue/src/zglue/nuttx/arch/arm/src/"armv7-m"  nrf52_autoleds.c -o  nrf52_autoleds.o
+CC:  nrf52_appinit.c
+arm-none-eabi-gcc -c -fno-builtin -std=c99 -Werror -Wall -Wstrict-prototypes -Wshadow -Wundef -g "-O0" -fno-strict-aliasing -fno-strength-reduce -fomit-frame-pointer -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -I/home/zglue/src/zglue/nuttx/arch/arm/src/nrf52 -I/home/zglue/src/zglue/nuttx/arch/arm/src/board -I. -isystem /home/zglue/src/zglue/nuttx/include -I/home/zglue/src/zglue/nuttx/arch/arm/src/nrf52/hal -I/home/zglue/src/zglue/nuttx/arch/arm/src/nrf52/hal/device   -D__KERNEL__ -pipe -ffunction-sections -fdata-sections -I/home/zglue/src/zglue/nuttx/sched -I/home/zglue/src/zglue/nuttx/arch/arm/src/chip -I/home/zglue/src/zglue/nuttx/arch/arm/src/common -I/home/zglue/src/zglue/nuttx/arch/arm/src/"armv7-m"  nrf52_appinit.c -o  nrf52_appinit.o
+nrf52_appinit.c: In function 'board_app_initialize':
+nrf52_appinit.c:1021:8: error: 'io_bus_config_u_t {aka union <anonymous>}' has no member named 'spi_frequency'
+       .spi_frequency = SPI_FREQUENCY_MAX8614A,
+        ^~~~~~~~~~~~~
+nrf52_appinit.c:1021:24: error: 'SPI_FREQUENCY_MAX8614A' undeclared (first use in this function); did you mean 'SPI_FREQUENCY_MAX8614X'?
+       .spi_frequency = SPI_FREQUENCY_MAX8614A,
+                        ^~~~~~~~~~~~~~~~~~~~~~
+                        SPI_FREQUENCY_MAX8614X
+nrf52_appinit.c:1021:24: note: each undeclared identifier is reported only once for each function it appears in
+nrf52_appinit.c:1021:24: error: excess elements in union initializer [-Werror]
+nrf52_appinit.c:1021:24: note: (near initialization for 'max8614x_spi_config.bus_config')
+nrf52_appinit.c:1022:8: error: 'io_bus_config_u_t {aka union <anonymous>}' has no member named 'spi_devid'
+       .spi_devid = SPIDEV_ACC_GYRO_COMB,
+        ^~~~~~~~~
+nrf52_appinit.c:1022:20: error: excess elements in union initializer [-Werror]
+       .spi_devid = SPIDEV_ACC_GYRO_COMB,
+                    ^~~~~~~~~~~~~~~~~~~~
+nrf52_appinit.c:1022:20: note: (near initialization for 'max8614x_spi_config.bus_config')
+nrf52_appinit.c:1023:8: error: 'io_bus_config_u_t {aka union <anonymous>}' has no member named 'spi_mode'
+       .spi_mode = SPIDEV_MODE3,
+        ^~~~~~~~
+nrf52_appinit.c:1023:19: error: excess elements in union initializer [-Werror]
+       .spi_mode = SPIDEV_MODE3,
+                   ^~~~~~~~~~~~
+nrf52_appinit.c:1023:19: note: (near initialization for 'max8614x_spi_config.bus_config')
+nrf52_appinit.c:1016:3: error: missing braces around initializer [-Werror=missing-braces]
+   {
+   ^
+nrf52_appinit.c:1020:14:
+       .spi = spi0,
+              {   }
+nrf52_appinit.c:1016:3: error: missing braces around initializer [-Werror=missing-braces]
+   {
+   ^
+nrf52_appinit.c:1020:14:
+       .spi = spi0,
+              {   }
+nrf52_appinit.c:1029:5: error: 'max8614x_attach_gpio_irq' undeclared (first use in this function); did you mean 'bmi160_attach_gpio_irq'?
+     max8614x_attach_gpio_irq,
+     ^~~~~~~~~~~~~~~~~~~~~~~~
+     bmi160_attach_gpio_irq
+nrf52_appinit.c:1030:5: error: 'max8614x_enable_int_pin' undeclared (first use in this function); did you mean 'bmi160_enable_int_pin'?
+     max8614x_enable_int_pin,
+     ^~~~~~~~~~~~~~~~~~~~~~~
+     bmi160_enable_int_pin
+nrf52_appinit.c:1033:45: error: passing argument 2 of 'max8614x_register' from incompatible pointer type [-Werror=incompatible-pointer-types]
+   ret = max8614x_register(MAX8614X_DEVPATH, &max8614x_spi_config, &max8614x_ll_op);
+                                             ^
+In file included from nrf52_appinit.c:100:0:
+/home/zglue/src/zglue/nuttx/include/nuttx/sensors/max8614x.h:121:5: note: expected 'struct spi_dev_s *' but argument is of type 'struct sensor_bus_config_s *'
+ int max8614x_register(FAR const char *devpath, FAR struct spi_dev_s *spi);
+     ^~~~~~~~~~~~~~~~~
+nrf52_appinit.c:1033:9: error: too many arguments to function 'max8614x_register'
+   ret = max8614x_register(MAX8614X_DEVPATH, &max8614x_spi_config, &max8614x_ll_op);
+         ^~~~~~~~~~~~~~~~~
+In file included from nrf52_appinit.c:100:0:
+/home/zglue/src/zglue/nuttx/include/nuttx/sensors/max8614x.h:121:5: note: declared here
+ int max8614x_register(FAR const char *devpath, FAR struct spi_dev_s *spi);
+     ^~~~~~~~~~~~~~~~~
+cc1: all warnings being treated as errors
+/home/zglue/src/zglue/nuttx/configs/Board.mk:110: recipe for target 'nrf52_appinit.o' failed
+make[3]: *** [nrf52_appinit.o] Error 1
+make[3]: Leaving directory '/home/zglue/src/zglue/nuttx/configs/nrf52832_dk/src'
+Makefile:200: recipe for target 'board/libboard.a' failed
+make[2]: *** [board/libboard.a] Error 2
+make[2]: Leaving directory '/home/zglue/src/zglue/nuttx/arch/arm/src'
+Makefile.unix:416: recipe for target 'pass2' failed
+make[1]: *** [pass2] Error 2
+make[1]: Leaving directory '/home/zglue/src/zglue/nuttx'
+Makefile:157: recipe for target 'nsh' failed
+make: *** [nsh] Error 2
