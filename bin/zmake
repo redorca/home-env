@@ -415,13 +415,10 @@ select_board()
         BOARD_SET=()
         BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') )
         for board_id in ${!BOARD_LIST[@]} ; do
-                echo_dbg -n "Looking in: ${BOARD_LIST[$board_id]}"
                 for idx in ${!TARGETS[@]} ; do
-                        echo_dbg "\t\tfor target: ${TARGETS[$idx]}"
                         Path="configs/${BOARD_LIST[$board_id]}/${TARGETS[$idx]}"
                         if ls -d $Path >/dev/null 2>&1  ; then
                                 bidx="${#BOARD_SET[@]}"
-                                echo_dbg "@ $bidx, Suitable config: ${BOARD_LIST[$board_id]}"
                                 BOARD_SET[$bidx]=${BOARD_LIST[$board_id]}
                                 echo_dbg "${BOARD_LIST[$board_id]} added to BOARD_SET"
                                 break
@@ -429,14 +426,13 @@ select_board()
                 done
         done
 
-        echo_dbg "Board set to select from: ${BOARD_SET[*]}"
         if [ "${#BOARD_SET[@]}" -eq 1 ] ; then
                 echo_dbg "One board to build in: ${BOARD_SET[@]}"
                 echo "${BOARD_SET[@]}"
                 return 0
         fi
 
-        select Val in "${BOARD_SET[@]}" $ALL $Exit ; do
+        select Val in "${BOARD_SET[@]}" $All $Exit ; do
                 echo_dbg "Val = <$Val>"
                 [ "${Val,,}" = "exit" ] && return 1
                 [ -n "$Val" ] && break
