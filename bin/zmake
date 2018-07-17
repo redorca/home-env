@@ -238,7 +238,7 @@ find_repo_root()
 set_fastapi_targets()
 {
         funcname $@
-        echo "zeus1 clean sim zeus2 clean sim"
+        echo "zeus1 clean sim distclean zeus2 clean sim"
 }
 
 set_nuttx_app_list()
@@ -328,7 +328,7 @@ build_fastapi()
         echo_err "Compiling for $repo_type"
         echo_dbg "Targets are: ${Targets[*]}"
 
-        for target in ${Targets[@]} ; do
+        for target in distclean ${Targets[@]} ; do
             echo_dbg "\tbuild target <$target>"
             OutFile="${OUT}.${repo_type}.${target}"
             echo_err -n "\tBuilding $target ... "

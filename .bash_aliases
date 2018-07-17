@@ -37,7 +37,7 @@ unset DEBUG
 declare -A ip_to_display
 ip_to_display["default"]="1920x1080"
 ip_to_display["192.168.168"]="2048x1152"
-ip_to_display["192.168.183"]="1680x1050"
+ip_to_display["192.168.183"]="1920x1080"
 
 function dbg_echo()
 {
