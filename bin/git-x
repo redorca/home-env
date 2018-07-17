@@ -210,6 +210,8 @@ list_files()
         Filter="${!1}"
         echo_dbg "Filter ($Filter) ($1)"
 
+        [ -z "$(git status --porcelain)" ] && echo "Nothing to list." && return
+
         # shellcheck disable=2162 # read without -r will mangle backslashes.
         git status --porcelain | sed -e 's:^ :_:' \
                 | grep "$Filter" \
@@ -217,8 +219,6 @@ list_files()
 }
 
 
-PUSH="push"
-# PUSH="review -D"
 FILTER="^[A-Z_][A-Z]"
 setup_mode_code
 if [ -n "$UNTRACK" ] && [ "$UNTRACK" -eq 1 ] ; then
@@ -267,10 +267,9 @@ while [ $# -ne 0 ] ; do
            ;;
         -P) page_size=$2; echo "page size: $page_size"
            ;;
-        -p|--push) POST_ACTION=( "eval" "git" "commit" "&&" "git" "$PUSH" )
+        -p|--push) PUSH="push"
            ;;
         -r) PUSH="review -D"
-            POST_ACTION=( "eval" "git" "commit" "&&" "git" "$PUSH" )
            ;;
         --rebase) git stash save "====" && git pull --rebase && git stash pop && exit
                 echo "Failed somewhere along stash, pull (rebase), and pop." >&2
@@ -286,6 +285,8 @@ while [ $# -ne 0 ] ; do
         shift
 done
 # ARGS_End"
+
+[ -z "$PUSH" ] || POST_ACTION=( "eval" "git" "commit" "&&" "git" "$PUSH" )
 
 if ! var_sanity_check page_size ; then
         echo "page_size has a bad value: ($page_size)" >&2
