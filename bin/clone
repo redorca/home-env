@@ -51,11 +51,13 @@ RepoRename["apps"]="nuttx_apps"
 RepoRename["bme280"]="BME280_driver"
 RepoRename["bmi160"]="BMI160_driver"
 RepoRename["bmm050"]="BMM050_driver"
+RepoRename["notepad"]="notepad-plus-plus"
 
 #
 # Hash translation from canonical repo target to  URI crafted to
 # hold enough info to clone/checkout the source.
 #
+Repo2Host["notepad-plus-plus"]="master@https://github.com/notepad-plus-plus/notepad-plus-plus.git"
 Repo2Host["mbed-os"]="master@git@github.com/ARMmbed/mbed-os.git"
 Repo2Host["qemu"]="master@git://git.qemu.org/qemu.git"
 Repo2Host["oclint"]="master@git@github.com/oclint::oclint.git, ocling-docs.git"
@@ -88,6 +90,7 @@ Repo2Host["BMI160_driver"]="master@https://github.com/BoschSensortec/BMI160_driv
 Repo2Host["BME280_driver"]="master@https://github.com/BoschSensortec/BME280_driver.git"
 Repo2Host["BMM050_driver"]="master@https://github.com/BoschSensortec/BMM050_driver.git"
 
+FinalCmds=()
 FinalCmds["nuttx"]="setup_repo"
 FinalCmds["apps"]="setup_repo"
 FinalCmds["nuttx_apps"]="setup_repo"
@@ -181,13 +184,6 @@ debug()
 {
         [ "$DEBUG" = "1" ] && return 0
         return 1
-}
-
-help()
-{
-        Func $@
-        sed    -e '1,/^#Help/d' -e '/^#Help/,$d' "$0" | \
-                        sed -n -e '/^[ 	]\+[^A-Za-z0-9+=);_-]\+#/p' -e '/)/p'
 }
 
 #
@@ -432,10 +428,12 @@ clone_one()
                 echo_err "Not cloned."
                 return 1
         fi
-        [ -n "$MSG" ] && echo "${MSG} $TrueTarget"
+        [ -n "$MSG" ] && echo_dbg "== ${MSG} $TrueTarget"
 
-        CMD="${FinalCmds["${TrueTarget%.git}"]} ${TrueTarget%.git}"
-        [ -z "$CMD" ] && echo_dbg "No final command to run: <$CMD>" && return 0
+        echo_dbg "=== TrueTarget: $TrueTarget,  Final Cmd : ${FinalCmds[${TrueTarget%.git}]}"
+        CMD="${FinalCmds["${TrueTarget%.git}"]}"
+        [ -z "${CMD}" ] && echo_dbg "No final command to run: <$CMD>" && return 0
+        CMD="$CMD ${TrueTarget%.git}"
         echo_dbg "Final Command: <$CMD>"
         $CMD
 }
@@ -465,6 +463,38 @@ dual_source_repos()
         Func $@
         git remote rename origin gerrit
         git remote add github ssh://git@github.com/zglue-bill
+}
+
+hhelp()
+{
+        Func $@
+        sed    -e '1,/^#Help/d' -e '/^#Help/,$d' "$0" | \
+                        sed -n -e '/^[ 	]\+[^A-Za-z0-9+=);_-]\+#/p' -e '/)/p'
+}
+
+Help()
+{
+        cat << "EOF"
+    $(basename $0) : [h]  [-d <dir>] [ -c <repo1 ... > ]
+
+        -c :    Clone.  Clone from a repo specified by the arguments
+                The flag must be the last flag and immediately precede
+                the list and of repos.
+        -d :    Create a parent directory of the cloned repos.
+        -h :    Print this text to stdout.
+        -l :    Print the list of repos available to clone.
+EOF
+}
+
+parse_cli()
+{
+        while [ $# -ne 0 ] ; do
+                case
+                 -h )  Help && exit
+                ;;
+                esac
+                shift
+        done
 }
 
 SRC_REPO_URL="$GERRIT_HOST_URL"

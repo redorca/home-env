@@ -1,5 +1,22 @@
 #!/bin/bash
 
+UTF_OUT=utf-8
+
+file_unicode_check()
+{
+        local Blah=
+        local UTF_IN=
+        local UTF_OUT=
+
+
+        while [ $# -ne 0 ] ; do
+                Parts=( $(file -ib $1) )
+                UTF_IN="${Parts[1]##*=}"
+                if [ "${UTF_IN,,}" != "${UTF_OUT,,}" 
+                        iconv -f $UTF_IN  -t $UTF_OUT "$1" > "$1"-utf8
+                shift
+        done
+}
 
 strip_srcs()
 {
@@ -21,5 +38,9 @@ strip_ascii()
         done
 }
 
+if ! file_unicode_check "$@" ; then
+        echo "Faid processing a unicode conversion to $UTF_OUT." >&2
+        exit 1
+fi
 strip_ascii "$@"
-# strip_srcs "$@"
+strip_srcs "$@"
