@@ -13,12 +13,23 @@ SDK_13="SDK_13.0.0-1"
 SDK_13_1="SDK_13.1.0"
 SDK_14="SDK_14.0.0"
 DIALOG_SDK=dialog_585_sdk_dev
+NORDIC_SDK="$SDK_13_1"
 
+declare -A OfferRepos
 declare -A Repo2Host
 declare -A RepoRename
 declare -A CONFIGS
 declare -A svn_backed
 declare -A FinalCmds
+
+OfferRepos["NuttX"]="Official repo for Nuttx rtos for branch master"
+OfferRepos["AppsX"]="Official repo for Nuttx apps for branch master"
+OfferRepos["nuttx"]="zGlue repo for nuttx rtos for branch zdk"
+OfferRepos["apps"]="zGlue repo for nuttx_apps for branch zdk"
+OfferRepos["fast"]="zGlue repo for fast_api repo branch fast_api_dev".
+OfferRepos["auto_test"]="zGlue repo for auto_test tools for Gerrit branch=master."
+OfferRepos["dialog"]="zGlue repo for Dialog sdk  branch $DIALOG_SDK"
+OfferRepos["nordic"]="zGlue repo for Nordic sdk branch $NORDIC_SDK" 
 
 #
 # Repos which are svn based are added here along with the command
@@ -45,7 +56,7 @@ RepoRename["riot"]="RIOT"
 RepoRename["apps"]="nuttx_apps"
 # Setup in setup_repo_table() ## RepoRename["dialog"]="dialog_585_sdk_dev@3rd_Party_SDK"
 # Setup in setup_repo_table() ## RepoRename["dallas"]="dialog_585_sdk_dev@3rd_Party_SDK"
-# Setup in setup_repo_table() ## RepoRename["nordic"]="SDK_13.0.0-1@3rd_Party_SDK"
+# Setup in setup_repo_table() ## RepoRename["nordic"]="#$NORDIC_SDK"@3rd_Party_SDK"
 # Setup in setup_repo_table() ## RepoRename["sdk_13_1"]="SDK_13.1.0@3rd_Party_SDK"
 # Setup in setup_repo_table() ## RepoRename["sdk_14"]="SDK_14.0.0@3rd_Party_SDK"
 RepoRename["bme280"]="BME280_driver"
@@ -146,10 +157,10 @@ RESET='\033[0;39;49m'
 
 echo_err()
 {
-        echo -e "$@" >&2
+        echo -e "$@${RESET}" >&2
 }
 
-echo_dbg()
+dbg_echo()
 {
         debug || return 0
 
@@ -161,7 +172,7 @@ echo_dbg()
 #
 Func()
 {
-        echo_dbg "${#FUNCNAME[@]} : ${FUNCNAME[1]}( $@ )"
+        dbg_echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}( $@ )"
 }
 
 #
@@ -194,13 +205,13 @@ setup_repo_table()
         Func $@
         local repo_host_url=
 
-        [ -z "$1" ] && echo_dbg "No repo provided." && return 1
+        [ -z "$1" ] && dbg_echo "No repo provided." && return 1
         repo_host_url="$1"; shift
-        echo_dbg "repo_host_url ($repo_host_url)"
+        dbg_echo "repo_host_url ($repo_host_url)"
 	Repo2Host["fast_api"]=fast_api_dev@$repo_host_url/fast_api
 	Repo2Host["sdk_13"]=$SDK_13@$repo_host_url/3rd_Party_SDK
 	Repo2Host["sdk_14"]=$SDK_14@$repo_host_url/3rd_Party_SDK
-	Repo2Host["nordic"]=$SDK_13_1@$repo_host_url/3rd_Party_SDK
+	Repo2Host["nordic"]=$NORDIC_SDK@$repo_host_url/3rd_Party_SDK
 	Repo2Host["dialog"]=$DIALOG_SDK@$repo_host_url/3rd_Party_SDK
 	Repo2Host["nuttx"]=zdk@$repo_host_url/nuttx.git
 	Repo2Host["nuttx-ext"]=zdk@$repo_host_url/nuttx.git,zdk@$repo_host_url/external.git,zdk@$repo_host_url/nuttx_apps.git
@@ -228,6 +239,21 @@ dump_Repo2Host()
         for key in ${!RepoRename[@]} ; do
                 for="${RepoRename[$key]}"
                 echo -e "alias: ${BLUE}$key\t\t${RED}${for#*@}${RESET}"
+        done
+}
+
+dump_OfferRepos()
+{
+        Func $@
+
+        echo_err "\t${YLWGRN}\tRepos supported"
+        echo_err "\t${YLWGRN}\t               "
+        echo_err "\t${YLWGRN}Repo:\t\t\tDescription"
+        echo_err "\t${YLWGRN}     \t\t\t           "
+        for key in ${!OfferRepos[@]} ; do
+                echo_err -n "      ${YEllOW}$key\t"
+                [ "${#key}" -le 9 ] && echo -n -e "\t"
+                echo_err "${BLUE}${OfferRepos[$key]}"
         done
 }
 
@@ -329,7 +355,7 @@ get_info()
 
         [ -z "$1" ] && return 1
         Key=${1%%.git}
-        echo_dbg "-n Key: (${Key})\t"
+        dbg_echo "-n Key: (${Key})\t"
         if [ "${Key}" = "astyle" ] ; then
                 $ASTYLE_CO
                 return
@@ -340,7 +366,7 @@ get_info()
                 Branch=${Repo2Host[$Key]}
         fi
         [ -z "$Branch" ] && echo_err "No repo info found." && return 1
-        echo_dbg "Branch: <$Branch>"
+        dbg_echo "Branch: <$Branch>"
         break_apart "$Branch"
 }
 
@@ -374,12 +400,12 @@ set_cmd_git()
                 echo_err "Repo not found"
                 return 1
         fi
-        echo_dbg "Info: <$Info>"
+        dbg_echo "Info: <$Info>"
 
         Proto=ssh
         Uri=${Info[$URL]}
         tmp="${Uri#*://}"
-        echo_dbg "Uri: <$Uri>, tmp <$tmp>"
+        dbg_echo "Uri: <$Uri>, tmp <$tmp>"
 
         [ "$tmp" != "${Uri}" ] && Proto="${Uri%://*}"
         Uri="${Uri#*://}"
@@ -405,7 +431,7 @@ clone_one()
 
         [ -z "$1" ] && return 1
         TrueTarget="$(resolve_clone_id $1)"
-        echo_dbg "Target to clone: $TrueTarget"
+        dbg_echo "Target to clone: $TrueTarget"
         if [ -n "${svn_backed[$TrueTarget]}" ] ; then
                 CMD="${svn_backed[$TrueTarget]} ${Repo2Host[$TrueTarget]}"
         else
@@ -423,18 +449,18 @@ clone_one()
                 MSG="Checked out:"
         fi
 
-        echo_dbg "$CMD"
+        dbg_echo "$CMD"
         if ! $CMD >/dev/null 2>&1; then
                 echo_err "Not cloned."
                 return 1
         fi
-        [ -n "$MSG" ] && echo_dbg "== ${MSG} $TrueTarget"
+        [ -n "$MSG" ] && dbg_echo "== ${MSG} $TrueTarget"
 
-        echo_dbg "=== TrueTarget: $TrueTarget,  Final Cmd : ${FinalCmds[${TrueTarget%.git}]}"
+        dbg_echo "=== TrueTarget: $TrueTarget,  Final Cmd : ${FinalCmds[${TrueTarget%.git}]}"
         CMD="${FinalCmds["${TrueTarget%.git}"]}"
-        [ -z "${CMD}" ] && echo_dbg "No final command to run: <$CMD>" && return 0
+        [ -z "${CMD}" ] && dbg_echo "No final command to run: <$CMD>" && return 0
         CMD="$CMD ${TrueTarget%.git}"
-        echo_dbg "Final Command: <$CMD>"
+        dbg_echo "Final Command: <$CMD>"
         $CMD
 }
 
@@ -472,7 +498,7 @@ hhelp()
                         sed -n -e '/^[ 	]\+[^A-Za-z0-9+=);_-]\+#/p' -e '/)/p'
 }
 
-Help()
+help()
 {
         cat << "EOF"
     $(basename $0) : [h]  [-d <dir>] [ -c <repo1 ... > ]
@@ -488,14 +514,51 @@ EOF
 
 parse_cli()
 {
+        Func $@
+
         while [ $# -ne 0 ] ; do
-                case
-                 -h )  Help && exit
+                case "$1" in
+                 -c ) shift ; TARGET=( $@ )
+                      shift ${#TARGET[@]}
+                      dbg_echo "\$# = $#, shifted ${#TARGET[@]}, Target(s): ${TARGET[*]}"
+                ;;
+                 -d )  [ -n "$2" ] && shift
+                       [ ! -d "$1" ] && help && exit
+                       PARENT_DIR="$1" ; shift
+                       dbg_echo "PARENT_DIR set to $PARENT_DIR"
+                ;;
+                 -h )  help && exit
+                ;;
+                 -hh )  hhelp && exit
+                ;;
+                 -l )  [ "$(basename $0)" = "klone" ] && dump_Repo2Host && exit
+                       dump_OfferRepos && exit
+                ;;
+        # Rename origin to something else.
+                -O | --no-origin)
+                     CONFIG_TWO_REPOS="dual_source_repo" # TBD
+                ;;
+                -p | --print) PRINT=YES  # Print the set of repos and names.
+                ;;
+        # set a particular url to clone the desired repo from.
+                -R | --repo ) SRC_REPO_URL="$2"; shift # set the repo to init with.
+                ;;
+                *) [ -z "${OfferRepos[$1]}" ] && echo "Not a supported repo: $1." && exit
+                   TARGET[${#TARGET[@]}]="$1"; # The repo name to clone.
                 ;;
                 esac
                 shift
         done
 }
+
+if [ "$(basename $0)" != "klone" ] ; then
+        parse_cli $@
+        [ -z "${TARGET[*]}" ] && echo "Nothing to clone." >&2 && exit
+
+        clone "${TARGET[@]}"
+
+        exit
+fi
 
 SRC_REPO_URL="$GERRIT_HOST_URL"
 [ "$#" -eq 0 ] && help && exit 1
