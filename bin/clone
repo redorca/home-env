@@ -531,7 +531,7 @@ parse_cli()
                 ;;
                  -hh )  hhelp && exit
                 ;;
-                 -l )  [ "$(basename $0)" = "klone" ] && dump_Repo2Host && exit
+                 -l )  [ "$(basename $0)" != "clone" ] && dump_Repo2Host && exit
                        dump_OfferRepos && exit
                 ;;
         # Rename origin to something else.
@@ -551,7 +551,7 @@ parse_cli()
         done
 }
 
-if [ "$(basename $0)" != "klone" ] ; then
+if [ "$(basename $0)" = "clone" ] ; then
         parse_cli $@
         [ -z "${TARGET[*]}" ] && echo "Nothing to clone." >&2 && exit
 
