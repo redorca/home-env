@@ -532,8 +532,8 @@ parse_cli()
                 ;;
                  -d)    [ "${2:0:1}" = "-" ] && help && exit
                         [ -z "$2" ] && help && exit
-                        [ -d "$1" ] && echo_err "$1 already exists" && help && exit
-                        PARENT_DIR="$1" ; shift
+                        [ -d "$2" ] && echo_err "$2 already exists" && help && exit
+                        PARENT_DIR="$2" ; shift
                         dbg_echo "PARENT_DIR set to $PARENT_DIR"
                 ;;
                  -h )   help && exit
@@ -568,10 +568,16 @@ if [ "$(basename $0)" = "clone" ] ; then
         fi
         parse_cli $@
         [ -z "${TARGET[*]}" ] && echo "Nothing to clone." >&2 && exit
-
-        clone "${TARGET[@]}"
-
-        exit
+        [ -n "$PARENT_DIR" ] && dbg_echo "Create <$PARENT_DIR>" && mkdir -p "$PARENT_DIR"
+        (
+                cd $PARENT_DIR || exit -2
+                dbg_echo "cd to $PARENT_DIR: <$(pwd)>"
+                if ! clone "${TARGET[@]}" ; then
+                        rm -rf $PARENT_DIR
+                        RV="-1"
+                fi
+                exit $RV
+        )
 fi
 
 [ "$#" -eq 0 ] && help && exit 1
