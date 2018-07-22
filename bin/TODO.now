@@ -46,5 +46,11 @@ X   profiles:
         Write some git commands, i.e. callable through git, to help
         troubleshoot, combine actions, etc.
 
+        cluster (--fuck, --unfuck)
+
+        retreat : Back out of a bad situation and start over.  E.G. a rebase mixed with a commit.
+
+
+
 
 
