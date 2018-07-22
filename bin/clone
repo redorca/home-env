@@ -14,6 +14,7 @@ SDK_13_1="SDK_13.1.0"
 SDK_14="SDK_14.0.0"
 DIALOG_SDK=dialog_585_sdk_dev
 NORDIC_SDK="$SDK_13_1"
+SRC_REPO_URL="$GERRIT_HOST_URL"
 
 declare -A OfferRepos
 declare -A Repo2Host
@@ -26,6 +27,7 @@ OfferRepos["NuttX"]="Official repo for Nuttx rtos for branch master"
 OfferRepos["AppsX"]="Official repo for Nuttx apps for branch master"
 OfferRepos["nuttx"]="zGlue repo for nuttx rtos for branch zdk"
 OfferRepos["apps"]="zGlue repo for nuttx_apps for branch zdk"
+OfferRepos["nuttx_apps"]="zGlue repo for nuttx_apps for branch zdk"
 OfferRepos["fast"]="zGlue repo for fast_api repo branch fast_api_dev".
 OfferRepos["auto_test"]="zGlue repo for auto_test tools for Gerrit branch=master."
 OfferRepos["dialog"]="zGlue repo for Dialog sdk  branch $DIALOG_SDK"
@@ -216,7 +218,8 @@ setup_repo_table()
 	Repo2Host["nuttx"]=zdk@$repo_host_url/nuttx.git
 	Repo2Host["nuttx-ext"]=zdk@$repo_host_url/nuttx.git,zdk@$repo_host_url/external.git,zdk@$repo_host_url/nuttx_apps.git
 	Repo2Host["nuttx_apps"]=zdk@$repo_host_url/nuttx_apps.git
-	Repo2Host["apps"]=zdk@$repo_host_url/nuttx_apps.git
+#	Repo2Host["apps"]=zdk@$repo_host_url/nuttx_apps.git
+	Repo2Host["apps"]="${Repo2Host["nuttx_apps"]}"
 	Repo2Host["external"]=zdk@$repo_host_url/external.git
 	Repo2Host["auto_test"]=master@$repo_host_url/auto_test.git
 	Repo2Host["3rd_Party_SDK"]=dialog_585_sdk_dev@$repo_host_url/3rd_Party_SDK.git
@@ -355,7 +358,7 @@ get_info()
 
         [ -z "$1" ] && return 1
         Key=${1%%.git}
-        dbg_echo "-n Key: (${Key})\t"
+        dbg_echo -n "Key: (${Key})\t"
         if [ "${Key}" = "astyle" ] ; then
                 $ASTYLE_CO
                 return
@@ -397,7 +400,7 @@ set_cmd_git()
 
         target="$1"
         if ! Info=( $(get_info $target) ) ; then
-                echo_err "Repo not found"
+                echo_err "Repo not found <$target>"
                 return 1
         fi
         dbg_echo "Info: <$Info>"
@@ -500,9 +503,10 @@ hhelp()
 
 help()
 {
-        cat << "EOF"
+        cat <<  EOF 
     $(basename $0) : [h]  [-d <dir>] [ -c <repo1 ... > ]
-
+EOF
+        cat << "EOF"
         -c :    Clone.  Clone from a repo specified by the arguments
                 The flag must be the last flag and immediately precede
                 the list and of repos.
@@ -515,43 +519,53 @@ EOF
 parse_cli()
 {
         Func $@
+        local REPO_MODE=
 
         while [ $# -ne 0 ] ; do
+                dbg_echo "\$1 == ($1)"
                 case "$1" in
-                 -c ) shift ; TARGET=( $@ )
-                      shift ${#TARGET[@]}
-                      dbg_echo "\$# = $#, shifted ${#TARGET[@]}, Target(s): ${TARGET[*]}"
+                 -c)    REPO_MODE="yes"
+                        dbg_echo "REPO_MODE set: <$REPO_MODE>"
+#                       shift ; TARGET=( $@ )
+#                       shift ${#TARGET[@]}
+#                       dbg_echo "\$# = $#, shifted ${#TARGET[@]}, Target(s): ${TARGET[*]}"
                 ;;
-                 -d )  [ -n "$2" ] && shift
-                       [ ! -d "$1" ] && help && exit
-                       PARENT_DIR="$1" ; shift
-                       dbg_echo "PARENT_DIR set to $PARENT_DIR"
+                 -d)    [ "${2:0:1}" = "-" ] && help && exit
+                        [ -z "$2" ] && help && exit
+                        [ -d "$1" ] && echo_err "$1 already exists" && help && exit
+                        PARENT_DIR="$1" ; shift
+                        dbg_echo "PARENT_DIR set to $PARENT_DIR"
                 ;;
-                 -h )  help && exit
+                 -h )   help && exit
                 ;;
                  -hh )  hhelp && exit
                 ;;
-                 -l )  [ "$(basename $0)" != "clone" ] && dump_Repo2Host && exit
-                       dump_OfferRepos && exit
+                 -l )   [ "$(basename $0)" != "clone" ] && dump_Repo2Host && exit
+                        dump_OfferRepos && exit
                 ;;
         # Rename origin to something else.
                 -O | --no-origin)
-                     CONFIG_TWO_REPOS="dual_source_repo" # TBD
+                        CONFIG_TWO_REPOS="dual_source_repo" # TBD
                 ;;
-                -p | --print) PRINT=YES  # Print the set of repos and names.
+                -p | --print) dump_Repo2Host && exit 0
                 ;;
         # set a particular url to clone the desired repo from.
                 -R | --repo ) SRC_REPO_URL="$2"; shift # set the repo to init with.
                 ;;
-                *) [ -z "${OfferRepos[$1]}" ] && echo "Not a supported repo: $1." && exit
-                   TARGET[${#TARGET[@]}]="$1"; # The repo name to clone.
+                *)      [ "$REPO_MODE" != "yes" ] && echo "Unknown argumet: <$1>" && help && exit
+                        [ -z "${OfferRepos[$1]}" ] && echo "Not a supported repo: $1." && exit
+                        TARGET[${#TARGET[@]}]="$1"; # The repo name to clone.
                 ;;
                 esac
                 shift
         done
+  dbg_echo done
 }
 
 if [ "$(basename $0)" = "clone" ] ; then
+        if ! setup_repo_table $SRC_REPO_URL ; then
+                exit 1
+        fi
         parse_cli $@
         [ -z "${TARGET[*]}" ] && echo "Nothing to clone." >&2 && exit
 
@@ -560,7 +574,6 @@ if [ "$(basename $0)" = "clone" ] ; then
         exit
 fi
 
-SRC_REPO_URL="$GERRIT_HOST_URL"
 [ "$#" -eq 0 ] && help && exit 1
 #Help
 while [ $# -ne 0 ] ; do
@@ -571,7 +584,7 @@ while [ $# -ne 0 ] ; do
         -O | --no-origin)
                      CONFIG_TWO_REPOS="dual_source_repo" # TBD
                 ;;
-        -p | --print) PRINT=YES  # Print the set of repos and names.
+        -p | --print) dump_Repo2Host && exit 0
                 ;;
         # set a particular url to clone the desired repo from.
         -R | --repo ) SRC_REPO_URL="$2"; shift # set the repo to init with.
