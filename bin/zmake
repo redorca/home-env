@@ -364,6 +364,7 @@ build_nuttx()
                         echo_err "\nExit selected."
                         exit 1
                 fi
+                echo_dbg "BOARDS ${BOARDS[*]}"
 
     for board in "${BOARDS[@]}" ; do
         echo_err ":::: Compiling for Board $board"
@@ -407,12 +408,14 @@ select_board()
 
         Exit=exit
         All=all
-        BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') )
+#       BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') )
+        BOARD_LIST=( $(ls configs/*/Makefile | awk -F'/' '{print $2}') )
 
         select Val in "${BOARD_LIST[@]}" all Exit ; do
                 echo_dbg "Val = <$Val>"
                 [ "$Val" = "exit" ] && return 1
                 [ -n "$Val" ] && break
+                [ -n "$REPLY" ] && echo_err "REPLY is <$REPLY>"
         done
 
         [ "$Val" != "all" ] && echo "$Val" && return 0

@@ -42,6 +42,7 @@ OfferRepos["Doxygen"]="zGlue repo for Doxygen branch $DOXYGEN"
 svn_backed["astyle-code"]="svn checkout"
 svn_backed["xpra"]="svn checkout"
 svn_backed["FreeImage-svn"]="svn checkout"
+svn_backed["Moritz"]="svn checkout"
 
 #
 # Hash to match informal repo names to the canonical ones.
@@ -100,6 +101,7 @@ Repo2Host["poppler"]="master@https://anongit.freedesktop.org/git/poppler/poppler
 Repo2Host["xpra"]="https://www.xpra.org/svn/Xpra/trunk xpra"
 Repo2Host["astyle-code"]="https://svn.code.sf.net/p/astyle/code/trunk astyle-code"
 Repo2Host["FreeImage-svn"]="https://svn.code.sf.net/p/freeimage/svn/ freeimage-svn"
+Repo2Host["Moritz"]="https://svn.code.sf.net/p/moritz/Archive_SVN/ moritz-Archive_SVN"
 # Repo2Host["FreeImage-git"]="master@https://git.code.sf.net/p/freeimage/git freeimage-git"
 Repo2Host["git-repo"]="master@https://gerrit.googlesource.com/git-repo.git"
 Repo2Host["BMI160_driver"]="master@https://github.com/BoschSensortec/BMI160_driver.git"
