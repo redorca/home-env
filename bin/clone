@@ -29,6 +29,7 @@ OfferRepos["AppsX"]="Official repo for Nuttx apps for branch master"
 OfferRepos["nuttx"]="zGlue repo for nuttx rtos for branch zdk"
 OfferRepos["apps"]="zGlue repo for nuttx_apps for branch zdk"
 OfferRepos["nuttx_apps"]="zGlue repo for nuttx_apps for branch zdk"
+OfferRepos["tools"]="Official repo for Nuttx tools, branch master"
 OfferRepos["fast"]="zGlue repo for fast_api repo branch fast_api_dev".
 OfferRepos["auto_test"]="zGlue repo for auto_test tools for Gerrit branch=master."
 OfferRepos["dialog"]="zGlue repo for Dialog sdk  branch $DIALOG_SDK"
@@ -382,6 +383,7 @@ get_info()
                 Branch=${Key##@*}
         else
                 Branch=${Repo2Host[$Key]}
+                dbg_echo "Repo2Host[$Key] : <$Branch>"
         fi
         [ -z "$Branch" ] && echo_err "No repo info found." && return 1
         dbg_echo "Branch: <$Branch>"
@@ -513,6 +515,25 @@ hhelp()
                         sed -n -e '/^[ 	]\+[^A-Za-z0-9+=);_-]\+#/p' -e '/)/p'
 }
 
+set_dir_aside()
+{
+        local CUR_DIR
+
+        CUR_DIR="$1"
+        mv "$CUR_DIR" ".${CUR_DIR}"
+}
+
+make_a_dir()
+{
+        local Dir=
+
+        [ -z "$1" ] && return 1
+
+        Dir="$1"
+        [ -d $Dir ] && set_dir_aside $Dir
+        mkdir -p $Dir
+}
+
 help()
 {
         cat <<  EOF 
@@ -522,7 +543,9 @@ EOF
         -c :    Clone.  Clone from a repo specified by the arguments
                 The flag must be the last flag and immediately precede
                 the list and of repos.
-        -d :    Create a parent directory of the cloned repos.
+        -d :    Create a new parent directory of the cloned repos. If the
+                directory already exists then it will be set aside and a
+                new directory created.
         -h :    Print this text to stdout.
         -l :    Print the list of repos available to clone.
 EOF
@@ -531,21 +554,21 @@ EOF
 parse_cli()
 {
         Func $@
-        local REPO_MODE=
 
         while [ $# -ne 0 ] ; do
                 dbg_echo "\$1 == ($1)"
                 case "$1" in
-                 -c)    REPO_MODE="yes"
-                        dbg_echo "REPO_MODE set: <$REPO_MODE>"
-#                       shift ; TARGETS=( $@ )
-#                       shift ${#TARGETS[@]}
-#                       dbg_echo "\$# = $#, shifted ${#TARGETS[@]}, Target(s): ${TARGETS[*]}"
+                 -c )   shift ; TARGETS=( $@ )
+                        dbg_echo "Target based on $@"
+                        shift ${#TARGETS[@]}
+                        dbg_echo "\$# = $#, shifted ${#TARGETS[@]}, Target(s): ${TARGETS[*]}"
                 ;;
-                 -d)    [ "${2:0:1}" = "-" ] && help && exit
-                        [ -z "$2" ] && help && exit
-                        [ -d "$2" ] && echo_err "$2 already exists" && help && exit
-                        PARENT_DIR="$2" ; shift
+                 -d )   [ -n "$2" ] && dbg_echo "Found a \$2: $2" && shift
+                        if ! make_a_dir "$1" ; then
+                                echo_err "Unable to create directory path $1"
+                                exit 1
+                        fi
+                        PARENT_DIR="$1" ; shift
                         dbg_echo "PARENT_DIR set to $PARENT_DIR"
                 ;;
                  -h )   help && exit
@@ -574,7 +597,6 @@ parse_cli()
         done
   dbg_echo done
 }
-
 
 if [ "$(basename $0)" = "clone" ] ; then
         if ! setup_repo_table $SRC_REPO_URL ; then

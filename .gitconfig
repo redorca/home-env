@@ -3,12 +3,14 @@
 	name = Bill Rees
 [color]
 	branch = auto
-	diff = auto
 	interactive = auto
         review = auto
+	diff = auto
 
 [color "log"]
+        Commit = black
         Date = red
+	meta = blue yellow bold
 
 [color "status"]
         added = green
