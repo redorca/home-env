@@ -240,7 +240,7 @@ dump_Repo2Host()
         echo_err  "\tRepo names to clone and their repo urls"
         echo_err  "\tFormat of repo url:  branch@name@url/x.git"
         for key in ${!Repo2Host[@]} ; do
-                echo_err -n "Repo: ${YEllOW}$key\t"
+                echo_err -n "Repo: ${YELLOW}$key\t"
                 [ "${#key}" -le 9 ] && echo_err -n "\t"
                 echo_err "${BLUE}${Repo2Host[$key]}${RESET}"
         done
@@ -584,6 +584,7 @@ if [ "$(basename $0)" = "clone" ] ; then
 
         [ -z "${TARGETS[*]}" ] && echo_err "Nothing to clone." >&2 && exit
         [ -n "$PARENT_DIR" ] && dbg_echo "Create <$PARENT_DIR>" && mkdir -p "$PARENT_DIR"
+        [ -z "$PARENT_DIR" ] && dbg_echo "set PARENT_DIR to  './'" && PARENT_DIR="./"
         (
                 cd $PARENT_DIR || exit -2
                 dbg_echo "cd to $PARENT_DIR: <$(pwd)>"
