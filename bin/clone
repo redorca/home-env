@@ -561,24 +561,24 @@ parse_cli()
         while [ $# -ne 0 ] ; do
                 dbg_echo "\$1 == ($1)"
                 case "$1" in
-                 -c )   shift ; TARGETS=( $@ )
+                 -c)   shift ; TARGETS=( $@ )
                         dbg_echo "Target based on $@"
                         shift ${#TARGETS[@]}
                         dbg_echo "\$# = $#, shifted ${#TARGETS[@]}, Target(s): ${TARGETS[*]}"
                 ;;
-                 -d )   [ -n "$2" ] && dbg_echo "Found a \$2: $2" && shift
-                        if ! make_a_dir "$1" ; then
-                                echo_err "Unable to create directory path $1"
+                 -d)   [ -n "$2" ] && dbg_echo "Found a \$2: $2"
+                        if ! make_a_dir "$2" ; then
+                                echo_err "Unable to create directory path $2"
                                 exit 1
                         fi
-                        PARENT_DIR="$1" ; shift
+                        PARENT_DIR="$2" ; shift
                         dbg_echo "PARENT_DIR set to $PARENT_DIR"
                 ;;
-                 -h )   help && exit
+                 -h)   help && exit
                 ;;
-                 -hh )  hhelp && exit
+                 -hh)  hhelp && exit
                 ;;
-                 -l )   [ "$(basename $0)" != "clone" ] && dump_Repo2Host && exit
+                 -l)   [ "$(basename $0)" != "clone" ] && dump_Repo2Host && exit
                         dump_OfferRepos && exit
                 ;;
         # Rename origin to something else.
@@ -588,7 +588,7 @@ parse_cli()
                 -p | --print) dump_Repo2Host && exit 0
                 ;;
         # set a particular url to clone the desired repo from.
-                -R | --repo ) SRC_REPO_URL="$2"; shift # set the repo to init with.
+                -R | --repo) SRC_REPO_URL="$2"; shift # set the repo to init with.
                 ;;
                 *)
                         [ -z "${OfferRepos[$1]}" ] && echo_err "Not a supported repo: $1." && exit

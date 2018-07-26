@@ -372,9 +372,11 @@ build_nuttx()
         [ ! -d "configs/$board" ] && echo_err "Not found: $board" && continue
         (
             cd configs/$board >/dev/null
-            for build in distclean $TARGET_DIRS "${TARGETS[@]}" ; do
+            echo_err "Running distclean to start from a clean slate."
+            make_one_target distclean >/dev/null
+            for build in $TARGET_DIRS "${TARGETS[@]}" ; do
                 [ -z "${pseudo_targets[$build]}" ] && OutFile="${OUT}.${board}.${build}"
-                    echo_err -n "\tBuilding $board/$build: ... "
+                    echo_err -n "\tBuilding $board :: $build: ... "
                     if ! make_one_target $build > $OutFile  2>&1 ; then
                             [ -z "$Q" ] && echo_err "Build failed see ${OutFile}." && continue
                             echo_err "Failed.\n"
