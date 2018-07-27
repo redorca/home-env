@@ -2,6 +2,9 @@
 # List of mods to consider in the future.
 #
 
+    add a --force option to klone to remove any existing directoy that
+         would keep git from succeeding.
+
     gitset + gitrev-setup.sh:
         combine gitset and gitrev-seutp.sh
 
