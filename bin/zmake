@@ -372,8 +372,10 @@ build_nuttx()
         [ ! -d "configs/$board" ] && echo_err "Not found: $board" && continue
         (
             cd configs/$board >/dev/null
-            echo_err "Running distclean to start from a clean slate."
-            make_one_target distclean >/dev/null
+            if [ "$INCREMENTAL_BUILD" != "yes" ] ; then
+                echo_err "Running distclean to start from a clean slate."
+                make_one_target distclean >/dev/null
+            fi
             for build in $TARGET_DIRS "${TARGETS[@]}" ; do
                 [ -z "${pseudo_targets[$build]}" ] && OutFile="${OUT}.${board}.${build}"
                     echo_err -n "\tBuilding $board :: $build: ... "
