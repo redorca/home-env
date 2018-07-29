@@ -599,7 +599,7 @@ parse_cli()
                 -R | --repo) SRC_REPO_URL="$2"; shift # set the repo to init with.
                 ;;
                 *)
-                        [ "${basename $0}" = "klone' ] && klone_parse "$1" && break
+                        [ "$(basename $0)" = "klone" ] && klone_parse "$1" && break
                         [ -z "${OfferRepos[$1]}" ] && echo_err "Not a supported repo: $1." && exit
                         dbg_echo "Adding target $1 to TARGETS"
                         TARGETS[${#TARGETS[@]}]="$1"; # The repo name to clone.
@@ -610,28 +610,6 @@ parse_cli()
   dbg_echo done
 }
 
-if [ "$(basename $0)" = "clone" ] ; then
-        if ! setup_repo_table $SRC_REPO_URL ; then
-                exit 1
-        fi
-        parse_cli $@
-
-        [ -z "${TARGETS[*]}" ] && echo_err "Nothing to clone." >&2 && exit
-        [ -n "$PARENT_DIR" ] && dbg_echo "Create <$PARENT_DIR>" && mkdir -p "$PARENT_DIR"
-        [ -z "$PARENT_DIR" ] && dbg_echo "set PARENT_DIR to  './'" && PARENT_DIR="./"
-        (
-                cd $PARENT_DIR || exit -2
-                dbg_echo "cd to $PARENT_DIR: <$(pwd)>"
-                if ! clone "${TARGETS[@]}" ; then
-                        rm -rf $PARENT_DIR
-                        RV="-1"
-                fi
-                exit $RV
-        )
-        exit
-fi
-
-[ "$#" -eq 0 ] && help && exit 1
 klone_parse()
 {
 #Help
@@ -658,13 +636,37 @@ klone_parse()
 #Help
 }
 
+if [ "$(basename $0)" = "clone" ] ; then
+        if ! setup_repo_table $SRC_REPO_URL ; then
+                exit 1
+        fi
+        parse_cli $@
+
+        [ -z "${TARGETS[*]}" ] && echo_err "Nothing to clone." >&2 && exit
+        [ -n "$PARENT_DIR" ] && dbg_echo "Create <$PARENT_DIR>" && mkdir -p "$PARENT_DIR"
+        [ -z "$PARENT_DIR" ] && dbg_echo "set PARENT_DIR to  './'" && PARENT_DIR="./"
+        (
+                cd $PARENT_DIR || exit -2
+                dbg_echo "cd to $PARENT_DIR: <$(pwd)>"
+                if ! clone "${TARGETS[@]}" ; then
+                        rm -rf $PARENT_DIR
+                        RV="-1"
+                fi
+                exit $RV
+        )
+        exit
+fi
+
+klone_parse $@
+
+[ "$#" -eq 0 ] && help && exit 1
 if ! setup_repo_table $SRC_REPO_URL ; then
         exit 1
 fi
 
 [ "$PRINT" = "YES" ] && dump_Repo2Host && exit 0
 
-[ -z "${TARGETS[*]}" ] && echo _err"Nothing to clone." && exit
+[ -z "${TARGETS[*]}" ] && echo _err "Nothing to clone." && exit
 
 clone "${TARGETS[@]}"
 
