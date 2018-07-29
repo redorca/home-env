@@ -72,6 +72,7 @@ RepoRename["bmi160"]="BMI160_driver"
 RepoRename["bmm050"]="BMM050_driver"
 RepoRename["notepad"]="notepad-plus-plus"
 RepoRename["Doxygen"]="doxygen"
+RepoRename["ctags"]="universal-ctags"
 
 #
 # Hash translation from canonical repo target to  URI crafted to
@@ -113,6 +114,7 @@ Repo2Host["BMI160_driver"]="master@https://github.com/BoschSensortec/BMI160_driv
 Repo2Host["BME280_driver"]="master@https://github.com/BoschSensortec/BME280_driver.git"
 Repo2Host["BMM050_driver"]="master@https://github.com/BoschSensortec/BMM050_driver.git"
 Repo2Host["doxygen"]="master@https://github.com/doxygen/doxygen.git"
+Repo2Host["universal-ctags"]="master@https://github.com/universal-ctags/ctags.git"
 
 FinalCmds=()
 FinalCmds["nuttx"]="setup_repo"
@@ -470,6 +472,11 @@ clone_one()
                 MSG="Checked out:"
         fi
 
+        if [ "$FORCE_CLONE" = "yes" ] ;then
+                ChkDir="${CMD##*/}"
+                [ -d "${ChkDir%.git}" ] && dbg_echo "Forcing a clone ..." && rm -rf "${ChkDir%.git}"
+        fi
+
         dbg_echo "$CMD"
         if ! $CMD ; then
                 echo_err "Not cloned."
@@ -479,7 +486,7 @@ clone_one()
 
         dbg_echo "=== TrueTarget: $TrueTarget,  Final Cmd : ${FinalCmds[${TrueTarget%.git}]}"
         CMD="${FinalCmds["${TrueTarget%.git}"]}"
-        [ -z "${CMD}" ] && dbg_echo "No final command to run: <$CMD>" && return 0
+        [ -z "${CMD}" ] && dbg_echo "No final command to run" && return 0
         CMD="$CMD ${TrueTarget%.git}"
         dbg_echo "Final Command: <$CMD>"
         $CMD
@@ -592,6 +599,7 @@ parse_cli()
                 -R | --repo) SRC_REPO_URL="$2"; shift # set the repo to init with.
                 ;;
                 *)
+                        [ "${basename $0}" = "klone' ] && klone_parse "$1" && break
                         [ -z "${OfferRepos[$1]}" ] && echo_err "Not a supported repo: $1." && exit
                         dbg_echo "Adding target $1 to TARGETS"
                         TARGETS[${#TARGETS[@]}]="$1"; # The repo name to clone.
@@ -624,27 +632,31 @@ if [ "$(basename $0)" = "clone" ] ; then
 fi
 
 [ "$#" -eq 0 ] && help && exit 1
+klone_parse()
+{
 #Help
-while [ $# -ne 0 ] ; do
-        case "$1" in
-        -h | --help) help; exit
-                ;;
-        # Rename origin to something else.
-        -O | --no-origin)
-                     CONFIG_TWO_REPOS="dual_source_repo" # TBD
-                ;;
-        -p | --print) dump_Repo2Host && exit 0
-                ;;
-        # set a particular url to clone the desired repo from.
-        -R | --repo ) SRC_REPO_URL="$2"; shift # set the repo to init with.
-                ;;
-        *) TARGETS[${#TARGETS[@]}]="$1"; # The repo name to clone.
-                [ -z "$1" ] && help && exit
-                ;;
-        esac
-        shift
-done
+	while [ $# -ne 0 ] ; do
+	        case "$1" in
+	        -f|--force) FORCE_CLONE="yes"
+	                    echo "Force clone set: <$FORCE_CLONE>"
+	                ;;
+	        # Rename origin to something else.
+	        -O | --no-origin)
+	                     CONFIG_TWO_REPOS="dual_source_repo" # TBD
+	                ;;
+	        -p | --print) dump_Repo2Host && exit 0
+	                ;;
+	        # set a particular url to clone the desired repo from.
+	        -R | --repo ) SRC_REPO_URL="$2"; shift # set the repo to init with.
+	                ;;
+	        *) TARGETS[${#TARGETS[@]}]="$1"; # The repo name to clone.
+	                [ -z "$1" ] && help && exit
+	                ;;
+	        esac
+	        shift
+	done
 #Help
+}
 
 if ! setup_repo_table $SRC_REPO_URL ; then
         exit 1
