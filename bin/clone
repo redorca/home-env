@@ -36,6 +36,7 @@ OfferRepos["dialog"]="zGlue repo for Dialog sdk  branch $DIALOG_SDK"
 OfferRepos["nordic"]="zGlue repo for Nordic sdk branch $NORDIC_SDK" 
 OfferRepos["Doxygen"]="zGlue repo for Doxygen branch $DOXYGEN" 
 OfferRepos["upgrade"]="zGlue-bill's repo for moving to nuttx TOT." 
+OfferRepos["external"]="3rd party code to build into the tree." 
 
 #
 # Repos which are svn based are added here along with the command
