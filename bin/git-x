@@ -196,7 +196,7 @@ add_patch()
         #                           In fact globbing and splitting is what is necessary here
         #                           to ensure all of that extraneous white space is stripped.
         #
-        PATCH_FILE=patches/patch.$(echo $branch | sed -e 's/\//_/g').${Info["Hash"]}.${time_stamp}
+        PATCH_FILE="patches/patch.$(echo $branch | sed -e 's/\//_/g').${time_stamp}.${Info["Hash"]}"
 
         [ ! -d patches ] && mkdir -p patches
         git diff > "$PATCH_FILE"
