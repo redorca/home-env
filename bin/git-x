@@ -231,17 +231,6 @@ fi
 # ARGS_Begin
 while [ $# -ne 0 ] ; do
         case $1 in
-        -A) NEW_TIME_STAMP=$(date +"%a %b %d %T %Y %z")
-            echo "NEW_TIME_STAMP:  ($NEW_TIME_STAMP)"
-            POST_ACTION=( "git" "commit" "--amend" "--date=${NEW_TIME_STAMP}" "--no-verify" )
-            myname="$(git config --get user.name)"
-            author=$(git log -1 --pretty=short | awk '/^Author:/ {print $2 " " $3}' )
-            if [ "$myname" != "$author" ] ; then
-                echo "Updating Author."
-                POST_ACTION=( "${POST_ACTION[@]}" "--reset-author" )
-                sleep 2
-            fi
-           ;;
         -a) NEW_TIME_STAMP=$(date +"%a %b %d %T %Y %z")
             echo "NEW_TIME_STAMP:  ($NEW_TIME_STAMP)"
             POST_ACTION=( "git" "commit" "--amend" "--date=${NEW_TIME_STAMP}" )
@@ -255,25 +244,50 @@ while [ $# -ne 0 ] ; do
            ;;
         -c) POST_ACTION=( "git" "commit" )
            ;;
+        -T) TOPIC=
+           ;;
         -d) DEBUG=1; echo "DEBUG = $DEBUG"
            ;;
         -e) dump_env; exit 0
            ;;
         -h) Help; exit 0
            ;;
+        #
+        # List the files staged. 
+        #
         -l) list_files FILTER && exit
+           ;;
+        -L) git review -l; exit
            ;;
         -n) DRY_RUN=1; echo "DRY_RUN = $DRY_RUN"
            ;;
         -P) page_size=$2; echo "page size: $page_size"
            ;;
+        #
+        # Push to the configured repo defined by the name "origin"
+        #
         -p|--push) PUSH="push"
            ;;
-        -r) PUSH="review -D"
+        #
+        # Push to gerrit as a draft and remove
+        # the branch supplying to change set.
+        #
+        -R) PUSH="review -D -f"
            ;;
-        --rebase) git stash save "====" && git pull --rebase && git stash pop && exit
+        -r|--rebase) git stash save "====" && git pull --rebase && git stash pop && exit
                 echo "Failed somewhere along stash, pull (rebase), and pop." >&2
                 exit 1
+           ;;
+        -t) NEW_TIME_STAMP=$(date +"%a %b %d %T %Y %z")
+            echo "NEW_TIME_STAMP:  ($NEW_TIME_STAMP)"
+            POST_ACTION=( "git" "commit" "--amend" "--date=${NEW_TIME_STAMP}" "--no-verify" )
+            myname="$(git config --get user.name)"
+            author=$(git log -1 --pretty=short | awk '/^Author:/ {print $2 " " $3}' )
+            if [ "$myname" != "$author" ] ; then
+                echo "Updating Author."
+                POST_ACTION=( "${POST_ACTION[@]}" "--reset-author" )
+                sleep 2
+            fi
            ;;
         -u) UNTRACK=1
            ;;
