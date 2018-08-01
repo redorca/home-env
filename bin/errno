@@ -1,335 +1,348 @@
 #!/bin/bash
 
 err_codes_to_text=(
-EPERM
-ENOENT
-ESRCH
-EINTR
-EIO
-ENXIO
-E2BIG
-ENOEXEC
-EBADF
-ECHILD
-EAGAIN
-ENOMEM
-EACCES
-EFAULT
-ENOTBLK
-EBUSY
-EEXIST
-EXDEV
-ENODEV
-ENOTDIR
-EISDIR
-EINVAL
-ENFILE
-EMFILE
-ENOTTY
-ETXTBSY
-EFBIG
-ENOSPC
-ESPIPE
-EROFS
-EMLINK
-EPIPE
-EDOM
-ERANGE
+        SUCCESS
+        EPERM
+        ENOENT
+        ESRCH
+        EINTR
+        EIO
+        ENXIO
+        E2BIG
+        ENOEXEC
+        EBADF
+        ECHILD
+        EAGAIN
+        ENOMEM
+        EACCES
+        EFAULT
+        ENOTBLK
+        EBUSY
+        EEXIST
+        EXDEV
+        ENODEV
+        ENOTDIR
+        EISDIR
+        EINVAL
+        ENFILE
+        EMFILE
+        ENOTTY
+        ETXTBSY
+        EFBIG
+        ENOSPC
+        ESPIPE
+        EROFS
+        EMLINK
+        EPIPE
+        EDOM
+        ERANGE
+        EDEADLK
+        ENAMETOOLONG
+        ENOLCK
+        ENOSYS
+        ENOTEMPTY
+        ELOOP
+        EWOULDBLOCK
+        ENOMSG
+        EIDRM
+        ECHRNG
+        EL2NSYNC
+        EL3HLT
+        EL3RST
+        ELNRNG
+        EUNATCH
+        ENOCSI
+        EL2HLT
+        EBADE
+        EBADR
+        EXFULL
+        ENOANO
+        EBADRQC
+        EBADSLT
+        EDEADLOCK
+        EBFONT
+        ENOSTR
+        ENODATA
+        ETIME
+        ENOSR
+        ENONET
+        ENOPKG
+        EREMOTE
+        ENOLINK
+        EADV
+        ESRMNT
+        ECOMM
+        EPROTO
+        EMULTIHOP
+        EDOTDOT
+        EBADMSG
+        EOVERFLOW
+        ENOTUNIQ
+        EBADFD
+        EREMCHG
+        ELIBACC
+        ELIBBAD
+        ELIBSCN
+        ELIBMAX
+        ELIBEXEC
+        EILSEQ
+        ERESTART
+        ESTRPIPE
+        EUSERS
+        ENOTSOCK
+        EDESTADDRREQ
+        EMSGSIZE
+        EPROTOTYPE
+        ENOPROTOOPT
+        EPROTONOSUPPORT
+        ESOCKTNOSUPPORT
+        EOPNOTSUPP
+        EPFNOSUPPORT
+        EAFNOSUPPORT
+        EADDRINUSE
+        EADDRNOTAVAIL
+        ENETDOWN
+        ENETUNREACH
+        ENETRESET
+        ECONNABORTED
+        ECONNRESET
+        ENOBUFS
+        EISCONN
+        ENOTCONN
+        ESHUTDOWN
+        ETOOMANYREFS
+        ETIMEDOUT
+        ECONNREFUSED
+        EHOSTDOWN
+        EHOSTUNREACH
+        EALREADY
+        EINPROGRESS
+        ESTALE
+        EUCLEAN
+        ENOTNAM
+        ENAVAIL
+        EISNAM
+        EREMOTEIO
+        EDQUOT
+        ENOMEDIUM
+        EMEDIUMTYPE
+        ECANCELED
+#
+# The following codes are not supported in Nuttx.
+#
+#       ENOKEY
+#       EKEYEXPIRED
+#       EKEYREVOKED
+#       EKEYREJECTED
+#       EOWNERDEAD
+#       ENOTRECOVERABLE
+#       ERFKILL
+#       EHWPOISON
+#
 )
 
 declare -A errno
 declare -A XXX
-declare -A YYY
 
-XXX["EPERM"]		        =  "Operation not permitted"
-XXX["ENOENT"]		        = "No such file or directory"
-XXX["ESRCH"]		        =  "No such process"
-XXX["EINTR"]		        =  "Interrupted system call"
-XXX["EIO"]		        =    "I/O error"
-XXX["ENXIO"]		        =  "No such device or address"
-XXX["E2BIG"]		        =  "Argument list too long"
-XXX["ENOEXEC"]		        = "Exec format error"
-XXX["EBADF"]		        =  "Bad file number"
-XXX["ECHILD"]		        = "No child processes"
-XXX["EAGAIN"]		        = "Try again"
-XXX["ENOMEM"]		        = "Out of memory"
-XXX["EACCES"]		        = "Permission denied"
-XXX["EFAULT"]		        = "Bad address"
-XXX["ENOTBLK"]		        = "Block device required"
-XXX["EBUSY"]		        =  "Device or resource busy"
-XXX["EEXIST"]		        = "File exists"
-XXX["EXDEV"]		        =  "Cross-device link"
-XXX["ENODEV"]		        = "No such device"
-XXX["ENOTDIR"]		        = "Not a directory"
-XXX["EISDIR"]		        = "Is a directory"
-XXX["EINVAL"]		        = "Invalid argument"
-XXX["ENFILE"]		        = "File table overflow"
-XXX["EMFILE"]		        = "Too many open files"
-XXX["ENOTTY"]		        = "Not a typewriter"
-XXX["ETXTBSY"]		        = "Text file busy"
-XXX["EFBIG"]		        =  "File too large"
-XXX["ENOSPC"]		        = "No space left on device"
-XXX["ESPIPE"]		        = "Illegal seek"
-XXX["EROFS"]		        =        "Read-only file system"
-XXX["EMLINK"]		        =        "Too many links"
-XXX["EPIPE"]		        =        "Broken pipe"
-XXX["EDOM"]		        =        "Math argument out of domain of func"
-XXX["ERANGE"]		        =        "Math result not representable"
-XXX["EDEADLK"]		        =        "Resource deadlock would occur"
-XXX["ENAMETOOLONG"]		=        "File name too long"
-XXX["ENOLCK"]		        =        "No record locks available"
+XXX["SUCCESS"]="Operation completed successfully."
+XXX["EPERM"]="Operation not permitted."
+XXX["ENOENT"]="No such file or directory."
+XXX["ESRCH"]="No such process."
+XXX["EINTR"]="Interrupted system call."
+XXX["EIO"]="I/O error."
+XXX["ENXIO"]="No such device or address."
+XXX["E2BIG"]="Argument list too long."
+XXX["ENOEXEC"]="Exec format error."
+XXX["EBADF"]="Bad file number."
+XXX["ECHILD"]="No child processes."
+XXX["EAGAIN"]="Try again."
+XXX["ENOMEM"]="Out of memory."
+XXX["EACCES"]="Permission denied."
+XXX["EFAULT"]="Bad address."
+XXX["ENOTBLK"]="Block device required."
+XXX["EBUSY"]="Device or resource busy."
+XXX["EEXIST"]="File exists."
+XXX["EXDEV"]="Cross-device link."
+XXX["ENODEV"]="No such device."
+XXX["ENOTDIR"]="Not a directory."
+XXX["EISDIR"]="Is a directory."
+XXX["EINVAL"]="Invalid argument."
+XXX["ENFILE"]="File table overflow."
+XXX["EMFILE"]="Too many open files."
+XXX["ENOTTY"]="Not a typewriter."
+XXX["ETXTBSY"]="Text file busy."
+XXX["EFBIG"]="File too large."
+XXX["ENOSPC"]="No space left on device."
+XXX["ESPIPE"]="Illegal seek."
+XXX["EROFS"]="Read-only file system."
+XXX["EMLINK"]="Too many links."
+XXX["EPIPE"]="Broken pipe."
+XXX["EDOM"]="Math argument out of domain of func."
+XXX["ERANGE"]="Math result not representable."
+XXX["EDEADLK"]="Resource deadlock would occur."
+XXX["ENAMETOOLONG"]="File name too long."
+XXX["ENOLCK"]="No record locks available."
+XXX["ENOSYS"]="Invalid system call number."
+XXX["ENOTEMPTY"]="Directory not empty."
+XXX["ELOOP"]="Too many symbolic links encountered."
+XXX["EWOULDBLOCK"]="EAGAIN  Operation would block."
+XXX["ENOMSG"]="No message of desired type."
+XXX["EIDRM"]="Identifier removed."
+XXX["ECHRNG"]="Channel number out of range."
+XXX["EL2NSYNC"]="Level 2 not synchronized."
+XXX["EL3HLT"]="Level 3 halted."
+XXX["EL3RST"]="Level 3 reset."
+XXX["ELNRNG"]="Link number out of range."
+XXX["EUNATCH"]="Protocol driver not attached."
+XXX["ENOCSI"]="No CSI structure available."
+XXX["EL2HLT"]="Level 2 halted."
+XXX["EBADE"]="Invalid exchange."
+XXX["EBADR"]="Invalid request descriptor."
+XXX["EXFULL"]="Exchange full."
+XXX["ENOANO"]="No anode."
+XXX["EBADRQC"]="Invalid request code."
+XXX["EBADSLT"]="Invalid slot."
+XXX["EDEADLOCK"]="Resource deadlock would occur."
+XXX["EBFONT"]="Bad font file format."
+XXX["ENOSTR"]="Device not a stream."
+XXX["ENODATA"]="No data available."
+XXX["ETIME"]="Timer expired."
+XXX["ENOSR"]="Out of streams resources."
+XXX["ENONET"]="Machine is not on the network."
+XXX["ENOPKG"]="Package not installed."
+XXX["EREMOTE"]="Object is remote."
+XXX["ENOLINK"]="Link has been severed."
+XXX["EADV"]="Advertise error."
+XXX["ESRMNT"]="Srmount error."
+XXX["ECOMM"]="Communication error on send."
+XXX["EPROTO"]="Protocol error."
+XXX["EMULTIHOP"]="Multihop attempted."
+XXX["EDOTDOT"]="RFS specific error."
+XXX["EBADMSG"]="Not a data message."
+XXX["EOVERFLOW"]="Value too large for defined data type."
+XXX["ENOTUNIQ"]="Name not unique on network."
+XXX["EBADFD"]="File descriptor in bad state."
+XXX["EREMCHG"]="Remote address changed."
+XXX["ELIBACC"]="Can not access a needed shared library."
+XXX["ELIBBAD"]="Accessing a corrupted shared library."
+XXX["ELIBSCN"]=".lib section in a.out corrupted."
+XXX["ELIBMAX"]="Attempting to link in too many shared libraries."
+XXX["ELIBEXEC"]="Cannot exec a shared library directly."
+XXX["EILSEQ"]="Illegal byte sequence."
+XXX["ERESTART"]="Interrupted system call should be restarted."
+XXX["ESTRPIPE"]="Streams pipe error."
+XXX["EUSERS"]="Too many users."
+XXX["ENOTSOCK"]="Socket operation on non-socket."
+XXX["EDESTADDRREQ"]="Destination address required."
+XXX["EMSGSIZE"]="Message too long."
+XXX["EPROTOTYPE"]="Protocol wrong type for socket."
+XXX["ENOPROTOOPT"]="Protocol not available."
+XXX["EPROTONOSUPPORT"]="Protocol not supported."
+XXX["ESOCKTNOSUPPORT"]="Socket type not supported."
+XXX["EOPNOTSUPP"]="Operation not supported on transport endpoint."
+XXX["EPFNOSUPPORT"]="Protocol family not supported."
+XXX["EAFNOSUPPORT"]="Address family not supported by protocol."
+XXX["EADDRINUSE"]="Address already in use."
+XXX["EADDRNOTAVAIL"]="Cannot assign requested address."
+XXX["ENETDOWN"]="Network is down."
+XXX["ENETUNREACH"]="Network is unreachable."
+XXX["ENETRESET"]="Network dropped connection because of reset."
+XXX["ECONNABORTED"]="Software caused connection abort."
+XXX["ECONNRESET"]="Connection reset by peer."
+XXX["ENOBUFS"]="No buffer space available."
+XXX["EISCONN"]="Transport endpoint is already connected."
+XXX["ENOTCONN"]="Transport endpoint is not connected."
+XXX["ESHUTDOWN"]="Cannot send after transport endpoint shutdown."
+XXX["ETOOMANYREFS"]="Too many references: cannot splice."
+XXX["ETIMEDOUT"]="Connection timed out."
+XXX["ECONNREFUSED"]="Connection refused."
+XXX["EHOSTDOWN"]="Host is down."
+XXX["EHOSTUNREACH"]="No route to host."
+XXX["EALREADY"]="Operation already in progress."
+XXX["EINPROGRESS"]="Operation now in progress."
+XXX["ESTALE"]="Stale file handle."
+XXX["EUCLEAN"]="Structure needs cleaning."
+XXX["ENOTNAM"]="Not a XENIX named type file."
+XXX["ENAVAIL"]="No XENIX semaphores available."
+XXX["EISNAM"]="Is a named type file."
+XXX["EREMOTEIO"]="Remote I/O error."
+XXX["EDQUOT"]="Quota exceeded."
+XXX["ENOMEDIUM"]="No medium found."
+XXX["EMEDIUMTYPE"]="Wrong medium type."
+XXX["ECANCELED"]="Operation Canceled."
+#
+# The following are not supported in Nuttx
+#
+# XXX["ENOKEY"]="Required key not available."
+# XXX["EKEYEXPIRED"]="Key has expired."
+# XXX["EKEYREVOKED"]="Key has been revoked."
+# XXX["EKEYREJECTED"]="Key was rejected by service."
+# XXX["EOWNERDEAD"]="Owner died" #"for robust mutexes."
+# XXX["ENOTRECOVERABLE"]="State not recoverable."
+# XXX["ERFKILL"]="Operation not possible due to RF-kill."
+# XXX["EHWPOISON"]="Memory page has hardware error."
+#
 
-#*
-#* This error code is special: arch syscall entry code will return
-#* -ENOSYS if users try to call a syscall that doesn\'t exist.  To keep
-#* failures of syscalls that really do exist distinguishable from
-#* failures due to attempts to use a nonexistent syscall, syscall
-#* implementations should refrain from returning -ENOSYS.
-#*/
-XXX["ENOSYS"]		        =         "Invalid system call number"
-XXX["ENOTEMPTY"]		=      "Directory not empty"
-XXX["ELOOP"]		        =          "Too many symbolic links encountered"
-XXX["EWOULDBLOCK"]		=    "EAGAIN  Operation would block"
-XXX["ENOMSG"]		        =         "No message of desired type"
-XXX["EIDRM"]		        =          "Identifier removed"
-XXX["ECHRNG"]		        =         "Channel number out of range"
-XXX["EL2NSYNC"]		        =       "Level 2 not synchronized"
-XXX["EL3HLT"]		        =         "Level 3 halted"
-XXX["EL3RST"]		        =         "Level 3 reset"
-XXX["ELNRNG"]		        =         "Link number out of range"
-XXX["EUNATCH"]		        =        "Protocol driver not attached"
-XXX["ENOCSI"]		        =         "No CSI structure available"
-XXX["EL2HLT"]		        =         "Level 2 halted"
-XXX["EBADE"]		        =          "Invalid exchange"
-XXX["EBADR"]		        =          "Invalid request descriptor"
-XXX["EXFULL"]		        =         "Exchange full"
-XXX["ENOANO"]		        =         "No anode"
-XXX["EBADRQC"]		        =        "Invalid request code"
-XXX["EBADSLT"]		        =        "Invalid slot"
-XXX["EDEADLOCK"]		=      "Resource deadlock would occur"
-XXX["EBFONT"]		        =         "Bad font file format"
-XXX["ENOSTR"]		        =         "Device not a stream"
-XXX["ENODATA"]		        =        "No data available"
-XXX["ETIME"]		        =          "Timer expired"
-XXX["ENOSR"]		        =          "Out of streams resources"
-XXX["ENONET"]		        =        "Machine is not on the network"
-XXX["ENOPKG"]		        =        "Package not installed"
-XXX["EREMOTE"]		        =       "Object is remote"
-XXX["ENOLINK"]		        =       "Link has been severed"
-XXX["EADV"]		        =          "Advertise error"
-XXX["ESRMNT"]		        =        "Srmount error"
-XXX["ECOMM"]		        =         "Communication error on send"
-XXX["EPROTO"]		        =           "Protocol error"
-XXX["EMULTIHOP"]		=        "Multihop attempted"
-XXX["EDOTDOT"]		        =          "RFS specific error"
-XXX["EBADMSG"]		        =          "Not a data message"
-XXX["EOVERFLOW"]		=        "Value too large for defined data type"
-XXX["ENOTUNIQ"]		        =         "Name not unique on network"
-XXX["EBADFD"]		        =           "File descriptor in bad state"
-XXX["EREMCHG"]		        =          "Remote address changed"
-XXX["ELIBACC"]		        =          "Can not access a needed shared library"
-XXX["ELIBBAD"]		        =          "Accessing a corrupted shared library"
-XXX["ELIBSCN"]		        =          ".lib section in a.out corrupted"
-XXX["ELIBMAX"]		        =          "Attempting to link in too many shared libraries"
-XXX["ELIBEXEC"]		        =         "Cannot exec a shared library directly"
-XXX["EILSEQ"]		        =           "Illegal byte sequence"
-XXX["ERESTART"]		        =         "Interrupted system call should be restarted"
-XXX["ESTRPIPE"]		        =         "Streams pipe error"
-XXX["EUSERS"]		        =           "Too many users"
-XXX["ENOTSOCK"]		        =         "Socket operation on non-socket"
-XXX["EDESTADDRREQ"]		=     "Destination address required"
-XXX["EMSGSIZE"]		        =         "Message too long"
-XXX["EPROTOTYPE"]		=       "Protocol wrong type for socket"
-XXX["ENOPROTOOPT"]		=      "Protocol not available"
-XXX["EPROTONOSUPPORT"]		=  "Protocol not supported"
-XXX["ESOCKTNOSUPPORT"]		=  "Socket type not supported"
-XXX["EOPNOTSUPP"]		=       "Operation not supported on transport endpoint"
-XXX["EPFNOSUPPORT"]		=     "Protocol family not supported"
-XXX["EAFNOSUPPORT"]		=     "Address family not supported by protocol"
-XXX["EADDRINUSE"]		=       "Address already in use"
-XXX["EADDRNOTAVAIL"]		=    "Cannot assign requested address"
-XXX["ENETDOWN"]		        =         "Network is down"
-XXX["ENETUNREACH"]		=      "Network is unreachable"
-XXX["ENETRESET"]		=        "Network dropped connection because of reset"
-XXX["ECONNABORTED"]		=     "Software caused connection abort"
-XXX["ECONNRESET"]		=       "Connection reset by peer"
-XXX["ENOBUFS"]		        =          "No buffer space available"
-XXX["EISCONN"]		        =          "Transport endpoint is already connected"
-XXX["ENOTCONN"]		        =         "Transport endpoint is not connected"
-XXX["ESHUTDOWN"]		=        "Cannot send after transport endpoint shutdown"
-XXX["ETOOMANYREFS"]		=     "Too many references: cannot splice"
-XXX["ETIMEDOUT"]		=        "Connection timed out"
-XXX["ECONNREFUSED"]		=     "Connection refused"
-XXX["EHOSTDOWN"]		=        "Host is down"
-XXX["EHOSTUNREACH"]		=     "No route to host"
-XXX["EALREADY"]		        =         "Operation already in progress"
-XXX["EINPROGRESS"]		=      "Operation now in progress"
-XXX["ESTALE"]		        =           "Stale file handle"
-XXX["EUCLEAN"]		        =          "Structure needs cleaning"
-XXX["ENOTNAM"]		        =          "Not a XENIX named type file"
-XXX["ENAVAIL"]		        =          "No XENIX semaphores available"
-XXX["EISNAM"]		        =           "Is a named type file"
-XXX["EREMOTEIO"]		=        "Remote I/O error"
-XXX["EDQUOT"]		        =        "Quota exceeded"
-XXX["ENOMEDIUM"]		=        "No medium found"
-XXX["EMEDIUMTYPE"]		=        "Wrong medium type"
-XXX["ECANCELED"]		=      "Operation Canceled"
-XXX["ENOKEY"]		        = "Required key not available"
-XXX["EKEYEXPIRED"]		=    "Key has expired"
-XXX["EKEYREVOKED"]		=    "Key has been revoked"
-XXX["EKEYREJECTED"]		=   "Key was rejected by service"
-#"for robust mutexes"
-XXX["EOWNERDEAD"]		=      "Owner died"
-XXX["ENOTRECOVERABLE"]		=        "State not recoverable"
-XXX["ERFKILL"]		        =        "Operation not possible due to RF-kill"
-XXX["EHWPOISON"]		=       "Memory page has hardware error"
 
-YYY["EPERM"]			="1"
-YYY["ENOENT"]			="2"
-YYY["ESRCH"]			="3"
-YYY["EINTR"]			="4"
-YYY["EIO"]			="5"
-YYY["ENXIO"]			="6"
-YYY["E2BIG"]			="7"
-YYY["ENOEXEC"]			="8"
-YYY["EBADF"]			="9"
-YYY["ECHILD"]			="10"
-YYY["EAGAIN"]			="11"
-YYY["ENOMEM"]			="12"
-YYY["EACCES"]			="13"
-YYY["EFAULT"]			="14"
-YYY["ENOTBLK"]			="15"
-YYY["EBUSY"]			="16"
-YYY["EEXIST"]			="17"
-YYY["EXDEV"]			="18"
-YYY["ENODEV"]			="19"
-YYY["ENOTDIR"]			="20"
-YYY["EISDIR"]			="21"
-YYY["EINVAL"]			="22"
-YYY["ENFILE"]			="23"
-YYY["EMFILE"]			="24"
-YYY["ENOTTY"]			="25"
-YYY["ETXTBSY"]			="26"
-YYY["EFBIG"]			="27"
-YYY["ENOSPC"]			="28"
-YYY["ESPIPE"]			="29"
-YYY["EROFS"]			="30"
-YYY["EMLINK"]			="31"
-YYY["EPIPE"]			="32"
-YYY["EDOM"]			="33"
-YYY["ERANGE"]			="34"
-YYY["EDEADLK"]			="35"
-YYY["ENAMETOOLONG"]			="36"
-YYY["ENOLCK"]			="37"
-/*
- * This error code is special: arch syscall entry code will return
- * -ENOSYS if users try to call a syscall that doesn\'t exist.  To keep
- * failures of syscalls that really do exist distinguishable from
- * failures due to attempts to use a nonexistent syscall, syscall
- * implementations should refrain from returning -ENOSYS.
- */
-YYY["ENOSYS"]			="38"
-YYY["ENOTEMPTY"]		="39"
-YYY["ELOOP"]			="40"
-YYY["EWOULDBLOCK"]		="EAGAIN"
-YYY["ENOMSG"]			="42"
-YYY["EIDRM"]			="43"
-YYY["ECHRNG"]			="44"
-YYY["EL2NSYNC"]			="45"
-YYY["EL3HLT"]			="46"
-YYY["EL3RST"]			="47"
-YYY["ELNRNG"]			="48"
-YYY["EUNATCH"]			="49"
-YYY["ENOCSI"]			="50"
-YYY["EL2HLT"]			="51"
-YYY["EBADE"]			="52"
-YYY["EBADR"]			="53"
-YYY["EXFULL"]			="54"
-YYY["ENOANO"]			="55"
-YYY["EBADRQC"]			="56"
-YYY["EBADSLT"]			="57"
-YYY["EDEADLOCK"]		="35"
-YYY["EBFONT"]			="59"
-YYY["ENOSTR"]			="60"
-YYY["ENODATA"]			="61"
-YYY["ETIME"]			="62"
-YYY["ENOSR"]			="63"
-YYY["ENONET"]			="64"
-YYY["ENOPKG"]			="65"
-YYY["EREMOTE"]			="66"
-YYY["ENOLINK"]			="67"
-YYY["EADV"]			="68"
-YYY["ESRMNT"]			="69"
-YYY["ECOMM"]			="70"
-YYY["EPROTO"]			="71"
-YYY["EMULTIHOP"]		="72"
-YYY["EDOTDOT"]			="73"
-YYY["EBADMSG"]			="74"
-YYY["EOVERFLOW"]		="75"
-YYY["ENOTUNIQ"]			="76"
-YYY["EBADFD"]			="77"
-YYY["EREMCHG"]			="78"
-YYY["ELIBACC"]			="79"
-YYY["ELIBBAD"]			="80"
-YYY["ELIBSCN"]			="81"
-YYY["ELIBMAX"]			="82"
-YYY["ELIBEXEC"]			="83"
-YYY["EILSEQ"]			="84"
-YYY["ERESTART"]			="85"
-YYY["ESTRPIPE"]			="86"
-YYY["EUSERS"]			="87"
-YYY["ENOTSOCK"]			="88"
-YYY["EDESTADDRREQ"]		="89"
-YYY["EMSGSIZE"]			="90"
-YYY["EPROTOTYPE"]		="91"
-YYY["ENOPROTOOPT"]		="92"
-YYY["EPROTONOSUPPORT"]		="93"
-YYY["ESOCKTNOSUPPORT"]		="94"
-YYY["EOPNOTSUPP"]		="95"
-YYY["EPFNOSUPPORT"]		="96"
-YYY["EAFNOSUPPORT"]		="97"
-YYY["EADDRINUSE"]		="98"
-YYY["EADDRNOTAVAIL"]		="99"
-YYY["ENETDOWN"]			="100"
-YYY["ENETUNREACH"]		="101"
-YYY["ENETRESET"]		="102"
-YYY["ECONNABORTED"]		="103"
-YYY["ECONNRESET"]		="104"
-YYY["ENOBUFS"]			="105"
-YYY["EISCONN"]			="106"
-YYY["ENOTCONN"]			="107"
-YYY["ESHUTDOWN"]		="108"
-YYY["ETOOMANYREFS"]		="109"
-YYY["ETIMEDOUT"]		="110"
-YYY["ECONNREFUSED"]		="111"
-YYY["EHOSTDOWN"]		="112"
-YYY["EHOSTUNREACH"]		="113"
-YYY["EALREADY"]			="114"
-YYY["EINPROGRESS"]		="115"
-YYY["ESTALE"]			="116"
-YYY["EUCLEAN"]			="117"
-YYY["ENOTNAM"]			="118"
-YYY["ENAVAIL"]			="119"
-YYY["EISNAM"]			="120"
-YYY["EREMOTEIO"]		="121"
-YYY["EDQUOT"]			="122"
-YYY["ENOMEDIUM"]		="123"
-YYY["EMEDIUMTYPE"]		="124"
-YYY["ECANCELED"]		="125"
-YYY["ENOKEY"]			="126"
-YYY["EKEYEXPIRED"]		="127"
-YYY["EKEYREVOKED"]		="128"
-YYY["EKEYREJECTED"]		="129"
-""
-YYY["EOWNERDEAD"]		="130"
-YYY["ENOTRECOVERABLE"]		="131"
-YYY["ERFKILL"]			="132"
-YYY["EHWPOISON"]		="133"
+#
+# Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
+# shell option forcing the script to run in tracing mode.
+#
+trace()
+{
+        [ "$TRACE" = "1" ] && return 0
+        return  1
+}
 
+#
+# Provide an in-line check for debug status to conditionally enable calls.
+# e.g. debug && echo "This is a test" will only fire if DEBUG=1 otherwise
+#      it is a no-op.
+#
+#
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+#
+# Wrap 'echo' to cleanly redirect all output to stderr.
+#
+echo_err()
+{
+        local Bin=
+
+        Bin=echo
+        CMD="$Bin -e $@"
+        $CMD >&2
+}
+
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        debug  && echo_err "${#FUNCNAME[@]} : ${FUNCNAME[1]}( $@ )"
+}
+
+#
+# Shortcut to send output to stderr by default.
+#
+echo_dbg()
+{
+        debug || return
+        echo_err "$@"
+}
 
 setup_error_codes()
 {
-        for i in $(seq 0 33) ; do
+        Func $@
+        local NumEntries=
+
+        NumEntries=$(( "${#err_codes_to_text[@]}" - 1 ))
+        echo_dbg "NumEntries is <$NumEntries>"
+        for i in $(seq 0 $NumEntries) ; do
                 name="${err_codes_to_text[$i]}"
                 errno["$name"]=$i
         done
@@ -337,42 +350,53 @@ setup_error_codes()
 
 print_error_codes()
 {
-	for key in "${!errno[@]}" ; do
-	        echo -e -n "$key\t"
-	        [ "${#errno[$key]}" -lt 7 ] && echo -e -n "\t:: "
-	        echo "${errno[$key]}"
-	done
+        Func $@
+        for key in "${!errno[@]}" ; do
+                echo_err -n "$key\t\t"
+                [ "${#errno[$key]}" -lt 7 ] && echo_err -n "\t:: "
+                echo_err "$key: ${errno[$key]}\t\t${XXX[$key]}"
+        done
 }
 
 print_name_to_code()
 {
+        Func $@
         local err="$1"
 
-        [ -z "$err" ] && echo "No error specified." >&2 && return 1
-        echo "$err:  ${errno[$err]}"
+        [ -z "$err" ] && echo_err "No error specified." && return 1
+        echo_err "$err:  ${errno[$err]}\t:: ${XXX[$err]}"
 }
 
 print_code_to_name()
 {
+        Func $@
         local err="$1"
+        local name=
 
-        [ -z "$err" ] && echo "No error specified." >&2 && return 1
-        echo "$err:  ${err_codes_to_text[$err]}"
+        [ -z "$err" ] && echo_err "No error specified." && return 1
+        name="${err_codes_to_text[$err]}"
+        echo_err "$err:  $name\t:: ${XXX[$name]}"
 }
 
 list_err_map()
 {
-        for i in $(seq 0 33) ; do
+        Func $@
+        local NumEntries=
+
+        NumEntries=$(( "${#err_codes_to_text[@]}" - 1 ))
+        echo_dbg "NumEntries is <$NumEntries>"
+        for i in $(seq 0 $NumEntries) ; do
                 key=${err_codes_to_text[$i]}
                 val=$i
-                echo -e -n "  $key\t"
-                [ "${#key}" -lt 6 ] && echo -n -e "\t"
-                echo "$val"
+                echo_err -n "  $key\t"
+                [ "${#key}" -lt 8 ] && echo -n -e "\t"
+                echo_err "$val\t${XXX[$key]}"
         done
 }
 
 help_errno()
 {
+        Func $@
         echo -e "\tGiven a number less than 33 or an E code output the other."
         echo -e "\te.g.  'errno 21' ==> 'EINVAL'"
         echo -e "\te.g.  'errno EIO' ==> '4'"
@@ -403,8 +427,8 @@ if [ -z "$(echo "$ARG" | tr -d [:digit:])" ] ; then
 elif [ -z "$(echo $ARG | tr -d [:alpha:])" ] ; then
         print_name_to_code "$ARG"
 else
-        echo "The argument passed in contained numbers and letters." >&2
-        echo "Don't do that!  Only numbers or only letters please!" >&2
+        echo_err "The argument passed in contained numbers and letters."
+        echo_err "Don't do that!  Only numbers or only letters please!"
         exit 1
 fi
 

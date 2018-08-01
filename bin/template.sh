@@ -33,14 +33,6 @@ debug()
 }
 
 #
-# Print the name of the function and how deeply nested.
-#
-Func()
-{
-        debug  && echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}()" >&2
-}
-
-#
 # Wrap 'echo' to cleanly redirect all output to stderr.
 #
 echo_err()
@@ -50,6 +42,14 @@ echo_err()
         Bin=echo
         CMD="$Bin -e $@"
         $CMD >&2
+}
+
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        debug  && echo_err "${#FUNCNAME[@]} : ${FUNCNAME[1]}( $@ )"
 }
 
 #
