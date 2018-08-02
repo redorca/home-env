@@ -378,7 +378,8 @@ build_nuttx()
             fi
             for build in $TARGET_DIRS "${TARGETS[@]}" ; do
                 [ -z "${pseudo_targets[$build]}" ] && OutFile="${OUT}.${board}.${build}"
-                    echo_err -n "\tBuilding $board :: $build: ... "
+                    echo_err -n "\tBuilding $board :: $build:\t"
+                    [ "${#board}" -lt 8 ] && echo_err -n "\t"
                     if ! make_one_target $build > $OutFile  2>&1 ; then
                             [ -z "$Q" ] && echo_err "Build failed see ${OutFile}." && continue
                             echo_err "Failed.\n"
@@ -389,7 +390,7 @@ build_nuttx()
                             Fails=$(( Fails + 1 ))
                             continue
                     fi
-                    echo_err "Succeeded."
+                    echo_err "...\tSucceeded."
             done
             [ "$Fails" -ne 0 ] && set -x
         return 0
