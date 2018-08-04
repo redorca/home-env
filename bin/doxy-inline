@@ -1,0 +1,15 @@
+#!/bin/bash
+
+[ $# -eq 0 ] && echo "No file(s) provided." >&2 && exit 1
+
+Files=( $@ )
+for FileIn in  ${Files[@]} ; do
+        [ ! -f $FileIn ] && echo "Not found: <$FileIn>" >&2 && continue
+
+        FileOut="doxy.${FileIn}"
+        echo "Doxy $FileIn to $FileOut"
+        sed -e '/[,;][ 	]\+\/\*/s/\*/\*\!</' $FileIn > $FileOut
+        sleep 1
+done
+
+

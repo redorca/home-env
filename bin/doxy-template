@@ -1,0 +1,15 @@
+#!/bin/bash
+
+
+[ ! -f "$1" ] && echo "File not found: <$1>" >&2 && exit 1
+
+for Tag in enum var typedef union struct def ; do
+   eval sed -i  -e \'/\* *@${Tag}/a\\ \*\'                                                \
+                -e \'/\* *@${Tag}/a\\ \* [ a brief description of one line ]\'            \
+                -e \'/\* *@${Tag}/a\\ \*\'                                                \
+                -e \'/\* *@${Tag}/a\\ \* [ more detailed stuff goes in a paragraph\'      \
+                -e \'/\* *@${Tag}/a\\ \*   that is bounded by a blank line. ]\'           \
+                -e \'/\* *@${Tag}/a\\ \*\'                                                \
+                $1
+done
+
