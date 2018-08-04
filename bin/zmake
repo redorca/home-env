@@ -418,7 +418,7 @@ select_board()
 
         select Val in "${BOARD_LIST[@]}" all Exit ; do
                 echo_dbg "Val = <$Val>"
-                [ "$Val" = "exit" ] && return 1
+                [ "$Val" = "Exit" ] && return 1
                 [ -n "$Val" ] && break
                 [ -n "$REPLY" ] && echo_err "REPLY is <$REPLY>"
         done

@@ -613,6 +613,8 @@ parse_cli()
 
 klone_parse()
 {
+        Func $@
+
 #Help
 	while [ $# -ne 0 ] ; do
 	        case "$1" in
@@ -637,7 +639,7 @@ klone_parse()
 #Help
 }
 
-if [ "$(basename $0)" = "clone" ] ; then
+# if [ "$(basename $0)" = "clone" ] ; then
         if ! setup_repo_table $SRC_REPO_URL ; then
                 exit 1
         fi
@@ -656,9 +658,10 @@ if [ "$(basename $0)" = "clone" ] ; then
                 exit $RV
         )
         exit
-fi
+# fi
 
-klone_parse $@
+# klone_parse $@
+parse_cli $@
 
 [ "$#" -eq 0 ] && help && exit 1
 if ! setup_repo_table $SRC_REPO_URL ; then
