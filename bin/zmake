@@ -399,6 +399,65 @@ build_nuttx()
 }
 
 #
+#
+#
+spray_contents()
+{
+        for key in ${!Selection[@]} ; do
+                echo_err "Setting ${Selection[$key]} to $key"
+                NameCheck[${Selection[$key]}]=$key
+        done
+        for key in ${!NameCheck[@]} ; do
+                echo_err "NameCheck for $key = ${NameCheck[$key]}"
+        done
+}
+
+# print_hash Array_assoc
+# foo=$(declare -p Array_assoc | sed -e 's/^.*(//' -e 's/)//' -e 's/\[/\\tArray_assoc\[/g' -e 's/ /\\n/g')
+array_copy()
+{
+        local AName=
+        local BName=
+        local Tmp=
+
+        AName="$1" ; shift
+        BName="$1" ; shift
+
+        echo "================================================="
+        declare -p ${AName} | eval sed -e 's/${AName}/${BName}/'
+        echo ":: " $Tmp
+        eval ${BName}=\([0]="a" [1]="b" [2]="c" [3]="x"\)
+#       declare -a Hoo=([0]="a" [1]="b" [2]="c" [3]="x")
+#       echo "=== ${BName[@]}"
+}
+
+
+#
+#
+#
+adjust_selection()
+{
+        declare -a Combo=
+        delcare -a Selection=
+        declare -A NameCheck=
+
+        Selection=( $@  )
+        eval spray_contents ${Selection[@]}
+        select Val in "${Selection[@]}" Exit ; do
+                echo_dbg "Val : $Val, REPLY <$REPLY>"
+                case "$Val" in
+                        "Exit") [ "${#Combo[@]}" -eq 0 ] && return 1
+                                echo "${Combo[@]}" ; echo_dbg "Exit with Combo ${#Combo[@]}" && return 0
+                            ;;
+                             *)
+                                [ -n "$REPLY"  ] && echo_err "Bad selection: <$REPLY>, try again."
+                                Combo[${#Combo[@]}]=$Val
+                            ;;
+                esac
+        done
+}
+
+#
 # Assemble a list of configs directories available for builds
 # and if it is more than 1 generate a menu selection and have
 # the user spec which board config to use.
@@ -413,17 +472,36 @@ select_board()
 
         Exit=exit
         All=all
-#       BOARD_LIST=( $(ls configs/*/Makefile | sed -e 's/configs\///' -e 's/\/.*//') )
         BOARD_LIST=( $(ls configs/*/Makefile | awk -F'/' '{print $2}') )
 
-        select Val in "${BOARD_LIST[@]}" all Exit ; do
-                echo_dbg "Val = <$Val>"
-                [ "$Val" = "Exit" ] && return 1
-                [ -n "$Val" ] && break
-                [ -n "$REPLY" ] && echo_err "REPLY is <$REPLY>"
+        select Val in "${BOARD_LIST[@]}" all combo Exit ; do
+                echo_dbg "Val : <$Val>,  REPLY : <$REPLY>"
+                case "$Val" in
+                "Exit"|"exit") echo_dbg "Exiting, returning 1"
+                               return 1
+                 ;;
+                "all"        )  echo_dbg "All boards selected:"
+                                echo "${BOARD_LIST[@]}"
+                                        return 0
+                 ;;
+                 combo       )  if ! BOARD_LIST=( $(adjust_selection ${BOARD_LIST[@]}) ) ; then
+                                        echo_dbg "Could not adjust the selction."
+                                        return 1
+                                fi
+                                echo_err "Made it this far!"
+                                echo "${BOARD_LIST[@]}"
+                                        return 0
+                 ;;
+                *            )  echo "$Val"
+                                        return 0
+                 ;;
+                esac
         done
 
-        [ "$Val" != "all" ] && echo "$Val" && return 0
+
+        #
+        # When all or a combo of boards is selected:
+        #
         echo "${BOARD_LIST[@]}"
 
         return 0
