@@ -15,6 +15,14 @@ page_size=10
 count=$page_size
 declare -A GIT_MODE_CODE
 
+dump_git_mode_codes()
+{
+        declare -A Foo=
+
+        Foo="$1"
+        declare -p $Foo
+}
+
 setup_mode_code()
 {
         GIT_MODE_CODE["R"]="git mv"
@@ -24,6 +32,8 @@ setup_mode_code()
         GIT_MODE_CODE["C"]="git add"
         GIT_MODE_CODE["??"]="echo Untracked: "
         GIT_MODE_CODE["U"]="git add"
+
+        debug && dump_git_mode_codes GIT_MODE_CODE
 }
 
 Help()
@@ -221,12 +231,6 @@ list_files()
 
 FILTER="^[A-Z_][A-Z]"
 setup_mode_code
-if [ -n "$UNTRACK" ] && [ "$UNTRACK" -eq 1 ] ; then
-        GIT_MODE_CODE["??"]="git add"
-        echo_dbg "Resetting the FILTER ..."
-        FILTER="^[A-Z_?][A-Z?]"
-fi
-
 
 # ARGS_Begin
 while [ $# -ne 0 ] ; do
@@ -290,6 +294,7 @@ while [ $# -ne 0 ] ; do
             fi
            ;;
         -u) UNTRACK=1
+           echo_dbg "UNTRACK set: <$UNTRACK>"
            ;;
         --vim) vim $(list_files FILTER | awk '{print $NF}') ; exit 0
            ;;
@@ -299,6 +304,12 @@ while [ $# -ne 0 ] ; do
         shift
 done
 # ARGS_End"
+
+if [ -n "$UNTRACK" ] && [ "$UNTRACK" -eq 1 ] ; then
+        GIT_MODE_CODE["??"]="git add"
+        echo_dbg "Resetting the FILTER ..."
+        FILTER="^[A-Z_?][A-Z?]"
+fi
 
 [ -z "$PUSH" ] || POST_ACTION=( "eval" "git" "commit" "&&" "git" "$PUSH" )
 
