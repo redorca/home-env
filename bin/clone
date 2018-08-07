@@ -229,10 +229,12 @@ setup_repo_table()
 	Repo2Host["sdk_14"]=$SDK_14@$repo_host_url/3rd_Party_SDK
 	Repo2Host["nordic"]=$NORDIC_SDK@$repo_host_url/3rd_Party_SDK
 	Repo2Host["dialog"]=$DIALOG_SDK@$repo_host_url/3rd_Party_SDK
+	Repo2Host["nuttx725"]=nuttx-7.25-merge@$repo_host_url/nuttx.git
 	Repo2Host["nuttx"]=zdk@$repo_host_url/nuttx.git
 	Repo2Host["nuttx-ext"]=zdk@$repo_host_url/nuttx.git,zdk@$repo_host_url/external.git,zdk@$repo_host_url/nuttx_apps.git
 	Repo2Host["nuttx_apps"]=zdk@$repo_host_url/nuttx_apps.git
 #	Repo2Host["apps"]=zdk@$repo_host_url/nuttx_apps.git
+	Repo2Host["apps725"]=nuttx-7.25-merge@$repo_host_url/nuttx_apps.git
 	Repo2Host["apps"]="${Repo2Host["nuttx_apps"]}"
 	Repo2Host["external"]=zdk@$repo_host_url/external.git
 	Repo2Host["auto_test"]=master@$repo_host_url/auto_test.git
