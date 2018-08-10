@@ -404,7 +404,7 @@ build_nuttx()
 spray_contents()
 {
         for key in ${!Selection[@]} ; do
-                echo_err "Setting ${Selection[$key]} to $key"
+                echo_dbg "Setting ${Selection[$key]} to $key"
                 NameCheck[${Selection[$key]}]=$key
         done
         for key in ${!NameCheck[@]} ; do
@@ -431,6 +431,28 @@ array_copy()
 #       echo "=== ${BName[@]}"
 }
 
+#
+# An attempt to generalize use of select so there aren't
+# so many case statements to handle them.
+#
+select_what()
+{
+        declare -a Cases=
+        local MAX_CASES=
+
+        MAX_CASES=10
+        Cases=( $@ )
+        if [ "${#Cases[@]}" -gt "$MAX_CASES" ] ; then
+                echo_err "Too many choices requested.  Please limit to $MAX_CASES choices"
+                return 1
+        fi
+
+        select Val in ${Cases[@]} ; do
+                case "$Val" in
+                esac
+        done
+}
+
 
 #
 #
@@ -442,16 +464,21 @@ adjust_selection()
         declare -A NameCheck=
 
         Selection=( $@  )
-        eval spray_contents ${Selection[@]}
+#       eval spray_contents ${Selection[@]}
         select Val in "${Selection[@]}" Exit ; do
                 echo_dbg "Val : $Val, REPLY <$REPLY>"
                 case "$Val" in
+                            "" )  echo_dbg "Val returned NULL and reply is <$REPLY>"
+                                sleep 1
+                            ;;
                         "Exit") [ "${#Combo[@]}" -eq 0 ] && return 1
-                                echo "${Combo[@]}" ; echo_dbg "Exit with Combo ${#Combo[@]}" && return 0
+                                echo_dbg "Exit with Combo ${#Combo[@]}"
+                                echo "${Combo[@]}" ; return 0
                             ;;
                              *)
-                                [ -n "$REPLY"  ] && echo_err "Bad selection: <$REPLY>, try again."
+                                [ -z "$Val"  ] && echo_err "Bad selection: <$REPLY>, try again."
                                 Combo[${#Combo[@]}]=$Val
+                                echo_err "${Combo[*]}"
                             ;;
                 esac
         done
@@ -475,8 +502,11 @@ select_board()
         BOARD_LIST=( $(ls configs/*/Makefile | awk -F'/' '{print $2}') )
 
         select Val in "${BOARD_LIST[@]}" all combo Exit ; do
-                echo_dbg "Val : <$Val>,  REPLY : <$REPLY>"
+                echo_dbg "Pre case op:: Val : <$Val>,  REPLY : <$REPLY>"
                 case "$Val" in
+                 ""          )  echo_dbg "Val returned NULL and reply is <$REPLY>"
+                                sleep 1
+                 ;;
                 "Exit"|"exit") echo_dbg "Exiting, returning 1"
                                return 1
                  ;;
@@ -488,7 +518,6 @@ select_board()
                                         echo_dbg "Could not adjust the selction."
                                         return 1
                                 fi
-                                echo_err "Made it this far!"
                                 echo "${BOARD_LIST[@]}"
                                         return 0
                  ;;
@@ -611,7 +640,7 @@ rm -f $OBJS_FILE
 # Main()
 #
 TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
-echo     "Targets : (${TARGET_DIRS[*]})"
+echo_dbg "Targets : (${TARGET_DIRS[*]})"
 [ "${VERBOSE:0:1}" = "V" ] && print_keyval
 
 #
