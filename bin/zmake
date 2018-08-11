@@ -460,16 +460,17 @@ select_what()
 adjust_selection()
 {
         declare -a Combo=
-        delcare -a Selection=
-        declare -A NameCheck=
+        declare -a Selection=
+        local Val=
 
         Selection=( $@  )
-#       eval spray_contents ${Selection[@]}
+
+        while [ 1 ] ; do
         select Val in "${Selection[@]}" Exit ; do
                 echo_dbg "Val : $Val, REPLY <$REPLY>"
                 case "$Val" in
                             "" )  echo_dbg "Val returned NULL and reply is <$REPLY>"
-                                sleep 1
+                                break
                             ;;
                         "Exit") [ "${#Combo[@]}" -eq 0 ] && return 1
                                 echo_dbg "Exit with Combo ${#Combo[@]}"
@@ -478,9 +479,13 @@ adjust_selection()
                              *)
                                 [ -z "$Val"  ] && echo_err "Bad selection: <$REPLY>, try again."
                                 Combo[${#Combo[@]}]=$Val
-                                echo_err "${Combo[*]}"
+                                unset Selection[$(( REPLY - 1 ))]
+                                break
                             ;;
                 esac
+                echo_err "${Combo[*]}"
+                sleep 1
+        done
         done
 }
 
