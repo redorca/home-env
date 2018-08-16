@@ -1,0 +1,13 @@
+#!/bin/bash
+
+[ -f "$1" ] || exit 1
+
+Parts=( $(file -ib $1) )
+UTF_IN="${Parts[1]##*=}"
+UTF_OUT=utf-8
+
+echo "Charset in: $UTF_IN,  out: $UTF_OUT"
+
+iconv -f $UTF_IN  -t $UTF_OUT "$1" > "$1"-utf8
+
+

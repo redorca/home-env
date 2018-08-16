@@ -1,0 +1,49 @@
+#!/bin/bash
+
+BFD_TARGETS=" elf64-x86-64 elf32-i386 elf32-iamcu elf32-x86-64 a.out-i386-linux pei-i386
+             pei-x86-64 elf64-l1om elf64-k1om elf64-little elf64-big elf32-little elf32-big
+             pe-x86-64 pe-bigobj-x86-64 pe-i386 plugin srec symbolsrec verilog tekhex binary
+             ihex elf32-littlearm elf32-bigarm elf32-little elf32-big plugin srec symbolsrec
+             verilog tekhex binary ihex "
+
+declare -a BFD_TARGETS
+BFD_TARGETS=( $(echo $BFD_TARGETS) )
+# echo "BFDTARGET: ${#BFD_TARGETS[@]},  ${BFD_TARGETS[23]}"
+
+do_help()
+{
+        cat <<EOF
+        A list of the names accepted by "gcc -march".  Given an architecture family the
+        possible names appropriate are displayed. The names are case insensitive.
+
+        Architecture families are:  arm, i386, x86_64.
+EOF
+}
+
+[ $# -eq 0 ] && do_help && exit
+
+filter_names()
+{
+        local Name=
+        local idx=
+
+        Name="$1"
+
+        echo ""
+        for idx in ${!BFD_TARGETS[@]} ; do
+                echo ${BFD_TARGETS[$idx]} | grep -i $Name >/dev/null || continue
+                echo -e "${BFD_TARGETS[$idx]}\t"
+        done
+        echo ""
+}
+
+
+case "${1,,}" in
+        arm|x86|x96_64|mips) FAMILY="${1,,}"
+        ;;
+        *) echo  "That family is not covered in the current compiler."
+        ;;
+esac
+
+filter_names $FAMILY
+

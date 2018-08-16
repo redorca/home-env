@@ -1,0 +1,29 @@
+#!/bin/bash
+
+#
+# Preview changes:
+#
+preview_A()
+{
+        make clean && make docs && (cd _build/html && python -m SimpleHTTPServer 8080)
+}
+
+#
+# Install Sphinx toolchain:
+#
+sphinx_tools_install()
+{
+        sudo apt-get install  python3-breathe python3-recommonmark 
+}
+
+#
+# 
+#
+preview_B()
+{
+        cd docs
+        make clean && make preview && (cd _build/html && python -m SimpleHTTPServer 8080)
+}
+
+[ -n "$1" ] && "$1"
+
