@@ -574,6 +574,7 @@ parse_cli()
 {
         Func $@
 
+        dbg_echo "\$# $#"
         while [ $# -ne 0 ] ; do
                 dbg_echo "\$1 == ($1)"
                 case "$1" in
@@ -607,10 +608,15 @@ parse_cli()
                 -R | --repo) SRC_REPO_URL="$2"; shift # set the repo to init with.
                 ;;
                 *)
-                        [ "$(basename $0)" = "klone" ] && klone_parse "$1" && break
-                        [ -z "${OfferRepos[$1]}" ] && echo_err "Not a supported repo: $1." && exit
-                        dbg_echo "Adding target $1 to TARGETS"
-                        TARGETS[${#TARGETS[@]}]="$1"; # The repo name to clone.
+                        if [ "$(basename $0)" = "klone" ] ; then
+                                klone_parse "$1"
+                        elif [ -z "${OfferRepos[$1]}" ] ; then
+                                echo_err "Not a supported repo: $1."
+                                exit
+                        else
+                                dbg_echo "Adding target $1 to TARGETS"
+                                TARGETS[${#TARGETS[@]}]="$1"; # The repo name to clone.
+                        fi
                 ;;
                 esac
                 shift
