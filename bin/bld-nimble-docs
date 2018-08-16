@@ -1,11 +1,35 @@
 #!/bin/bash
 
+INDENT=""
+#
+#
+#
+function dbg
+{
+        [ "$DEBUG" = "1" ] || return 1
+        return 0
+}
+
+#
+# Show what functions is executing
+# and what args were passed.
+#
+function Func
+{
+        dbg || return
+        echo -e "${INDENT}===> ${FUNCNAME[1]}() $@" >&2
+}
+
 #
 # Preview changes:
 #
 preview_A()
 {
+        INDENT="\t${INDENT}"
+        Func $@
+
         make clean && make docs && (cd _build/html && python -m SimpleHTTPServer 8080)
+        INDENT="${INDENT%	}"
 }
 
 #
@@ -13,7 +37,10 @@ preview_A()
 #
 sphinx_tools_install()
 {
+        INDENT="\t${INDENT}"
+        Func $@
         sudo apt-get install  python3-breathe python3-recommonmark 
+        INDENT="${INDENT%	}"
 }
 
 #
@@ -21,9 +48,65 @@ sphinx_tools_install()
 #
 preview_B()
 {
+        INDENT="\t${INDENT}"
+        Func $@
         cd docs
         make clean && make preview && (cd _build/html && python -m SimpleHTTPServer 8080)
+        INDENT="${INDENT%	}"
 }
 
-[ -n "$1" ] && "$1"
+#
+# List possible args.
+#
+list_funcs()
+{
+        INDENT="\t${INDENT}"
+        Func $@
+        declare -a LIST
+
+        LIST=( $(grep "()$" $0 | sed -e 's/^/        /') )
+        for i in $(seq 0 $(( ${#LIST[@]} - 1)) ); do
+                echo -e "${INDENT} :: ${LIST[$i]}"
+        done
+
+        INDENT="${INDENT%	}"
+}
+
+#
+#
+#
+help()
+{
+    INDENT="\t${INDENT}"
+    Func $@
+    list_funcs
+    INDENT="${INDENT%	}"
+}
+
+#
+#
+#
+function parse
+{
+    INDENT="\t${INDENT}"
+    Func $@
+
+    [ $# -eq 0 ] && ARG="-h"
+    while [ $# -ne 0 ] ; do
+        ARG=$1
+        case "$ARG" in
+        -h)     help
+                exit
+                ;;
+        *)
+                ;;
+        esac
+        shift
+    done
+
+    INDENT="${INDENT%	}"
+}
+
+Func $@
+[ -n "$1" ] && parse "$@"
 
