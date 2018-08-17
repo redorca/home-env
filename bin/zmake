@@ -467,12 +467,12 @@ adjust_selection()
 
         while [ 1 ] ; do
         select Val in "${Selection[@]}" Exit ; do
-                echo_dbg "Val : $Val, REPLY <$REPLY>"
+                echo_err "Val : $Val, REPLY <$REPLY>"
                 case "$Val" in
                             "" )  echo_dbg "Val returned NULL and reply is <$REPLY>"
                                 break
                             ;;
-                        "Exit") [ "${#Combo[@]}" -eq 0 ] && return 1
+                        Exit) [ "${#Combo[@]}" -eq 0 ] && return 1
                                 echo_dbg "Exit with Combo ${#Combo[@]}"
                                 echo "${Combo[@]}" ; return 0
                             ;;
