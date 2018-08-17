@@ -23,12 +23,12 @@ function Func
 #
 # Preview changes:
 #
-preview_A()
+make_docs()
 {
         INDENT="\t${INDENT}"
         Func $@
 
-        make clean && make docs && (cd _build/html && python -m SimpleHTTPServer 8080)
+        make clean && make docs && (cd _build/html && python3 -m SimpleHTTPServer 8080)
         INDENT="${INDENT%	}"
 }
 
@@ -46,12 +46,12 @@ sphinx_tools_install()
 #
 # 
 #
-preview_B()
+preview()
 {
         INDENT="\t${INDENT}"
         Func $@
         cd docs
-        make clean && make preview && (cd _build/html && python -m SimpleHTTPServer 8080)
+        make clean && make preview && (cd _build/html && python3 -m SimpleHTTPServer 8080)
         INDENT="${INDENT%	}"
 }
 
@@ -109,4 +109,5 @@ function parse
 
 Func $@
 [ -n "$1" ] && parse "$@"
+$@
 
