@@ -3,8 +3,16 @@
 TRACE=${TRACE:-0}
 DEBUG=${DEBUG:-0}
 SIGNALS=${SIGNALS:-}
+trap indent RETURN
 
 #
+# Remove from the indenting offset from the ${INDENT} variable.
+#
+indent()
+{
+        INDENT="${INDENT%$DOWN}"
+}
+
 # Make sure the 'echo' command will process control sequences.
 #
 Bin=echo
@@ -49,7 +57,8 @@ echo_err()
 #
 Func()
 {
-        debug  && echo_err "${#FUNCNAME[@]} : ${FUNCNAME[1]}( $@ )"
+        INDENT="${INDENT}  "
+        debug  && echo_err "${#FUNCNAME[@]}${INDENT}${FUNCNAME[1]}( $@ )"
 }
 
 #

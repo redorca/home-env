@@ -1,6 +1,17 @@
 #!/bin/bash
 
+trap indent RETURN
+
+STEP="   "
 INDENT=""
+
+indent()
+{
+        [ "$1" = "+" ] && INDENT="${STEP}${INDENT}" && return
+        INDENT="${INDENT%%      }"
+        dbg && echo "Indent decremented to ${#INDENT}" >&2
+}
+
 #
 #
 #
@@ -17,7 +28,8 @@ function dbg
 function Func
 {
         dbg || return
-        echo -e "${INDENT}===> ${FUNCNAME[1]}() $@" >&2
+        indent "+"
+        echo -e "${#INDENT}:${INDENT} :: ${#FUNCNAME[@]} ===> ${FUNCNAME[1]}() $@" >&2
 }
 
 #
@@ -25,11 +37,9 @@ function Func
 #
 make_docs()
 {
-        INDENT="\t${INDENT}"
         Func $@
 
         make clean && make docs && (cd _build/html && python3 -m SimpleHTTPServer 8080)
-        INDENT="${INDENT%	}"
 }
 
 #
@@ -37,10 +47,8 @@ make_docs()
 #
 sphinx_tools_install()
 {
-        INDENT="\t${INDENT}"
         Func $@
         sudo apt-get install  python3-breathe python3-recommonmark 
-        INDENT="${INDENT%	}"
 }
 
 #
@@ -48,7 +56,6 @@ sphinx_tools_install()
 #
 preview()
 {
-        INDENT="\t${INDENT}"
         Func $@
         cd docs
         make clean && make preview && (cd _build/html && python3 -m SimpleHTTPServer 8080)
@@ -60,16 +67,16 @@ preview()
 #
 list_funcs()
 {
-        INDENT="\t${INDENT}"
         Func $@
         declare -a LIST
 
+        indent "+"
         LIST=( $(grep "()$" $0 | sed -e 's/^/        /') )
         for i in $(seq 0 $(( ${#LIST[@]} - 1)) ); do
-                echo -e "${INDENT} :: ${LIST[$i]}"
+                 echo -e "${INDENT} :: ${LIST[$i]}"
         done
+        indent "-"
 
-        INDENT="${INDENT%	}"
 }
 
 #
@@ -77,10 +84,8 @@ list_funcs()
 #
 help()
 {
-    INDENT="\t${INDENT}"
     Func $@
     list_funcs
-    INDENT="${INDENT%	}"
 }
 
 #
@@ -88,7 +93,6 @@ help()
 #
 function parse
 {
-    INDENT="\t${INDENT}"
     Func $@
 
     [ $# -eq 0 ] && ARG="-h"
@@ -107,7 +111,14 @@ function parse
     INDENT="${INDENT%	}"
 }
 
-Func $@
+function boo
+{
+        Func $@
+        echo "func call to see whether indent the func works."
+        indent
+}
+
 [ -n "$1" ] && parse "$@"
 $@
 
+boo
