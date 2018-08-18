@@ -238,7 +238,7 @@ find_repo_root()
 set_fastapi_targets()
 {
         funcname $@
-        echo "zeus1 clean sim distclean zeus2 clean sim"
+        echo "zeus1 clean simlib distclean zeus2 clean simlib"
 }
 
 set_nuttx_app_list()
