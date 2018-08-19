@@ -5,11 +5,30 @@ trap indent RETURN
 STEP="   "
 INDENT=""
 
+echo_err()
+{
+        local OP=
+
+        OP=""
+        [ $# -gt 1 ] && OP="$1" && shift
+        echo $OP -e "${INDENT}$@" >&2
+}
+
+#
+# Since this runs on every function exit an exit
+# from routines who do not call Func() would end
+# up decrementing INDENT without a paired increment.
+#
 indent()
 {
-        [ "$1" = "+" ] && INDENT="${STEP}${INDENT}" && return
-        INDENT="${INDENT%%      }"
-        dbg && echo "Indent decremented to ${#INDENT}" >&2
+        [ "${FUNCNAME[1]}" = "echo_err" ] && return 0
+#       [ "${FUNCNAME[1]}" = "dbg"      ] && return 0
+        [ "${FUNCNAME[1]}" = "indent"      ] && return 0
+
+        dbg && echo_err "-n" "${INDENT}Indent @ ${#INDENT}:$INDENT: "
+        [ "$1" = "+" ] && echo -n ":" >&2 && echo -n "+" >&2 && INDENT="${STEP}${INDENT}"
+        [ "$1" = ""  ] && echo -n ";" >&2 && INDENT="-${INDENT%%      } "
+        dbg && echo_err "now @ ${#INDENT}:$INDENT:"
 }
 
 #
@@ -23,13 +42,16 @@ function dbg
 
 #
 # Show what functions is executing
-# and what args were passed.
+# and what args were passed. By the
+# way, don't increment INDENT for
+# ourselves.
 #
 function Func
 {
-        dbg || return
+        [ "${FUNCNAME[1]}" = "Func"      ] && return 0
+        [ "${FUNCNAME[1]}" = "echo_err" ] && return 0
         indent "+"
-        echo -e "${#INDENT}:${INDENT} :: ${#FUNCNAME[@]} ===> ${FUNCNAME[1]}() $@" >&2
+        echo_err "===> ${FUNCNAME[1]}() $@"
 }
 
 #
@@ -82,7 +104,7 @@ list_funcs()
         indent "+"
         LIST=( $(grep "()$" $0 | sed -e 's/^/        /') )
         for i in $(seq 0 $(( ${#LIST[@]} - 1)) ); do
-                 echo -e "${INDENT} :: ${LIST[$i]}"
+                 echo_err "${LIST[$i]}"
         done
         indent "-"
 
@@ -109,7 +131,10 @@ function parse
         ARG=$1
         case "$ARG" in
         -h)     help
+                echo     "${INDENT}================================" >&2
                 exit
+                ;;
+         list) list_funcs ; exit
                 ;;
         *)
                 ;;
