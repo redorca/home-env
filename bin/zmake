@@ -70,6 +70,33 @@ REPO_BUILD_CMDS["fast_api"]="build_fastapi"
 REPO_BUILD_CMDS["nuttx"]="build_nuttx"
 
 #
+# Point to a function to test build results in
+# different repos on a per target basisl
+#
+# Requires the "-T" flag.
+#
+declare -A REPO_BUILD_TESTS
+REPO_BUILD_TESTS["fast_api"]="test_fastapi"
+REPO_BUILD_TESTS["nuttx"]="test_nuttx"
+
+#
+#
+#
+declare -A FASTAPI_BLD_TST_CMDS
+FASTAPI_BLD_TST_CMDS["zeus1"]="fastapi_zeus_bldtest"
+FASTAPI_BLD_TST_CMDS["zeus2"]="fastapi_zeus_bldtest"
+FASTAPI_BLD_TST_CMDS["sim"]="fastapi_sims_bldtest"
+FASTAPI_BLD_TST_CMDS["simlib"]="fastapi_sims_bldtest"
+
+#
+#
+#
+declare -A NUTTX_BLD_TST_CMDS
+NUTTX_BLD_TST_CMDS["nsh_zeus1"]="nuttx_nsh_zeus_bldtest"
+NUTTX_BLD_TST_CMDS["nsh_zeus2"]="nuttx_nsh_zeus_bldtest"
+NUTTX_BLD_TST_CMDS["nsh"]="nuttx_nsh_bldtest"
+
+#
 # Trap all exits.
 #
 on_exit()
@@ -399,6 +426,98 @@ build_nuttx()
 }
 
 #
+# Return which zeus architecture is configured.
+#
+fastapi_get_zeus_bldbase()
+{
+        local ConfigDir=
+        local ZeusArch=
+
+        ConfigDir=build/gcc
+        [ ! -f $ConfigDir/.config ] && return 1
+
+        ZeusArch=$(grep ^CONFIG_ZEUS.= $ConfigDir/.config)
+        ZeusArch=${ZeusArch#CONFIG_ZEUS}
+        ZeusArch=${ZeusArch%=y}
+
+        echo zeus${ZeusArch}
+}
+
+#
+#
+#
+test_fast_api()
+{
+        [ -z "$1" ] && return 1
+        [ -z "${FASTAPI_BLD_TST_CMDS["$1"]}" ] && return 1
+
+        ${FASTAPI_BLD_TST_CMDS[$1]}
+}
+
+#
+# The real test function.
+#
+fastapi_bldtst()
+{
+        local Target=
+        local ZeusArch=
+        local TstOutfile=
+        local OutputDir=
+        local SimExec=
+
+        ZeusArch="$1" ; shift
+        Target=$1
+        [ -n "$Target" ] && Bld="${Zeus}_${Target}"
+
+        TstOutfile="/tmp/.tst_fastapi_${Bld}"
+        OutputDir="output/$ZeusArch/${Target}"
+        Lib="libfastapi${target}_${ZeusArch}.a"
+        Exec="${Lib:%.a=%.o}"
+
+        [ -f "$OutputDir/$ZeusArch/$Target/$lib" ] && echo_err "Found\t$lib"
+        [ -f "$OutputDir/$ZeusArch/$Target/$Exec" ] && echo_err "Found\t$Exec"
+        if [ -n "$Target" ] && ! $OutputDir/$Exec > $TstOutfile  2>&1 ; then
+                tail -20 $TstOutfile
+                return 1
+        fi
+        if [ -n "$Target" ] && [ -f "$OutputDir/$Exec" ] ; then
+                echo_err "Found and ran:\t$Exec"
+        fi
+        return 0
+
+}
+
+#
+#
+#
+fastapi_zeus_bldtest()
+{
+        local ZEUS=
+
+        if ! ZEUS=$(fastapi_get_zeus_bldbase) ; then
+                echo_err "Unable to determine which zeus build is configured."
+                return 1
+        fi
+        fastapi_bldtst "$ZEUS" "$1"
+}
+
+#
+#
+#
+fastapi_sims_bldtest()
+{
+        fast_zeus_bldtest "$1"
+}
+
+#
+#
+#
+test_nuttx()
+{
+        return
+}
+
+#
 #
 #
 spray_contents()
@@ -593,6 +712,8 @@ while [ $# -ne 0 ] ; do
         #
         # Specify build target. May specify multiple times.
         -t) TARGET_DIRS="$TARGET_DIRS ${2%/}"; shift
+                ;;
+        -T) TEST="yes"
                 ;;
         #
         # Print info beyond success/failure. May specify multiple times.
