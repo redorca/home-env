@@ -33,13 +33,33 @@ function Func
 }
 
 #
-# Preview changes:
+# Does not exist for python3
+#
+HTTPSERVER="SimpleHTTPServer  8080"
+#
+# This is the only python module that works readily
+#
+HTTPSERVER="littlehttpserver -p 8080"
+
+
+#
+#
 #
 make_docs()
 {
         Func $@
 
-        make clean && make docs && (cd _build/html && python3 -m SimpleHTTPServer 8080)
+        make clean && make docs && (cd _build/html && python3 -m $HTTPSERVER )
+}
+
+#
+# Preview changes:
+#
+preview()
+{
+        Func $@
+        cd docs
+        make clean && make preview && (cd _build/html && python3 -m $HTTPSERVER )
 }
 
 #
@@ -48,18 +68,7 @@ make_docs()
 sphinx_tools_install()
 {
         Func $@
-        sudo apt-get install  python3-breathe python3-recommonmark 
-}
-
-#
-# 
-#
-preview()
-{
-        Func $@
-        cd docs
-        make clean && make preview && (cd _build/html && python3 -m SimpleHTTPServer 8080)
-        INDENT="${INDENT%	}"
+        sudo apt-get install  python3-breathe python3-recommonmark
 }
 
 #
@@ -108,17 +117,8 @@ function parse
         shift
     done
 
-    INDENT="${INDENT%	}"
-}
-
-function boo
-{
-        Func $@
-        echo "func call to see whether indent the func works."
-        indent
 }
 
 [ -n "$1" ] && parse "$@"
 $@
 
-boo
