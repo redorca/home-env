@@ -39,10 +39,16 @@ ip_to_display["default"]="1920x1080"
 ip_to_display["192.168.168"]="2048x1152"
 ip_to_display["192.168.183"]="1920x1080"
 
+
+function err_echo()
+{
+        echo -e $@ >&2
+}
+
 function dbg_echo()
 {
         [ "$DEBUG" != "1" ] && return
-        echo -e "$@" >&2
+        err_echo "$@"
 }
 
 function funame()
@@ -171,7 +177,7 @@ function add_path()
 #       dbg_echo "::({Paths[$Dir]}) (${Paths[$Dir]})"
 
         [ -n "${Paths[$Dir]}" ] && dbg_echo "Won't add path. Already present: $Dir" && return
-        ([ -z "$PATH" ] && echo "Starting with empty PATH." >&2)
+        ([ -z "$PATH" ] && err_echo "Starting with empty PATH.")
         PATH="$Dir:$PATH"
         set +x
 }
@@ -230,13 +236,13 @@ function dbg()
 function find-fu()
 {
         funame $@
-        ([ -z "$1" ] || [ -z "$2" ]) && echo "Missing an arg or two." >&2 && return 1
+        ([ -z "$1" ] || [ -z "$2" ]) && err_echo "Missing an arg or two."  && return 1
         local find_key=
         local Flag=
         local regex=
         local ACTION_ARG=
         find_key="${1,,}"
-        [ -z "$Flag" ] && echo "Please supply a proper key" >&2 return 1
+        [ -z "$Flag" ] && err_echo "Please supply a proper key"  return 1
         [ "$TRACE" = "2" ] && set -x
         Flag="${dir_to_flag["$find_key"]}"; shift
         regex="$1"; shift
@@ -272,7 +278,7 @@ function pd()
 function rm-fu()
 {
         funame $@
-        ([ -z "$1" ] || [ -z "$2" ]) && echo "Missing an arg or two." >&2 && return 1
+        ([ -z "$1" ] || [ -z "$2" ]) && err_echo "Missing an arg or two."  && return 1
         local find_key=
         local Flag=
         local regex=
@@ -330,7 +336,7 @@ function tag()
         START_DIR="./"
         [ -n "$1" ] && [ -d "$1" ] && START_DIR="$1"
         CSCOPE_OPTS="-R -k -b -s"
-        [ -f "$CSCOPE_DBFILE" ] && echo "Removed current cscope.out" >&2 && rm "$CSCOPE_DBFILE"
+        [ -f "$CSCOPE_DBFILE" ] && err_echo "Removed current cscope.out"  && rm "$CSCOPE_DBFILE"
         cscope $CSCOPE_OPTS "$START_DIR"
 }
 
@@ -362,7 +368,7 @@ function rtag()
         fi
         dbg_echo "Would run cscope from $Path"
         CSCOPE_OPTS="-R -k -b -s"
-        [ -f "$CSCOPE_DBFILE" ] && echo "Removed current cscope.out" >&2 && rm "$CSCOPE_DBFILE"
+        [ -f "$CSCOPE_DBFILE" ] && err_echo "Removed current cscope.out"  && rm "$CSCOPE_DBFILE"
         cscope $CSCOPE_OPTS "$Path"
 }
 
@@ -444,15 +450,15 @@ function zee()
 
         Msg="Please pass only a single digit between 1 and 6."
         if [ -z "$1" ] || [ "${#1}" -gt 1 ] || [ -z "$(echo $1 | tr -d [:alpha:])" ] ; then
-                echo "$Msg" >&2
+                err_echo "$Msg"
                 return 1
         fi
-        [ -z "$(echo "$1" | tr -d [:alpha:])" ] && echo "$Msg" >&2 && return 1
+        [ -z "$(echo "$1" | tr -d [:alpha:])" ] && err_echo "$Msg" && return 1
         ZSERVER="${1: -1:1}"
         ZSERVER=$(( ZSERVER + 144 ))
         if [ "$ZSERVER" -lt 145 ] || [ "$ZSERVER" -gt 150 ] ; then
-                echo "Trailing digit does not represent any Z server id ["$ZSERVER"]" >&2
-                echo "$Msg" >&2
+                err_echo "Trailing digit does not represent any Z server id ["$ZSERVER"]"
+                err_echo "$Msg"
                 return 1
         fi
 
@@ -520,7 +526,7 @@ function arm()
         Prefix="arm-none-eabi-"
         Cmd=${Prefix}${1} ; shift
         if ! type $Cmd >/dev/null ; then
-                echo "Apparently no such binary can be found: <$Cmd>" >&2
+                err_echo "Apparently no such binary can be found: <$Cmd>"
                 return 3
         fi
 
@@ -686,10 +692,10 @@ function restart_time()
 
         dbg_echo "Restarting system time service."
         if ! FOO=$(sudo systemctl restart $Time 2>&1); then
-                echo_err "systemctl returned: $FOO"
+                err_echo "systemctl returned: $FOO"
                 dbg_echo "Unable to restart ntpd so try indicator-datetime."
                 if ! systemctl $Time_Canonical >/dev/null 2>&1 ; then
-                        echo "Unable to restart any time services." >&2
+                        err_echo "Unable to restart any time services."
                         return 1
                 fi
         fi
