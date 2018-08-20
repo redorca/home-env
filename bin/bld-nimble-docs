@@ -21,11 +21,11 @@ echo_err()
 #
 indent()
 {
+        dbg  || return
         [ "${FUNCNAME[1]}" = "echo_err" ] && return 0
-#       [ "${FUNCNAME[1]}" = "dbg"      ] && return 0
+        [ "${FUNCNAME[1]}" = "dbg"      ] && return 0
         [ "${FUNCNAME[1]}" = "indent"      ] && return 0
 
-        dbg && echo_err "-n" "${INDENT}Indent @ ${#INDENT}:$INDENT: "
         [ "$1" = "+" ] && echo -n ":" >&2 && echo -n "+" >&2 && INDENT="${STEP}${INDENT}"
         [ "$1" = ""  ] && echo -n ";" >&2 && INDENT="-${INDENT%%      } "
         dbg && echo_err "now @ ${#INDENT}:$INDENT:"
@@ -51,7 +51,7 @@ function Func
         [ "${FUNCNAME[1]}" = "Func"      ] && return 0
         [ "${FUNCNAME[1]}" = "echo_err" ] && return 0
         indent "+"
-        echo_err "===> ${FUNCNAME[1]}() $@"
+        dbg && echo_err "===> ${FUNCNAME[1]}() $@"
 }
 
 #
