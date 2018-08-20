@@ -42,7 +42,8 @@ done
 ( [ -z "$Dir" ] || [ -z "$Key" ] ) && exit 2
 CMD="find \"$Dir\" -type f -name \"$Name\" -exec grep \"$Key\" {} \; -print"
 # find $Dir -type f -name "$Name" -exec grep "$Key" {} \; -print
-eval echo "$CMD"
-eval $CMD
-
+# eval echo "$CMD"
+if ! eval $CMD ; then
+        exit 1
+fi
 
