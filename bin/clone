@@ -49,6 +49,12 @@ svn_backed["FreeImage-svn"]="svn checkout"
 svn_backed["Moritz"]="svn checkout"
 
 #
+# Repos which are svn based are added here along with the command
+# required to "clone" them.
+#
+hg_backed["eigen"]="hg clone"
+
+#
 # Hash to match informal repo names to the canonical ones.
 #
 # RepoRename["freeimage"]="FreeImage-git"
@@ -121,7 +127,7 @@ Repo2Host["BME280_driver"]="master@https://github.com/BoschSensortec/BME280_driv
 Repo2Host["BMM050_driver"]="master@https://github.com/BoschSensortec/BMM050_driver.git"
 Repo2Host["doxygen"]="master@https://github.com/doxygen/doxygen.git"
 Repo2Host["universal-ctags"]="master@https://github.com/universal-ctags/ctags.git"
-
+Repo2Host["eigen"]="https://bitbucket.org/eigen/eigen/"
 FinalCmds=()
 FinalCmds["nuttx"]="setup_repo"
 FinalCmds["apps"]="setup_repo"
@@ -465,6 +471,8 @@ clone_one()
         dbg_echo "Target to clone: $TrueTarget"
         if [ -n "${svn_backed[$TrueTarget]}" ] ; then
                 CMD="${svn_backed[$TrueTarget]} ${Repo2Host[$TrueTarget]}"
+        elif [ -n "${hg_backed[$TrueTarget]}" ] ; then
+                CMD="${hg_backed[$TrueTarget]} ${Repo2Host[$TrueTarget]}"
         else
                 CMD="$(set_cmd_git $TrueTarget)"
         fi
