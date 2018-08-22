@@ -1,0 +1,66 @@
+diff --git a/build/gcc/toolchain.mk b/build/gcc/toolchain.mk
+index abc1541..5295022 100644
+--- a/build/gcc/toolchain.mk
++++ b/build/gcc/toolchain.mk
+@@ -43,6 +43,22 @@ define COPYFILE
+ endef
+ endif
+ 
++#
++#
++define ZVERCHECK
++	echo "jjjjjjjjjjjjjjjjjjjjjj"
++	$(error ljkljlkjl)
++	true
++endef
++
++#
++# compare two version strings formatted in
++# dotted decimal notation: 1.2.3.4
++#
++define VERSION_CHECK
++	echo ",,,,, Version $1 versus $2" ; false
++endef
++
+ .env:
+ 	@echo "\tARMGNU           $(ARMGNU)"
+ 	@echo "\tCC               $(CC)"
+diff --git a/documentation/Makefile b/documentation/Makefile
+index 1a1e66d..d751386 100644
+--- a/documentation/Makefile
++++ b/documentation/Makefile
+@@ -2,8 +2,10 @@ Q  = @
+ PDIR = $(shell cd .. && pwd)
+ DOXYGEN_DOCDIR          = doxy
+ DOXYGEN          ?= $(shell which doxygen)
++OUTFILE = $(shell mktemp -p /tmp .doxy_$(USER).XXXX)
+ DOXY_CONFIG_FILE = documentation/configs/Doxyfile.v0.1.SDK
+ DOXYVERSION     =  $(shell $(DOXYGEN) --version)
++KNOWN_GOOD_VERSION = 1.8.15
+ 
+ .PHONY: dox help
+ 
+@@ -16,8 +18,14 @@ help:
+ $(DOXYGEN_DOCDIR):
+ 	$(Q) mkdir -p $@
+ 
+-OUTFILE = /tmp/.doxy.out
+-dox: $(DOXYGEN_DOCDIR)
++doxygen_1.8.%: env
++	@echo "Calling VERSION_CHECK on ${@:doxygen_%=%} versus $(KNOWN_GOOD_VERSION)"
++	$(Q) echo "=== [ (call VERCHECK,$(KNOWN_GOOD_VERSION),${@:doxygen_%=%}) ] ::"
++	$(Q) echo "===================================================================="
++	$(Q) [ "$(call ZVERCHECK,$(KNOWN_GOOD_VERSION),${@:doxygen_%=%})" ]
++	$(Q) echo "===================================================================="
++
++dox: doxygen_$(DOXYVERSION) $(DOXYGEN_DOCDIR)
+ 	@echo "$@ :: Output collected in $(OUTFILE)"
+ 	$(Q) cd .. && $(DOXYGEN) $(DOXY_CONFIG_FILE) > $(OUTFILE) 2>&1
+ 	$(Q) sed -i -e '/\"Data Structures\",/,+7d' doxy/html/navtreedata.js
+@@ -31,4 +39,5 @@ distclean: clean
+ 	@echo "$@ ::"
+ 	@$(RM) -r $(DOXYGEN_DOCDIR)
+ 
+-
++env:
++	@echo -e "$(DOXYGEN)\t$(DOXYVERSION)"

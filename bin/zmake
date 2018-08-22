@@ -285,7 +285,7 @@ set_nuttx_app_list()
         [ -z "$fresults" ] && return 1
 
         pieces=( $(echo $fresults | sed -e 's/\// /g') )
-        count=$(( "${#pieces[@]}" + 1 ))
+        count=$(( ${#pieces[@]} + 1 ))
         echo_dbg "fresults: ($fresults), count: [$count]"
 
         pieces=( $(ls $fresults/*/$File_Key | cut --delim='/' -f $count) )
