@@ -26,6 +26,26 @@ string_version_check()
         done
 }
 
+#
+#
+#
+brute_force()
+{
+        declare -a Current=
+        declare -a local Reference=
+
+        Reference=( $(echo "$1" | awk -F'.' '{print $1 " " $2 " " $3}') ) ; shift
+        Current=( $(echo "$1" | awk -F'.' '{print $1 " " $2 " " $3}') ) ; shift
+        ( [ ${Reference[0]} -ge ${Current[0]} ]  &&       \
+        [ ${Reference[1]} -ge ${Current[1]} ]   &&      \
+        [ ${Reference[2]} -ge ${Current[2]} ])    ||     \
+        return 1
+}
+
+if ! brute_force "$1" "$2" ; then
+        echo "$2 is King, $1 is old hat."
+        exit 1
+fi
 
 if ! string_version_check "$1" "$2" ; then
         echo "Version $2 is greater than $1"
