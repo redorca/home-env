@@ -1,0 +1,98 @@
+#!/bin/bash
+
+ROOT_FASTAPI=$(pwd)
+ROOT_NUTTX=/home/zglue/src/zglue/reference/nuttx
+
+declare -A BOARD_TARGETS
+
+set_boards()
+{
+        BOARD_TARGETS["zglue_zeus2_chicago"]="nsh_zeus2"
+        BOARD_TARGETS["fast_nrf52832_dk"]="nsh_zeus2"
+        BOARD_TARGETS["nrf52832_dk"]="app_nsh"
+        BOARD_TARGETS["nrf52840_dk"]="app_nsh"
+}
+
+sanitize_nuttx()
+{
+        local RootNuttx=
+        local Branch=
+
+        Branch=zdk
+        RootNuttx=$HOME/src/zglue/reference/nuttx
+        [ -d "$1" ] && RootNuttx="$1" && shift
+        [ -n "$1" ] && Branch="$1" && shift
+
+        pushd $RootNuttx >/dev/null
+        git stash save "Moved out of the way"
+        git reset --hard
+        git checkout $Branch
+        git reset --hard
+        git pull
+        popd >/dev/null
+}
+
+
+export_files()
+{
+        local BinSrcDir=
+        local RootFast=
+        local FastArch=
+
+        [ ! -d "$1" ] && echo "Root arg does not point to a valid directory" >&2 && return 1
+        RootFast="$1" && shift
+        [ -z "$1" ] && echo "No FAST architecture arg passed." >&2 && return 2
+        FastArch="$1"
+
+        BinSrcDir=output/${FastArch}
+        if [ -f $ROOT_FASTAPI/$BinSrcDir/libfastapi_${FastArch}.a ] ; then
+                cp $RootFast/$BinSrcDir/libfastapi_${FastArch}.a \
+                        $ROOT_NUTTX/drivers/zglue_fast/${FastArch}
+                cp $RootFast/$BinSrcDir/fast_api.h \
+                        $ROOT_NUTTX/include/nuttx/zglue_fast
+                cp $RootFast/$BinSrcDir/fast_api_support.h \
+                        $ROOT_NUTTX/drivers/zglue_fast/${FastArch}
+        else
+                echo "Looked for $RootFast/libfastapi_${FastArch}.a without success."
+                return 1
+        fi
+}
+
+build_libfastapi()
+{
+        local FastArch=
+        local RootFast=
+
+        [ -n "$1" ] && FastArch="$1"
+        [ ! -d "$1" ] && echo "Root arg does not point to a valid directory" >&2 && return 1
+        RootFast="$1" && shift
+        [ -z "$1" ] && echo "No FAST architecture arg passed." >&2 && return 2
+        FastArch="$1"
+
+        pushd $RootFast >/dev/null
+        make distclean && make Q= $FastArch >/tmp/out.synclibs 2>&1
+        export_files "$RootFast" "$FastArch" || return 3
+        popd >/dev/null
+}
+
+Arch=zeus2
+if [ $# -ne 0 ] ; then
+        Arch=$1; shift
+fi
+build_libfastapi $ROOT_FASTAPI $Arch || exit 1
+
+pushd $ROOT_NUTTX >/dev/null
+sanitize_nuttx
+set_boards
+
+BOARD_CONFIG=( "zglue_zeus2_chicago" "fast_nrf52832_dk" "nrf52832_dk" "nrf52840_dk" )
+
+for targ in ${BOARD_CONFIG[@]} ; do
+        BOARD_CONF=$targ
+        BOARD_BUILD="${BOARD_TARGETS[$targ]}"
+        CMD=( "zmake" "-Q" "-b" "$BOARD_CONF" "$BOARD_BUILD" )
+        echo "${CMD[@]}"
+        ${CMD[@]}
+done
+
+

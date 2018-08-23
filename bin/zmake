@@ -1,5 +1,6 @@
 #!/bin/bash
 
+DEBUG=1
 #
 # This script will run make from the configs/nrf52832_dk
 # directory against every example directory contiaining
@@ -711,7 +712,7 @@ while [ $# -ne 0 ] ; do
                 ;;
         #
         # Specify build target. May specify multiple times.
-        -t) TARGET_DIRS="$TARGET_DIRS ${2%/}"; shift
+        -t) echo_err "Not supported. No harm ..."
                 ;;
         -T) TEST="yes"
                 ;;
@@ -727,10 +728,8 @@ while [ $# -ne 0 ] ; do
         # Specify build target. May specify multiple times.
         *) if [ -n "${pseudo_targets["${1%/}"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
-           elif [ -n "${make_targets["${1%/}"]}" ] ; then
-                TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
            else
-#               ARGS_UNXP="$ARGS_UNXP \"$1\""
+                echo_dbg "Adding target <$1>"
                 TARGETS[${#TARGETS[@]}]="$1"
            fi
                 ;;
@@ -758,16 +757,13 @@ fi
 OBJS_FILE=/tmp/objs.built
 rm -f $OBJS_FILE
 
-#         make_targets["$target"]=1
-# done
-# DEFAULT_APPS="${!make_targets[@]}"
-
 #
 # Main()
 #
-TARGET_DIRS=${TARGET_DIRS:-$DEFAULT_APPS}
-echo_dbg "Targets : (${TARGET_DIRS[*]})"
+
+echo_err "Targets : <${#TARGETS[@]}> :: (${TARGETS[*]})"
 [ "${VERBOSE:0:1}" = "V" ] && print_keyval
+sleep 5
 
 #
 # Corner Case: empty value (no mapping set)

@@ -49,12 +49,6 @@ svn_backed["FreeImage-svn"]="svn checkout"
 svn_backed["Moritz"]="svn checkout"
 
 #
-# Repos which are svn based are added here along with the command
-# required to "clone" them.
-#
-hg_backed["eigen"]="hg clone"
-
-#
 # Hash to match informal repo names to the canonical ones.
 #
 # RepoRename["freeimage"]="FreeImage-git"
@@ -208,8 +202,10 @@ Func()
 #
 trace()
 {
-        [ "$TRACE" = "1" ] && return 0
-        return  1
+        set +x
+        [ "$TRACE" = "1" ] || return 1
+        set -x
+        return  0
 }
 
 #
@@ -470,10 +466,14 @@ clone_one()
         TrueTarget="$(resolve_clone_id $1)"
         dbg_echo "Target to clone: $TrueTarget"
         if [ -n "${svn_backed[$TrueTarget]}" ] ; then
+                dbg_echo "svn_backed[$TrueTarget] == ${svn_backed[$TrueTarget]}"
                 CMD="${svn_backed[$TrueTarget]} ${Repo2Host[$TrueTarget]}"
         elif [ -n "${hg_backed[$TrueTarget]}" ] ; then
+                dbg_echo  "hg_backed[$TrueTarget] == ${hg_backed[$TrueTarget]}"
+                dbg_echo  "hg_backed[fast_api] == ${hg_backed[fast_api]}"
                 CMD="${hg_backed[$TrueTarget]} ${Repo2Host[$TrueTarget]}"
         else
+                dbg_echo  "Repo2Host[$TruTarget] == ${Repo2Host[$TrueTarget]}"
                 CMD="$(set_cmd_git $TrueTarget)"
         fi
 
@@ -659,6 +659,17 @@ klone_parse()
 	done
 #Help
 }
+#
+# Repos which are svn based are added here along with the command
+# required to "clone" them.
+#
+hg_backed["eigen"]="hg klone"
+hg_backed["fast_Api"]=""
+for var in ${!hg_backed[@]} ; do
+        dbg_echo "hg_backed[$var] == ${hg_backed[$var]}"
+done
+dbg_echo ":: hg_backed[Eigen] == ${hg_backed[eigen]}"
+dbg_echo "hg_backed[fast_Api] == ${hg_backed[fast_api]}"
 
 # if [ "$(basename $0)" = "clone" ] ; then
         if ! setup_repo_table $SRC_REPO_URL ; then
@@ -682,7 +693,9 @@ klone_parse()
 # fi
 
 # klone_parse $@
+trace
 parse_cli $@
+trace off
 
 [ "$#" -eq 0 ] && help && exit 1
 if ! setup_repo_table $SRC_REPO_URL ; then
