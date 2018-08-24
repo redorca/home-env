@@ -1,5 +1,5 @@
 #!/bin/bash
-
+echo "========================================================"
 #
 # This script will run make from the configs/nrf52832_dk
 # directory against every example directory contiaining
@@ -134,7 +134,7 @@ debug()
 #
 # Shortcut to send output to stderr by default.
 #
-echo_dbg()
+dbg_echo()
 {
         debug || return
         echo_err "$@"
@@ -286,7 +286,7 @@ set_nuttx_app_list()
 
         pieces=( $(echo $fresults | sed -e 's/\// /g') )
         count=$(( ${#pieces[@]} + 1 ))
-        echo_dbg "fresults: ($fresults), count: [$count]"
+        dbg_echo "fresults: ($fresults), count: [$count]"
 
         pieces=( $(ls $fresults/*/$File_Key | cut --delim='/' -f $count) )
         echo "${pieces[@]}"
@@ -326,17 +326,17 @@ make_one_target()
         Incremental="$1" ; shift
         Verbose="$1" ; shift
 
-        echo_dbg "Target is $Target"
+        dbg_echo "Target is $Target"
         CMD=( "make" "Q=$Q" "$NO_ERRORS" "$Target" )
 
         [ "${1,,}" = "verb" ] && Verbose="" ; shift
         [ "${Incremental,,}" = "yes" ] && CMD[1]="Q="
 
-        echo_dbg "${#CMD[@]} :: ${CMD[@]}"
-        echo_dbg "CMD[0] : ${CMD[0]}"
-        echo_dbg "CMD[1] : ${CMD[1]}"
-        echo_dbg "CMD[2] : ${CMD[2]}"
-        echo_dbg "CMD[3] : ${CMD[3]}"
+        dbg_echo "${#CMD[@]} :: ${CMD[@]}"
+        dbg_echo "CMD[0] : ${CMD[0]}"
+        dbg_echo "CMD[1] : ${CMD[1]}"
+        dbg_echo "CMD[2] : ${CMD[2]}"
+        dbg_echo "CMD[3] : ${CMD[3]}"
 
         eval ${CMD[@]}
 }
@@ -353,10 +353,10 @@ build_fastapi()
         repo_type="fast_api"
         Targets=( $(set_fastapi_targets) )
         echo_err "Compiling for $repo_type"
-        echo_dbg "Targets are: ${Targets[*]}"
+        dbg_echo "Targets are: ${Targets[*]}"
 
         for target in distclean ${Targets[@]} ; do
-            echo_dbg "\tbuild target <$target>"
+            dbg_echo "\tbuild target <$target>"
             OutFile="${OUT}.${repo_type}.${target}"
             echo_err -n "\tBuilding $target ... "
             if ! make_one_target $target > $OutFile  2>&1 ; then
@@ -365,7 +365,7 @@ build_fastapi()
                 [ -z "$Q" ] && echo_err "Failed building $target.  See $OutFile"
                 tail -25 ${OutFile}
                 Fails=$(( Fails + 1 ))
-                echo_dbg "\tFails:  <$Fails>, continue"
+                dbg_echo "\tFails:  <$Fails>, continue"
                 echo_err "\t\tFailed."
                 continue
             fi
@@ -391,7 +391,7 @@ build_nuttx()
                         echo_err "\nExit selected."
                         exit 1
                 fi
-                echo_dbg "BOARDS ${BOARDS[*]}"
+                dbg_echo "BOARDS ${BOARDS[*]}"
 
     for board in "${BOARDS[@]}" ; do
         echo_err ":::: Compiling for Board $board"
@@ -523,7 +523,7 @@ test_nuttx()
 spray_contents()
 {
         for key in ${!Selection[@]} ; do
-                echo_dbg "Setting ${Selection[$key]} to $key"
+                dbg_echo "Setting ${Selection[$key]} to $key"
                 NameCheck[${Selection[$key]}]=$key
         done
         for key in ${!NameCheck[@]} ; do
@@ -588,11 +588,11 @@ adjust_selection()
         select Val in "${Selection[@]}" Exit ; do
                 echo_err "Val : $Val, REPLY <$REPLY>"
                 case "$Val" in
-                            "" )  echo_dbg "Val returned NULL and reply is <$REPLY>"
+                            "" )  dbg_echo "Val returned NULL and reply is <$REPLY>"
                                 break
                             ;;
                         Exit) [ "${#Combo[@]}" -eq 0 ] && return 1
-                                echo_dbg "Exit with Combo ${#Combo[@]}"
+                                dbg_echo "Exit with Combo ${#Combo[@]}"
                                 echo "${Combo[@]}" ; return 0
                             ;;
                              *)
@@ -626,20 +626,20 @@ select_board()
         BOARD_LIST=( $(ls configs/*/Makefile | awk -F'/' '{print $2}') )
 
         select Val in "${BOARD_LIST[@]}" all combo Exit ; do
-                echo_dbg "Pre case op:: Val : <$Val>,  REPLY : <$REPLY>"
+                dbg_echo "Pre case op:: Val : <$Val>,  REPLY : <$REPLY>"
                 case "$Val" in
-                 ""          )  echo_dbg "Val returned NULL and reply is <$REPLY>"
+                 ""          )  dbg_echo "Val returned NULL and reply is <$REPLY>"
                                 sleep 1
                  ;;
-                "Exit"|"exit") echo_dbg "Exiting, returning 1"
+                "Exit"|"exit") dbg_echo "Exiting, returning 1"
                                return 1
                  ;;
-                "all"        )  echo_dbg "All boards selected:"
+                "all"        )  dbg_echo "All boards selected:"
                                 echo "${BOARD_LIST[@]}"
                                         return 0
                  ;;
                  combo       )  if ! BOARD_LIST=( $(adjust_selection ${BOARD_LIST[@]}) ) ; then
-                                        echo_dbg "Could not adjust the selction."
+                                        dbg_echo "Could not adjust the selction."
                                         return 1
                                 fi
                                 echo "${BOARD_LIST[@]}"
@@ -671,6 +671,7 @@ while [ $# -ne 0 ] ; do
         # Specify the directory to build from
         -b) [ -n "$2" ] && [ -d "configs/$2" ] && BOARDS[${#BOARDS[@]}]="$2";
                 shift
+                dbg_echo "=== Board: <$1>"
                 ;;
         #
         ## Enhanced background suitable for screens with
@@ -728,7 +729,7 @@ while [ $# -ne 0 ] ; do
         *) if [ -n "${pseudo_targets["${1%/}"]}" ] ; then
                 TARGET_DIRS="$TARGET_DIRS ${1%/}" ;
            else
-                echo_dbg "Adding target <$1>"
+                dbg_echo "Adding target <$1>"
                 TARGETS[${#TARGETS[@]}]="$1"
            fi
                 ;;
@@ -768,7 +769,7 @@ sleep 5
 # Corner Case: empty value (no mapping set)
 # Corner Case: illegal command (nonsense text)
 #
-echo_dbg "REPO_BUILD_CMDS[$(find_repo_type)] ${REPO_BUILD_CMDS[$(find_repo_type)]}"
+dbg_echo "REPO_BUILD_CMDS[$(find_repo_type)] ${REPO_BUILD_CMDS[$(find_repo_type)]}"
 
 ${REPO_BUILD_CMDS["$(find_repo_type)"]}
 

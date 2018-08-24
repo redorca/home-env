@@ -5,6 +5,67 @@ ROOT_NUTTX=/home/zglue/src/zglue/reference/nuttx
 
 declare -A BOARD_TARGETS
 
+#
+# Remove from the indenting offset from the ${INDENT} variable.
+#
+indent()
+{
+        INDENT="${INDENT%$DOWN}"
+}
+
+#
+# Returns true if TRACE=1.  I.E. "trace && set -x" will set the '-x'
+# shell option forcing the script to run in tracing mode.
+#
+trace()
+{
+        [ "$TRACE" = "1" ] && return 0
+        return  1
+}
+
+#
+# Provide an in-line check for debug status to conditionally enable calls.
+# e.g. debug && echo "This is a test" will only fire if DEBUG=1 otherwise
+#      it is a no-op.
+#
+#
+debug()
+{
+        [ "$DEBUG" = "1" ] && return 0
+        return 1
+}
+
+#
+# Wrap 'echo' to cleanly redirect all output to stderr.
+#
+err_echo()
+{
+        local Bin=
+
+        Bin=echo
+        CMD="$Bin -e $@"
+        $CMD >&2
+}
+
+#
+# Print the name of the function and how deeply nested.
+#
+Func()
+{
+        INDENT=""
+        debug  && err_echo "${#FUNCNAME[@]}${INDENT}${FUNCNAME[1]}( $@ )"
+}
+
+#
+# Shortcut to send output to stderr by default.
+#
+dbg_echo()
+{
+        debug || return
+        err_echo "$@"
+}
+
+
 set_boards()
 {
         BOARD_TARGETS["zglue_zeus2_chicago"]="nsh_zeus2"
@@ -15,6 +76,7 @@ set_boards()
 
 sanitize_nuttx()
 {
+        Func $@
         local RootNuttx=
         local Branch=
 
@@ -28,62 +90,88 @@ sanitize_nuttx()
         git reset --hard
         git checkout $Branch
         git reset --hard
-        git pull
+        git ls-remote >/dev/null 2>&1 && git pull
         popd >/dev/null
 }
 
-
+#
+# Copy files from the FASTAPI tree to the right locations in the NUTTX tree.
+#
+# Arg1 == FASTAPI tree root
+# Arg2 == NUTTX tree root
+# Arg3 == FAST Arch type (zeus2 for now)
+#
 export_files()
 {
+        Func $@
         local BinSrcDir=
         local RootFast=
+        local RootNuttx=
         local FastArch=
 
-        [ ! -d "$1" ] && echo "Root arg does not point to a valid directory" >&2 && return 1
+        [ ! -d "$1" ] && echo "FASTAPI Root arg does not point to a valid directory" >&2 && return 1
         RootFast="$1" && shift
+        [ ! -d "$1" ] && echo "Nuttx Root arg does not point to a valid directory" >&2 && return 1
+        RootNuttx="$1" && shift
         [ -z "$1" ] && echo "No FAST architecture arg passed." >&2 && return 2
         FastArch="$1"
 
         BinSrcDir=output/${FastArch}
         if [ -f $ROOT_FASTAPI/$BinSrcDir/libfastapi_${FastArch}.a ] ; then
                 cp $RootFast/$BinSrcDir/libfastapi_${FastArch}.a \
-                        $ROOT_NUTTX/drivers/zglue_fast/${FastArch}
+                        $RootNuttx/drivers/zglue_fast/${FastArch}
                 cp $RootFast/$BinSrcDir/fast_api.h \
-                        $ROOT_NUTTX/include/nuttx/zglue_fast
+                        $RootNuttx/include/nuttx/zglue_fast
                 cp $RootFast/$BinSrcDir/fast_api_support.h \
-                        $ROOT_NUTTX/drivers/zglue_fast/${FastArch}
+                        $RootNuttx/drivers/zglue_fast/${FastArch}
         else
                 echo "Looked for $RootFast/libfastapi_${FastArch}.a without success."
                 return 1
         fi
 }
 
+#
+# Build the requested libfastapi_zeusXX.a.
+#
+# Arg1 == FASTAPI tree root
+# Arg2 == NUTTX tree root
+# Arg3 == FAST Arch type (zeus2 for now)
+#
 build_libfastapi()
 {
+        Func $@
         local FastArch=
         local RootFast=
+        local RootNuttx=
 
-        [ -n "$1" ] && FastArch="$1"
-        [ ! -d "$1" ] && echo "Root arg does not point to a valid directory" >&2 && return 1
+        [ ! -d "$1" ] && echo "FAST Root arg does not point to a valid directory" >&2 && return 1
         RootFast="$1" && shift
+        [ ! -d "$1" ] && echo "Nuttx Root arg does not point to a valid directory" >&2 && return 1
+        RootNuttx="$1" && shift
         [ -z "$1" ] && echo "No FAST architecture arg passed." >&2 && return 2
-        FastArch="$1"
+        FastArch="$1" && shift
 
         pushd $RootFast >/dev/null
         make distclean && make Q= $FastArch >/tmp/out.synclibs 2>&1
-        export_files "$RootFast" "$FastArch" || return 3
+        export_files "$RootFast" "$RootNuttx" "$FastArch" || return 3
         popd >/dev/null
 }
 
+[ -d "$1" ] && ROOT_NUTTX="$1" && shift
 Arch=zeus2
-if [ $# -ne 0 ] ; then
-        Arch=$1; shift
-fi
-build_libfastapi $ROOT_FASTAPI $Arch || exit 1
+dbg_echo "\tROOT_NUTTX  :: <$ROOT_NUTTX>"
+
+build_libfastapi "$ROOT_FASTAPI" "$ROOT_NUTTX" "$Arch" || exit 1
 
 pushd $ROOT_NUTTX >/dev/null
-sanitize_nuttx
-set_boards
+if ! sanitize_nuttx "$ROOT_NUTTX" zdk  ; then
+        err_echo "sanitize_nuttx failed." 
+        exit 3
+fi
+if ! set_boards ; then
+        err_echo "unable to set_boards"
+        exit 4
+fi
 
 BOARD_CONFIG=( "zglue_zeus2_chicago" "fast_nrf52832_dk" "nrf52832_dk" "nrf52840_dk" )
 
@@ -91,8 +179,9 @@ for targ in ${BOARD_CONFIG[@]} ; do
         BOARD_CONF=$targ
         BOARD_BUILD="${BOARD_TARGETS[$targ]}"
         CMD=( "zmake" "-Q" "-b" "$BOARD_CONF" "$BOARD_BUILD" )
-        echo "${CMD[@]}"
+        dbg_echo "=== <$targ> :${CMD[@]}:"
         ${CMD[@]}
+        exit
 done
 
 

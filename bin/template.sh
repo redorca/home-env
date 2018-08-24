@@ -43,7 +43,7 @@ debug()
 #
 # Wrap 'echo' to cleanly redirect all output to stderr.
 #
-echo_err()
+err_echo()
 {
         local Bin=
 
@@ -58,16 +58,16 @@ echo_err()
 Func()
 {
         INDENT="${INDENT}  "
-        debug  && echo_err "${#FUNCNAME[@]}${INDENT}${FUNCNAME[1]}( $@ )"
+        debug  && err_echo "${#FUNCNAME[@]}${INDENT}${FUNCNAME[1]}( $@ )"
 }
 
 #
 # Shortcut to send output to stderr by default.
 #
-echo_dbg()
+dbg_echo()
 {
         debug || return
-        echo_err "$@"
+        err_echo "$@"
 }
 
 #
@@ -100,8 +100,8 @@ process_args()
                 case "$1" in
                 -h) help_all
                     ;;
-                *) [ "${1:0:1}" = "-" ] && echo_err "[ "$1" ] :: Not yet implemented"
-                   [ "${1:0:1}" != "-" ] && echo_err "Not sure what to do with ["$1"]"
+                *) [ "${1:0:1}" = "-" ] && err_echo "[ "$1" ] :: Not yet implemented"
+                   [ "${1:0:1}" != "-" ] && err_echo "Not sure what to do with ["$1"]"
                    exit
                     ;;
                 esac
