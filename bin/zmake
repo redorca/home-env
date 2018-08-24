@@ -1,6 +1,5 @@
 #!/bin/bash
 
-DEBUG=1
 #
 # This script will run make from the configs/nrf52832_dk
 # directory against every example directory contiaining
