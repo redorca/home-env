@@ -499,7 +499,7 @@ alias         cls="clear_console"
 alias        grep="grep --exclude=.git --exclude=cscope.out"
 alias        halt="sudo /sbin/shutdown -h -t now"
 alias        sudo="sudo -H"
-
+alias     restart="sudo systemctl restsrt"
 
 #
 # Map a standard tool to an arm directed tool name.
