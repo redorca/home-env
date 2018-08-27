@@ -671,25 +671,6 @@ function repo()
         echo -n -e "$(bold $Kolor)$Repo${RESET}"
 }
 
-function restart_time()
-{
-        local Time=ntp
-        local Time_Canonical="--user restart indicator-datetime"
-
-        dbg_echo "Restarting system time service."
-        if ! FOO=$(sudo systemctl restart $Time 2>&1); then
-                err_echo "systemctl returned: $FOO"
-                dbg_echo "Unable to restart ntpd so try indicator-datetime."
-                if ! systemctl $Time_Canonical >/dev/null 2>&1 ; then
-                        err_echo "Unable to restart any time services."
-                        return 1
-                fi
-        fi
-        date >> /tmp/.ntp_restarted
-        return 0
-}
-
-
 if which apt-get >/dev/null 2>&1 ; then
         echo "Set prompt for Debian sys-arch"
         PS1='${debian_chroot:+($debian_chroot)}$(branch 15)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
@@ -720,5 +701,4 @@ PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 # Set display resolution according to ip addr /24
 #
 chk_debug || set_display_resolution
-# restart_time
 touch ~/.vimrc_color
