@@ -49,7 +49,7 @@ prepare()
         SrcDir="$(pwd)"
         mkdir -p build
         cd build
-        cmake -Dbuild_doc=ON -G "Unix Makefiles" "$SrcDir"
+        cmake -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX -Dbuild_doc=ON -G "Unix Makefiles" "$SrcDir"
 
 }
 
@@ -124,6 +124,7 @@ function parse
     return 1
 }
 
+CMAKE_INSTALL_PREFIX=/home/zglue/usr/
 list
 parse $@ && $@
 exit

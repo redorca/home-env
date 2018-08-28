@@ -82,6 +82,7 @@ RepoRename["ctags"]="universal-ctags"
 # Hash translation from canonical repo target to  URI crafted to
 # hold enough info to clone/checkout the source.
 #
+Repo2Host["cmake"]="master@https://gitlab.kitware.com/cmake/cmake"
 Repo2Host["spresence"]="master@https://github.com/sonydevworld/spresense.git"
 Repo2Host["nuttx-upgrade"]="master@git@github.com/zglue-bill/nuttx-upgrade.git"
 Repo2Host["notepad-plus-plus"]="master@https://github.com/notepad-plus-plus/notepad-plus-plus.git"
