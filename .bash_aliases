@@ -105,7 +105,8 @@ function set_display_resolution()
 
         IP_ADDR=$(get_home_ip)
         dbg_echo "Found IP_ADDR: $IP_ADDR"
-        TargetRes=${ip_to_display["$IP_ADDR"]}
+
+        [ -z "$TargetRes" ] && TargetRes=${ip_to_display["$IP_ADDR"]}
         [ -z "$TargetRes" ] && dbg_echo "No resolution matches that ip addr, use default." \
                            && TargetRes="${ip_to_display[default]}"
 
@@ -122,6 +123,7 @@ function set_display_resolution()
 
         [ -z "$TargetRes" ] && echo "No target resolution set, keep the current one." && return 1
         dbg_echo " TargetRes : ($TargetRes), CurrentRes : ($CurrentRes)"
+
         [ "$TargetRes" = "$CurrentRes" ] && return 0
         echo "Reset display to $TargetRes." && xrandr -s $TargetRes
 }
@@ -475,6 +477,7 @@ add_path /usr/share/doc/git/contrib/git-jump
 add_path ~/.cabal/bin
 add_path ~/bin
 
+alias        path="echo $PATH | sed -e 's/^/	/' -e 's/:/	/g'"
 alias          po="popd >/dev/null && dirs -v"
 alias        dirs="dirs -v"
 alias           j="jobs -l"
@@ -494,7 +497,7 @@ alias        mods="git status | grep modified:"
 alias       shlvl='echo "Shell Depth:   $SHLVL"'
 alias    resource="source ~/.bashrc"
 alias      launch="xdg-open"
-alias        diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
+ alias        diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
 alias         cls="clear_console"
 alias        grep="grep --exclude=.git --exclude=cscope.out"
 alias        halt="sudo /sbin/shutdown -h -t now"
@@ -519,7 +522,7 @@ function arm()
         $Cmd $@
 }
 
-function path()
+function Path()
 {
         funame $@
         case "$1" in
