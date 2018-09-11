@@ -82,6 +82,7 @@ RepoRename["ctags"]="universal-ctags"
 # Hash translation from canonical repo target to  URI crafted to
 # hold enough info to clone/checkout the source.
 #
+Repo2Host["webdox"]="master@git@github.com/zglue-bill/zglue-bill.github.io.git"
 Repo2Host["cmake"]="master@https://gitlab.kitware.com/cmake/cmake.git"
 Repo2Host["spresence"]="master@https://github.com/sonydevworld/spresense.git"
 Repo2Host["nuttx-upgrade"]="master@git@github.com/zglue-bill/nuttx-upgrade.git"
@@ -122,7 +123,7 @@ Repo2Host["BME280_driver"]="master@https://github.com/BoschSensortec/BME280_driv
 Repo2Host["BMM050_driver"]="master@https://github.com/BoschSensortec/BMM050_driver.git"
 Repo2Host["doxygen"]="master@https://github.com/doxygen/doxygen.git"
 Repo2Host["universal-ctags"]="master@https://github.com/universal-ctags/ctags.git"
-Repo2Host["eigen"]="https://bitbucket.org/eigen/eigen/"
+Repo2Host["eigen"]="master@${BITBUCKET_URL}/eigen/eigen.git"
 FinalCmds=()
 FinalCmds["nuttx"]="setup_repo"
 FinalCmds["apps"]="setup_repo"
