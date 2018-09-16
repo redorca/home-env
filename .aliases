@@ -1,3 +1,4 @@
+TMPFILE=/tmp/.foo
 setenv TMPFILE /tmp/.foo
 rm -f $TMPFILE
 grep ^alias ~/.bash_aliases | sed -e '/alias.*=/s:=: :' > $TMPFILE
