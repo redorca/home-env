@@ -1,0 +1,64 @@
+#!/bin/bash
+
+DOXY_CONF_NUTTX=configs/Doxyfile-Nuttx.v0.1.SDK
+DOXY_CONF_FASTAPI=configs/Doxyfile.v0.1.SDK
+DOX_DIR_FASTAPI=/home/zglue/src/zglue/doxy/fast_api/documentation
+DOX_DIR_NUTTX=/home/zglue/src/zglue/three-devs/nuttx/external/SDK-Documentation
+
+TAGS_NUTTX=
+TAGS_FAST=
+
+#
+# Given a path to a doygen config file convert
+# it to something bash can source.
+#
+# Arg1:  Doxygen file paath.
+# Arg2:  Variable(s) to fill in.
+#
+source_doxy_config()
+{
+        local DConf=
+        local TFile=
+        declare -a Vars=
+        local var=
+
+        [ $# -eq 0 ] && return 1
+        [ ! -f "$1" ] && return 2
+        DConf="$1" ; shift
+        Vars=( $@ )
+        TFile="$(mktemp -p /tmp .dvars_XXXX.$USER)"
+        sed -e '/^#/d' -e '/^$/d' -e 's/  *=/=/' -e 's:=  *:=\x27:' -e '/[^=\\]$/s/$/\x27/' "$DConf" > "$TFile"
+        sed -i -e 's/\\$//' $TFile
+        if ! . "$TFile" ; then
+                echo "Failed to source $TFile." >&2
+                return 4
+        fi
+        for var in ${Vars[@]} ; do
+                if ! eval $var='${!var}' ; then
+                        return 1
+                fi
+        done
+#       rm -f $TFile
+}
+
+display_vars()
+{
+        local var=
+
+        for var in $@ ; do
+                echo -e "$var\t\t${!var}"
+        done
+}
+
+Vars=( GENERATE_TAGFILE ENABLED_SECTIONS GENERATE_TAGFILE  IMAGE_PATH EXCLUDE PROJECT_BRIEF )
+for conffile in $DOX_DIR_NUTTX/$DOXY_CONF_NUTTX  $DOX_DIR_FASTAPI/$DOXY_CONF_FASTAPI ; do
+        echo "====== Config file $conffile::"
+        if ! source_doxy_config "$conffile"  ${Vars[@]} ; then
+                echo "Failed to fill in the var."
+                exit 1
+        else
+                display_vars ${Vars[@]}
+        fi
+        echo ""
+done
+
