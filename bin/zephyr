@@ -1,16 +1,84 @@
 #!/bin/bash
 
+[ -f Kconfig.zephyr ] && ZEPHYR_ROOT=$(pwd)
 SDK_VERSION=0.9.3
 SDK_DOWNLOADS=meta-zephyr-sdk/releases/download
 SDK_BIN=zephyr-sdk-${SDK_VERSION}-setup.run
 ZEPHYR_PROJECT=zephyrproject-rtos
 URL_GITHUB=https://github.com
 ZEPHYR_RCFILE=$HOME/.zeiphyrrc
+ZEPHYR_ENV=zephyr-env.sh
+
+prepare()
+{
+        local Board=
+
+        Board="$1" ; shift
+
+        [ -d build/$Board ] && rm -rf build
+        # On Linux/macOS
+        mkdir -p build/$Board
+}
+
+build_ninja()
+{
+        local Board=
+        local Project=
+
+        Project="$1" ; shift
+        Board="$1" ; shift
+
+        cd build/$Board
+        # Use cmake to configure a Ninja-based build system:
+#       cmake -GNinja -DBOARD="$Board" -B${ZEPHYR_ROOT}/$Project  -H${ZEPHYR_BASE} ../..
+        cmake -GNinja -DBOARD="$Board" ${ZEPHYR_ROOT}/$Project  ../..
+        # Now run ninja on the generated build system:
+        ninja
+}
+
+build_make()
+{
+        local Board=
+        local Project=
+
+        Project="$1" ; shift
+        Board="$1" ; shift
+
+
+        cd build/$Board
+        # Use cmake to configure a Make-based build system:
+        cmake -DBOARD="$Board" -B${ZEPHYR_ROOT}/$Project  -H${ZEPHYR_BASE} ../..
+
+        # Now run make on the generated build system:
+        make
+
+}
+
+[ ! -f "$ZEPHYR_ENV" ] && exit 4
+source $ZEPHYR_ENV
+[ -z "$ZEPHYR_BASE" ] && ZEPHYR_BASE="$ZEPHYR_ROOT"
+[ -z "$ZEPHYR_BASE" ] && echo "No ZEPHYR_BASE defined." >&2 && exit 6
+echo "==== ZEPHYR_BASE = <$ZEPHYR_BASE>"
+echo "==== ZEPHYR_SDK_INSTALL_DIR = <$ZEPHYR_SDK_INSTALL_DIR>"
+export ZEPHYR_SDK_INSTALL_DIR=$ZEPHYR_SDK_INSTALL_DIR
+
+BOARD=nrf52840_pca10056
+Project=sensor/bmm150
+cd $ZEPHYR_BASE/samples/$Project
+prepare $BOARD
+if build_ninja $Project $BOARD ; then
+        echo "Ninja built!" >&2
+        if build_make $Project $BOARD ; then
+                echo "Make built!" >&2
+        fi
+fi
+
+exit 5
 
 if [ ! -f "$SDK_BIN" ]  ; then
 if ! wget $URL_GITHUB/$ZEPHYR_PROJECT/$SDK_DOWNLOADS/$SDK_VERSION/$SDK_BIN ; then
         echo "!!!!!!!!!!!!!!!!!!!!!! Nada done." >&2
-        exit 4
+        exit 8
 fi
 
 #
@@ -23,7 +91,7 @@ sed -i -e '/^export.*ZEPHYR_TOOLCHAIN_VARIAMT=/d' -e '/^export.*ZEPHYR_SDK_INSTA
 #
 cat <<EOF >> $ZEPHYR_RCFILE
 export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-export ZEPHYR_SDK_INSTALL_DIR=$HOME/opt/zephyr-sdk
+export ZEPHYR_SDK_INSTALL_DIR=/home/zglue/opt/zephyr-sdk
 EOF
 fi
 
