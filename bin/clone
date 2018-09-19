@@ -179,6 +179,8 @@ BLUE='\033[1;34m'
 # shellcheck disable=2034
 RESET='\033[0;39;49m'
 
+CURRENT_FUNC=
+
 echo_err()
 {
         echo -e "$@${RESET}" >&2
@@ -186,9 +188,13 @@ echo_err()
 
 dbg_echo()
 {
+        local Offset=
+
         debug || return 0
 
-        echo_err "$@"
+        [ "${FUNCNAME[1]}" = "$CURRENT_FUNC" ] && Offset='\t'
+#       CURRENT_FUNC="${FUNCNAME[1]}"
+        echo_err "$Offset" "$@"
 }
 
 #
@@ -196,6 +202,7 @@ dbg_echo()
 #
 Func()
 {
+        CURRENT_FUNC="${FUNCNAME[1]}"
         dbg_echo "${#FUNCNAME[@]} : ${FUNCNAME[1]}( $@ )"
 }
 
@@ -432,9 +439,12 @@ resolve_clone_id()
 #
 set_cmd_git()
 {
+        Func $@
         local target=
         local Proto=
         local URL=1
+        local ActiveBranch=
+
         declare -a Info=
 
         target="$1"
@@ -442,7 +452,7 @@ set_cmd_git()
                 echo_err "Repo not found <$target>"
                 return 1
         fi
-        dbg_echo "Info: <$Info>"
+        dbg_echo "Info: [ ${Info[*]} ]"
 
         Proto=ssh
         Uri=${Info[$URL]}
@@ -452,7 +462,12 @@ set_cmd_git()
         [ "$tmp" != "${Uri}" ] && Proto="${Uri%://*}"
         Uri="${Uri#*://}"
         [ -z "$Proto" ] && Proto=ssh
-        echo "git clone -b "${Info[$Branch]}" $Proto://$Uri"
+        [ -n "$ALT_BRANCH" ] && ActiveBranch="$ALT_BRANCH"
+        [ -z "$ActiveBranch" ] && ActiveBranch=${Info[$Branch]%%@*}
+        dbg_echo "Active branch: <$ActiveBranch>, Branch: <$Branch>, Info[Branch] <${Info[$Branch]}>"
+        dbg_echo "Uri: <$Uri>,  Element count: ${#Info[@]}"
+#       echo "git clone -b "${Info[$Branch]}" $Proto://$Uri"
+        echo "git clone -b "$ActiveBranch" $Proto://$Uri"
 }
 
 #
@@ -547,6 +562,7 @@ hhelp()
 
 set_dir_aside()
 {
+        Func $@
         local CUR_DIR
 
         CUR_DIR="$1"
@@ -555,6 +571,7 @@ set_dir_aside()
 
 make_a_dir()
 {
+        Func $@
         local Dir=
 
         [ -z "$1" ] && return 1
@@ -566,6 +583,7 @@ make_a_dir()
 
 help()
 {
+        Func $@
         cat <<  EOF 
     $(basename $0) : [h]  [-d <dir>] [ -c <repo1 ... > ]
 EOF
@@ -589,6 +607,9 @@ parse_cli()
         while [ $# -ne 0 ] ; do
                 dbg_echo "\$1 == ($1)"
                 case "$1" in
+                 -b|--branch) ALT_BRANCH="$2" ; shift
+                        dbg_echo "ALT_BRANCH set to <$ALT_BRANCH>"
+                ;;
                  -c)   shift ; TARGETS=( $@ )
                         dbg_echo "Target based on $@"
                         shift ${#TARGETS[@]}
@@ -662,6 +683,7 @@ klone_parse()
 	done
 #Help
 }
+Func $@
 #
 # Repos which are svn based are added here along with the command
 # required to "clone" them.
@@ -684,10 +706,10 @@ dbg_echo "hg_backed[fast_Api] == ${hg_backed[fast_api]}"
         [ -n "$PARENT_DIR" ] && dbg_echo "Create <$PARENT_DIR>" && mkdir -p "$PARENT_DIR"
         [ -z "$PARENT_DIR" ] && dbg_echo "set PARENT_DIR to  './'" && PARENT_DIR="./"
         (
-                cd $PARENT_DIR || exit -2
                 dbg_echo "cd to $PARENT_DIR: <$(pwd)>"
+                cd $PARENT_DIR || exit -2
                 if ! clone "${TARGETS[@]}" ; then
-                        rm -rf $PARENT_DIR
+                        cd .. && rm -rf $PARENT_DIR
                         RV="-1"
                 fi
                 exit $RV
