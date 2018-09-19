@@ -83,6 +83,7 @@ RepoRename["ctags"]="universal-ctags"
 # hold enough info to clone/checkout the source.
 #
 Repo2Host["webdox"]="master@git@github.com/zglue-bill/zglue-bill.github.io.git"
+Repo2Host["zdkdox"]="master@git@github.com/zglue/zglue_doc.git"
 Repo2Host["cmake"]="master@https://gitlab.kitware.com/cmake/cmake.git"
 Repo2Host["spresence"]="master@https://github.com/sonydevworld/spresense.git"
 Repo2Host["nuttx-upgrade"]="master@git@github.com/zglue-bill/nuttx-upgrade.git"
