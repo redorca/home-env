@@ -82,6 +82,7 @@ RepoRename["ctags"]="universal-ctags"
 # Hash translation from canonical repo target to  URI crafted to
 # hold enough info to clone/checkout the source.
 #
+Repo2Host["uncrustify"]="master@https://github.com/uncrustify/uncrustify.git"
 Repo2Host["alios"]="master@git@github.com/alibaba/AliOS-Things.git"
 Repo2Host["webdox"]="master@git@github.com/zglue-bill/zglue-bill.github.io.git"
 Repo2Host["zdkdox"]="master@git@github.com/zglue/zglue_doc.git"
