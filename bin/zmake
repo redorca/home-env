@@ -159,7 +159,7 @@ echo_err()
 funcname()
 {
         debug || return
-        echo_err "===> ${FUNCNAME[1]} < $@ >"
+        echo_err "===> ${FUNCNAME[1]}( $@ )"
 }
 
 #
@@ -401,7 +401,7 @@ build_nuttx()
             cd configs/$board >/dev/null
             if [ "$INCREMENTAL_BUILD" != "yes" ] ; then
                 echo_err "Running distclean to start from a clean slate."
-                make_one_target distclean >/dev/null
+                make_one_target distclean >/dev/null 2>&1
             fi
             for build in $TARGET_DIRS "${TARGETS[@]}" ; do
                 [ -z "${pseudo_targets[$build]}" ] && OutFile="${OUT}.${board}.${build}"
