@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "========================================================"
+
 #
 # This script will run make from the configs/nrf52832_dk
 # directory against every example directory contiaining
@@ -159,7 +159,7 @@ echo_err()
 funcname()
 {
         debug || return
-        echo_err "===> ${FUNCNAME[1]}( $@ )"
+        echo_err "[${SECONDS}s] ===> ${FUNCNAME[1]}( $@ )"
 }
 
 #
@@ -386,7 +386,7 @@ build_nuttx()
 
     Fails=0
     [ "${#BOARDS[@]}" -eq 0 ] && [ -n "$BOARD" ] && BOARDS=( "$BOARD" )
-    [ "${#BOARDS[@]}" -eq 0 ] && echo_err "No board config specified, chose among these:" && \
+    [ "${#BOARDS[@]}" -eq 0 ] && echo_err "\tNo board config specified, chose among these:" && \
                 if ! BOARDS=( $(select_board "${BOARDS_LIST[@]}") ) ; then
                         echo_err "\nExit selected."
                         exit 1
@@ -400,7 +400,7 @@ build_nuttx()
         (
             cd configs/$board >/dev/null
             if [ "$INCREMENTAL_BUILD" != "yes" ] ; then
-                echo_err "Running distclean to start from a clean slate."
+                dbg_echo "Running distclean to start from a clean slate."
                 make_one_target distclean >/dev/null 2>&1
             fi
             for build in $TARGET_DIRS "${TARGETS[@]}" ; do
@@ -662,7 +662,7 @@ select_board()
 
 trace && set -x
 
-cd $(find_repo_root) || exit 1
+# cd $(find_repo_root) || exit 1
 
 ### HELP message start
 while [ $# -ne 0 ] ; do
@@ -744,7 +744,9 @@ if [ -n "$ARGS_UNXP" ] ; then
         echo_err "Perhaps you need to prefix this with '-t'. See help (-h)"
         exit 1
 fi
+SECONDS=0
 
+cd $(find_repo_root) || exit 1
 if [ "$RUN_HELP" = "yes" ] || [ "$PRINT_KV" = "yes" ] ; then
         ARG1=
         ARG2=
@@ -761,15 +763,15 @@ rm -f $OBJS_FILE
 # Main()
 #
 
-echo_err "Targets : <${#TARGETS[@]}> :: (${TARGETS[*]})"
+dbg_echo "Targets : <${#TARGETS[@]}> :: (${TARGETS[*]})"
 [ "${VERBOSE:0:1}" = "V" ] && print_keyval
-sleep 5
 
 #
 # Corner Case: empty value (no mapping set)
 # Corner Case: illegal command (nonsense text)
 #
-dbg_echo "REPO_BUILD_CMDS[$(find_repo_type)] ${REPO_BUILD_CMDS[$(find_repo_type)]}"
+RepoType=$(find_repo_type)
+dbg_echo "REPO_BUILD_CMDS[$RepoType] ${REPO_BUILD_CMDS[$RepoType]}"
 
-${REPO_BUILD_CMDS["$(find_repo_type)"]}
+${REPO_BUILD_CMDS["$RepoType"]}
 
