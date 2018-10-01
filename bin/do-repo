@@ -1,0 +1,51 @@
+#!/bin/bash
+
+MANIFEST=zdk-manifest
+MANIFEST_BRANCH=gerrit
+SERVER=101.132.142.37:30149
+SERVER_MANIFEST=bill@${SERVER}/${MANIFEST}
+REPO=/usr/bin/repo
+
+#
+# Reflect the test [ "$DEBUG" = 1 ]
+#
+dbg()
+{
+        [ "$DEBUG" = 1 ] || return 1
+        return 0
+}
+
+#
+# Wrapper to redirect output to stderr
+#
+err_echo()
+{
+        echo -e "$@" >&2
+}
+
+#
+# Wrapper to provide a debug output path.
+#
+err_echo()
+{
+        dbg || return 0
+        err_echo "$@"
+}
+
+echo "REPO_URL: <$REPO_URL>"
+
+if ! which repo >/dev/null 2>&1 ; then
+        err_echo "The repo tools is not in your path."
+        exit 4
+fi
+
+[ -d .repo ] && err_echo "This directory is already a .repo." && exit 2
+set -x
+if ! $REPO init -u   ssh://${SERVER_MANIFEST} -b $MANIFEST_BRANCH ; then
+        err_echo "Repo init failed."
+        exit 3
+fi
+
+$REPO sync
+
+
