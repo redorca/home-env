@@ -2,8 +2,21 @@
 
 UTF_OUT=utf-8
 
+dbg()
+{
+        [ "$DEBUG" = 1 ] || return 1
+        return 0
+}
+
+Func()
+{
+        dbg || return
+        echo "::$FUNCNAME[1] $@"
+}
+
 file_unicode_check()
 {
+        Func $@
         local Blah=
         local UTF_IN=
         local UTF_OUT=
@@ -21,6 +34,7 @@ file_unicode_check()
 
 strip_srcs()
 {
+        Func $@
         for file in "$@" ; do
                 if [ "${file%%.c}" == "$file" -a "${file%%.h}" == "$file" ] ; then
                         echo "Skipping $file"
@@ -32,8 +46,10 @@ strip_srcs()
 
 strip_ascii()
 {
+        Func $@
         for file in "$@" ; do
                 [ ! -f "$file" ] && continue
+                [ -n "$(file -ib $file 2>/dev/null | grep charset=binary)" ] && continue
                 [ "$(basename $0)" == "$(basename "$file")" ] && echo ======== && continue
         sed -i -e 's/[ 	]\+$//' -e 's/^[ ]\+	/	/' -e 's/$//' "$file" && echo "Processed: "$file""
         done

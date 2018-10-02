@@ -1,6 +1,3 @@
-[user]
-	email = bill@zglue.com
-	name = Bill Rees
 [color]
 	branch = auto
 	interactive = auto
@@ -37,3 +34,6 @@
 #  frag = magenta bold
 #  old = red bold
 #  new = green bold
+[user]
+	name = Bill
+	email = bill@zglue.com
