@@ -80,7 +80,7 @@ function get_home_ip()
         done
 }
 
-function display_geo()
+function display-geo()
 {
         xdpyinfo | grep dimension | awk '{print $2}'
 }
@@ -88,12 +88,12 @@ function display_geo()
 function what()
 {
         case "$1" in
-        reso*) diplay_geo ; exit ;;
+        reso*) diplay-geo ; exit ;;
         *);;
         esac
 }
 
-function set_display_resolution()
+function set-display-resolution()
 {
         funame $@
         local IPaddr=
@@ -110,7 +110,7 @@ function set_display_resolution()
         [ -z "$TargetRes" ] && dbg_echo "No resolution matches that ip addr, use default." \
                            && TargetRes="${ip_to_display[default]}"
 
-        CurrentRes=$(display_geo)
+        CurrentRes=$(display-geo)
 
 #         Geometry=( $(echo $CurrentRes | awk -F'x' '{print $1 "  " $2}') )
 #         if [ "${Geometry[0]}" -gt 1440 ] && [ "${Geometry[1]}" -gt 900 ] ; then
@@ -165,7 +165,7 @@ function prune_path()
 eval $(set_assoc_array Paths $(echo $PATH | sed -e 's/:/ /g'))
 prune_path A::a
 
-function add_path()
+function add-path()
 {
         funame $@
         local Dir=
@@ -199,7 +199,7 @@ function board()
         echo "BOARD: [$BOARD]"
 }
 
-function del_path()
+function del-path()
 {
         funame $@
         if [ -z "$1" ] ; then
@@ -473,9 +473,9 @@ export GOPATH=$HOME/src/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
 
-add_path /usr/share/doc/git/contrib/git-jump
-add_path ~/.cabal/bin
-add_path ~/bin
+add-path /usr/share/doc/git/contrib/git-jump
+add-path ~/.cabal/bin
+add-path ~/bin
 
 alias        path="echo $PATH | sed -e 's/^/	/' -e 's/:/	/g'"
 alias          po="popd >/dev/null && dirs -v"
