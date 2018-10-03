@@ -1,0 +1,5168 @@
+From 4ebfa7a1f71f306ca17fd4f2d7ca0dc7412174a6 Mon Sep 17 00:00:00 2001
+From: Bill <bill@zglue.com>
+Date: Wed, 3 Oct 2018 13:35:05 -0700
+Subject: [PATCH]   Maxim 8614X heart rate monitor, pulse oximeter.
+
+  Enable access to the PPG Maxim 86140 sensor. Two sampling features
+  are present: Pulse Oximetry (SpO2) and Heart Rate.
+
+Change-Id: I195553f82c768b9246014679b40ea05bfda4baf0
+---
+ arch/arm/src/nrf52/Make.defs                  |   5 +
+ arch/arm/src/nrf52/nrf52_gpio.c               |  44 +-
+ configs/fast_nrf52832_dk/Kconfig              |  12 -
+ configs/fast_nrf52832_dk/Makefile             |   8 +-
+ configs/fast_nrf52832_dk/defaults.mk          |  18 +-
+ .../fast_nrf52832_dk/fast_api_demo/defconfig  |   4 +
+ configs/fast_nrf52832_dk/nsh_zeus1/defconfig  |  14 -
+ configs/fast_nrf52832_dk/nsh_zeus2/defconfig  |  41 +-
+ configs/nrf52832_dk/Makefile                  |   6 +-
+ configs/nrf52832_dk/defaults.mk               |   6 +-
+ configs/nrf52832_dk/nsh/defconfig             |  83 +-
+ configs/nrf52832_dk/src/nrf52_appinit.c       | 335 ++++++-
+ configs/nrf52840_dk/Kconfig                   |   5 -
+ configs/nrf52840_dk/Makefile                  |   6 +-
+ configs/nrf52840_dk/defaults.mk               |   2 +-
+ configs/nrf52840_dk/nsh/defconfig             |  21 +
+ configs/zglue_zeus1_remora_board/Kconfig      |   6 -
+ configs/zglue_zeus2_chicago/Kconfig           |   8 +-
+ configs/zglue_zeus2_chicago/Makefile          |   6 +-
+ configs/zglue_zeus2_chicago/defaults.mk       |  34 +-
+ configs/zglue_zeus2_chicago/include/board.h   |  12 +-
+ .../zglue_zeus2_chicago/nsh_zeus2/defconfig   |  78 +-
+ .../scripts/ld.fast_config_file               |   1 -
+ configs/zglue_zeus2_chicago/src/Makefile      |   4 +-
+ .../zglue_zeus2_chicago/src/code_analysis.c   |   2 +-
+ .../zglue_zeus2_chicago/src/nrf52_appinit.c   | 160 +++-
+ configs/zglue_zeus2_chicago/src/nrf52_boot.c  |   2 +-
+ .../zglue_zeus2_chicago/src/nrf52_ostest.c    |   2 +-
+ .../zglue_zeus2_chicago/src/nrf52_user_spi.c  |   2 +-
+ drivers/Kconfig                               |   1 -
+ drivers/power/Kconfig                         |  86 +-
+ drivers/power/Make.defs                       |   6 +-
+ drivers/power/bq25120a.c                      | 314 +++++++
+ drivers/power/bq25120a_impl.h                 |  69 ++
+ drivers/sensors/Kconfig                       |  82 +-
+ drivers/sensors/Make.defs                     |   5 +
+ drivers/sensors/bmi160.c                      |   3 +
+ drivers/sensors/max8614x.c                    | 746 +++++++++++++++
+ drivers/sensors/max8614x_impl.h               | 853 ++++++++++++++++++
+ drivers/sensors/sensors.c                     |  91 ++
+ drivers/zglue_fast/Kconfig                    |   7 +
+ drivers/zglue_fast/Make.defs                  |  27 +-
+ include/nuttx/sensors/bmi160.h                |  30 +
+ include/nuttx/sensors/bq25120a.h              | 146 +++
+ include/nuttx/sensors/ioctl.h                 |  69 +-
+ include/nuttx/sensors/max8614x.h              | 132 +++
+ include/nuttx/sensors/sensors.h               | 265 ++++++
+ include/nuttx/spi/spi.h                       |  13 +-
+ tools/Config.mk                               |  18 +-
+ 49 files changed, 3684 insertions(+), 206 deletions(-)
+ create mode 100644 drivers/power/bq25120a.c
+ create mode 100644 drivers/power/bq25120a_impl.h
+ create mode 100644 drivers/sensors/max8614x.c
+ create mode 100644 drivers/sensors/max8614x_impl.h
+ create mode 100644 drivers/sensors/sensors.c
+ create mode 100644 include/nuttx/sensors/bq25120a.h
+ create mode 100644 include/nuttx/sensors/max8614x.h
+ create mode 100644 include/nuttx/sensors/sensors.h
+
+diff --git a/arch/arm/src/nrf52/Make.defs b/arch/arm/src/nrf52/Make.defs
+index 9ee66f7c81..49059781c4 100644
+--- a/arch/arm/src/nrf52/Make.defs
++++ b/arch/arm/src/nrf52/Make.defs
+@@ -236,6 +236,7 @@ ifeq ($(CONFIG_NRF52_USBD),y)
+ CHIP_CSRCS += nrf52_usbdev.c
+ CHIP_CSRCS += nrf52_power.c
+ endif
++CHIP_LIB_STEM = ${CHIP_LIB:%$(LIBEXT)=%}
+ 
+ CHIP_CSRCS += nrf52_uniqueid.c
+ 
+@@ -249,4 +250,8 @@ endif
+ 
+ #nrf52/$(NRF52_LIB)$(LIBEXT):
+ #	/bin/echo -e "$(MSG)" | arm-none-eabi-ar -M
++$(BIN): $(CHIP_LIB:%$(LIBEXT)=%)
++
++$(CHIP_LIB:%$(LIBEXT)=%):
++	@$(call COPYFILE,$@,$(BIN))
+ 
+diff --git a/arch/arm/src/nrf52/nrf52_gpio.c b/arch/arm/src/nrf52/nrf52_gpio.c
+index a3df890e1e..9a7e2800c3 100644
+--- a/arch/arm/src/nrf52/nrf52_gpio.c
++++ b/arch/arm/src/nrf52/nrf52_gpio.c
+@@ -158,6 +158,21 @@ int nrf52_unconfiggpio(uint32_t cfgset)
+   return OK;
+ }
+ 
++/****************************************************************************
++ * Name: gpio_pin_read
++ *
++ * Description:
++ *   Read one or zero from the selected GPIO pin
++ *
++ ****************************************************************************/
++
++bool gpio_pin_read(uint32_t pinset)
++{
++  /* Get the pin number and return the input state of that pin */
++  return nrf_gpio_pin_read(pinset);
++
++}
++
+ /****************************************************************************
+  * Name: gpio_pin_write
+  *
+@@ -180,9 +195,34 @@ void gpio_pin_write(uint32_t pinset, bool value)
+  *
+  ****************************************************************************/
+ 
+-bool gpio_pin_read(uint32_t pinset)
++void gpio_pin_enable(uint32_t pinset)
+ {
+   /* Get the pin number and return the input state of that pin */
+-  return nrf_gpio_pin_read(pinset);
++  nrf_gpio_pin_set(pinset);
++
++}
++void gpio_pin_clear(uint32_t pin_number);
++void gpio_pin_toggle(uint32_t pin_number);
++void gpio_pin_set(uint32_t pin_number);
++void gpio_pin_dir_set(uint32_t pin_number, nrf_gpio_pin_dir_t direction);
+ 
++void gpio_pin_clear(uint32_t pin_number)
++{
++  nrf_gpio_pin_clear(pin_number);
++}
++
++void gpio_pin_toggle(uint32_t pin_number)
++{
++  nrf_gpio_pin_toggle(pin_number);
+ }
++
++void gpio_pin_set(uint32_t pin_number)
++{
++  nrf_gpio_pin_set(pin_number);
++}
++
++void gpio_pin_dir_set(uint32_t pin_number, nrf_gpio_pin_dir_t direction)
++{
++  nrf_gpio_pin_dir_set(pin_number, (nrf_gpio_pin_dir_t) direction);
++}
++
+diff --git a/configs/fast_nrf52832_dk/Kconfig b/configs/fast_nrf52832_dk/Kconfig
+index c27da2355b..f92a2bfb71 100644
+--- a/configs/fast_nrf52832_dk/Kconfig
++++ b/configs/fast_nrf52832_dk/Kconfig
+@@ -3,18 +3,6 @@
+ # see the file kconfig-language.txt in the NuttX tools repository.
+ #
+ 
+-config ARCH_HAVE_FAST
+-	bool "Enable zglue Zeus platform"
+-	default y
+-	---help---
+-		Enable Zglue (First generation) Architecture
+-
+-config ARCH_HAVE_JTAG
+-	bool "Enable zglue Zeus JTAG"
+-	default y
+-	---help---
+-		Enable Zglue (First generation) Architecture
+-
+ config CODE_ANALYSIS
+   bool "code size analysis"
+   default y
+diff --git a/configs/fast_nrf52832_dk/Makefile b/configs/fast_nrf52832_dk/Makefile
+index 2ad34c444d..3cf8e31990 100644
+--- a/configs/fast_nrf52832_dk/Makefile
++++ b/configs/fast_nrf52832_dk/Makefile
+@@ -66,7 +66,7 @@ endef
+ # If the path is '.' then the return path is '.'.
+ #
+ define BACK_TRACK
+-        $(shell [ -n "$1" ] && echo "$1" | sed -e 's/[^/]*/\.\./g' || echo ".")
++	$(shell [ -n "$1" ] && echo "$1" | sed -e 's/[^/]*/\.\./g' || echo ".")
+ endef
+ 
+ #
+@@ -76,13 +76,13 @@ endef
+ #
+ define REDO_CSCOPE
+ 	@echo "Run cscope from $(DEPTH)/$1"
+-        $(Q) cd $(DEPTH)/$1 && cscope -R -k -b -s $(call BACK_TRACK,$1)
++	$(Q) cd $(DEPTH)/$1 && cscope -R -k -b -s $(call BACK_TRACK,$1)
+ endef
+ 
+ #
+ define UNDO_CSCOPE
+ 	@echo "Remove cscope.out from $(DEPTH)/$1"
+-        $(Q) cd $(DEPTH)/$1 && $(RM) cscope.out
++	$(Q) cd $(DEPTH)/$1 && $(RM) cscope.out
+ endef
+ 
+ #
+@@ -159,7 +159,7 @@ top:
+ # specified modules differ between the .config and defconfig then
+ # a distclean is run and the appropriate defconfig is copied to .config.
+ #
+-$(APPS):
++$(APPS):`
+ 	$(Q) if [ ! -f $(DEPTH)/.config ] || \
+ 		[ "$$(grep ^C.*XAMPLES_.*=y $(DEPTH)/.config)" != \
+ 			"$$(grep ^C.*XAMPLES_.*=y $(@)/defconfig)" ] ; then \
+diff --git a/configs/fast_nrf52832_dk/defaults.mk b/configs/fast_nrf52832_dk/defaults.mk
+index 362c31ed9c..aadb01b519 100644
+--- a/configs/fast_nrf52832_dk/defaults.mk
++++ b/configs/fast_nrf52832_dk/defaults.mk
+@@ -57,7 +57,7 @@ endif
+ #
+ WERROR = -Werror
+ ifdef NO_ERRORS
+-        WERROR =
++	WERROR =
+ endif
+ 
+ ifeq ($(CONFIG_NRF52_BLUETOOTH),y)
+@@ -202,13 +202,13 @@ FLASHER_VERIFY = $(FLASHER) --verify
+ #
+ define DOWNLOAD
+ 	$(Q)pwd
+-        $(Q)if [ -n "$(shell $(FLASHER_IDENTS))" ] ; then \
+-                $(FLASHER_ERASE)  ;\
+-                $(FLASHER_FLASH)  $(NUTTXNAME).hex ;\
+-                $(FLASHER_RESET)  ;\
+-                $(FLASHER_VERIFY) ; $(NUTTXNAME).hex ;\
+-        else                       \
+-                echo "\nNo flash identified for programming.\n" ;\
+-        fi
++	$(Q)if [ -n "$(shell $(FLASHER_IDENTS))" ] ; then \
++	        $(FLASHER_ERASE)  ;\
++	        $(FLASHER_FLASH)  $(NUTTXNAME).hex ;\
++	        $(FLASHER_RESET)  ;\
++	        $(FLASHER_VERIFY) ; $(NUTTXNAME).hex ;\
++	else                       \
++	        echo "\nNo flash identified for programming.\n" ;\
++	fi
+ endef
+ 
+diff --git a/configs/fast_nrf52832_dk/fast_api_demo/defconfig b/configs/fast_nrf52832_dk/fast_api_demo/defconfig
+index ff64efaa48..02f6e2112f 100644
+--- a/configs/fast_nrf52832_dk/fast_api_demo/defconfig
++++ b/configs/fast_nrf52832_dk/fast_api_demo/defconfig
+@@ -410,6 +410,7 @@ CONFIG_RAM_SIZE=65536
+ #
+ # CONFIG_ARCH_BOARD_NRF52832_DK is not set
+ CONFIG_ARCH_BOARD_FAST_NRF52832_DK=y
++# CONFIG_ARCH_BOARD_ZGLUE_ZEUS1_REMORA_BOARD is not set
+ # CONFIG_ARCH_BOARD_CHICAGO_FAST_ZEUS2_NRF52832 is not set
+ # CONFIG_ARCH_BOARD_CUSTOM is not set
+ CONFIG_ARCH_BOARD="fast_nrf52832_dk"
+@@ -652,6 +653,8 @@ CONFIG_SENSORS=y
+ # CONFIG_BH1750FVI is not set
+ # CONFIG_BMG160 is not set
+ # CONFIG_BMP180 is not set
++# CONFIG_SENSOR_INTF_SPI is not set
++# CONFIG_SENSOR_INTF_I2C is not set
+ # CONFIG_SENSORS_L3GD20 is not set
+ # CONFIG_SENSOR_KXTJ9 is not set
+ # CONFIG_LIS3DSH is not set
+@@ -666,6 +669,7 @@ CONFIG_MS58XX_VDD=30
+ # CONFIG_SENSORS_ADXL345 is not set
+ # CONFIG_MAX31855 is not set
+ # CONFIG_MAX6675 is not set
++# CONFIG_MAX8614X is not set
+ # CONFIG_LIS3MDL is not set
+ # CONFIG_LM75 is not set
+ # CONFIG_LM92 is not set
+diff --git a/configs/fast_nrf52832_dk/nsh_zeus1/defconfig b/configs/fast_nrf52832_dk/nsh_zeus1/defconfig
+index 6877ea173e..df24e31fd6 100644
+--- a/configs/fast_nrf52832_dk/nsh_zeus1/defconfig
++++ b/configs/fast_nrf52832_dk/nsh_zeus1/defconfig
+@@ -645,13 +645,6 @@ CONFIG_MC3672=y
+ CONFIG_MC3672_ADDR=0x4c
+ # CONFIG_BMM150 is not set
+ # CONFIG_BMI160 is not set
+-# CONFIG_SENSORS_APDS9960 is not set
+-# CONFIG_SENSORS_AS5048B is not set
+-# CONFIG_SENSORS_BH1750FVI is not set
+-# CONFIG_SENSORS_BMG160 is not set
+-# CONFIG_SENSORS_BMP180 is not set
+-# CONFIG_SENSORS_HCSR04 is not set
+-# CONFIG_SENSORS_HTS221 is not set
+ # CONFIG_SENSORS_L3GD20 is not set
+ # CONFIG_SENSOR_KXTJ9 is not set
+ # CONFIG_SENSORS_LIS2DH is not set
+@@ -670,13 +663,6 @@ CONFIG_MC3672_ADDR=0x4c
+ # CONFIG_SENSORS_MS58XX is not set
+ # CONFIG_SENSORS_MPL115A is not set
+ # CONFIG_SENSORS_ADXL345 is not set
+-# CONFIG_SENSORS_ADXL372 is not set
+-# CONFIG_SENSORS_MAX44009 is not set
+-# CONFIG_SENSORS_MAX31855 is not set
+-# CONFIG_SENSORS_MAX6675 is not set
+-# CONFIG_SENSORS_LIS3MDL is not set
+-# CONFIG_SENSORS_LM75 is not set
+-# CONFIG_SENSORS_LM92 is not set
+ # CONFIG_QENCODER is not set
+ # CONFIG_QDECODER is not set
+ # CONFIG_SENSORS_SHT21 is not set
+diff --git a/configs/fast_nrf52832_dk/nsh_zeus2/defconfig b/configs/fast_nrf52832_dk/nsh_zeus2/defconfig
+index 5cc73301b6..f0b3999917 100644
+--- a/configs/fast_nrf52832_dk/nsh_zeus2/defconfig
++++ b/configs/fast_nrf52832_dk/nsh_zeus2/defconfig
+@@ -651,7 +651,39 @@ CONFIG_MTD_PROGMEM=y
+ # CONFIG_DRIVERS_SMPS is not set
+ # CONFIG_DRIVERS_MOTOR is not set
+ # CONFIG_POWER is not set
+-# CONFIG_SENSORS is not set
++CONFIG_SENSORS=y
++# CONFIG_MC3672 is not set
++# CONFIG_BMM150 is not set
++# CONFIG_BMI160 is not set
++# CONFIG_AS5048B is not set
++# CONFIG_BH1750FVI is not set
++# CONFIG_BMG160 is not set
++# CONFIG_BMP180 is not set
++# CONFIG_SENSOR_INTF_SPI is not set
++# CONFIG_SENSOR_INTF_I2C is not set
++# CONFIG_SENSORS_L3GD20 is not set
++# CONFIG_SENSOR_KXTJ9 is not set
++# CONFIG_LIS3DSH is not set
++# CONFIG_LIS331DL is not set
++# CONFIG_SN_LSM9DS1 is not set
++# CONFIG_MB7040 is not set
++# CONFIG_MLX90393 is not set
++# CONFIG_MCP9844 is not set
++# CONFIG_MS58XX is not set
++# CONFIG_MS58XX_VDD is not set
++# CONFIG_MPL115A is not set
++# CONFIG_SENSORS_ADXL345 is not set
++# CONFIG_MAX31855 is not set
++# CONFIG_MAX6675 is not set
++# CONFIG_MAX8614X is not set
++# CONFIG_LIS3MDL is not set
++# CONFIG_LM75 is not set
++# CONFIG_LM92 is not set
++# CONFIG_QENCODER is not set
++# CONFIG_QDECODER is not set
++# CONFIG_VEML6070 is not set
++# CONFIG_XEN1210 is not set
++# CONFIG_ZEROCROSS is not set
+ CONFIG_SERIAL=y
+ # CONFIG_DEV_LOWCONSOLE is not set
+ # CONFIG_SERIAL_REMOVABLE is not set
+@@ -1151,11 +1183,11 @@ CONFIG_NSH_LIBRARY=y
+ #
+ CONFIG_NSH_READLINE=y
+ # CONFIG_NSH_CLE is not set
+-CONFIG_NSH_LINELEN=64
++CONFIG_NSH_LINELEN=80
+ # CONFIG_NSH_DISABLE_SEMICOLON is not set
+-# CONFIG_NSH_CMDPARMS is not set
++CONFIG_NSH_CMDPARMS=y
+ CONFIG_NSH_MAXARGUMENTS=10
+-# CONFIG_NSH_ARGCAT is not set
++CONFIG_NSH_ARGCAT=y
+ CONFIG_NSH_NESTDEPTH=3
+ # CONFIG_NSH_DISABLEBG is not set
+ CONFIG_NSH_BUILTIN_APPS=y
+@@ -1221,6 +1253,7 @@ CONFIG_NSH_CODECS_BUFSIZE=128
+ # CONFIG_NSH_CMDOPT_HEXDUMP is not set
+ CONFIG_NSH_FILEIOSIZE=512
+ CONFIG_NSH_STRERROR=y
++# CONFIG_NSH_CMDOPT_DD_STATS is not set
+ 
+ #
+ # Scripting Support
+diff --git a/configs/nrf52832_dk/Makefile b/configs/nrf52832_dk/Makefile
+index f763c4a786..181d0f8dcf 100644
+--- a/configs/nrf52832_dk/Makefile
++++ b/configs/nrf52832_dk/Makefile
+@@ -60,7 +60,7 @@ endef
+ # If the path is '.' then the return path is '.'.
+ #
+ define BACK_TRACK
+-        $(shell [ -n "$1" ] && echo "$1" | sed -e 's/[^/]*/\.\./g' || echo ".")
++	$(shell [ -n "$1" ] && echo "$1" | sed -e 's/[^/]*/\.\./g' || echo ".")
+ endef
+ 
+ #
+@@ -70,13 +70,13 @@ endef
+ #
+ define REDO_CSCOPE
+ 	@echo "Run cscope from $(DEPTH)/$1"
+-        $(Q) cd $(DEPTH)/$1 && cscope -R -k -b -s $(call BACK_TRACK,$1)
++	$(Q) cd $(DEPTH)/$1 && cscope -R -k -b -s $(call BACK_TRACK,$1)
+ endef
+ 
+ #
+ define UNDO_CSCOPE
+ 	@echo "Remove cscope.out from $(DEPTH)/$1"
+-        $(Q) cd $(DEPTH)/$1 && $(RM) cscope.out
++	$(Q) cd $(DEPTH)/$1 && $(RM) cscope.out
+ endef
+ 
+ #
+diff --git a/configs/nrf52832_dk/defaults.mk b/configs/nrf52832_dk/defaults.mk
+index 7154d85031..cb4b604ebf 100644
+--- a/configs/nrf52832_dk/defaults.mk
++++ b/configs/nrf52832_dk/defaults.mk
+@@ -80,7 +80,7 @@ endif # MAKECMDGOALS
+ #
+ WERROR ?= -Werror
+ ifdef NO_ERRORS
+-        WERROR =
++	WERROR =
+ endif
+ 
+ ifeq ($(CONFIG_NRF52_BLUETOOTH),y)
+@@ -160,8 +160,8 @@ endif
+ ARCHWARNINGS = $(WERROR) -Wall -Wstrict-prototypes -Wshadow -Wundef
+ 
+ ARCHWARNINGSXX = -Wall -Wshadow -Wundef
+-ARCHDEFINES =
+-ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
++ARCHDEFINES    =
++ARCHPICFLAGS   = -fpic -msingle-pic-base -mpic-register=r10
+ 
+ 
+ CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
+diff --git a/configs/nrf52832_dk/nsh/defconfig b/configs/nrf52832_dk/nsh/defconfig
+index 364614cbfa..4f002adba3 100644
+--- a/configs/nrf52832_dk/nsh/defconfig
++++ b/configs/nrf52832_dk/nsh/defconfig
+@@ -36,7 +36,7 @@ CONFIG_RAW_BINARY=y
+ # CONFIG_ARCH_STDINT_H is not set
+ # CONFIG_ARCH_STDBOOL_H is not set
+ # CONFIG_ARCH_MATH_H is not set
+-# CONFIG_ARCH_FLOAT_H is not set
++CONFIG_ARCH_FLOAT_H=y
+ # CONFIG_ARCH_STDARG_H is not set
+ # CONFIG_ARCH_DEBUG_H is not set
+ 
+@@ -57,8 +57,8 @@ CONFIG_DEBUG_ASSERTIONS=y
+ #
+ # Subsystem Debug Options
+ #
+-# CONFIG_DEBUG_AUDIO is not set
+ # CONFIG_DEBUG_BINFMT is not set
++# CONFIG_DEBUG_FAST is not set
+ CONFIG_DEBUG_FS=y
+ CONFIG_DEBUG_FS_ERROR=y
+ CONFIG_DEBUG_FS_WARN=y
+@@ -85,7 +85,6 @@ CONFIG_DEBUG_ANALOG_WARN=y
+ CONFIG_DEBUG_I2C=y
+ CONFIG_DEBUG_I2C_ERROR=y
+ CONFIG_DEBUG_I2C_WARN=y
+-# CONFIG_DEBUG_I2S is not set
+ CONFIG_DEBUG_PWM=y
+ CONFIG_DEBUG_PWM_ERROR=y
+ CONFIG_DEBUG_PWM_WARN=y
+@@ -227,7 +226,6 @@ CONFIG_NRF52832_FLASH_512KB=y
+ #
+ # NRF52 Peripheral Support
+ #
+-# CONFIG_NRF52_HAVE_LTDC is not set
+ CONFIG_NRF52_HAVE_LPTIM1=y
+ CONFIG_NRF52_HAVE_LPTIM2=y
+ CONFIG_NRF52_HAVE_COMP=y
+@@ -252,15 +250,10 @@ CONFIG_NRF52_COMP=y
+ # CONFIG_NRF52_LPCOMP is not set
+ # CONFIG_NRF52_PDM is not set
+ # CONFIG_NRF52_CRC is not set
+-# CONFIG_NRF52_TSC is not set
+-# CONFIG_NRF52_OTGFS is not set
+ # CONFIG_NRF52_PPI is not set
+ CONFIG_NRF52_AES=y
+ CONFIG_NRF52_RNG=y
+ # CONFIG_NRF52_I2S is not set
+-# CONFIG_NRF52_I2S_LOWPRIO is not set
+-# CONFIG_NRF52_I2S_HIGHPRIO is not set
+-# CONFIG_NRF52_FMC is not set
+ CONFIG_NRF52_PWR=y
+ CONFIG_NRF52_TIM0=y
+ # CONFIG_NRF52_TIM1 is not set
+@@ -281,7 +274,6 @@ CONFIG_NRF52_I2C1=y
+ # CONFIG_NRF52_LPTIM2 is not set
+ # CONFIG_NRF52_UART1 is not set
+ # CONFIG_NRF52_DFSDM is not set
+-# CONFIG_NRF52_BKPSRAM is not set
+ CONFIG_NRF52_PWM=y
+ CONFIG_NRF52_WDG=y
+ CONFIG_NRF52_QDECODER=y
+@@ -305,14 +297,6 @@ CONFIG_NRF52_PWM_MULTICHAN=y
+ #
+ CONFIG_NRF52_PWM_M0=y
+ CONFIG_NRF52_PWM_M0_CLK_FREQUENCY=16000000
+-CONFIG_NRF52_PWM_M0_CHANNEL1=y
+-CONFIG_NRF52_PWM_M0_CHANNEL1_GPIO_PIN=17
+-CONFIG_NRF52_PWM_M0_CHANNEL2=y
+-CONFIG_NRF52_PWM_M0_CHANNEL2_GPIO_PIN=18
+-CONFIG_NRF52_PWM_M0_CHANNEL3=y
+-CONFIG_NRF52_PWM_M0_CHANNEL3_GPIO_PIN=19
+-CONFIG_NRF52_PWM_M0_CHANNEL4=y
+-CONFIG_NRF52_PWM_M0_CHANNEL4_GPIO_PIN=20
+ # CONFIG_NRF52_PWM_M1 is not set
+ # CONFIG_NRF52_PWM_M2 is not set
+ CONFIG_NRF52_HAVE_UART1=y
+@@ -332,8 +316,6 @@ CONFIG_NRF52_CS_CONTROL_BY_USER=y
+ #
+ # I2C Configuration
+ #
+-# CONFIG_NRF52_I2C0_100K is not set
+-# CONFIG_NRF52_I2C0_250K is not set
+ CONFIG_NRF52_I2C0_400K=y
+ # CONFIG_NRF52_I2C1_100K is not set
+ # CONFIG_NRF52_I2C1_250K is not set
+@@ -358,9 +340,6 @@ CONFIG_NRF52_PDM_MONO_SAMMPLE_LEFT=y
+ CONFIG_NRF52_QDEC_PHASE_A=26
+ CONFIG_NRF52_QDEC_PHASE_B=27
+ # CONFIG_NRF52_QDEC_LED is not set
+-CONFIG_NRF52_QDEC_LED_PIN=0xFF
+-CONFIG_NRF52_QDEC_LED_ACTIVE_HIGH=y
+-# CONFIG_NRF52_QDEC_LED_ACTIVE_LOW is not set
+ 
+ #
+ # Architecture Options
+@@ -425,6 +404,8 @@ CONFIG_RAM_SIZE=65536
+ # Board Selection
+ #
+ CONFIG_ARCH_BOARD_NRF52832_DK=y
++# CONFIG_ARCH_BOARD_FAST_NRF52832_DK is not set
++# CONFIG_ARCH_BOARD_CHICAGO_FAST_ZEUS2_NRF52832 is not set
+ # CONFIG_ARCH_BOARD_CUSTOM is not set
+ CONFIG_ARCH_BOARD="nrf52832_dk"
+ 
+@@ -584,6 +565,7 @@ CONFIG_DEV_LOOP=y
+ # CONFIG_ARCH_HAVE_PWM_PULSECOUNT is not set
+ CONFIG_ARCH_HAVE_PWM_MULTICHAN=y
+ CONFIG_PWM=y
++# CONFIG_PWM_PULSECOUNT is not set
+ CONFIG_PWM_MULTICHAN=y
+ CONFIG_PWM_NCHANNELS=4
+ CONFIG_ARCH_HAVE_I2CRESET=y
+@@ -613,7 +595,6 @@ CONFIG_SPI_EXCHANGE=y
+ #
+ CONFIG_TIMER=y
+ # CONFIG_ONESHOT is not set
+-# CONFIG_COUNTER is not set
+ # CONFIG_RTC is not set
+ CONFIG_WATCHDOG=y
+ CONFIG_WATCHDOG_DEVPATH="/dev/watchdog0"
+@@ -694,7 +675,20 @@ CONFIG_W25_SPIFREQUENCY=500000
+ # CONFIG_EEPROM is not set
+ # CONFIG_PIPES is not set
+ # CONFIG_PM is not set
+-# CONFIG_POWER is not set
++CONFIG_POWER=y
++CONFIG_BATTERY_CHARGER=y
++# CONFIG_BQ2425X is not set
++CONFIG_BQ25120A=y
++CONFIG_SPI_BQ25120A=y
++CONFIG_BQ25120A_INTF_SPI=y
++# CONFIG_BQ25120A_SPI_125KHZ is not set
++# CONFIG_BQ25120A_SPI_250KHZ is not set
++# CONFIG_BQ25120A_SPI_500KHZ is not set
++# CONFIG_BQ25120A_SPI_1MHZ is not set
++# CONFIG_BQ25120A_SPI_2MHZ is not set
++CONFIG_BQ25120A_SPI_4MHZ=y
++# CONFIG_BQ25120A_SPI_8MHZ is not set
++# CONFIG_BATTERY_GAUGE is not set
+ CONFIG_SENSORS=y
+ CONFIG_MC3672=y
+ CONFIG_MC3672_ADDR=0x4c
+@@ -722,6 +716,8 @@ CONFIG_BMI160_SPI_4M=y
+ # CONFIG_BH1750FVI is not set
+ # CONFIG_BMG160 is not set
+ # CONFIG_BMP180 is not set
++CONFIG_SENSOR_INTF_SPI=y
++# CONFIG_SENSOR_INTF_I2C is not set
+ # CONFIG_SENSORS_L3GD20 is not set
+ # CONFIG_SENSOR_KXTJ9 is not set
+ # CONFIG_LIS3DSH is not set
+@@ -736,6 +732,15 @@ CONFIG_MS58XX_VDD=30
+ # CONFIG_SENSORS_ADXL345 is not set
+ # CONFIG_MAX31855 is not set
+ # CONFIG_MAX6675 is not set
++CONFIG_SENSORS_MAX8614X=y
++CONFIG_MAX8614X_INTF_SPI=y
++# CONFIG_MAX8614X_SPI_125KHZ is not set
++# CONFIG_MAX8614X_SPI_250KHZ is not set
++# CONFIG_MAX8614X_SPI_500KHZ is not set
++# CONFIG_MAX8614X_SPI_1MHZ is not set
++# CONFIG_MAX8614X_SPI_2MHZ is not set
++CONFIG_MAX8614X_SPI_4MHZ=y
++# CONFIG_MAX8614X_SPI_8MHZ is not set
+ # CONFIG_LIS3MDL is not set
+ # CONFIG_LM75 is not set
+ # CONFIG_LM92 is not set
+@@ -814,6 +819,8 @@ CONFIG_SYSLOG_CONSOLE=y
+ # CONFIG_SYSLOG_NONE is not set
+ # CONFIG_SYSLOG_FILE is not set
+ # CONFIG_SYSLOG_CHARDEV is not set
++# CONFIG_ARCH_HAVE_FAST is not set
++# CONFIG_ARCH_VIRTUAL_GPIO is not set
+ 
+ #
+ # Networking Support
+@@ -873,7 +880,6 @@ CONFIG_FS_PROCFS_REGISTER=y
+ # CONFIG_FS_PROCFS_EXCLUDE_MOUNTS is not set
+ # CONFIG_FS_PROCFS_EXCLUDE_MTD is not set
+ # CONFIG_FS_PROCFS_EXCLUDE_PARTITIONS is not set
+-# CONFIG_FS_PROCFS_EXCLUDE_SMARTFS is not set
+ # CONFIG_FS_UNIONFS is not set
+ 
+ #
+@@ -1060,20 +1066,14 @@ CONFIG_HAVE_CXXINITIALIZE=y
+ #
+ # uClibc++ Standard C++ Library
+ #
+-# CONFIG_UCLIBCXX is not set
++CONFIG_UCLIBCXX=y
++CONFIG_UCLIBCXX_EXCEPTION=y
++CONFIG_UCLIBCXX_IOSTREAM_BUFSIZE=32
++CONFIG_UCLIBCXX_HAVE_LIBSUPCXX=y
+ 
+ #
+ # Extenal Library
+ #
+-# CONFIG_MBEDTLS is not set
+-# CONFIG_TINYCRYPT is not set
+-# CONFIG_MCUBOOT is not set
+-# CONFIG_BLE_NIMBLE is not set
+-
+-#
+-# DSP Library
+-#
+-# CONFIG_LIBDSP is not set
+ 
+ #
+ # Application Configuration
+@@ -1106,10 +1106,11 @@ CONFIG_EXAMPLES_BMM150_DEVPATH="/dev/mag0"
+ CONFIG_EXAMPLES_COMP=y
+ CONFIG_EXAMPLES_COMP_DEVPATH="/dev/comp"
+ # CONFIG_EXAMPLES_CONFIGDATA is not set
++# CONFIG_EXAMPLES_CPPUT is not set
+ # CONFIG_EXAMPLES_CXXTEST is not set
+ # CONFIG_EXAMPLES_DHCPD is not set
+ # CONFIG_EXAMPLES_ELF is not set
+-# CONFIG_EXAMPLES_FLASH_TEST is not set
++# CONFIG_EXAMPLES_FAST_API is not set
+ # CONFIG_EXAMPLES_FSTEST is not set
+ # CONFIG_EXAMPLES_FTPC is not set
+ # CONFIG_EXAMPLES_FTPD is not set
+@@ -1126,7 +1127,9 @@ CONFIG_EXAMPLES_COMP_DEVPATH="/dev/comp"
+ # CONFIG_EXAMPLES_MOUNT is not set
+ CONFIG_EXAMPLES_MTDBLOCKRW=y
+ # CONFIG_EXAMPLES_MTDPART is not set
++# CONFIG_EXAMPLES_NIMBLE is not set
+ CONFIG_EXAMPLES_NSH=y
++# CONFIG_EXAMPLES_NSH_CXXINITIALIZE is not set
+ # CONFIG_EXAMPLES_NULL is not set
+ # CONFIG_EXAMPLES_NXFFS is not set
+ # CONFIG_EXAMPLES_NXHELLO is not set
+@@ -1172,6 +1175,7 @@ CONFIG_EXAMPLES_NSAMPLES=16
+ # CONFIG_EXAMPLES_ROMFS is not set
+ # CONFIG_EXAMPLES_RTC is not set
+ # CONFIG_EXAMPLES_SENDMAIL is not set
++CONFIG_EXAMPLES_SENSORS=y
+ CONFIG_EXAMPLES_SERIALBLASTER=y
+ CONFIG_EXAMPLES_SERIALBLASTER_STACKSIZE=1024
+ CONFIG_EXAMPLES_SERIALBLASTER_PRIORITY=50
+@@ -1306,7 +1310,6 @@ CONFIG_NSH_DISABLE_LOSMART=y
+ # CONFIG_NSH_DISABLE_MKDIR is not set
+ # CONFIG_NSH_DISABLE_MKFATFS is not set
+ # CONFIG_NSH_DISABLE_MKRD is not set
+-# CONFIG_NSH_DISABLE_MKSMARTFS is not set
+ # CONFIG_NSH_DISABLE_MH is not set
+ # CONFIG_NSH_DISABLE_MOUNT is not set
+ # CONFIG_NSH_DISABLE_MV is not set
+@@ -1322,6 +1325,7 @@ CONFIG_NSH_DISABLE_PRINTF=y
+ # CONFIG_NSH_DISABLE_SLEEP is not set
+ # CONFIG_NSH_DISABLE_TIME is not set
+ # CONFIG_NSH_DISABLE_TEST is not set
++# CONFIG_NSH_DISABLE_TELNETD is not set
+ # CONFIG_NSH_DISABLE_UMOUNT is not set
+ # CONFIG_NSH_DISABLE_UNAME is not set
+ # CONFIG_NSH_DISABLE_UNSET is not set
+@@ -1401,6 +1405,8 @@ CONFIG_READLINE_ECHO=y
+ # CONFIG_READLINE_TABCOMPLETION is not set
+ # CONFIG_READLINE_CMD_HISTORY is not set
+ CONFIG_SYSTEM_SENSOR=y
++CONFIG_SYSTEM_SENSORS_API=y
++# CONFIG_SYSTEM_LIB_SENSORS_API is not set
+ # CONFIG_SYSTEM_SUDOKU is not set
+ CONFIG_SYSTEM_SYSTEM=y
+ CONFIG_SYSTEM_SYSTEM_STACKSIZE=2048
+@@ -1408,6 +1414,7 @@ CONFIG_SYSTEM_SYSTEM_PRIORITY=100
+ # CONFIG_SYSTEM_TEE is not set
+ # CONFIG_SYSTEM_UBLOXMODEM is not set
+ # CONFIG_SYSTEM_VI is not set
++# CONFIG_SYSTEM_LIB_FASTAPI is not set
+ # CONFIG_SYSTEM_ZMODEM is not set
+ 
+ #
+diff --git a/configs/nrf52832_dk/src/nrf52_appinit.c b/configs/nrf52832_dk/src/nrf52_appinit.c
+index 8b66714d16..5330dbf5b0 100644
+--- a/configs/nrf52832_dk/src/nrf52_appinit.c
++++ b/configs/nrf52832_dk/src/nrf52_appinit.c
+@@ -1,8 +1,10 @@
+ /****************************************************************************
+- * configs/nrf52832_dk/src/nrf52_appinit.c
++ *   configs/nrf52832_dk/src/nrf52_appinit.c
+  *
+  *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+  *   Author: Gregory Nutt <gnutt@nuttx.org>
++ *   Copyright (C) 2018 zGlue Inc. All rights reserved.
++ *   Author: Bill Rees <bill@zglue.com>
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+@@ -50,6 +52,7 @@
+ #include <stdlib.h>
+ 
+ #include <nuttx/arch.h>
++#include <nuttx/wqueue.h>
+ #include <nuttx/board.h>
+ #include <nuttx/drivers/drivers.h>
+ #include <nuttx/fs/nxffs.h>
+@@ -77,6 +80,8 @@
+ #include "nrf52_ppi.h"
+ #include "nrf52_gpiote.h"
+ #include "boards.h"
++#include "nrf_nvmc.h"
++#include <nuttx/sensors/sensor.h>
+ 
+ #ifdef CONFIG_MC3672
+ #include <nuttx/sensors/mc3672.h>
+@@ -90,6 +95,14 @@
+ #include <nuttx/sensors/bmi160.h>
+ #endif
+ 
++#ifdef CONFIG_MAX8614X
++#include <nuttx/sensors/max8614x.h>
++#endif
++
++#ifdef CONFIG_BQ25120A
++#include <nuttx/sensors/bq25120a.h>
++#endif
++
+ #include "nrf52_adc.h"
+ 
+ #ifdef CONFIG_NRF52_PROCFS_DEVID
+@@ -100,7 +113,14 @@
+ #include <nuttx/timers/rtc.h>
+ #include "nrf52_rtc.h"
+ 
+-
++/*
++ * Args:
++ *  a : The lowercase name for the dev
++ *  b : The uppercase name for the dev
++ *  c :
++ *  D :  enum type of dev
++ *  E :  SPI channel/port/cs
++ */
+ 
+ /****************************************************************************
+  * Public Functions
+@@ -207,6 +227,127 @@ int nrf52_proc_fs_initialize(void)
+   return ret;
+ }
+ 
++
++#if defined(CONFIG_BMI160)
++
++static bmi160_int_cb_t bmi160_int_1_cb = NULL;
++static bmi160_int_cb_t bmi160_int_2_cb = NULL;
++
++
++
++static void bmi160_int_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
++{
++  if (action == NRF_GPIOTE_POLARITY_LOTOHI)
++    {
++      if ((pin == BMI160_INT1_PIN) && (bmi160_int_1_cb != NULL))
++        {
++          bmi160_int_1_cb(BMI160_INT_CHANNEL_1);
++        }
++      else if ((pin == BMI160_INT2_PIN) && (bmi160_int_2_cb != NULL))
++        {
++          bmi160_int_2_cb(BMI160_INT_CHANNEL_2);
++        }
++    }
++}
++
++static int bmi160_attach_gpio_irq(FAR enum bmi160_int_channel int_channel, bmi160_int_cb_t cb)
++{
++  uint32_t pin_no;
++  int ret = OK;
++  nrf_drv_gpiote_in_config_t pin_cfg = GPIOTE_CONFIG_IN_SENSE_LOTOHI(false);
++
++
++  if (int_channel == BMI160_INT_CHANNEL_1)
++    {
++      pin_no = BMI160_INT1_PIN;
++      bmi160_int_1_cb = cb;
++      ret = nrf_drv_gpiote_in_init(pin_no, &pin_cfg, bmi160_int_pin_handler);
++      ret = nrf_sdk_retcode_to_nuttx(ret);
++    }
++  else if (int_channel == BMI160_INT_CHANNEL_2)
++    {
++      pin_no = BMI160_INT2_PIN;
++      bmi160_int_2_cb = cb;
++      ret = nrf_drv_gpiote_in_init(pin_no, &pin_cfg, bmi160_int_pin_handler);
++      ret = nrf_sdk_retcode_to_nuttx(ret);
++    }
++  else
++    {
++      snerr("ERROR: please choose between INT_CHANNEL_1 and INT_CHANNEL_2\n");
++      ret = -EINVAL;
++    }
++
++  return ret;
++}
++
++static int bmi160_enable_int_pin(enum bmi160_int_channel int_channel, bool enable)
++{
++  switch (int_channel)
++    {
++      case BMI160_INT_CHANNEL_1:
++        nrf_drv_gpiote_in_event_enable(BMI160_INT1_PIN, enable);
++        break;
++      case BMI160_INT_CHANNEL_2:
++        nrf_drv_gpiote_in_event_enable(BMI160_INT2_PIN, enable);
++        break;
++      case BMI160_INT_CHANNEL_BOTH:
++        nrf_drv_gpiote_in_event_enable(BMI160_INT1_PIN, enable);
++        nrf_drv_gpiote_in_event_enable(BMI160_INT2_PIN, enable);
++        break;
++      default:
++        break;
++    }
++
++  return OK;
++}
++
++#endif
++
++#if defined(CONFIG_BQ25120A) && defined(CONFIG_BQ25120A_INTF_SPI)
++static int bq25120a_attach_gpio_irq(FAR enum bmi160_int_channel int_channel, bmi160_int_cb_t cb)
++{
++  int32_t ret = 0;
++
++  return ret;
++}
++
++static int bq25120a_enable_int_pin(enum bmi160_int_channel int_channel, bool enable)
++{
++  int32_t ret = 0;
++
++  nrf_drv_gpiote_in_event_enable(BQ25120A_INT_PIN, enable);
++  return ret;
++}
++#endif
++
++
++#if defined(CONFIG_MAX8614X) && defined(CONFIG_MAX8614X_INTF_SPI)
++
++static int max8614x_attach_gpio_irq(FAR struct sensor_dev_s *dev, sensor_cb_t cb)
++{
++  uint32_t pin_no;
++  int ret = OK;
++
++  nrf_drv_gpiote_in_config_t pin_cfg = GPIOTE_CONFIG_IN_SENSE_LOTOHI(false);
++
++  pin_no = BOARD_MAX86140_IRQ_PIN;
++  // cb;
++  ret = nrf_drv_gpiote_in_init(pin_no, &pin_cfg, max8614x_pin_handler);
++  ret = nrf_sdk_retcode_to_nuttx(ret);
++
++  return ret;
++}
++
++static int max8614x_enable_int_pin(enum max8614x_int_channel int_channel, bool enable)
++{
++
++  BOARD_SPI0_CS_PIN
++  nrf_drv_gpiote_in_event_enable(MAX86140_INT_PIN, enable);
++  return OK;
++}
++#endif
++
++
+ /****************************************************************************
+  * Name: board_app_initialize
+  *
+@@ -326,6 +467,69 @@ int board_app_initialize(uintptr_t arg)
+   i2c_register(i2c0, 0);
+ #endif
+ 
++#if defined(CONFIG_BMI160) && defined(CONFIG_BMI160_INTF_I2C)
++
++  struct bmi160_bus_config_s bmi160_i2c_config =
++  {
++    .bus_selection = BMI160_I2C_INTF,
++    .bus_config.i2c_config =
++    {
++      .i2c = i2c0,
++      .config =
++      {
++        .frequency = CONFIG_BMI160_I2C_SPEED,
++        .address = I2C_ADDR_BMI160,
++        .addrlen = 7,
++      },
++    },
++  };
++
++  struct bmi160_low_level_operations_s bmi160_ll_op =
++  {
++    bmi160_attach_gpio_irq,
++    bmi160_enable_int_pin,
++  };
++
++  ret = bmi160_register("/dev/bmi160", &bmi160_i2c_config, &bmi160_ll_op);
++
++  if (ret < 0)
++    {
++      snerr("ERROR: Error registering bmi160\n");
++      return -ENODEV;
++    }
++
++#endif
++
++#if defined(CONFIG_BQ25120A) && defined(CONFIG_BQ25120A_INTF_I2C)
++#warning This code needs finishing (correct addr values)
++  struct sensor_config_s bq25120a_i2c_config =
++  {
++    .bus_selection = _I2C_INTF,
++    .bus.i2c =
++    {
++      .i2c = i2c0,
++      .config =
++      {
++        .frequency = CONFIG__I2C_SPEED,
++        .address = I2C_ADDR_BQ25120A,
++        .addrlen = 7,
++      },
++    },
++  };
++
++  struct bq25120a_low_level_operations_s bq25120a_ll_op =
++  {
++    bq25120a_attach_gpio_irq,
++    bq25120a_enable_int_pin,
++  };
++
++  ret = bq25120a_register("/dev/bq25120a", &bq25120a_i2c_config, &bq25120a_ll_op);
++#endif /* CONFIG_BQ25120A && CONFIG_BQ25120A_INTF_I2C */
++#if defined(CONFIG_MAX8614X) && defined(CONFIG_MAX8614X_INTF_I2C)
++#error ================================================================!!!!
++  // ret = max8614x_register("/dev/max8614x", &max8614x_i2c_config, &max8614x_ll_op);
++#endif /* CONFIG_MAX8614X && CONFIG_MAX8614X_INTF_I2C */
++
+ #endif//CONFIG_NRF52_I2C0
+ 
+ #ifdef CONFIG_NRF52_I2C1
+@@ -373,6 +577,131 @@ int board_app_initialize(uintptr_t arg)
+     }
+ #endif
+ 
++#ifdef CONFIG_BMM150
++  /* Then register the accelerometer sensor */
++  struct bmm050_config_s bmm050_config;
++  bmm050_config.spi_devid = SPIDEV_MAGNETOMETER;
++
++#ifdef CONFIG_BMM150_INTERRUPT_ENABLE
++  /*issue:we haven't implement the interrupt mode until now*/
++  bmm050_config.irq = 0;
++  bmm050_config.attach = NULL;
++#else
++  bmm050_config.attach = NULL;
++#endif
++
++  ret = bmm050_register("/dev/mag0", spi0, &bmm050_config);
++  if (ret < 0)
++    {
++      snerr("ERROR: Error registering the BMM150\n");
++      return -ENODEV;
++    }
++#endif
++
++#if defined(CONFIG_BMI160) && defined(CONFIG_BMI160_INTF_SPI)
++
++  struct bmi160_bus_config_s bmi160_spi_config =
++  {
++    .bus_selection = BMI160_SPI_INTF,
++    .bus_config.spi_config =
++    {
++      .spi = spi0,
++      .spi_frequency = SPI_FREQUENCY_BMI160,
++      .spi_devid = SPIDEV_ACC_GYRO_COMB,
++      .spi_mode = SPIDEV_MODE3,
++    },
++  };
++
++  struct bmi160_low_level_operations_s bmi160_ll_op =
++  {
++    bmi160_attach_gpio_irq,
++    bmi160_enable_int_pin,
++  };
++
++  ret = bmi160_register("/dev/bmi160", &bmi160_spi_config, &bmi160_ll_op);
++
++  if (ret < 0)
++    {
++      snerr("ERROR: Error registering bmi160\n");
++      return -ENODEV;
++    }
++
++#endif
++
++#if defined(CONFIG_BQ25120A) && defined(CONFIG_BQ25120A_INTF_SPI) && defined(NO_DEF_WRAPPING)
++
++  struct sensor_config_s bq25120a_spi_config =
++  {
++    .bus_selection = SENSOR_INTF_SPI,
++    .bus.spi =
++    {
++      .dev = spi0,
++      .frequency = SPI_FREQUENCY_BQ25120A,
++      .devid = SPIDEV_ACC_GYRO_COMB,
++      .mode = SPIDEV_MODE3,
++    },
++  };
++
++  struct bq25120a_low_level_operations_s bq25120a_ll_op =
++  {
++    bq25120a_attach_gpio_irq,
++    bq25120a_enable_int_pin,
++  };
++
++  ret = bq25120a_register("/dev/bq25120a", &bq25120a_spi_config, &bq25120a_ll_op);
++
++  if (ret < 0)
++    {
++      snerr("ERROR: Error registering bq25120a\n");
++      return -ENODEV;
++    }
++
++#endif /* CONFIG_BQ25120A && CONFIG_BQ25120A_INTF_SPI */
++
++#if defined(FIGURE_IT_OUT)
++  REGISTER_SPI_DEV(bq25120a, BQ25120A, blah, SPIDEVTYPE_OPTO_BIOMETRIC, 0)
++  defined(CONFIG_BQ25120A)
++#endif
++
++#if defined(CONFIG_MAX8614X) && defined(CONFIG_MAX8614X_INTF_SPI)
++
++  /*
++  struct sensor_spi_bus_config_s
++  {
++    FAR struct spi_dev_s *spi;* Pointer to the SPI instance *
++    FAR uint32_t spi_frequency;
++    FAR uint8_t spi_devid;
++    FAR enum spi_mode_e spi_mode;
++  };
++  */
++
++  struct sensor_config_s max8614x_config =
++  {
++    .bus_selection = SENSOR_INTF_SPI,
++    .bus.spi =
++    {
++      .dev = spi0,
++      .frequency = SPI_FREQUENCY_MAX8614X,
++      .devid = SPIDEV_ACC_GYRO_COMB,
++      .mode = SPIDEV_MODE3,
++    },
++  };
++
++  struct sensor_low_level_operations_s max8614x_ll_ops =
++  {
++    max8614x_attach_gpio_irq,
++    max8614x_enable_int_pin,
++  };
++
++  ret = max8614x_register(MAX8614X_DEVPATH, &max8614x_config, &max8614x_ll_ops);
++
++  if (ret < 0)
++    {
++      snerr("ERROR: Error registering max8614x\n");
++      return -ENODEV;
++    }
++#endif /* CONFIG_MAX8614X  && CONFIG_MAX8614X_INTF_SPI */
++
+ #endif /* CONFIG_NRF52_SPI0 */
+ #endif /* CONFIG_SPI */
+ 
+@@ -550,5 +879,3 @@ int board_app_initialize(uintptr_t arg)
+ 
+   return OK;
+ }
+-
+-
+diff --git a/configs/nrf52840_dk/Kconfig b/configs/nrf52840_dk/Kconfig
+index 4137b48d0a..cc51ca1981 100644
+--- a/configs/nrf52840_dk/Kconfig
++++ b/configs/nrf52840_dk/Kconfig
+@@ -11,10 +11,5 @@ config CODE_ANALYSIS
+   ---help---
+     This is for analysis each module code size and data size
+ 
+-config ARCH_HAVE_FAST
+-	bool "Enable zglue Zeus platform"
+-	default n
+-	---help---
+-		Enable Zglue (First generation) Architecture
+ 
+ endif # ARCH_BOARD_NRF52840_DK
+diff --git a/configs/nrf52840_dk/Makefile b/configs/nrf52840_dk/Makefile
+index 3bd594d748..b1a603f630 100644
+--- a/configs/nrf52840_dk/Makefile
++++ b/configs/nrf52840_dk/Makefile
+@@ -60,7 +60,7 @@ endef
+ # If the path is '.' then the return path is '.'.
+ #
+ define BACK_TRACK
+-        $(shell [ -n "$1" ] && echo "$1" | sed -e 's/[^/]*/\.\./g' || echo ".")
++	$(shell [ -n "$1" ] && echo "$1" | sed -e 's/[^/]*/\.\./g' || echo ".")
+ endef
+ 
+ #
+@@ -70,13 +70,13 @@ endef
+ #
+ define REDO_CSCOPE
+ 	@echo "Run cscope from $(DEPTH)/$1"
+-        $(Q) cd $(DEPTH)/$1 && cscope -R -k -b -s $(call BACK_TRACK,$1)
++	$(Q) cd $(DEPTH)/$1 && cscope -R -k -b -s $(call BACK_TRACK,$1)
+ endef
+ 
+ #
+ define UNDO_CSCOPE
+ 	@echo "Remove cscope.out from $(DEPTH)/$1"
+-        $(Q) cd $(DEPTH)/$1 && $(RM) cscope.out
++	$(Q) cd $(DEPTH)/$1 && $(RM) cscope.out
+ endef
+ 
+ #
+diff --git a/configs/nrf52840_dk/defaults.mk b/configs/nrf52840_dk/defaults.mk
+index b41f45ebea..06c78c069c 100644
+--- a/configs/nrf52840_dk/defaults.mk
++++ b/configs/nrf52840_dk/defaults.mk
+@@ -76,7 +76,7 @@ $(shell [ ! -d $(TOPDIR)/external ] && mkdir -p $(TOPDIR)/external)
+ # user -Wall instead of -Werror
+ WERROR ?= -Wall
+ ifdef NO_ERRORS
+-        WERROR =
++	WERROR =
+ endif
+ 
+ SCRIPTSDIR = $(TOPDIR)/configs/$(CONFIG_ARCH_BOARD)/scripts
+diff --git a/configs/nrf52840_dk/nsh/defconfig b/configs/nrf52840_dk/nsh/defconfig
+index fdf89497a5..bbe63d1019 100644
+--- a/configs/nrf52840_dk/nsh/defconfig
++++ b/configs/nrf52840_dk/nsh/defconfig
+@@ -291,6 +291,12 @@ CONFIG_NRF52_LSCLK_XTAL_CLOCK=y
+ #
+ # CONFIG_NRF52_ONESHOT is not set
+ # CONFIG_NRF52_FREERUN is not set
++CONFIG_NRF52_TIM1_PWM=y
++CONFIG_NRF52_TIM1_MODE=0
++# CONFIG_NRF52_TIM1_CHANNEL1 is not set
++# CONFIG_NRF52_TIM1_CHANNEL2 is not set
++# CONFIG_NRF52_TIM1_CHANNEL3 is not set
++# CONFIG_NRF52_TIM1_CHANNEL4 is not set
+ # CONFIG_NRF52_TIM0_PWM is not set
+ 
+ #
+@@ -334,6 +340,7 @@ CONFIG_NRF52_I2CTIMEOTICKS=500
+ CONFIG_NRF52_QDEC_PHASE_A=26
+ CONFIG_NRF52_QDEC_PHASE_B=27
+ # CONFIG_NRF52_QDEC_LED is not set
++# CONFIG_NRF52_QDEC_LED_ACTIVE_LOW is not set
+ 
+ #
+ # Architecture Options
+@@ -557,6 +564,7 @@ CONFIG_DEV_LOOP=y
+ # CONFIG_ARCH_HAVE_PWM_PULSECOUNT is not set
+ CONFIG_ARCH_HAVE_PWM_MULTICHAN=y
+ CONFIG_PWM=y
++# CONFIG_PWM_PULSECOUNT is not set
+ CONFIG_PWM_MULTICHAN=y
+ CONFIG_PWM_NCHANNELS=4
+ CONFIG_ARCH_HAVE_I2CRESET=y
+@@ -700,6 +708,8 @@ CONFIG_BMI160_SPI_4M=y
+ # CONFIG_BH1750FVI is not set
+ # CONFIG_BMG160 is not set
+ # CONFIG_BMP180 is not set
++CONFIG_SENSOR_INTF_SPI=y
++# CONFIG_SENSOR_INTF_I2C is not set
+ # CONFIG_SENSORS_L3GD20 is not set
+ # CONFIG_SENSOR_KXTJ9 is not set
+ # CONFIG_LIS3DSH is not set
+@@ -714,6 +724,15 @@ CONFIG_MS58XX_VDD=30
+ # CONFIG_SENSORS_ADXL345 is not set
+ # CONFIG_MAX31855 is not set
+ # CONFIG_MAX6675 is not set
++CONFIG_SESORS_MAX8614X=y
++CONFIG_MAX8614X_INTF_SPI=y
++# CONFIG_MAX8614X_SPI_125KHZ is not set
++# CONFIG_MAX8614X_SPI_250KHZ is not set
++# CONFIG_MAX8614X_SPI_500KHZ is not set
++# CONFIG_MAX8614X_SPI_1MHZ is not set
++# CONFIG_MAX8614X_SPI_2MHZ is not set
++CONFIG_MAX8614X_SPI_4MHZ=y
++# CONFIG_MAX8614X_SPI_8MHZ is not set
+ # CONFIG_LIS3MDL is not set
+ # CONFIG_LM75 is not set
+ # CONFIG_LM92 is not set
+@@ -792,6 +811,7 @@ CONFIG_SYSLOG_CONSOLE=y
+ # CONFIG_SYSLOG_NONE is not set
+ # CONFIG_SYSLOG_FILE is not set
+ # CONFIG_SYSLOG_CHARDEV is not set
++# CONFIG_ARCH_HAVE_FAST is not set
+ # CONFIG_ARCH_VIRTUAL_GPIO is not set
+ 
+ #
+@@ -1115,6 +1135,7 @@ CONFIG_EXAMPLES_NSAMPLES=16
+ # CONFIG_EXAMPLES_ROMFS is not set
+ # CONFIG_EXAMPLES_RTC is not set
+ # CONFIG_EXAMPLES_SENDMAIL is not set
++# CONFIG_EXAMPLES_SENSORS is not set
+ CONFIG_EXAMPLES_SERIALBLASTER=y
+ CONFIG_EXAMPLES_SERIALBLASTER_STACKSIZE=1024
+ CONFIG_EXAMPLES_SERIALBLASTER_PRIORITY=50
+diff --git a/configs/zglue_zeus1_remora_board/Kconfig b/configs/zglue_zeus1_remora_board/Kconfig
+index 514b389976..926f2860d4 100644
+--- a/configs/zglue_zeus1_remora_board/Kconfig
++++ b/configs/zglue_zeus1_remora_board/Kconfig
+@@ -3,12 +3,6 @@
+ # see the file kconfig-language.txt in the NuttX tools repository.
+ #
+ 
+-config ARCH_HAVE_FAST
+-	bool "Enable zglue Zeus platform"
+-	default y
+-	---help---
+-		Enable Zglue (First generation) Architecture
+-
+ config ARCH_HAVE_JTAG
+ 	bool "Enable zglue Zeus JTAG"
+ 	default y
+diff --git a/configs/zglue_zeus2_chicago/Kconfig b/configs/zglue_zeus2_chicago/Kconfig
+index 138722676b..681c754bf9 100644
+--- a/configs/zglue_zeus2_chicago/Kconfig
++++ b/configs/zglue_zeus2_chicago/Kconfig
+@@ -3,14 +3,12 @@
+ # see the file kconfig-language.txt in the NuttX tools repository.
+ #
+ 
+-config ARCH_HAVE_FAST
+-	bool "Enable zglue Zeus platform"
+-	default y
+-	---help---
+-		Enable Zglue zeus Architecture
++if ARCH_BOARD_CHICAGO_FAST_ZEUS2_NRF52832
+ 
+ config CODE_ANALYSIS
+   bool "code size analysis"
+   default y
+   ---help---
+     This is for analysis each module code size and data size
++
++endif
+diff --git a/configs/zglue_zeus2_chicago/Makefile b/configs/zglue_zeus2_chicago/Makefile
+index 6201204d5e..1c1f8b88e4 100644
+--- a/configs/zglue_zeus2_chicago/Makefile
++++ b/configs/zglue_zeus2_chicago/Makefile
+@@ -66,7 +66,7 @@ endef
+ # If the path is '.' then the return path is '.'.
+ #
+ define BACK_TRACK
+-        $(shell [ -n "$1" ] && echo "$1" | sed -e 's/[^/]*/\.\./g' || echo ".")
++	$(shell [ -n "$1" ] && echo "$1" | sed -e 's/[^/]*/\.\./g' || echo ".")
+ endef
+ 
+ #
+@@ -76,13 +76,13 @@ endef
+ #
+ define REDO_CSCOPE
+ 	@echo "Run cscope from $(DEPTH)/$1"
+-        $(Q) cd $(DEPTH)/$1 && cscope -R -k -b -s $(call BACK_TRACK,$1)
++	$(Q) cd $(DEPTH)/$1 && cscope -R -k -b -s $(call BACK_TRACK,$1)
+ endef
+ 
+ #
+ define UNDO_CSCOPE
+ 	@echo "Remove cscope.out from $(DEPTH)/$1"
+-        $(Q) cd $(DEPTH)/$1 && $(RM) cscope.out
++	$(Q) cd $(DEPTH)/$1 && $(RM) cscope.out
+ endef
+ 
+ #
+diff --git a/configs/zglue_zeus2_chicago/defaults.mk b/configs/zglue_zeus2_chicago/defaults.mk
+index 9302467967..7fbf99bbee 100644
+--- a/configs/zglue_zeus2_chicago/defaults.mk
++++ b/configs/zglue_zeus2_chicago/defaults.mk
+@@ -1,5 +1,5 @@
+ ############################################################################
+-#   configs/fast_nrf52832_dk/defaults.mk
++#   configs/zglue_zeus2_chicago/defaults.mk
+ #
+ #   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+ #   Copyright (C) 2018 Zglue Inc. All rights reserved.
+@@ -57,7 +57,7 @@ endif
+ #
+ WERROR = -Werror
+ ifdef NO_ERRORS
+-        WERROR =
++	WERROR =
+ endif
+ 
+ ifeq ($(CONFIG_NRF52_BLUETOOTH),y)
+@@ -176,6 +176,11 @@ ifneq ($(_BLE_DEV_NAME),)
+ CFLAGS += -D_BLE_DEV_NAME=\"$(_BLE_DEV_NAME)\"
+ endif
+ 
++# added stack check flag
++ifeq ($(CONFIG_ARMV7M_STACKCHECK),y)
++CFLAGS += -finstrument-functions
++endif
++
+ ifneq ($(CROSSDEV),arm-nuttx-elf-)
+   LDFLAGS += -nostartfiles -nodefaultlibs
+ endif
+@@ -188,6 +193,7 @@ endif
+ LDFLAGS += -Map=${TOPDIR}/nuttx.map
+ 
+ CFLAGS += -ffunction-sections -fdata-sections
++# Levin's discovery ## LDFLAGS += --gc-sections
+ 
+ CFLAGS += -I${TOPDIR}/${APPDIR}/include
+ HOSTCC = gcc
+@@ -195,27 +201,5 @@ HOSTINCLUDES = -I.
+ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
+ HOSTLDFLAGS =
+ 
+-FLASHER=nrfjprog
+-FLASHER_IDENTS= $(FLASHER) -i
+-FLASHER_ERASE = $(FLASHER) -e
+-FLASHER_FLASH = $(FLASHER) --program
+-FLASHER_RESET = $(FLASHER) -r
+-FLASHER_VERIFY = $(FLASHER) --verify
+-
+-#
+-# With this macro defined making the target "download" will build
+-# nuttx and then call this define to program the flashdevice.
+-# (see Makefile.unix, target download:)
+-#
+-define DOWNLOAD
+-	$(Q)pwd
+-        $(Q)if [ -n "$(shell $(FLASHER_IDENTS))" ] ; then \
+-                $(FLASHER_ERASE)  ;\
+-                $(FLASHER_FLASH)  $(NUTTXNAME).hex ;\
+-                $(FLASHER_RESET)  ;\
+-                $(FLASHER_VERIFY) ; $(NUTTXNAME).hex ;\
+-        else                       \
+-                echo "\nNo flash identified for programming.\n" ;\
+-        fi
+-endef
++EXTRA_CLEAN = rm -f $(SCRIPTSDIR)/$(LDSCRIPT) $(SCRIPTSDIR)/tmp
+ 
+diff --git a/configs/zglue_zeus2_chicago/include/board.h b/configs/zglue_zeus2_chicago/include/board.h
+index 1fe1ab3d8f..3ff020a8f6 100644
+--- a/configs/zglue_zeus2_chicago/include/board.h
++++ b/configs/zglue_zeus2_chicago/include/board.h
+@@ -1,9 +1,12 @@
+ /*****************************************************************************
+- *   configs/fast_nrf52832_dk/include/board.h
++ *   configs/zglue_zeus2_chicago/include/board.h
+  *
+  *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+  *   Copyright (C) 2016 Motorola Mobility, LLC.
+  *
++ *   Copyright (C) 2018 zGlue Inc, All rights reserved.
++ *   Author: Bill Rees   <bill@zglue.com>
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -38,8 +41,8 @@
+  *
+  *****************************************************************************/
+ 
+-#ifndef __CONFIGS_NRF52382_MDK_INCLUDE_BOARD_H
+-#define __CONFIGS_NRF52382_MDK_INCLUDE_BOARD_H
++#ifndef __CONFIGS_ZGLUE_ZEUS2_CHICAGO_INCLUDE_BOARD_H
++#define __CONFIGS_ZGLUE_ZEUS2_CHICAGO_INCLUDE_BOARD_H
+ 
+ /*****************************************************************************
+  * Included Files
+@@ -133,6 +136,7 @@
+ /* SPI pin config */
+ #define BOARD_FAST_CS         26
+ #define BOARD_MAX86140_CS     2
++#define BOARD_MAX86140_IRQ_PIN 13
+ 
+ 
+ #define BOARD_SPI0_MISO_PIN   NRF52_INVALID_GPIO_PIN
+@@ -186,4 +190,4 @@ void nrf52_boardinitialize(void);
+ #endif
+ 
+ #endif /* __ASSEMBLY__ */
+-#endif  /* __CONFIGS_STM32L476_MDK_INCLUDE_BOARD_H */
++#endif  /* __CONFIGS_ZGLUE_ZEUS2_CHICAGO_INCLUDE_BOARD_H */
+diff --git a/configs/zglue_zeus2_chicago/nsh_zeus2/defconfig b/configs/zglue_zeus2_chicago/nsh_zeus2/defconfig
+index 83c3a06a6f..5dc6026753 100644
+--- a/configs/zglue_zeus2_chicago/nsh_zeus2/defconfig
++++ b/configs/zglue_zeus2_chicago/nsh_zeus2/defconfig
+@@ -37,7 +37,7 @@ CONFIG_RAW_BINARY=y
+ # CONFIG_ARCH_STDINT_H is not set
+ # CONFIG_ARCH_STDBOOL_H is not set
+ # CONFIG_ARCH_MATH_H is not set
+-# CONFIG_ARCH_FLOAT_H is not set
++CONFIG_ARCH_FLOAT_H=y
+ # CONFIG_ARCH_STDARG_H is not set
+ # CONFIG_ARCH_DEBUG_H is not set
+ 
+@@ -179,8 +179,6 @@ CONFIG_ARCH_CORTEXM4=y
+ # CONFIG_ARCH_CORTEXR7F is not set
+ CONFIG_ARCH_FAMILY="armv7-m"
+ CONFIG_ARCH_CHIP="nrf52"
+-# CONFIG_ARM_TOOLCHAIN_IAR is not set
+-CONFIG_ARCH_TOOLCHAIN_GNU=y
+ # CONFIG_SEGGER_SYSVIEW is not set
+ # CONFIG_ARMV7M_USEBASEPRI is not set
+ CONFIG_ARCH_HAVE_CMNVECTOR=y
+@@ -276,7 +274,6 @@ CONFIG_NRF52_RTC0=y
+ # CONFIG_NRF52_SPI1 is not set
+ CONFIG_NRF52_SPI2=y
+ CONFIG_NRF52_UART0=y
+-# CONFIG_NRF52_UART1 is not set
+ CONFIG_NRF52_I2C0=y
+ CONFIG_NRF52_I2C1=y
+ # CONFIG_NRF52_LPTIM1 is not set
+@@ -327,7 +324,6 @@ CONFIG_NRF52_I2C1_400K=y
+ CONFIG_NRF52_I2CTIMEOSEC=0
+ CONFIG_NRF52_I2CTIMEOMS=500
+ CONFIG_NRF52_I2CTIMEOTICKS=500
+-# CONFIG_NRF52_I2C_DUTY16_9 is not set
+ # CONFIG_ARCH_TOOLCHAIN_IAR is not set
+ CONFIG_ARCH_TOOLCHAIN_GNU=y
+ 
+@@ -413,7 +409,6 @@ CONFIG_ARCH_BOARD="zglue_zeus2_chicago"
+ # Board-Specific Options
+ #
+ CONFIG_CODE_ANALYSIS=y
+-CONFIG_ARCH_HAVE_FAST=y
+ # CONFIG_BOARD_CRASHDUMP is not set
+ CONFIG_LIB_BOARDCTL=y
+ # CONFIG_BOARDCTL_RESET is not set
+@@ -499,7 +494,9 @@ CONFIG_NAME_MAX=32
+ # CONFIG_BOARD_INITIALIZE is not set
+ # CONFIG_SCHED_STARTHOOK is not set
+ CONFIG_SCHED_ATEXIT=y
++CONFIG_SCHED_ATEXIT_MAX=1
+ # CONFIG_SCHED_ONEXIT is not set
++# CONFIG_SIG_EVTHREAD is not set
+ 
+ #
+ # Signal Numbers
+@@ -508,6 +505,7 @@ CONFIG_SIG_SIGUSR1=1
+ CONFIG_SIG_SIGUSR2=2
+ CONFIG_SIG_SIGALARM=3
+ CONFIG_SIG_SIGCONDTIMEDOUT=16
++CONFIG_SIG_SIGWORK=17
+ 
+ #
+ # POSIX Message Queue Options
+@@ -519,8 +517,11 @@ CONFIG_MQ_MAXMSGSIZE=32
+ #
+ # Work queue support
+ #
+-# CONFIG_SCHED_WORKQUEUE is not set
+-# CONFIG_SCHED_HPWORK is not set
++CONFIG_SCHED_WORKQUEUE=y
++CONFIG_SCHED_HPWORK=y
++CONFIG_SCHED_HPWORKPRIORITY=224
++CONFIG_SCHED_HPWORKPERIOD=50000
++CONFIG_SCHED_HPWORKSTACKSIZE=2048
+ # CONFIG_SCHED_LPWORK is not set
+ 
+ #
+@@ -661,10 +662,20 @@ CONFIG_MTD_PROGMEM=y
+ # CONFIG_DRIVERS_POWERLED is not set
+ # CONFIG_DRIVERS_SMPS is not set
+ # CONFIG_DRIVERS_MOTOR is not set
+-# CONFIG_POWER is not set
++CONFIG_POWER=y
++CONFIG_BATTERY_CHARGER=y
++# CONFIG_BQ2425X is not set
++# CONFIG_BQ2429X is not set
++CONFIG_BQ25120A=y
++CONFIG_BQ25120A_INTF_I2C=y
++# CONFIG_BQ25120A_INTF_SPI is not set
++CONFIG_BQ25120A_I2C_ADDR_0x68=y
++# CONFIG_BQ25120A_I2C_ADDR_0x69 is not set
++# CONFIG_BATTERY_GAUGE is not set
+ CONFIG_SENSORS=y
+ CONFIG_MC3672=y
+ CONFIG_MC3672_ADDR=0x6C
++# CONFIG_BMM150 is not set
+ # CONFIG_BMI160 is not set
+ # CONFIG_SENSORS_APDS9960 is not set
+ # CONFIG_SENSORS_AS5048B is not set
+@@ -673,6 +684,8 @@ CONFIG_MC3672_ADDR=0x6C
+ # CONFIG_SENSORS_BMP180 is not set
+ # CONFIG_SENSORS_HCSR04 is not set
+ # CONFIG_SENSORS_HTS221 is not set
++CONFIG_SENSOR_INTF_SPI=y
++CONFIG_SENSOR_INTF_I2C=y
+ # CONFIG_SENSORS_L3GD20 is not set
+ # CONFIG_SENSOR_KXTJ9 is not set
+ # CONFIG_SENSORS_LIS2DH is not set
+@@ -695,7 +708,7 @@ CONFIG_MC3672_ADDR=0x6C
+ # CONFIG_SENSORS_MAX44009 is not set
+ # CONFIG_SENSORS_MAX31855 is not set
+ # CONFIG_SENSORS_MAX6675 is not set
+-# CONFIG_SENSORS_LIS3MDL is not set
++# CONFIG_LIS3MDL is not set
+ # CONFIG_SENSORS_LM75 is not set
+ # CONFIG_SENSORS_LM92 is not set
+ # CONFIG_QENCODER is not set
+@@ -705,6 +718,15 @@ CONFIG_MC3672_ADDR=0x6C
+ # CONFIG_SENSORS_VEML6070 is not set
+ # CONFIG_SENSORS_XEN1210 is not set
+ # CONFIG_SENSORS_ZEROCROSS is not set
++CONFIG_SENSORS_MAX8614X=y
++CONFIG_MAX8614X_INTF_SPI=y
++# CONFIG_MAX8614X_SPI_125KHZ is not set
++# CONFIG_MAX8614X_SPI_250KHZ is not set
++# CONFIG_MAX8614X_SPI_500KHZ is not set
++# CONFIG_MAX8614X_SPI_1MHZ is not set
++# CONFIG_MAX8614X_SPI_2MHZ is not set
++CONFIG_MAX8614X_SPI_4MHZ=y
++# CONFIG_MAX8614X_SPI_8MHZ is not set
+ CONFIG_SERIAL=y
+ # CONFIG_DEV_LOWCONSOLE is not set
+ # CONFIG_SERIAL_REMOVABLE is not set
+@@ -795,6 +817,7 @@ CONFIG_FAST_FILE_DIRECTORY="/mnt"
+ CONFIG_FAST_CONFIG_FILE=y
+ CONFIG_FLASH_FAST_CONFIG_FILE_LENGTH=0x1400
+ CONFIG_ZEUS2_CHICAGO=y
++CONFIG_ARCH_HAVE_FAST=y
+ CONFIG_ARCH_VIRTUAL_GPIO=y
+ CONFIG_TARGET_DRIVER="gpio_api"
+ # CONFIG_1WIRE is not set
+@@ -1034,7 +1057,6 @@ CONFIG_LIB_SENDFILE_BUFSIZE=512
+ #
+ CONFIG_C99_BOOL8=y
+ CONFIG_HAVE_CXX=y
+-CONFIG_HAVE_CXXINITIALIZE=y
+ # CONFIG_CXX_NEWLONG is not set
+ 
+ #
+@@ -1046,14 +1068,13 @@ CONFIG_HAVE_CXXINITIALIZE=y
+ # uClibc++ Standard C++ Library
+ #
+ CONFIG_UCLIBCXX=y
++CONFIG_UCLIBCXX_EXCEPTION=y
++CONFIG_UCLIBCXX_IOSTREAM_BUFSIZE=32
++CONFIG_UCLIBCXX_HAVE_LIBSUPCXX=y
+ 
+ #
+ # Extenal Library
+ #
+-# CONFIG_MBEDTLS is not set
+-# CONFIG_TINYCRYPT is not set
+-# CONFIG_MCUBOOT is not set
+-# CONFIG_BLE_NIMBLE is not set
+ 
+ #
+ # DSP Library
+@@ -1072,6 +1093,7 @@ CONFIG_BUILTIN_PROXY_STACKSIZE=1024
+ #
+ # CAN Utilities
+ #
++CONFIG_CPPUTEST_FRAMEWORK=y
+ 
+ #
+ # Examples
+@@ -1082,8 +1104,8 @@ CONFIG_BUILTIN_PROXY_STACKSIZE=1024
+ # CONFIG_EXAMPLES_CCTYPE is not set
+ # CONFIG_EXAMPLES_CHAT is not set
+ # CONFIG_EXAMPLES_CONFIGDATA is not set
+-# CONFIG_EXAMPLES_CPPUT is not set
+-# CONFIG_EXAMPLES_CXXTEST is not set
++CONFIG_EXAMPLES_CPPUT=y
++CONFIG_EXAMPLES_CXXTEST=y
+ # CONFIG_EXAMPLES_DHCPD is not set
+ # CONFIG_EXAMPLES_FAST_API is not set
+ CONFIG_EXAMPLES_FSTEST=y
+@@ -1383,26 +1405,14 @@ CONFIG_SYSTEM_ZMODEM_WRITESIZE=0
+ # Wireless Libraries and NSH Add-Ons
+ #
+ 
++#
++# Bluetooth Application Stack
++#
++# CONFIG_WIRELESS_BT is not set
++
+ #
+ # IEEE 802.15.4 applications
+ #
+ # CONFIG_IEEE802154_LIBMAC is not set
+ # CONFIG_IEEE802154_LIBUTILS is not set
+ # CONFIG_IEEE802154_I8SAK is not set
+-
+-CONFIG_EXAMPLES_CXXTEST=y
+-
+-CONFIG_ARCH_FLOAT_H=y
+-CONFIG_UCLIBCXX_EXCEPTION=y
+-CONFIG_UCLIBCXX_IOSTREAM_BUFSIZE=y
+-CONFIG_UCLIBCXX_HAVE_LIBSUPCXX=y
+-CONFIG_EXAMPLES_CPPUT=y
+-CONFIG_CPPUTEST_FRAMEWORK=y
+-CONFIG_EXAMPLES_NSH_CXXINITIALIZE=y
+-CONFIG_DEBUG_CXX=y
+-CPPUTEST_STD_CPP_LIB_DISABLED=y
+-CPPUTEST_USE_MEM_LEAK_DETECTION=y
+-
+-CONFIG_FSUTILS_MKFATFS=y
+-CONFIG_NRF52_PROGMEM=y
+-CONFIG_ARCH_HAVE_PROGMEM=y
+diff --git a/configs/zglue_zeus2_chicago/scripts/ld.fast_config_file b/configs/zglue_zeus2_chicago/scripts/ld.fast_config_file
+index caa6d33f87..c0ad22d643 100644
+--- a/configs/zglue_zeus2_chicago/scripts/ld.fast_config_file
++++ b/configs/zglue_zeus2_chicago/scripts/ld.fast_config_file
+@@ -137,7 +137,6 @@ SECTIONS
+ 	   __fast_config_file_end__ = .;
+ 	   . = ALIGN(0x1000);
+ 	   __fast_config_section_end__ =  (NRF_FLASH_FAST_CONFIG_FILE_LENGTH + __fast_config_section_start__);
+-	   . = __fast_config_section_end__;
+ 	} > flash
+ 	_efastcfgdata = ABSOLUTE(.);
+ 
+diff --git a/configs/zglue_zeus2_chicago/src/Makefile b/configs/zglue_zeus2_chicago/src/Makefile
+index 660317d58f..376dd2dac7 100644
+--- a/configs/zglue_zeus2_chicago/src/Makefile
++++ b/configs/zglue_zeus2_chicago/src/Makefile
+@@ -1,8 +1,10 @@
+ ############################################################################
+-# configs/fast_api_debug/src/Makefile
++# configs/zglue_zeus2_chicago/src/Makefile
+ #
+ #   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ #   Author: dev@ziggurat29.com
++#   Copyright (C) 2018 Zglue Inc. All rights reserved.
++#   Author: bill@zglue.com
+ #
+ # Redistribution and use in source and binary forms, with or without
+ # modification, are permitted provided that the following conditions
+diff --git a/configs/zglue_zeus2_chicago/src/code_analysis.c b/configs/zglue_zeus2_chicago/src/code_analysis.c
+index ac296786ec..b460060b26 100644
+--- a/configs/zglue_zeus2_chicago/src/code_analysis.c
++++ b/configs/zglue_zeus2_chicago/src/code_analysis.c
+@@ -1,5 +1,5 @@
+ /****************************************************************************
+- * configs/fast_nrf52832_dk/src/code_analysis.c
++ * configs/zglue_zeus2_chicago/src/code_analysis.c
+  *
+  *   Copyright (C) 2017 Zglue  Inc. All rights reserved.
+  *   Author: Levin Li <zhiqiang@zglue.com>
+diff --git a/configs/zglue_zeus2_chicago/src/nrf52_appinit.c b/configs/zglue_zeus2_chicago/src/nrf52_appinit.c
+index 4ebe04528d..e9ef1b2f37 100644
+--- a/configs/zglue_zeus2_chicago/src/nrf52_appinit.c
++++ b/configs/zglue_zeus2_chicago/src/nrf52_appinit.c
+@@ -1,8 +1,10 @@
+ /****************************************************************************
+- *   configs/fast_nrf52832_dk/src/nrf52_appinit.c
++ *   configs/zglue_zeus2_chicago/src/nrf52_appinit.c
+  *
+  *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+  *   Author: Gregory Nutt <gnutt@nuttx.org>
++ *   Copyright (C) 2018 zGlue Inc. All rights reserved.
++ *   Author: Bill Rees <bill@zglue.com>
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+@@ -51,6 +53,7 @@
+ 
+ #include <nuttx/arch.h>
+ #include <nuttx/board.h>
++#include <nuttx/wqueue.h>
+ #include <nuttx/mtd/mtd.h>
+ #include <nuttx/drivers/drivers.h>
+ #include <nuttx/fs/nxffs.h>
+@@ -67,6 +70,7 @@
+ #include <nuttx/spi/spi.h>
+ #include <nuttx/spi/spi_transfer.h>
+ #include <nuttx/drivers/drivers.h>
++#include <nuttx/sensors/sensors.h>
+ #include "nrf52_i2c.h"
+ 
+ #include "nrf52_spi.h"
+@@ -105,6 +109,13 @@
+ #include "nrf52_jtag.h"
+ #endif
+ 
++#ifdef CONFIG_BQ25120A
++#include <nuttx/sensors/bq25120a.h>
++#endif
++
++#ifdef CONFIG_SENSORS_MAX8614X
++#include <nuttx/sensors/max8614x.h>
++#endif
+ 
+ /****************************************************************************
+  * Public Functions
+@@ -353,6 +364,61 @@ int nrf52_internal_flash_fs_initialize(void)
+   return ret;
+ }
+ 
++#if defined(CONFIG_BQ25120A)
++static int bq25120a_attach_gpio_irq(FAR struct sensor_dev_s *dev, uint32_t *irq, \
++                                    void (*handler)(uint32_t pin, sensor_gpio_polarity_t action))
++{
++  int32_t ret = 0;
++
++  return ret;
++}
++
++static int bq25120a_enable_int_pin(FAR struct sensor_dev_s *dev, uint32_t pin, bool enable)
++{
++  int32_t ret = 0;
++
++#ifdef CONFIG_NRF52_GPIOTE
++  nrf_drv_gpiote_in_event_enable(pin, enable);
++#endif
++  return ret;
++}
++
++#endif /* defined(CONFIG_BQ25120A) */
++
++
++#if defined(CONFIG_SENSORS_MAX8614X) && defined(CONFIG_MAX8614X_INTF_SPI)
++
++static int max8614x_attach_gpio_irq(FAR struct sensor_dev_s *dev, uint32_t *irq, \
++                                    void (*handler)(uint32_t pin, sensor_gpio_polarity_t action))
++{
++  uint32_t pin_no;
++  int ret = OK;
++
++  // nrf_drv_gpiote_in_config_t pin_cfg = GPIOTE_CONFIG_IN_SENSE_LOTOHI(false);
++
++  pin_no = BOARD_MAX86140_IRQ_PIN;
++  *irq = pin_no;
++
++
++#ifdef CONFIG_NRF52_GPIOTE
++  ret = nrf_drv_gpiote_in_init(pin_no, &pin_cfg, (nrf_drv_gpiote_evt_handler_t) handler);
++  ret = nrf_sdk_retcode_to_nuttx(ret);
++#endif
++
++  return ret;
++}
++
++static int max8614x_enable_int_pin(FAR struct sensor_dev_s *dev, uint32_t pin, bool enable)
++{
++
++#ifdef CONFIG_NRF52_GPIOTE
++  nrf_drv_gpiote_in_event_enable(pin, enable);
++#endif
++  return OK;
++}
++
++#endif /* defined(CONFIG_SENSORS_MAX8614X) && defined(CONFIG_MAX8614X_INTF_SPI) */
++
+ /****************************************************************************
+  * Name: board_app_initialize
+  *
+@@ -495,6 +561,36 @@ int board_app_initialize(uintptr_t arg)
+     }
+ #endif
+ 
++#if defined(CONFIG_BQ25120A)
++
++  struct sensor_config_s *bq25120a_config;
++  struct sensor_low_level_operations_s bq25120a_ll_op =
++  {
++    bq25120a_attach_gpio_irq,
++    bq25120a_enable_int_pin,
++  };
++#endif
++
++#if defined(CONFIG_BQ25120A) && defined(CONFIG_BQ25120A_INTF_I2C)
++
++  struct sensor_config_s bq25120a_i2c_config =
++  {
++    .bus_selection = BQ25120A_SPI_INTF,
++    .bus.i2c    =
++    {
++      .i2c = i2c0,
++      .config =
++      {
++        .address = I2C_ADDR_BQ25120A,
++        .addrlen = 7,
++      },
++    },
++  };
++  bq25120a_config = &bq25120a_i2c_config;
++  ret = bq25120a_register("/dev/bq25120a", bq25120a_config, &bq25120a_ll_op);
++
++#endif /* CONFIG_BQ25120A && CONFIG_BQ25120A_INTF_I2C */
++
+ #endif//CONFIG_NRF52_I2C0
+ 
+ #ifdef CONFIG_NRF52_I2C1
+@@ -525,20 +621,75 @@ int board_app_initialize(uintptr_t arg)
+ #if defined(CONFIG_NRF52_SPI2)
+   FAR struct spi_dev_s *spi2;
+ 
+-#ifdef CONFIG_NRF52_SPI2
+   /* Initialize SPI2 */
++#ifdef CONFIG_NRF52_SPI2
+   spi2 = nrf52_spibus_initialize(2, true);
+   if (!spi2)
+     {
+       return -ENODEV;
+     }
+-#endif
++#endif /* NRF52_SP2 */
++
++
++#if defined(CONFIG_BQ25120A) && defined(CONFIG_BQ25120A_INTF_SPI)
++
++  struct sensor_config_s bq25120a_spi_config =
++  {
++    .bus_selection = BQ25120A_SPI_INTF,
++    .bus.spi =
++    {
++      .dev = spi2,
++      .frequency = SPI_FREQUENCY_BQ25120A,
++      .devid = SPIDEV_ID(SPIDEV_BATT_PWR_MGMT(0), false),
++      .mode = SPIDEV_MODE3,
++    },
++  };
++  bq25120a_config = &bq25120a_spi_config;
++
++  ret = bq25120a_register("/dev/bq25120a", bq25120a_config, &bq25120a_ll_op);
++
++  if (ret < 0)
++    {
++      snerr("ERROR: Error registering bq25120a\n");
++      return -ENODEV;
++    }
++
++#endif /* CONFIG_BQ25120A && CONFIG_BQ25120A_INTF_SPI */
++
++#if defined(CONFIG_SENSORS_MAX8614X) && defined(CONFIG_MAX8614X_INTF_SPI)
++
++  struct sensor_config_s max8614x_config =
++  {
++    .bus_selection = MAX8614X_SPI_INTF,
++    .bus.spi =
++    {
++      .dev = spi2,
++      .frequency = SPI_FREQUENCY_MAX8614X,
++      .devid = SPIDEV_ID(SPIDEV_ACC_GYRO_COMB(0), false),
++      .mode = SPIDEV_MODE3,
++    },
++  };
++
++  struct sensor_low_level_operations_s max8614x_ll_ops =
++  {
++    .attach_irq = max8614x_attach_gpio_irq,
++    .enable_gpio_pin = max8614x_enable_int_pin,
++  };
++
++  ret = max8614x_register(MAX8614X_DEVPATH, &max8614x_config, &max8614x_ll_ops);
++  if (ret < 0)
++    {
++      snerr("ERROR: Error registering max8614x\n");
++      return -ENODEV;
++    }
++#endif /* CONFIG_SENSORS_MAX8614X  && CONFIG_MAX8614X_INTF_SPI */
+ 
+ #if defined(CONFIG_FAST_SPI)
+-  fastapi_config.spi_devid = SPIDEV_ID(SPIDEVTYPE_ZGLUE_FAST,0);
++  fastapi_config.spi_devid = SPIDEV_ID(SPIDEV_ZGLUE_FAST(0), 0);
+   fastapi_driver.spi = spi2;
+ #endif
+ #endif /* CONFIG_NRF52_SPI2 */
++
+ #endif /* CONFIG_SPI */
+ 
+ #if defined(CONFIG_SYSTEM_FAST_DRIVER)
+@@ -556,6 +707,7 @@ int board_app_initialize(uintptr_t arg)
+   gpio_pin_write(BOARD_ULPM_WAKEUP_PIN, 0);
+ #endif
+ 
++
+ #ifdef CONFIG_NRF52_PPI
+   ret = nrf_drv_ppi_init();
+   if (ret != 0)
+diff --git a/configs/zglue_zeus2_chicago/src/nrf52_boot.c b/configs/zglue_zeus2_chicago/src/nrf52_boot.c
+index 1982447e0d..a32a404382 100644
+--- a/configs/zglue_zeus2_chicago/src/nrf52_boot.c
++++ b/configs/zglue_zeus2_chicago/src/nrf52_boot.c
+@@ -1,5 +1,5 @@
+ /************************************************************************************
+- *   configs/fast_nrf52832_dk/src/nrf52_boot.c
++ *   configs/zglue_zeus2_chicago/src/nrf52_boot.c
+  *
+  *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+  *   Author: Gregory Nutt <gnutt@nuttx.org>
+diff --git a/configs/zglue_zeus2_chicago/src/nrf52_ostest.c b/configs/zglue_zeus2_chicago/src/nrf52_ostest.c
+index 00636fa9a5..0869dfea66 100644
+--- a/configs/zglue_zeus2_chicago/src/nrf52_ostest.c
++++ b/configs/zglue_zeus2_chicago/src/nrf52_ostest.c
+@@ -1,5 +1,5 @@
+ /************************************************************************************
+- *   configs/fast_nrf52832_dk/src/nrf52_ostest.c
++ *   configs/zglue_zeus2_chicago/src/nrf52_ostest.c
+  *
+  *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
+  *   Author: Gregory Nutt <gnutt@nuttx.org>
+diff --git a/configs/zglue_zeus2_chicago/src/nrf52_user_spi.c b/configs/zglue_zeus2_chicago/src/nrf52_user_spi.c
+index fbe19f2d3e..9f692201b5 100644
+--- a/configs/zglue_zeus2_chicago/src/nrf52_user_spi.c
++++ b/configs/zglue_zeus2_chicago/src/nrf52_user_spi.c
+@@ -1,5 +1,5 @@
+ /****************************************************************************
+- *   configs/fast_nrf52832_dk/src/nrf52_user_spi.c
++ *   configs/zglue_zeus2_chicago/src/nrf52_user_spi.c
+  *
+  *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
+  *   Copyright (C) 2017 Zglue  Inc. All rights reserved.
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index 8d56ab8259..d40e2f4fd3 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -490,7 +490,6 @@ source drivers/contactless/Kconfig
+ 
+ menuconfig SYSTEM_FAST_DRIVER
+ 	bool "Zglue FAST Driver Support"
+-	depends on ARCH_HAVE_FAST
+ 	default n
+ 	---help---
+ 		Zglue FAST driver. Supports both zeus1 and zeus2
+diff --git a/drivers/power/Kconfig b/drivers/power/Kconfig
+index 94d29122d7..0cbfa108a1 100644
+--- a/drivers/power/Kconfig
++++ b/drivers/power/Kconfig
+@@ -367,10 +367,94 @@ config DEBUG_BQ2429X
+ 
+ endif # BQ2429X
+ 
++config BQ25120A
++        bool "BQ25120A Battery charger support"
++	default n
++	select BQ25120A_INTF_SPI
++	depends on BATTERY_CHARGER
++	---help---
++		Enable driver support for TI's Battery Charger (BQ25120A) PMIC
++                "Low IQ Highly Integrated Battery Charge Management Solution"
++
++
++if  BQ25120A
++
++choice
++        prompt "Select the bus"
++        default BQ25120A_INTF_I2C
++
++config BQ25120A_INTF_I2C
++	bool "Enable the i2c interface"
++	select I2C
++        select SENSOR_INTF_I2C
++	---help---
++		Use the I2C bus to access BQ25120A
++
++config BQ25120A_INTF_SPI
++	bool "Enable the spi interface"
++	select SPI
++        select SENSOR_INTF_SPI
++	---help---
++		Use the SPI bus to access BQ25120A
++endchoice
++
++if BQ25120A_INTF_I2C
++
++choice
++        prompt "Set the I2C address."
++        default BQ25120A_I2C_ADDR_0x68
++
++config BQ25120A_I2C_ADDR_0x68
++        bool "Set the i2c address to 0x68"
++        ---help---
++                bnlah
++
++config BQ25120A_I2C_ADDR_0x69
++        bool "Set the i2c address to 0x69"
++        ---help---
++                bnlah
++endchoice
++
++endif # BQ25120A_INTF_I2C
++
++
++if  BQ25120A_INTF_SPI
++
++choice
++	prompt "Set the SPI Clock Frequency"
++	default BQ25120A_SPI_125KHZ
++
++config BQ25120A_SPI_125KHZ
++	bool "125KHZ"
++
++config BQ25120A_SPI_250KHZ
++	bool "250KHZ"
++
++config BQ25120A_SPI_500KHZ
++	bool "500KHZ"
++
++config BQ25120A_SPI_1MHZ
++	bool "1MHZ"
++
++config BQ25120A_SPI_2MHZ
++	bool "2MHZ"
++
++config BQ25120A_SPI_4MHZ
++	bool "4MHZ"
++
++config BQ25120A_SPI_8MHZ
++	bool "8MHZ"
++
++endchoice
++
++endif # BQ25120A_INTF_SPI
++
++endif # BQ25120A
++
+ config BATTERY_GAUGE
+ 	bool "Battery Fuel Gauge support"
+ 	default n
+-	
++
+ config MAX1704X
+ 	bool "MAX1704X Battery fuel gauge support"
+ 	default n
+diff --git a/drivers/power/Make.defs b/drivers/power/Make.defs
+index f4fe4c1a6a..a7d709ccbb 100644
+--- a/drivers/power/Make.defs
++++ b/drivers/power/Make.defs
+@@ -112,8 +112,12 @@ endif
+ 
+ endif
+ 
+-# Include power support in the build
++# Include battery suport in the build
++ifeq ($(CONFIG_BQ25120A),y)
++  CSRCS += bq25120a.c
++endif
+ 
++# Include power support in the build
+ POWER_DEPPATH := --dep-path power
+ POWER_VPATH := :power
+ POWER_CFLAGS := ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)power}
+diff --git a/drivers/power/bq25120a.c b/drivers/power/bq25120a.c
+new file mode 100644
+index 0000000000..8c6fd9f10d
+--- /dev/null
++++ b/drivers/power/bq25120a.c
+@@ -0,0 +1,314 @@
++/****************************************************************************
++ * drivers/sensors/bq25120a.c
++ * Character driver for the
++ *      "TI BQ25120A: Highly Integrated Battery Charge Management Solution"
++ *
++ *   Copyright (C) 2018 zGlue Inc. All rights reserved.
++ *   Author: Bill Rees <bill@zglue.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name NuttX nor the names of its contributors may be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ *
++ ****************************************************************************/
++
++/****************************************************************************
++ * Included Files
++ ****************************************************************************/
++
++#include <nuttx/config.h>
++
++#include <stdlib.h>
++#include <errno.h>
++#include <debug.h>
++
++#include <nuttx/kmalloc.h>
++#include <nuttx/fs/fs.h>
++#include <nuttx/spi/spi.h>
++#include <nuttx/wqueue.h>
++#include <nuttx/sensors/sensors.h>
++#include <nuttx/sensors/bq25120a.h>
++
++#if defined(CONFIG_SPI) && defined(CONFIG_BQ25120A)
++
++/****************************************************************************
++ * Pre-processor Definitions
++ ****************************************************************************/
++
++/****************************************************************************
++ * Private
++ ****************************************************************************/
++
++struct bq25120a_dev_s
++{
++  FAR struct spi_dev_s *spi;           /* Saved SPI driver instance */
++  int16_t temp;
++};
++
++
++/****************************************************************************
++ * Private Function Prototypes
++ ****************************************************************************/
++
++static void    bq25120a_lock(FAR struct spi_dev_s *spi);
++static void    bq25120a_unlock(FAR struct spi_dev_s *spi);
++
++/* Character driver methods */
++
++static int     bq25120a_open(FAR struct file *filep);
++static int     bq25120a_close(FAR struct file *filep);
++static ssize_t bq25120a_read(FAR struct file *, FAR char *, size_t);
++static ssize_t bq25120a_write(FAR struct file *filep, FAR const char *buffer,
++                              size_t buflen);
++
++/****************************************************************************
++ * Private Data
++ ****************************************************************************/
++
++static const struct file_operations g_bq25120afops =
++{
++  bq25120a_open,
++  bq25120a_close,
++  bq25120a_read,
++  bq25120a_write,
++  NULL,
++  NULL
++#ifndef CONFIG_DISABLE_POLL
++  , NULL
++#endif
++};
++
++/****************************************************************************
++ * Private Functions
++ ****************************************************************************/
++
++/****************************************************************************
++ * Name: bq25120a_lock
++ *
++ * Description:
++ *   Lock and configure the SPI bus.
++ *
++ ****************************************************************************/
++
++static void bq25120a_lock(FAR struct spi_dev_s *spi)
++{
++  (void)SPI_LOCK(spi, true);
++  SPI_SETMODE(spi, SPIDEV_MODE0);
++  SPI_SETBITS(spi, 8);
++  (void)SPI_HWFEATURES(spi, 0);
++  SPI_SETFREQUENCY(spi, 400000);
++}
++
++/****************************************************************************
++ * Name: bq25120a_unlock
++ *
++ * Description:
++ *   Unlock the SPI bus.
++ *
++ ****************************************************************************/
++
++static void bq25120a_unlock(FAR struct spi_dev_s *spi)
++{
++  (void)SPI_LOCK(spi, false);
++}
++
++/****************************************************************************
++ * Name: bq25120a_open
++ *
++ * Description:
++ *   This function is called whenever the BQ25120A device is opened.
++ *
++ ****************************************************************************/
++
++static int bq25120a_open(FAR struct file *filep)
++{
++  return OK;
++}
++
++/****************************************************************************
++ * Name: bq25120a_close
++ *
++ * Description:
++ *   This routine is called when the BQ25120A device is closed.
++ *
++ ****************************************************************************/
++
++static int bq25120a_close(FAR struct file *filep)
++{
++  return OK;
++}
++
++/****************************************************************************
++ * Name: bq25120a_read
++ ****************************************************************************/
++
++static ssize_t bq25120a_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
++{
++  FAR struct inode         *inode = filep->f_inode;
++  FAR struct bq25120a_dev_s *priv  = inode->i_private;
++  int                       ret   = 2;
++  int16_t                   regmsb;
++  int16_t                   regval;
++
++  /* Check for issues */
++
++  if (!buffer)
++    {
++      snerr("ERROR: Buffer is null\n");
++      return -EINVAL;
++    }
++
++  if (buflen != 2)
++    {
++      snerr("ERROR: You can't read something other than 16 bits (2 bytes)\n");
++      return -EINVAL;
++    }
++
++  /* Enable BQ25120A's chip select */
++
++  bq25120a_lock(priv->spi);
++  SPI_SELECT(priv->spi, SPIDEVTYPE_BATT_PWR_MGMT, true);
++
++  /* Read ... */
++  SPI_RECVBLOCK(priv->spi, &regmsb, 2);
++
++  /* Disable BQ25120A's chip select */
++  SPI_SELECT(priv->spi, SPIDEVTYPE_BATT_PWR_MGMT, false);
++  bq25120a_unlock(priv->spi);
++
++  regval  = (regmsb & 0xFF00) >> 8;
++  regval |= (regmsb & 0xFF) << 8;
++
++  sninfo("Read from BQ25120A = 0x%04X\n", regval);
++
++#if defined(PORT_TO_BQ25120A)
++  /* Verify if the device ID bit is really zero */
++  if (regval & MAX6675_DEV_ID)
++    {
++      snerr("ERROR: The Device ID bit needs to be 0 !\n");
++      ret = -EINVAL;
++    }
++#endif
++
++  /* Read temperature */
++
++  SPI_RECVBLOCK(priv->spi, &regmsb, 2);
++
++  /* Disable BQ25120A's chip select */
++
++  SPI_SELECT(priv->spi, SPIDEVTYPE_TEMPERATURE, false);
++  bq25120a_unlock(priv->spi);
++
++  regval  = (regmsb & 0xFF00) >> 8;
++  regval |= (regmsb & 0xFF) << 8;
++
++  sninfo("Read from BQ25120A = 0x%04X\n", regval);
++
++#if defined(PORT_TO_BQ25120A)
++  /* Verify if the device ID bit is really zero */
++  if (regval & MAX6675_DEV_ID)
++    {
++      snerr("ERROR: The Device ID bit needs to be 0 !\n");
++      ret = -EINVAL;
++    }
++
++  /* Detect if termocople input is open */
++
++  if (regval & MAX6675_OPEN_CIRCUIT)
++    {
++      snerr("ERROR: The thermocouple input is not connected!\n");
++      ret = -EINVAL;
++    }
++
++  /* Get the temperature */
++
++  *temp = (regval & MAX6675_TEMP_COUPLE) >> 3;
++
++  /* Return two bytes, the temperature is fixed point Q10.2, then divide by 4
++   * in your application in order to get real temperature in Celsius degrees.
++   */
++#endif
++  return ret;
++}
++
++/****************************************************************************
++ * Name: bq25120a_write
++ ****************************************************************************/
++
++static ssize_t bq25120a_write(FAR struct file *filep, FAR const char *buffer,
++                              size_t buflen)
++{
++  return -ENOSYS;
++}
++
++/****************************************************************************
++ * Public Functions
++ ****************************************************************************/
++
++/****************************************************************************
++ * Name: bq25120a_register
++ *
++ * Description:
++ *   Register the BQ25120A character device as 'devpath'
++ *
++ * Input Parameters:
++ *   devpath - The full path to the driver to register. E.g., "/dev/temp0"
++ *   spi - An instance of the SPU interface to use to communicate with
++ *   BQ25120A.
++ *
++ * Returned Value:
++ *   Zero (OK) on success; a negated errno value on failure.
++ *
++ ****************************************************************************/
++
++/* int bq25120a_register(FAR const char *devpath, FAR struct spi_dev_s *spi) */
++int32_t bq25120a_register(FAR const char *devpath, FAR struct sensor_config_s *config,
++                          FAR struct sensor_low_level_operations_s *ll_ops)
++{
++  FAR struct bq25120a_dev_s *priv;
++  int ret;
++
++  /* Initialize the BQ25120A device structure */
++  priv = (FAR struct bq25120a_dev_s *)kmm_malloc(sizeof(struct bq25120a_dev_s));
++  if (priv == NULL)
++    {
++      snerr("ERROR: Failed to allocate instance\n");
++      return -ENOMEM;
++    }
++
++  /* Register the character driver */
++  ret = register_driver(devpath, &g_bq25120afops, 0666, priv);
++  if (ret < 0)
++    {
++      snerr("ERROR: Failed to register driver: %d\n", ret);
++      kmm_free(priv);
++    }
++
++  return ret;
++}
++
++
++#endif /* defined(CONFIG_SPI) && defined(CONFIG_BQ25120A) */
+diff --git a/drivers/power/bq25120a_impl.h b/drivers/power/bq25120a_impl.h
+new file mode 100644
+index 0000000000..3e8f60ec4f
+--- /dev/null
++++ b/drivers/power/bq25120a_impl.h
+@@ -0,0 +1,69 @@
++/********************************************************************************************
++ * drivers/sensors/bq25120a_impl.h
++ *
++ *   Copyright (C) 2018 zGlue.h, All rights reserved.
++ *   Author: Bill Rees <bill@zglue.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name NuttX nor the names of its contributors may be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ *
++ ********************************************************************************************/
++
++#ifndef __DRIVERS_SENSORS_BQ25120A_H
++#define __DRIVERS_SENSORS_BQ25120A_H
++
++/********************************************************************************************
++ * Included Files
++ ********************************************************************************************/
++
++#include <nuttx/config.h>
++
++#include <semaphore.h>
++
++#include <nuttx/wdog.h>
++#include <nuttx/clock.h>
++#include <nuttx/wqueue.h>
++#include <nuttx/sensors/bq25120a.h>
++
++typedef enum
++{
++  STATUS_SHIP_MODE_CNTRL  = 0x00,
++  FAULTS_AND_MASK,
++  TS_CTRL_AND_FAULTS_MASK,
++  FAST_CHARGE_CNTRL,
++  TERMINATE_PRECHRG_I2C_ADDR,
++  BASIC_VOLTAGE_CNTRL,
++  SYS_VOUT_CTRL,
++  LOAD_SWTICH_LDO_CNTRL,
++  PUSH_BUTTON_CONTROL,
++  ILIM_BATTERY_UVLO_CNTRL,
++  VLT_BASED_BATTERY_MONITOR,
++  VIN_DPM_AND_TIMERS,
++} reg_map_bq25120a_t;
++
++
++#endif /* __DRIVERS_SENSORS_BQ25120A_H */
+diff --git a/drivers/sensors/Kconfig b/drivers/sensors/Kconfig
+index 5d4e611b44..3a579c81e1 100644
+--- a/drivers/sensors/Kconfig
++++ b/drivers/sensors/Kconfig
+@@ -273,6 +273,20 @@ config HTS221_NPOLLWAITERS
+ 
+ endif # SENSORS_HTS221
+ 
++config  SENSOR_INTF_SPI
++        bool
++	default n
++	---help---
++                General flag for any sensor to use for deciding what io protocol to setup.
++
++
++config  SENSOR_INTF_I2C
++        bool
++	default n
++	---help---
++                General flag for any sensor to use for deciding what io protocol to setup.
++
++
+ config SENSORS_L3GD20
+ 	bool "STMicro L3GD20 Gyroscope Sensor support"
+ 	default n
+@@ -587,7 +601,9 @@ config SENSORS_MAX6675
+ 	---help---
+ 		Enables support for the MAX6675 driver
+ 
+-config SENSORS_LIS3MDL
++# config SENSORS_LIS3MDL
++
++config LIS3MDL
+ 	bool "STMicro LIS3MDL 3-Axis magnetometer support"
+ 	default n
+ 	select SPI
+@@ -692,3 +708,67 @@ config XEN1210_REGDEBUG
+ config SENSORS_ZEROCROSS
+ 	bool "Zero Cross Sensor"
+ 	default n
++
++config SENSORS_MAX8614X
++	bool "Maxim MAX8614X Optical Pulse Oximeter / Heart Rate"
++	default n
++	select SCHED_HPWORK
++	select MAX8614X_INTF_SPI
++	---help---
++		Enables support for the MAX8614x driver supporting
++                the Maxim Best-in-class Optical Pulse Oximeter and
++                Heart-Rate Sensor for Wearable Health.
++
++if SENSORS_MAX8614X
++
++config MAX8614X_INTF_SPI
++	bool "SPI"
++        default n
++	select SPI
++        select SENSOR_INTF_SPI
++	---help---
++		use SPI bus to access BMI160
++choice
++	prompt "Maxim MAX8614X SPI Clock Frequency"
++	default MAX8614X_SPI_4MHZ
++	depends on MAX8614X_INTF_SPI
++
++config MAX8614X_SPI_125KHZ
++	bool "125KHZ"
++	---help---
++		SPI clock frequency of 125KHZ
++
++config MAX8614X_SPI_250KHZ
++	bool "250KHZ"
++	---help---
++		SPI clock frequency of 250KHZ
++
++config MAX8614X_SPI_500KHZ
++	bool "500KHZ"
++	---help---
++		SPI clock frequency of 500KHZ
++
++config MAX8614X_SPI_1MHZ
++	bool "1MHZ"
++	---help---
++		SPI clock frequency of 1MHZ
++
++config MAX8614X_SPI_2MHZ
++	bool "2MHZ"
++	---help---
++		SPI clock frequency of 2MHZ
++
++config MAX8614X_SPI_4MHZ
++	bool "4MHZ"
++	---help---
++		SPI clock frequency of 4MHZ
++
++config MAX8614X_SPI_8MHZ
++	bool "8MHZ"
++	---help---
++		SPI clock frequency of 8MHZ
++
++endchoice
++
++endif # MAX8614X
++
+diff --git a/drivers/sensors/Make.defs b/drivers/sensors/Make.defs
+index bcc35fc6b8..0422bce42d 100644
+--- a/drivers/sensors/Make.defs
++++ b/drivers/sensors/Make.defs
+@@ -187,6 +187,11 @@ ifeq ($(CONFIG_SENSORS_MAX6675),y)
+   CSRCS += max6675.c
+ endif
+ 
++ifeq ($(CONFIG_SENSORS_MAX8614X),y)
++  CSRCS += max8614x.c
++  CSRCS += sensors.c
++endif
++
+ ifeq ($(CONFIG_SENSORS_MPL115A),y)
+   CSRCS += mpl115a.c
+ endif
+diff --git a/drivers/sensors/bmi160.c b/drivers/sensors/bmi160.c
+index 8816066772..0a136ed820 100644
+--- a/drivers/sensors/bmi160.c
++++ b/drivers/sensors/bmi160.c
+@@ -50,6 +50,9 @@
+ #include <nuttx/wqueue.h>
+ 
+ #include <nuttx/fs/fs.h>
++#include <nuttx/spi/spi.h>
++#define SENSOR_INTF_I2C
++#include <nuttx/sensors/sensors.h>
+ #include <nuttx/sensors/bmi160.h>
+ 
+ #ifdef CONFIG_BMI160
+diff --git a/drivers/sensors/max8614x.c b/drivers/sensors/max8614x.c
+new file mode 100644
+index 0000000000..90cfb9214e
+--- /dev/null
++++ b/drivers/sensors/max8614x.c
+@@ -0,0 +1,746 @@
++/****************************************************************************
++ * drivers/sensors/max8614x.c
++ * Character driver for the "Maxim MAX86140/86141 Optcal Pulse Oiximeter and
++ * Heart-Rate Sensor for Wearable Health"
++ *
++ *   Copyright (C) 2018 zGlue Inc. All rights reserved.
++ *   Author: Bill Rees <bill@zglue.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name NuttX nor the names of its contributors may be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ *
++ ****************************************************************************/
++
++/****************************************************************************
++ * Included Files
++ ****************************************************************************/
++
++#include <nuttx/config.h>
++
++#include <stdlib.h>
++#include <string.h>
++#include <errno.h>
++#include <debug.h>
++
++#include <nuttx/kmalloc.h>
++#include <nuttx/wqueue.h>
++#include <nuttx/fs/fs.h>
++#include <nuttx/spi/spi.h>
++#include <arch/board/board.h>
++#include <nuttx/sensors/ioctl.h>
++#include <nuttx/sensors/sensors.h>
++#include <nuttx/sensors/max8614x.h>
++#include "max8614x_impl.h"
++
++#if defined(CONFIG_SENSORS_MAX8614X)
++
++/****************************************************************************
++ * Pre-processor Definitions
++ ****************************************************************************/
++
++map_priv(get, sensor_dev);
++
++/****************************************************************************
++ * Private
++ ****************************************************************************/
++
++/* Alias for SPI_LOCK() calls to make obvious what action is requested. */
++bool lock, unlock;
++
++static struct sensor_dev_s g_max8614x_dev;
++int32_t (*max8614x_register_read) (sensor_dev_t *dev, uint8_t regaddr, uint8_t *data, uint16_t cnt);
++int32_t (*max8614x_register_write)(sensor_dev_t *dev, uint8_t regaddr, uint8_t *data, uint16_t cnt);
++int32_t (*max8614x_bus_setup)(struct sensor_config_s *dconf);
++
++/****************************************************************************
++ * Private Function Prototypes
++ ****************************************************************************/
++
++int32_t max8614x_register_spi_read(struct sensor_dev_s *dev, uint8_t reg_addr,
++                                   uint8_t *data, uint16_t len);
++int32_t max8614x_register_spi_write(struct sensor_dev_s *dev, uint8_t reg_addr,
++                                    uint8_t *data, uint16_t len);
++int8_t max861x_sample_read(struct sensor_dev_s *sdev, uint32_t *data);
++static void    max8614x_lock(FAR struct spi_dev_s *sensor);
++static void    max8614x_unlock(FAR struct spi_dev_s *sensor);
++
++/* Character driver methods */
++
++static int     max8614x_open(FAR struct file *filep);
++static int     max8614x_close(FAR struct file *filep);
++static ssize_t max8614x_read(FAR struct file *, FAR char *, size_t);
++static ssize_t max8614x_write(FAR struct file *filep, FAR const char *buffer,
++                              size_t buflen);
++static int max8614x_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
++#ifndef CONFIG_DISABLE_POLL
++static int max8614x_poll(FAR struct file *filep, FAR struct pollfd *fds,
++                         bool setup);
++#endif
++
++/****************************************************************************
++ * Private Data
++ ****************************************************************************/
++
++static const struct file_operations g_max8614xfops =
++{
++  max8614x_open,
++  max8614x_close,
++  max8614x_read,
++  max8614x_write,
++  NULL,
++  max8614x_ioctl,
++#ifndef CONFIG_DISABLE_POLL
++  max8614x_poll,
++#endif
++  NULL
++#ifndef CONFIG_DISABLE_POLL
++  , NULL
++#endif
++};
++
++
++#define aSSERT(f)        do { if (!(f)) PANIC(); } while (0)
++#define vERIFY(f)        do { if ((f) < 0) PANIC(); } while (0)
++
++#define PRIV(a, b)  (!(b != NULL && fp->f_inode != NULL)) ? : PANIC();
++
++#define A_PRIV(a, b) if (!(b != NULL && fp->f_inode != NULL))                    \
++    {                                                           \
++        PANIC();                                                \
++    }                                                           \
++  else                                                          \
++    {                                                           \
++      struct inode = b->f_inode;                               \
++      if (!(inode->i_private != NULL))                          \
++        {                                                       \
++          PANIC();                                              \
++        }                                                       \
++      return (a *) inode->i_private;                         \
++    }                                                           \
++
++
++#define _TRANSMOG(type, fp) {                                    \
++  { if (!(fp != NULL && fp->f_inode != NULL)) { PANIC(); }  }   \
++  inode = fp->f_inode;                                          \
++  { if (!(inode->i_private != NULL)) { PANIC();  }  }           \
++  return (type *) inode->i_private;                             \
++ }
++
++#define A_TRANSMOG(type, fp) (type *)fp->f_inode->i_private
++
++#define foo(type, fp)   {       \
++  if (fp != NULL && fp->f_inode != NULL) {                      \
++        struct inode *inode;                                    \
++        inode = fp->f_inode;                                    \
++        return (type *) inode->i_private;                       \
++  } else {  PANIC(); }                                          \
++  }
++
++/****************************************************************************
++ * Private Functions
++ ****************************************************************************/
++
++/****************************************************************************
++ * Name: max8614x_lock
++ *
++ * Description:
++ *   Lock and configure the SPI bus.
++ *
++ ****************************************************************************/
++
++static void max8614x_lock(FAR struct spi_dev_s *spi)
++{
++  (void)SPI_LOCK(spi, true);
++  SPI_SETMODE(spi, SPIDEV_MODE0);
++  SPI_SETBITS(spi, 8);
++  (void)SPI_HWFEATURES(spi, 0);
++  SPI_SETFREQUENCY(spi, 400000);
++}
++
++/****************************************************************************
++ * Name: max8614x_unlock
++ *
++ * Description:
++ *   Unlock the SPI bus.
++ *
++ ****************************************************************************/
++
++static void max8614x_unlock(FAR struct spi_dev_s *spi)
++{
++  (void)SPI_LOCK(spi, false);
++}
++
++/****************************************************************************
++ * Name: max8614x_spi_bus_setup
++ ****************************************************************************/
++int32_t max8614x_spi_bus_setup(struct sensor_config_s *dconf)
++{
++
++  SPI_LOCK(dconf->bus.spi.dev, lock);
++  SPI_SETMODE(dconf->bus.spi.dev, dconf->bus.spi.mode);
++  SPI_SETBITS(dconf->bus.spi.dev, dconf->bus.spi.bits);
++  SPI_SETFREQUENCY(dconf->bus.spi.dev, dconf->bus.spi.frequency);
++  SPI_LOCK(dconf->bus.spi.dev, unlock);
++
++  return OK;
++}
++
++/****************************************************************************
++ * Name: max8614x_spi_reg_read
++ ****************************************************************************/
++int32_t max8614x_register_spi_read(struct sensor_dev_s *dev, uint8_t reg_addr,
++                                   uint8_t *data, uint16_t len)
++{
++  struct sensor_spi_config_s *spi;
++
++  spi = &dev->config.bus.spi;
++
++  SPI_LOCK(spi->dev, true);
++
++  /* Set CS to low which selects the Max86140 */
++  SPI_SELECT(spi->dev, spi->devid, true);
++
++  /* Transmit the register address from where we want to read - the MSB needs
++   * to be set to indicate the read indication.
++   */
++  SPI_SEND(spi->dev, reg_addr);
++
++  /* Write idle bytes while receiving the required data */
++  if (len > 1)
++    {
++      SPI_EXCHANGE(spi->dev, NULL, data, len);
++    }
++  else
++    {
++      *data = SPI_SEND(spi->dev, 0);
++    }
++
++  /* Set CS to high which deselects the Max86140 */
++  SPI_SELECT(spi->dev, spi->devid, false);
++
++  SPI_LOCK(spi->dev, false);
++
++  return 0;
++}
++
++/****************************************************************************
++ * Name: max8614x_spi_reg_write
++ ****************************************************************************/
++int32_t max8614x_register_spi_write(struct sensor_dev_s *dev, uint8_t reg_addr,
++                                    uint8_t *data, uint16_t len)
++{
++  struct sensor_spi_config_s *spi;
++
++  spi = &dev->config.bus.spi;
++
++  /* Lock the SPI bus so that only one device can access it at the same time */
++
++  SPI_LOCK(spi->dev, true);
++
++  /* Set CS to low which selects the BMG160 */
++
++  SPI_SELECT(spi->dev, spi->devid, true);
++
++  /* Transmit the register address from where we want to read */
++
++  SPI_SEND(spi->dev, reg_addr);
++
++  /* Transmit the content which should be written in the register */
++
++  if (len > 1)
++    {
++      SPI_EXCHANGE(spi->dev, data, NULL, len);
++    }
++  else
++    {
++      SPI_SEND(spi->dev, *data);
++    }
++
++  /* Set CS to high which deselects the BMG160 */
++
++  SPI_SELECT(spi->dev, spi->devid, false);
++
++  /* Unlock the SPI bus */
++
++  SPI_LOCK(spi->dev, false);
++
++  return 0;
++}
++
++/****************************************************************************
++ * Name: max8614x_open
++ *
++ * Description:
++ *   This function is called whenever the MAX8614X device is opened.
++ *
++ ****************************************************************************/
++
++static int max8614x_open(FAR struct file *filep)
++{
++  return OK;
++}
++
++/****************************************************************************
++ * Name: max8614x_close
++ *
++ * Description:
++ *   This routine is called when the MAX8614X device is closed.
++ *
++ ****************************************************************************/
++
++static int max8614x_close(FAR struct file *filep)
++{
++  return OK;
++}
++
++/****************************************************************************
++ * Name: max8614x_read
++ ****************************************************************************/
++
++static ssize_t max8614x_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
++{
++  int          ret   = 2;
++  int16_t      regmsb;
++  sensor_dev_t *priv;
++
++
++  priv = get_priv(filep);
++  struct spi_dev_s *spi = priv->config.bus.spi.dev;
++
++  /* Check for issues */
++  if (!buffer)
++    {
++      snerr("ERROR: Buffer is null\n");
++      return -EINVAL;
++    }
++
++  if (buflen != 2)
++    {
++      snerr("ERROR: You can't read something other than 16 bits (2 bytes)\n");
++      return -EINVAL;
++    }
++
++  /* Enable MAX8614x's chip select */
++  max8614x_lock(spi);
++  SPI_SELECT(spi, SPIDEV_OPTO_BIOMETRIC(0), true);
++
++  /* Read ... */
++  SPI_RECVBLOCK(spi, &regmsb, 2);
++
++  /* Disable MAX8614x's chip select */
++  SPI_SELECT(spi, SPIDEV_OPTO_BIOMETRIC(0), false);
++  max8614x_unlock(spi);
++
++  return ret;
++}
++
++/****************************************************************************
++ * Name: max8614x_write
++ ****************************************************************************/
++
++static ssize_t max8614x_write(FAR struct file *filep, FAR const char *buffer,
++                              size_t buflen)
++{
++  return -ENOSYS;
++}
++#if !defined(CONFIG_DISABLE_POLL)
++static int max8614x_poll(FAR struct file *filep, FAR struct pollfd *fds,
++                         bool setup)
++{
++  sensor_dev_t *priv = get_priv(filep);
++}
++#endif
++
++/****************************************************************************
++ * Private Functions
++ ****************************************************************************/
++
++/****************************************************************************
++ * Name: max8614x_led_config()
++ *                           Setup the sensor's  three leds for a particular
++ *                           sequencing. This would dictate led pulse width,
++ *                           led settling time, adc integration time.
++ *
++ * Description:
++ ****************************************************************************/
++#define LED_COUNT 3
++static uint8_t max8614x_led_config(uint8_t blah)
++{
++  return OK;
++}
++
++/****************************************************************************
++ * Name: max8614x_ppg_sampling_setup()
++ *                           Setup the sensor  for ppg sampling. Specifies
++ *                           sample rate, led sequencing.
++ *
++ * Description:
++ ****************************************************************************/
++static uint8_t max8614x_ppg_sampling_setup(struct sensor_dev_s *dev, uint8_t choice)
++{
++  uint16_t count;
++  uint8_t regaddr;
++  uint8_t value;
++
++  /*
++   * Enable timestamp                   (PPG Sync control @0x10)
++   * Set ADC range, interval, alc       (PPG Config 1 @0x11)
++   *                                    Disable Ambient light function  [7]
++   *                                    Apply an offset for low light   [6]
++   *                                    Set PPG1 ADC range for SpO2     [3:2]
++   *                                    Set LED pulse width (TINT)      [1:0]
++   *
++   * Set sampling rate and average      (PPG Config 2 @0x12)
++   *                                    Set sampling rate               [7:3]
++   *                                    Average # samples before fifo   [2:0]
++   *
++   *
++   * Burst enable & rate, filter select (PPG Config 3 @0x13)
++   *    led settling time.
++   *                                    Delay between LED on and ADC sample     [7:6]
++   *                                    Choose digital filter type              [5]
++   *                                    Rate of burst sampling                  [2:1]
++   *                                    Enable burst sampling mode              [0]
++   *
++   * Set Proximity threshold            (PROX THRES @0x14)
++   *                                    Set ADC count to trigger an int         [7:0]
++   *
++   * Set Photo diode bias               (Photodiode Bias @0x15)
++   *                                    Fix the LED bias based on LED C         [2:0]
++   *
++   * Ignore Picket fence for now.
++   *
++   * Set the output led sequencing      (LED Sequence Control @0x20 - 0x22)
++   *
++   */
++
++  /*
++   * Set the System Control bits:       LP_MODE [2] Place chip in low power operation
++   *                                    SHDN    [1] Place chip in power save mode (set to 1)
++   *                                    Reset   [0] Reset the chip.
++   *
++   * Set LED pulse amplitude (Current)  LEDx_PA 0x23 - 0x28
++   *                                    Related to LED Range. Sets resolution.  [7:0]
++   *
++   * Set LED drive current range:       LED3 Max drive current:                 [5:4]
++   *                                    LED2 Max drive current:                 [3:2]
++   *                                    LED1 Max drive current:                 [1:0]
++   *
++   * Set ADC control to SW or Chip      Control over led sequence exposure      0x2C - 0x31
++   *                                    Chip: 0                                 [7]
++   * Ignore SHA256 config for now.
++   *
++   */
++  value = 0x07;
++  count = 1;
++  regaddr = 0x04;
++  max8614x_register_write(dev, regaddr, &value, count);
++  max8614x_led_config(value);
++  return OK;
++}
++
++/****************************************************************************
++ * Name: max8614x_irqhandler()
++ *
++ * Description:
++ ****************************************************************************/
++static int32_t max8614x_irqhandler(int irq, FAR void *context, FAR void *arg)
++{
++#if defined(NEEDS_WORK)
++  struct sensor_dev_s *max861x_dev = (struct sensor_dev_s *)arg;
++
++  /** If context is NULL and arg is NULL assume the caller
++   *  is a redirecting handler such as a gpio pin handler.
++   */
++  if (arg == NULL)
++    {
++      return -1;
++    }
++  max861x_dev = (struct sensor_dev_s *)arg;
++#endif
++
++  return OK;
++}
++
++/****************************************************************************
++ * Name: max8614x_event_handler()
++ *
++ * Description:
++ ****************************************************************************/
++// static void bmi160_int_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
++void max8614x_event_handler(uint32_t pin, sensor_gpio_polarity_t action)
++{
++  max8614x_irqhandler(pin, NULL, (void *)&g_max8614x_dev);
++
++}
++
++
++/****************************************************************************
++ * Public Functions
++ ****************************************************************************/
++
++/****====================================================================****
++ *                              FIFO Functions
++ ****====================================================================****
++ *
++ * max8614x_ppg_config() For a description of what PPG is see max8614x_impl.h.
++ *
++ *    The FIFO properties are:
++ *
++ *       Write pointer register as the index into the buffer the next data
++ *              write will occupy.  Advances when a full set is received.
++ *
++ *       Read pointer register as the index into the sample buffer the next
++ *              sample will come from.  Advances upon a full sample (3 bytes)
++ *              read. This register is r/w so you can specify what location
++ *              what location to read from such as restarting a sample read.
++ *
++ *       Overflow count register which reports the number of sample sample
++ *              points were lost due to a full FIFO.  Mainly a debugging
++ *              support reg to be read before reading the FIFO data so you
++ *              know whether or not the data you're getting is tainted.
++ *              See interrupts.
++ *
++ *      FIFO counter indicates how many samples are in the FIFO. Will max out
++ *              0x7F (Full Buffer) and can generate an A_FULL interrupt after
++ *              at every read. A read will decrement the folling write from
++ *              ADC will fill the buffer again and another interrupt will fire.
++ *              Or, the counter will generate an interrupt the next time
++ *              the buffer overflows after the current condition disappears.
++ *
++ *      FIFO data register a byte wide portal into the fifo which requires
++ *              three reads to advance/decrement the read/write pointer a step.
++ *              A proper sample read is to burst read 3 bytes to minimize any
++ *              any new write corrupting the sample: read once, twice, and then
++ *              the sample updates making the 3rd byte worthless and advancing
++ *              the pointer maybe losing the new sample.
++ *
++ *      Data is defined as 24 bits (3 reg reads) broken into the 5 msb mapping
++ *              tag info representing what kind of data this sample represents
++ *              such as which LED or ambient sensor, time stamp, etc.
++ *
++ *              The sample data proper is in the 19 lsbits as show below:
++ *  23  22  21 20 19  18   17   16   15   14   13   12   11   10   9  8  7  6  5  4  3  2  1  0
++ * -----------------------------------------------------------------------------
++ *  T4  T3  T2 T1  T0 O18  O17 O16  O15  O14  O13  O12  O11  O10  O9  O8 O7 O6 O5 O4 O3 O2 O1 O0
++ *
++ */
++
++int8_t max861x_sample_read(struct sensor_dev_s *sdev, uint32_t *data)
++{
++  uint8_t sample_sz = 3;
++
++  return max8614x_register_read(sdev, 0x10, (uint8_t *)data, sample_sz);
++}
++
++/****************************************************************************
++ * Name: max8614x_ioctl
++ *
++ * Description:
++ *   Support unique features and requirements outside of the typical filesystem
++ *   io operations.
++ *
++ * Input Parameters:
++ *   filep:     File descriptor acquired from the open.
++ *   cmd  :     The action requested.
++ *   arg  :     Representing either a value of uint32_t or less or,
++ *              a pointer to the arg structure required for this cmd.
++ *
++ * Returned Value:
++ *   Zero (OK) on success; a negated errno value on failure.
++ *
++ ****************************************************************************/
++
++static int max8614x_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
++{
++  int ret = OK;
++  FAR sensor_dev_t *sensor;
++
++  sensor = get_priv(filep);
++
++  /*IOCtrl operation should not be use by two or more thread at the same time*/
++  if (sem_wait(&sensor->sem_ioctl) != OK)
++    {
++      ret = -errno;
++    }
++  else
++    {
++      switch (cmd)
++        {
++          case SNIOC_GET_DEBUG_LEVEL :
++            break;
++          case SNIOC_SET_DEBUG_LEVEL :
++            break;
++          case SNIOC_SET_TIMEOUT :
++            break;
++          case SNIOC_API_CLOSE :
++            break;
++          case SNIOC_READ_ID :
++            break;
++          case SNIOC_READ :
++            break;
++          case SNIOC_WRITE :
++            break;
++          case SNIOC_ENABLE :
++            break;
++          case SNIOC_DISABLE :
++            break;
++          case SNIOC_INTERFACE_SET :
++            break;
++          case SNIOC_API_INIT :
++            break;
++          /* Command was not recognized */
++          default:
++            snerr("ERROR: Unrecognized cmd: %d\n", cmd);
++            ret = -EINVAL;
++            break;
++        }
++
++      sem_post(&sensor->sem_ioctl);
++    }
++  return ret;
++}
++
++
++
++/****************************************************************************
++ * Name: max8614x_register
++ *
++ * Description:
++ *   Register the MAX8614X character device as 'devpath'
++ *
++ * Input Parameters:
++ *   devpath - The full path to the driver to register. E.g., "/dev/????n"
++ *   spi - An instance of the SPU interface to use to communicate with
++ *   MAX8614X.
++ *
++ * Returned Value:
++ *   Zero (OK) on success; a negated errno value on failure.
++ *
++ ****************************************************************************/
++
++int32_t max8614x_register(FAR const char *devpath, FAR struct sensor_config_s *config,
++                          FAR struct sensor_low_level_operations_s *ll_ops)
++{
++  int ret;
++  uint32_t pin;
++
++  lock = true;
++  unlock = false;
++  FAR struct sensor_dev_s *dev;
++  FAR struct sensor_config_s *dconf;
++
++  /* Sanity check */
++  DEBUGASSERT(config != NULL);
++  dev = sensor_initialize(MAX8614X_ID_REG, MAX86140_PART_ID);
++  if (dev == NULL)
++    {
++      return -ENOMEM;
++    }
++
++  dconf = &dev->config;
++
++  if (dconf->bus_selection == SENSOR_INTF_SPI)
++    {
++      max8614x_bus_setup      = max8614x_spi_bus_setup;
++      max8614x_register_read  = max8614x_register_spi_read;
++      max8614x_register_write = max8614x_register_spi_write;
++    }
++  else
++    {
++      return -ENODEV;
++    }
++
++  config->ll_ops = (FAR struct sensor_low_level_operations_s *)kmm_malloc(sizeof(*config->ll_ops));
++  if (config->ll_ops == NULL)
++    {
++      return -ENOMEM;
++    }
++
++  /* Initialize sensor data access semaphore */
++
++  memcpy(&dev->config, config, sizeof(struct sensor_config_s));
++  dev->work.worker = NULL;
++
++  dev->config.bus.spi.devid  = MAX86140_PART_ID;
++//struct sensor_low_level_operations_s max8614x_ll_op =
++//{
++//  max8614x_attach_gpio_irq,
++//  max8614x_enable_int_pin,
++//};
++
++  /* Attach the interrupt channel 1 handler */
++  memcpy(dconf->ll_ops, ll_ops, sizeof(struct sensor_low_level_operations_s));
++  ret = dconf->ll_ops->attach_irq(dev, &pin, max8614x_event_handler);
++  if (ret < 0)
++    {
++      kmm_free(dev);
++      snerr("ERROR: Failed to attach interrupt\n");
++      return ret;
++    }
++
++
++  /* Register the character driver */
++  ret = register_driver(devpath, &g_max8614xfops, 0666, dev);
++  if (ret < 0)
++    {
++      snerr("ERROR: Failed to register driver: %d\n", ret);
++      kmm_free(dev);
++    }
++
++  max8614x_ppg_sampling_setup(dev, PPG_HEART_RATE);
++
++  return ret;
++}
++
++static inline int8_t tag_enum(int8_t tag)
++{
++  if (tag < 0x10)
++    {
++      return tag;
++    }
++  else if ((tag > 0x12) && (tag < 0x16))
++    {
++      tag -= 0x3;
++    }
++  else if ((tag > 0x18) && (tag < 0x1B))
++    {
++      tag -= 0x6;
++    }
++  else if (tag > 0x1D)
++    {
++      tag -= 0x9;
++    }
++  else
++    {
++      tag = -1;
++    }
++
++  return tag;
++}
++
++#endif /* defined(CONFIG_SENSORS_MAX8614X) */
+diff --git a/drivers/sensors/max8614x_impl.h b/drivers/sensors/max8614x_impl.h
+new file mode 100644
+index 0000000000..6ead5096ac
+--- /dev/null
++++ b/drivers/sensors/max8614x_impl.h
+@@ -0,0 +1,853 @@
++/********************************************************************************************
++ * drivers/sensors/max8614X_impl.h
++ *
++ *   Copyright (C) 2018 zGlue.h, All rights reserved.
++ *   Author: Bill Rees <bill@zglue.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name NuttX nor the names of its contributors may be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ *
++ ********************************************************************************************/
++
++/********************************************************************************************
++ *                                                                                          *
++ *     PPG:                                                                                 *
++ *           A photoplethysmogram (PPG) is an optically obtained plethysmogram, as          *
++ *           volumetric measurement of an organ. A PPG is often obtained by using a         *
++ *           pulse oximeter which illuminates the skin and measures changes in light        *
++ *           absorption.[1] A conventional pulse oximeter monitors the perfusion of         *
++ *           blood to the dermis and subcutaneous tissue of the skin.                       *
++ *                                                                                          *
++ *           https://en.wikipedia.org/wiki/Photoplethysmogram                               *
++ *                                                                                          *
++ ********************************************************************************************/
++#ifndef __DRIVERS_SENSORS_MAX8614X_H
++#define __DRIVERS_SENSORS_MAX8614X_H
++
++/********************************************************************************************
++ * Included Files
++ ********************************************************************************************/
++
++#include <nuttx/config.h>
++
++#include <semaphore.h>
++
++#include <nuttx/wdog.h>
++#include <nuttx/clock.h>
++#include <nuttx/wqueue.h>
++// #include <nuttx/sensors/max8614x.h>
++
++
++/********************************************************************************************
++ * Pre-processor Definitions
++ ********************************************************************************************/
++
++/*
++ * Many of the registers are only 7 bits, 7 bits lsb.
++typedef struct bufsz_s
++{
++  uint8_t       off_limits      : 1;
++  uint8_t       data            : 7;
++} bufsz_t;
++ */
++
++#if defined(CCONFIG_SENSORS_MAX8614X)
++
++/*
++ * Use enums as addresses
++ */
++enum regmap_86140
++{
++  status_int1             = 0x00,
++  status_int2,
++  enable_int1,
++  enable_int2,
++  fifo_write_ptr,
++  fifo_read_ptr,
++  fifo_oflow_ctr,
++  fifo_data_ctr,
++  fifo_data_reg,
++  fifo_config_1,
++  fifo_config_2,
++  system_ctrl             = 0X0d,
++  ppg_sync_ctrl           = 0x10,
++  ppg_config_1,
++  ppg_config_2,
++  ppg_config_3,
++  proxim_int_thres,
++  photo_diode_bias,
++  picket_fence,
++  led_sequence_reg1       = 0x20,
++  led_sequence_reg2,
++  led_sequence_reg3,
++  led1_pulse_amp,
++  led2_pulse_amp,
++  led3_pulse_amp,
++  led4_pulse_amp,
++  led5_pulse_amp,
++  led6_pulse_amp,
++  led_pilot_pulse_amp,
++  led_range_1,
++  led_range_2,
++  s1_hi_res_dac_1,
++  s2_hi_res_dac_1,
++  s3_hi_res_dac_1,
++  s4_hi_res_dac_1,
++  s5_hi_res_dac_1,
++  s6_hi_res_dac_1,
++  s1_hi_res_dac_2,
++  s2_hi_res_dac_2,
++  s3_hi_res_dac_2,
++  s4_hi_res_dac_2,
++  s5_hi_res_dac_2,
++  s6_hi_res_dac_2,
++  die_temp_config         = 0x40,
++  die_temp_int,
++  die_temp_fract,
++  sha_command             = 0xF0,
++  sha_config,
++  mm_control,
++  mm_index,
++  mm_data,
++  part_id                 = 0xFF,
++};
++
++/*
++ * Many of the registers are only 7 bits, 7 bits lsb.
++ */
++typedef struct bufsz_s
++{
++  uint8_t       off_limits      : 1;
++  uint8_t       data            : 7;
++} bufsz_t;
++
++/*
++ *
++ */
++typedef union _istatus_u
++{
++  struct
++  {
++    uint8_t     a_full          : 1;
++    uint8_t     data_rdy        : 1;
++    uint8_t     alc_ovf         : 1;
++    uint8_t     prox_int        : 1;
++    uint8_t     led_compb       : 1;
++    uint8_t     die_t_rdy       : 1;
++    uint8_t     vdd_oor         : 1;
++    uint8_t     pwr_rdy         : 1;
++  } ints;
++  struct
++  {
++    uint8_t     off_limits      : 7;
++    uint8_t     done            : 1;
++  } sha;
++
++  uint8_t       data;
++} interrupt_status_t;
++
++/*
++ *
++ */
++typedef union _ienable_u
++{
++  struct
++  {
++    uint8_t     a_full          : 1;
++    uint8_t     data_rdy        : 1;
++    uint8_t     alc_ovf         : 1;
++    uint8_t     prox_int        : 1;
++    uint8_t     led_compb       : 1;
++    uint8_t     die_t_rdy       : 1;
++    uint8_t     vdd_oor         : 1;
++    uint8_t     off_limit       : 1;
++  } flags1;
++  struct
++  {
++    uint8_t     off_limits      : 7;
++    uint8_t     sha_done        : 1;
++  } flags2;
++  uint8_t       reg;
++} interrupt_enable_t;
++
++/*
++ *
++ */
++typedef union _fifo_config_u
++{
++  struct
++  {
++    uint8_t     offlimits1      : 3;
++    uint8_t     flush           : 1 ;
++    uint8_t     stat_clear      : 1 ;
++    uint8_t     a_full_type     : 1 ;
++    uint8_t     read            : 1 ;
++    uint8_t     offlimits0      : 1 ;
++  } flags;
++  bufsz_t       reg;
++} fifo_config_t;
++
++/*
++ *
++ */
++typedef struct _fifo_s
++{
++  bufsz_t       reg_write;
++  bufsz_t       reg_read;
++  uint8_t       reg_oflwcntr;
++  uint8_t       reg_datacntr;
++  uint8_t       reg_data;
++  bufsz_t       reg_afull;
++  fifo_config_t config;
++} fifo_t;
++
++/*
++ *
++ */
++typedef union _system_control_u
++{
++  union
++  {
++    uint8_t     nada            : 4 ;
++    uint8_t     single_ppg      : 1 ;
++    uint8_t     lpmode          : 1 ;
++    uint8_t     shdn            : 1 ;
++    uint8_t     reset           : 1 ;
++  } flags;
++  bufsz_t       reg;
++} system_control_t;
++
++/*****************************************************************************
++ *****************************************************************************
++ *                                                                           *
++ *                PPG register mappings and definitions.                     *
++ *                                                                           *
++ *****************************************************************************
++ *****************************************************************************/
++
++/*
++ * PPG control
++ */
++struct
++{
++  uint8_t     timestamp_en      : 1 ;
++  uint8_t     offlimits         : 2 ;
++  uint8_t     force_sync        : 1 ;
++  uint8_t     gpio_ctrl         : 4 ;
++} ppg_sync_cntrl;
++
++/*
++ *
++ */
++typedef union _ppg_conf_u
++{
++  /*
++   * alc_disable  : Disable the Ambient Level Cancelation feature.
++   *
++   * add_offset   : ADD_OFFSET is an option designed for dark current measurement. By
++   *                adding offset to the PPG Data would allow dark current measurement
++   *                without clipping the signal below 0.
++   *
++   *                When ADD_OFFSET is set to 1, an offset is added to the PPG Data to
++   *                be able to measure the dark current. The offset is 8192 counts if
++   *                PPG_SR is programmed for single pulse mode. The offset is 4096 counts
++   *                if PPG_SR is programmed for dual pulse mode.
++
++   * ppg1_adc_rge :
++   * ppg2_adc_rge :
++   *                 These bits set the ADC range of the SPO2 sensor of either ppg channel,
++   *                 as shown in the table below.
++   *            PPG_ADC_RGE<1:0>        LSB [pA]        FULL SCALE [nA]
++   *                  00                78125                4096
++   *                  01                15.625               8192
++   *                  10                31.25                16384
++   *                  11                62.5                 32768
++   *
++   * ppg_adc_tint :
++   *                 These bits set the pulse width of the LED drivers and the integration
++   *                 time of PPG ADC as shown in the table below.
++   *                    tPW = tTINT + tLED_SETLNG + 0.5μs
++   *    PPG_TINT<1:0>   TPW, PULSE WIDTH [μS]   TTINT, INTEGRATION TIME [μS]    RESOLUTION BITS
++   *         00                 21.3                    14.8                        19
++   *         01                 35.9                    29.4                        19
++   *         10                 65.2                    58.7                        19
++   *         11                 123.8                   117.3                       19
++   *
++   */
++  struct
++  {
++    uint8_t     alc_disable     : 1 ;
++    uint8_t     add_offset      : 1 ;
++    uint8_t     ppg1_adc_rge    : 2 ;
++    uint8_t     ppg2_adc_rge    : 2 ;
++    uint8_t     ppg_adc_tint    : 2 ;
++
++  } _1;
++
++  /*
++   *  ppg_sr :
++   *                 These bits set the effective sampling rate of the PPG sensor as shown
++   *                 in the table below. The default on-chip sampling clock frequency is 32768Hz.
++   *
++   *                 Note: If a sample rate is set that can not be supported by the selected pulse
++   *                 width and number of exposures per sample, then the highest available sample
++   *                 rate will be automatically set. The user can read back this register to
++   *                 confirm the sample rate.
++   *    SAMPLING CLOCK
++   *    FREQUENCY             32768HZ                  32000HZ
++   *    PPG_SR<4:0      Samples per Second      Samples per Second      Pulses Per Sample, N
++   *      0x00               24.995                     24.409                  1
++   *      0x01               50.027                     48.855                  1
++   *      0x02               84.021                     82.051                  1
++   *      0x03               99.902                     97.561                  1
++   *      0x04               199,805                    195.122                 1
++   *      0x05               399.610                    390.244                 1
++   *      0x06               24.995                     24.409                  2
++   *      0x07               50.027                     48.855                  2
++   *      0x08               84.021                     82.051                  2
++   *      0x09               99.902                     97.561                  2
++   *      0x0A               8.000                      7.8125                  1
++   *      0x0B               16.000                     15.625                  1
++   *      0x0C               32.000                     31.250                  1
++   *      0x0D               64.000                     62.500                  1
++   *      0x0E               128.000                    125.000                 1
++   *      0x0F               256.000                    250.000                 1
++   *      0x10               512.000                    500.000                 1
++   *      0x11               1024.000                   1000.000                1
++   *      0x12               2048.000                   2000.000                1
++   *      0x13               4096.000                   4000.000                1
++   *      0x14-1F            Reserved                   Reserved                Reserved
++   *
++   *                  Maximum Sample rates (sps) supported for all the Integration Time (PPG_TINT)
++   *                  and Number of Exposures:
++   *    NUMBER OF EXPOSURE
++   *    PER SAMPLE      PPG_TINT = 0    PPG_TINT = 1    PPG_TINT = 2    PPG_TINT = 3
++   *                    (14.8μS)        (29.4μS)        (58.7μS)        (117.3μS)
++   * 1 Exposure,  N = 1   4096            2048            2048            1024
++   * 2 Exposures, N = 1   2048            1024            1024             512
++   * 3 Exposures, N = 1   1024            1024             512             512
++   * 4 Exposures, N = 1   1024             512             512             400
++   * 5 Exposures, N = 1   512              512             512             256
++   * 6 Exposures, N = 1   512              512             400             256
++   *
++   * 1 Exposure,  N = 2   100              100             100             100
++   * 2 Exposures, N = 2   100               84              84              84
++   * 3 Exposures, N = 2   50                50              50              50
++   * 4 Exposures, N = 2   25                25              25              25
++   * 5 Exposures, N = 2   25                25              25              25
++   * 6 Exposures, N = 2   25                25              25              25
++   *
++   *
++   *  smp_ave :
++   *                  To reduce the amount of data throughput, adjacent samples
++   *                  (in each individual channel) can be averaged and decimated
++   *                  on the chip by setting this register.
++   *
++   *                  These bits set the number of samples that are averaged on
++   *                  chip before being written to the FIFO.
++   *    SMP_AVE[2:0]            SAMPLE AVERAGE
++   *      000                       1 (no averaging)
++   *      001                       2
++   *      010                       4
++   *      011                       8
++   *      100                      16
++   *      101                      32
++   *      110                      64
++   *      111                     128
++   *
++
++                      The following table shows the maximum SMP_AVE allowed for
++                      various configurations of BURST_RATE and PPG_SR:
++        PPG_SR USED     BURST_RATE = 0   BURST_RATE = 1   BURST_RATE = 2    BURST_RATE = 3
++                          (8HZ)           (32HZ)            (84HZ)             (256HZ)
++        0 (25Hz,   N = 1)    1             DIS               DIS               DIS
++        1 (50Hz,   N = 1)    2              0                DIS               DIS
++        2 (84Hz,   N = 1)    3              1                DIS               DIS
++        3 (100Hz,  N = 1)    3              1                DIS               DIS
++        4 (200Hz,  N = 1)    4              2                 0                DIS
++        5 (400Hz,  N = 1)    5              3                 1                DIS
++        6 (25Hz,   N = 2)    1             DIS               DIS               DIS
++        7 (50Hz,   N = 2)    2              0                DIS               DIS
++        8 (84Hz,   N = 2)    3              1                DIS               DIS
++        9 (100Hz,  N = 2)    3              1                DIS               DIS
++        A (8Hz,    N = 1)   DIS            DIS               DIS               DIS
++        B (16Hz,   N = 1)    0             DIS               DIS               DIS
++        C (32Hz,   N = 1)    1             DIS               DIS               DIS
++        D (64Hz,   N = 1)    2              0                DIS               DIS
++        E (128Hz,  N = 1)    3              1                 0                DIS
++        F (256Hz,  N = 1)    4              2                 1                DIS
++       10 (512Hz,  N = 1)    5              3                 2                DIS
++       11 (1024Hz, N = 1)    6              4                 3                 0
++       12 (2048Hz, N = 1)    7              5                 4                 1
++       13 (4096Hz, N = 1)    7              6                 5                 2
++
++   */
++  struct
++  {
++    uint8_t     ppg_sr          : 5 ;
++    uint8_t     smp_ave         : 3 ;
++  } _2;
++
++  /*
++   *  led_settling  :
++   *                  Delay from rising-edge of LED to start of ADC integration. This
++   *                  allows for the LED current to settle before the start of ADC
++   *                  integration.
++   *
++   *    TLED_SETLNG, LED_SETLNG<1:0>            DELAY (μS)
++   *            00                                4.0
++   *            01                                6.0 (default)
++   *            10                                8.0
++   *            11                               12.0
++   *
++   *  dig_fltr_sel  :
++   *                  Select digital filter type.
++   *            VALUE           ENUMERATION       DECODE
++   *              0x0                             Use CDM
++   *              0x1                             Use FDM
++   *
++   *  burst_mode    :
++   *            VALUE           ENUMERATION       DECODE
++   *             0x0                                8Hz
++   *             0x1                               32Hz
++   *             0x2                               84Hz
++   *             0x3                              256Hz
++   *
++   *  burst_mode_en :
++   *                  When Burst Mode is disabled, PPG data conversions are continuous at
++   *                  the sample rate defined by PPG_SR register,
++   *
++   *                  When Burst mode is enabled, a burst of PPG data conversions occur at
++   *                  the sample rate defined by PPG_SR register. Number of conversion in
++   *                  the burst is defined by the SMP_AVE register. Average data from the
++   *                  burst of data conversions is pushed to the FIFO. The burst repeats at
++   *                  the rate defined in BURST_RATE[2:0] register. If the number of conver-
++   *                  sions cannot be accommodated, the device will use the next highest
++   *                  number of conversions.
++   *
++   *                  If the effective PPG_SR is too slow to accommodate the burst rate programmed,
++   *                  BURST_EN is automatically set to 0, and the device runs in continuous mode.
++   *
++   *                  Note: Each data conversion cycle is a sequence of conversions defined in
++   *                  the LEDC1 to LEDC6 registers.
++   *
++   *
++   */
++  struct
++  {
++    uint8_t     led_settling    : 2 ;
++    uint8_t     dig_fltr_sel    : 1 ;
++    uint8_t     offlimits       : 2 ;
++    uint8_t     brst_mode       : 2 ;
++    uint8_t     brst_mode_en    : 2 ;
++  } _3;
++
++  /*
++   *
++   */
++  uint8_t       reg;
++} ppg_config_t;
++
++/*
++ *
++ */
++typedef  union _pdbias_u
++{
++  struct
++  {
++    uint8_t     data            : 3 ;
++    uint8_t     ignore          : 1 ;
++  } bias_b;
++  struct
++  {
++    uint8_t     ignore          : 1 ;
++    uint8_t     data            : 3 ;
++  } bias_a;
++  uint8_t       reg;
++} pdbias_t;
++
++/*
++ * pf_enable    :
++ *                    PF_ENABLE set to 1 enabled the picket-fence detect and replace method.
++ *      VALUE           ENUMERATION             DECODE
++ *        0                OFF               Disable (default)
++ *        1                ON                Enable Detect and Replace
++ *
++ * pf_order     :
++ *                    PF_ORDER determines which prediction method is used: the last sample or
++ *                    a linear fit to the previous four samples.
++ *      VALUE           ENUMERATION             DECODE
++ *        0                OFF               Last Sample (1 point)
++ *        1                ON                Fit 4 points to a line for prediction (default)
++ *
++ * iir_tc       :
++ *                    IIR_TC<1:0> determines the IIR filter bandwidth where the lowest setting
++ *                    has the narrowest bandwidth of a first-order filter.
++ *      IIR_TC<1:0>     COEFFICIENT             SAMPLES TO 90%
++ *        00                1/64                    146
++ *        01                1/32                     72
++ *        10                1/16                     35
++ *        11                1/8                      17
++ *
++ * iir_initval  :
++ *                    This IIR filter estimates the true standard deviation between the actual
++ *                    and predicted sample and tracks the ADC Range setting.
++ *
++ *      IIR_INIT_VALUE<1:0>     CODE
++ *              00               64
++ *              01               48
++ *              10               32
++ *              11               24
++ *
++ * sigma multi  :
++ *                    GAIN resulting from the SIGMA_MULT<1:0> setting determines the number of
++ *                    standard deviations of the delta between the actual and predicted sample
++ *                    beyond which a picket-fence event is triggered.
++ *      THRESHOLD_SIGMA_MULT<1:0>       GAIN
++ *              00                        4
++ *              01                        8
++ *              10                       16
++ *              11                       32
++ *
++ *
++ *
++ */
++typedef union _picket_fence_u
++{
++  struct
++  {
++    uint8_t     pf_enable       : 1 ;
++    uint8_t     pf_order        : 1 ;
++    uint8_t     iir_tc          : 2 ;
++    uint8_t     iir_initval     : 2 ;
++    uint8_t     sigmamulti      : 2 ;
++  } flags;
++  uint8_t       reg;
++} picketfence_t;
++
++/*
++ *
++ */
++typedef struct _ppg_s
++{
++  bufsz_t       sync;
++  ppg_config_t  config[3];
++  /*
++   *    PROX_INT_THRESH :
++   *                  This register sets the LED1 ADC count that will trigger the transition
++   *                  between proximity mode and normal mode. The threshold is defined as the
++   *                  8 MSB bits of the ADC count. For example, if PROX_INT_THRESH[7:0] = 0x01,
++   *                  then an ADC value of 2048 (decimal) or higher triggers the PROX interrupt.
++   *                  If PROX_INT_THRESH[7:0] = 0xFF, then only a saturated ADC triggers the
++   *                  interrupt.
++   */
++  uint8_t       prox_int_thresh;
++  pdbias_t      diode;
++  picketfence_t fence;
++} ppg_t;
++
++/*
++ * Led setup, control
++ */
++
++/*****************************************************************************
++ *****************************************************************************
++ *                                                                           *
++ *  LEDX_RGE<1:0>   00                      01           10              11  *
++ *  LEDx_PA<7:0> LED Current [mA] LED Current [mA] LED Current [mA] LED Current [mA]
++ *  00000000        0.00              0.00             0.00             0.00  *
++ *  00000001        0.12              0.24             0.36             0.48  *
++ *  00000010        0.24              0.48             0.73             0.97  *
++ *  00000011        0.36              0.73             1.09             1.45  *
++ *                          ............                                      *
++ *  11111100        30.6              61.3             91.9             122.5 *
++ *  11111101        30.8              61.5             92.3             123.0 *
++ *  11111110        30.9              61.8             92.6             123.5 *
++ *  11111111        31.0              62.0             93.0             124.0 *
++ *                          ............                                      *
++ *     LSB          0.12              0.24             0.36             0.48  *
++ *                                                                            *
++ ******************************************************************************
++ *****************************************************************************/
++
++typedef union _led_drive_range_u
++{
++  struct
++  {
++    uint8_t nada                : 2 ;
++    uint8_t range               : 2 ;
++    uint8_t reserved            : 4 ;
++  } _3;
++  struct
++  {
++    uint8_t reserved            : 4 ;
++    uint8_t range               : 2 ;
++    uint8_t nada                : 2 ;
++  } _2;
++  struct
++  {
++    uint8_t reserved            : 4 ;
++    uint8_t nada                : 2 ;
++    uint8_t range               : 2 ;
++  } _1;
++
++} led_range_t;
++
++typedef union _led_sequencing_codes_u
++{
++  struct
++  {
++    uint8_t code                : 4 ;
++    uint8_t sequence            : 4 ;
++  } phase_b;
++  struct
++  {
++    uint8_t code                : 4 ;
++    uint8_t nada                : 4 ;
++  } phase_a;
++  uint8_t reg;
++} led_sequencing_t;
++
++typedef struct
++{
++  led_sequencing_t      sequence[3];
++  uint8_t               pulse_amp[7];     /* 7 controls for 6 leds and the pilot mode.           */
++  led_range_t           range[2];
++} led_t;
++
++/*
++ * Hi resolution DAC definition.
++ */
++typedef union _hires_dac_u
++{
++  struct
++  {
++    uint8_t ovr                 : 1 ;
++    uint8_t nada                : 1 ;
++    uint8_t data                : 6 ;
++  } exposure;
++  uint8_t reg;
++} hires_dac_t;
++
++/*
++ *
++ */
++typedef union
++{
++  struct
++  {
++    uint8_t   reserved          : 7 ;
++    uint8_t   emable            : 1 ;
++  } config;
++  uint8_t       tint;
++  struct
++  {
++    uint8_t   nan               : 4 ;
++    uint8_t   digits            : 4 ;
++  } tfrac;
++} die_temp_t;
++
++enum sha_commands
++{
++  MAC_WITH_ROM_ID     = 0x35,
++  MAC_WITHOUT_ROM_ID,
++};
++
++/*
++ *
++ */
++typedef union _sha_u
++{
++  uint8_t       sha_cmd;
++  struct
++  {
++    uint8_t   ignore            : 6 ;
++    uint8_t   sha_enable        : 1 ;
++    uint8_t   sha_start         : 1 ;
++  } config;
++} sha_t;
++
++/*
++ *
++ */
++typedef union _memory_u
++{
++  union
++  {
++    struct
++    {
++      uint8_t   reserved        : 6 ;
++      uint8_t   mem_enable      : 1 ;
++      uint8_t   bank_select     : 1 ;
++    } flags;
++    uint8_t   reg;
++  } control;
++  uint8_t idx;
++  uint8_t data;
++} memory_t;
++
++/*
++ *
++ */
++typedef union _regmap_u
++{
++
++  /*
++   *
++   */
++  interrupt_status_t            istat1;
++  interrupt_status_t            istat2;
++
++  /*
++   *
++   */
++  interrupt_enable_t            ienable1;
++  interrupt_enable_t            ienable2;
++
++  fifo_t        fifo;
++  /*
++   *
++   */
++  system_control_t scontrol;
++
++  /*
++   *
++   */
++  ppg_t                 ppg;
++
++  /*
++   *
++   */
++  led_t                 leds;
++  hires_dac_t           ppg1_dac[6];    /* For the MAXIM 86140/86141                         */
++  hires_dac_t           ppg2_dac[6];    /* Only for the MAXIM 86141  with dual PPG channels. */
++  die_temp_t            die;
++  sha_t                 sha;
++  memory_t              mm;
++  uint8_t               part_id;
++} regmap_t;
++
++/*
++ *
++ */
++enum data_tags
++{
++  PPG1_LEDC1_DATA = 1,
++  PPG1_LEDC2_DATA,
++  PPG1_LEDC3_DATA,
++  PPG1_LEDC4_DATA,
++  PPG1_LEDC5_DATA,
++  PPG1_LEDC6_DATA,
++  PPG2_LEDC1_DATA,
++  PPG2_LEDC2_DATA,
++  PPG2_LEDC3_DATA,
++  PPG2_LEDC4_DATA,
++  PPG2_LEDC5_DATA,
++  PPG2_LEDC6_DATA,
++  PPF1_LEDC1_DATA,
++  PPF1_LEDC2_DATA,
++  PPF1_LEDC3_DATA,
++  PPF2_LEDC1_DATA,
++  PPF2_LEDC2_DATA,
++  PPF2_LEDC3_DATA,
++  PROX1_DATA,
++  PROX2_DATA,
++  INVALID_DATA,
++  TIME_STAMP,
++};
++
++
++/******************************************************************************
++LEDC1_DATA[18:0]
++LEDC2_DATA[18:0]
++LEDC3_DATA[18:0]
++LEDC4_DATA[18:0]
++LEDC5_DATA[18:0]
++LEDC6_DATA[18:0]
++LEDC1_DATA[18:0]
++LEDC2_DATA[18:0]
++LEDC3_DATA[18:0]
++LEDC4_DATA[18:0]
++LEDC5_DATA[18:0]
++LEDC6_DATA[18:0]
++LEDC1_DATA[18:0]
++LEDC2_DATA[18:0]
++LEDC3_DATA[18:0]
++LEDC1_DATA[18:0]
++LEDC2_DATA[18:0]
++LEDC3_DATA[18:0]
++PROX1_DATA[18:0]
++PROX2_DATA[18:0]
++Don’t_care[18:0]
++TIME_STAMP[18:0]
++          TAG[4:0]      FIFO_DATA[23:0]           "COMMENTS"
++          =======       ==============             =========
++    00001 PPG1_LEDC1_DATA LEDC1_DATA[18:0] "If LEDC1 is non-zero"
++    00010 PPG1_LEDC2_DATA LEDC2_DATA[18:0] "If LEDC1 and LEDC2 are non-zero"
++    00011 PPG1_LEDC3_DATA LEDC3_DATA[18:0] "If LEDC1, LEDC2 and LEDC3 are non-zero"
++    00100 PPG1_LEDC4_DATA LEDC4_DATA[18:0] "If LEDC1, LEDC2, LEDC3, and LEDC4 are non-zero"
++    00101 PPG1_LEDC5_DATA LEDC5_DATA[18:0] "If LEDC1, LEDC2, LEDC3, LEDC4, and LEDC5 are non-zero"
++    00110 PPG1_LEDC6_DATA LEDC6_DATA[18:0] "If LEDC1, LEDC2, LEDC3, LEDC4, LEDC5, and LEDC6 are non-zero"
++    00111 PPG2_LEDC1_DATA LEDC1_DATA[18:0] "If LEDC1 is non-zero"
++    01000 PPG2_LEDC2_DATA LEDC2_DATA[18:0] "If LEDC1 and LEDC2 are non-zero"
++    01001 PPG2_LEDC3_DATA LEDC3_DATA[18:0] "If LEDC1, LEDC2, and LEDC3 are non-zero"
++    01010 PPG2_LEDC4_DATA LEDC4_DATA[18:0] "If LEDC1, LEDC2, LEDC3, and LEDC4 are non-zero"
++    01011 PPG2_LEDC5_DATA LEDC5_DATA[18:0] "If LEDC1, LEDC2, LEDC3, LEDC4, and LEDC5 are non-zero"
++    01100 PPG2_LEDC6_DATA LEDC6_DATA[18:0] "If LEDC1, LEDC2, LEDC3, LEDC4, LEDC5, and LEDC6 are non-zero"
++    01101 PPF1_LEDC1_DATA LEDC1_DATA[18:0] "If LEDC1 is non-zero (Picket Fence Event)"
++    01110 PPF1_LEDC2_DATA LEDC2_DATA[18:0] "If LEDC1 and LEDC2 are non-zero (Picket Fence Event)"
++    01111 PPF1_LEDC3_DATA LEDC3_DATA[18:0] "If LEDC1, LEDC2, and LEDC3 are non-zero (Picket Fence Event)"
++    10000 Reserved – ""
++    10001 Reserved – ""
++    10010 Reserved – ""
++    10011 PPF2_LEDC1_DATA LEDC1_DATA[18:0] "If LEDC1 is non-zero (Picket Fence Event)"
++    10100 PPF2_LEDC2_DATA LEDC2_DATA[18:0] "If LEDC1 and LEDC2 are non-zero (Picket Fence Event)"
++    10101 PPF2_LEDC3_DATA LEDC3_DATA[18:0] "If LEDC1, LEDC2, and LEDC3 are non-zero (Picket Fence Event)"
++    10110 Reserved – ""
++    10111 Reserved – ""
++    11000 Reserved – ""
++    11001 PROX1_DATA PROX1_DATA[18:0] "Only PILOT LED1 for LEDC1 is used"
++    11010 PROX2_DATA PROX2_DATA[18:0] "Only PILOT LED1 for LEDC1 is used"
++    11011 Reserved –   ""
++    11100 Reserved –   ""
++    11101 Reserved –   ""
++    11110 INVALID_DATA Don’t_care[18:0] "This tag indicates that there was an attempt to read an empty FIFO"
++    11111 TIME_STAMP TIME_STAMP[18:0] "If TIME_STAMP_EN = 1, this is TIME_STAMP"
++ ******************************************************************************/
++/* Interrupt Status 1 @ 0x00 */
++
++/* Interrupt Status 2 @ 0x01 */
++/* Interrupt enable 1 @ 0x02 */
++/* Interrupt enable 2 @ 0x03 */
++
++#define TAG_DATA(a)     ((a) & 0x00F80000) >> 19
++#define SAMPLE_DATA(a)  ((a) & 0x0007FFFF)
++
++static inline int8_t tag_enum(int8_t tag);
++
++#endif /* CONFIG_SENSORS_MAX8614X */
++#endif /* __DRIVERS_SENSORS_MAX8614X_H */
+diff --git a/drivers/sensors/sensors.c b/drivers/sensors/sensors.c
+new file mode 100644
+index 0000000000..ee540bf8ae
+--- /dev/null
++++ b/drivers/sensors/sensors.c
+@@ -0,0 +1,91 @@
++/****************************************************************************
++ * drivers/sensors/sensor.c
++ * Character driver support for sensor drivers.
++ *
++ *   Copyright (C) 2018 zGlue Inc. All rights reserved.
++ *   Author: Bill Rees <bill@zglue.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name NuttX nor the names of its contributors may be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ *
++ ****************************************************************************/
++
++/****************************************************************************
++ * Included Files
++ ****************************************************************************/
++
++#include <errno.h>
++#include <string.h>
++#include <nuttx/kmalloc.h>
++#include <nuttx/wqueue.h>
++#include <nuttx/sensors/sensors.h>
++
++int8_t max8614x_spi_reg_read(struct sensor_dev_s *dev, uint8_t reg_addr,
++                             uint8_t *data, uint16_t len);
++
++FAR sensor_dev_t *sensor_initialize(uint8_t regaddr, uint8_t part_id)
++{
++  int ret = 0;
++#if defined(NOTYET)
++  uint8_t data;
++#endif
++  FAR struct sensor_dev_s *sensor;
++
++  /* Initialize the device structure */
++  sensor = (FAR struct sensor_dev_s *)kmm_malloc(sizeof(struct sensor_dev_s));
++  if (sensor == NULL)
++    {
++      snerr("ERROR: Failed to allocate instance\n");
++      set_errno(-ENOMEM);
++      return sensor;
++    }
++  (void) memset(sensor, 0, sizeof(sensor_dev_t));
++
++#if defined(NOTYET)
++  max8614x_spi_reg_read(sensor, regaddr, &data, 1);
++  if (data != part_id)
++    {
++      kmm_free(sensor);
++      set_errno(-ENODEV);
++      return NULL;
++    }
++#endif
++
++  ret += sem_init(&sensor->sem_ioctl, 0, 0);
++  ret += sem_init(&sensor->sem_read, 0, 0);
++  ret += sem_init(&sensor->sem_write, 0, 0);
++  if (ret != 0 )
++    {
++      kmm_free(sensor);
++      sensor = NULL;
++      set_errno(-ENODEV);
++    }
++
++  return sensor;
++}
++
++
+diff --git a/drivers/zglue_fast/Kconfig b/drivers/zglue_fast/Kconfig
+index 883e356698..bf0be104a0 100644
+--- a/drivers/zglue_fast/Kconfig
++++ b/drivers/zglue_fast/Kconfig
+@@ -138,3 +138,10 @@ config ZEUS2_CHICAGO
+ endchoice
+ 
+ endif #ARCH_HAVE_FAST
++
++config ARCH_HAVE_FAST
++	bool "Enable zglue Zeus platform"
++	default n
++	---help---
++		Enable Zglue zeus Architecture
++
+diff --git a/drivers/zglue_fast/Make.defs b/drivers/zglue_fast/Make.defs
+index 66245f336c..baf9facb5d 100644
+--- a/drivers/zglue_fast/Make.defs
++++ b/drivers/zglue_fast/Make.defs
+@@ -41,6 +41,7 @@ SHELL=/bin/bash
+ 
+ DRIVERS_DIR = $(TOPDIR)/drivers
+ FAST_DRIVER_DIR = $(DRIVERS_DIR)/zglue_fast
++# FAST_DRIVER_DIR = zglue_fast
+ 
+ FAST_LIB_BASE  = libfastapi
+ FASTAPI_LIB       = $(FAST_LIB_BASE)$(LIBEXT)
+@@ -52,6 +53,14 @@ ifeq ($(CONFIG_ZEUS2),y)
+ endif
+ ZEUS_LIB = $(FAST_LIB_BASE)_$(ZEUS)$(LIBEXT)
+ 
++FAST_LIB_BASE  = libfastapi
++LIBFASTAPI = $(FAST_LIB_BASE)$(LIBEXT)
++ZEUS_LIBFASTAPI = zglue_fast/$(ZEUS)/$(FAST_LIB_BASE)_$(ZEUS)$(LIBEXT)
++$(info ======================================================)
++$(info LIBFASTAPI :: ($(LIBFASTAPI)))
++$(info ZEUS_LIBFASTAPI :: ($(ZEUS_LIBFASTAPI)))
++$(info ======================================================)
++
+ ifeq ($(CONFIG_ARCH_HAVE_FAST),y)
+ 
+ CSRCS += zglue_fast.c
+@@ -63,7 +72,7 @@ FAST_CONFIG_BIN_FILE = fast_config_file.bin
+ BUILT_FILES = $(FAST_CONFIG_BIN_FILE) $(FAST_CONFIG_FILE_H_FILE)
+ 
+ ifeq ($(ZEUS),)
+-#error No zeus architecture selected.
++$(error No zeus architecture selected.)
+ endif
+ 
+ define COPY
+@@ -72,7 +81,6 @@ define COPY
+ endef
+ 
+ zglue_fast/zglue_fast.c : $(FAST_DRIVER_DIR)/$(FAST_CONFIG_FILE_H_FILE)
+-	@echo "++++++ $$(pwd)"
+ 
+ ifeq ($(CONFIG_FAST_CONFIG_FILE),y)
+ FAST_CONFIG_DIR  = $(FAST_DRIVER_DIR)/zglue_fast_config_files
+@@ -105,16 +113,25 @@ $(FAST_DRIVER_DIR)/$(FAST_CONFIG_FILE_H_FILE): $(FAST_DRIVER_DIR)/$(FAST_CONFIG_
+ 	$(Q) cd $(FAST_DRIVER_DIR) && xxd -i fast_config_file.bin > $(FAST_CONFIG_FILE_H_FILE)
+ 	$(Q) cd $(FAST_DRIVER_DIR) && sed -i 's/unsigned char/__attribute__((section(".fastconfigfilesection"))) unsigned char/g' $(FAST_CONFIG_FILE_H_FILE)
+ 
+-
+ libfastapi: MSG="create libdrivers.a\\naddlib $(FAST_DRIVER_DIR)/$(ZEUS)/$(ZEUS_LIB)\\nsave\\nend\\n"
+ libfastapi:
+ 	@/bin/echo -e "$(MSG)" | arm-none-eabi-ar -M
+ 
++# $(FAST_CONFIGFILE_BIN): $(ZEUS_PLATFORM_CONFIG_BIN)
++# 	$(Q) $(call COPYFILE,$(ZEUS_PLATFORM_CONFIG_BIN),$@)
++#
++# $(LIBFASTAPI): $(ZEUS_LIBFASTAPI)
++# 	$(Q) $(call COPYFILE,$@,$(BIN))
++#
++# $(ZEUS_LIBFASTAPI):
++# 	$(call COPYFILE,$@,$(LIBFASTAPI))
++
+ zglue_fast_clean:
+-	$(Q) @echo "-===============================================-"
+-	$(Q) cd $(FAST_DRIVER_DIR) && $(RM) $(BUILT_FILES)
++	$(Q) cd $(FAST_DRIVER_DIR) && $(RM) $(BUILT_FILES) *.rej *.orig
++	$(Q) $(call,CLEAN)
+ 
+ clean: zglue_fast_clean
+ 
+ 
+ endif # CONFIG_ARCH_HAVE_FAST
++
+diff --git a/include/nuttx/sensors/bmi160.h b/include/nuttx/sensors/bmi160.h
+index fd8841bc3d..3614281ccc 100644
+--- a/include/nuttx/sensors/bmi160.h
++++ b/include/nuttx/sensors/bmi160.h
+@@ -56,6 +56,35 @@
+  * Pre-processor Definitions
+  ********************************************************************************************/
+ 
++#if defined(CONFIG_BMI160_SPI_125K)
++#define SPI_FREQUENCY_BMI160      125000
++
++#elif defined(CONFIG_BMI160_SPI_250K)
++#define SPI_FREQUENCY_BMI160      250000
++
++#elif defined(CONFIG_BMI160_SPI_500K)
++#define SPI_FREQUENCY_BMI160      500000
++
++#elif defined(CONFIG_BMI160_SPI_1M)
++#define SPI_FREQUENCY_BMI160      1000000
++
++#elif defined(CONFIG_BMI160_SPI_2M)
++#define SPI_FREQUENCY_BMI160      2000000
++
++#elif defined(CONFIG_BMI160_SPI_4M)
++#define SPI_FREQUENCY_BMI160      4000000
++
++#elif defined(CONFIG_BMI160_SPI_8M)
++#define SPI_FREQUENCY_BMI160      8000000
++
++#endif
++
++#if defined(CONFIG_BMI160_I2C_ADDR_0x68)
++I2C_ADDR_BMI160 0x68
++#elif defined(CONFIG_BMI160_I2C_ADDR_0x69)
++I2C_ADDR_BMI160 0x69
++#endif
++
+ /********************************************************************************************
+  * Public Types
+  ********************************************************************************************/
+@@ -146,6 +175,7 @@ extern "C"
+ #define EXTERN extern
+ #endif
+ 
++
+ /********************************************************************************************
+  * Name: bmi160_register
+  *
+diff --git a/include/nuttx/sensors/bq25120a.h b/include/nuttx/sensors/bq25120a.h
+new file mode 100644
+index 0000000000..f89e18957e
+--- /dev/null
++++ b/include/nuttx/sensors/bq25120a.h
+@@ -0,0 +1,146 @@
++/****************************************************************************
++ * include/nuttx/sensors/bq25120a.h
++ *
++ *   Copyright (C) 2018 zGlue Inc. All rights reserved.
++ *   Author: Bill Rees <bill@zglue.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name NuttX nor the names of its contributors may be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ *
++ ****************************************************************************/
++
++#ifndef __INCLUDE_NUTTX_SENSORS_BQ25120A_H
++#define __INCLUDE_NUTTX_SENSORS_BQ25120A_H
++
++/****************************************************************************
++ * Included Files
++ ****************************************************************************/
++
++#include <nuttx/config.h>
++#include <nuttx/irq.h>
++
++#if defined(CONFIG_BQ25120A)
++
++/****************************************************************************
++ * Pre-processor Definitions
++ ****************************************************************************/
++
++#define BQ25120A_SPI_INTF  5
++
++#if defined(CONFIG_BQ25120A_INTF_SPI)
++
++#if defined(CONFIG_BQ25120A_SPI_125KHZ)
++#define SPI_FREQUENCY_BQ25120A      125000
++
++#elif defined(CONFIG_BQ25120A_SPI_250KHZ)
++#define SPI_FREQUENCY_BQ25120A      250000
++
++#elif defined(CONFIG_BQ25120A_SPI_500KHZ)
++#define SPI_FREQUENCY_BQ25120A      500000
++
++#elif defined(CONFIG_BQ25120A_SPI_1MHZ)
++#define SPI_FREQUENCY_BQ25120A      1000000
++
++#elif defined(CONFIG_BQ25120A_SPI_2MHZ)
++#define SPI_FREQUENCY_BQ25120A      2000000
++
++#elif defined(CONFIG_BQ25120A_SPI_4MHZ)
++#define SPI_FREQUENCY_BQ25120A      4000000
++
++#elif defined(CONFIG_BQ25120A_SPI_8MHZ)
++#define SPI_FREQUENCY_BQ25120A      8000000
++
++#else
++#error No SPI Frequency is configured for this sensor!!
++
++#endif
++
++/* CONFIG_SPI_BQ25120A */
++#elif defined(CONFIG_BQ25120A_INTF_I2C)
++
++#if defined(CONFIG_BQ25120A_I2C_ADDR_0x68)
++#define I2C_ADDR_BQ25120A 0x68
++
++#elif defined(CONFIG_BQ25120A_I2C_ADDR_0x69)
++#define I2C_ADDR_BQ25120A 0x69
++
++#else
++#error No I2C address is defined for the bq25120a.
++
++#endif
++#else
++#error Some sort of io bus must be chosen; i2c, spi
++
++#endif /* CONFIG_I2C_BQ25120A */
++
++/****************************************************************************
++ * Public Types
++ ****************************************************************************/
++
++struct spi_dev_s;
++
++/****************************************************************************
++ * Public Function Prototypes
++ ****************************************************************************/
++
++#ifdef __cplusplus
++#define EXTERN extern "C"
++extern "C"
++{
++#else
++#define EXTERN extern
++#endif
++
++/****************************************************************************
++ * Name: bq25120a_register
++ *
++ * Description:
++ *  This function will register the bq25120a driver as /dev/????N
++ *  where N is the minor device number
++ *
++ * Input Parameters:
++ *   devpath - The full path to the driver to register. E.g., "/dev/????0"
++ *   spi     - An instance of the SPI interface to use to communicate with
++ *             BQ25120A
++ *
++ * Returned Value:
++ *   Zero is returned on success.  Otherwise, a negated errno value is
++ *   returned to indicate the nature of the failure.
++ *
++ ****************************************************************************/
++
++/* int bq25120a_register(FAR const char *devpath, FAR struct spi_dev_s *spi); */
++int32_t bq25120a_register(FAR const char *devpath, FAR struct sensor_config_s *config,
++                          FAR struct sensor_low_level_operations_s *ll_ops);
++
++#undef EXTERN
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* CONFIG_BQ25120A */
++#endif /* __INCLUDE_NUTTX_SENSORS_BQ25120A_H */
+diff --git a/include/nuttx/sensors/ioctl.h b/include/nuttx/sensors/ioctl.h
+index b858611433..1f639465e3 100644
+--- a/include/nuttx/sensors/ioctl.h
++++ b/include/nuttx/sensors/ioctl.h
+@@ -249,7 +249,6 @@ typedef struct _sn_ga_raw
+ 
+ #define SNIOC_GA_UNREGISTER_INT   _SNIOC(0x0032)
+ 
+-
+ /* IOCTL commands unique to the bmi160 */
+ 
+ /* Command:     SNIOC_ACCEL_SETBW
+@@ -333,4 +332,72 @@ typedef struct _sn_ga_raw
+ #define SNIOC_SET_DATA_RATE     _SNIOC(0x003e) /* Arg: LIS3DH_ODR_xxx */
+ #define SNIOC_SET_DATA_FORMAT   _SNIOC(0x003f) /* Arg: LIS3DH_FORMAT_xxx */
+ 
++// #if defined(OLD_MAX_IOCTLS)
++/* Command:     SNIOC_GET_DEBUG_LEVEL
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_GET_DEBUG_LEVEL    _SNIOC(0x003A)
++
++/* Command:     SNIOC_SET_DEBUG_LEVEL
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_SET_DEBUG_LEVEL    _SNIOC(0x003B)
++
++/* Command:     SNIOC_SET_TIMEOUT
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_SET_TIMEOUT        _SNIOC(0x003C)
++
++/* Command:     SNIOC_INTERFACE_SET
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_INTERFACE_SET      _SNIOC(0x003D)
++
++/* Command:     SNIOC_API_INIT
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_API_INIT           _SNIOC(0x003E)
++
++/* Command:     SNIOC_API_CLOSE
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_API_CLOSE          _SNIOC(0x003F)
++
++/* Command:     SNIOC_READ_ID
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_READ_ID            _SNIOC(0x0040)
++
++/* Command:     SNIOC_READ
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_READ               _SNIOC(0x0041)
++
++/* Command:     SNIOC_WRITE
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_WRITE              _SNIOC(0x0042)
++
++/* Command:     SNIOC_ENABLE
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_ENABLE             _SNIOC(0x0043)
++
++/* Command:     SNIOC_DISABLE
++ * Description: get gyro bandwidth
++ * Argument:    pointer to the bandwidth */
++
++#define SNIOC_DISABLE            _SNIOC(0x0044)
++// #endif /* OLD_MAX_IOCTLS */
++
+ #endif /* __INCLUDE_NUTTX_SENSORS_IOCTL_H */
+diff --git a/include/nuttx/sensors/max8614x.h b/include/nuttx/sensors/max8614x.h
+new file mode 100644
+index 0000000000..f2fb07b6f7
+--- /dev/null
++++ b/include/nuttx/sensors/max8614x.h
+@@ -0,0 +1,132 @@
++/****************************************************************************
++ * include/nuttx/input/max8614x.h
++ *
++ *   Copyright (C) 2018 zGlue Inc. All rights reserved.
++ *   Author: Bill Rees <bill@zglue.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name NuttX nor the names of its contributors may be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ *
++ ****************************************************************************/
++
++#ifndef __INCLUDE_NUTTX_SENSORS_MAX8614X_H
++#define __INCLUDE_NUTTX_SENSORS_MAX8614X_H
++
++
++/****************************************************************************
++ * Included Files
++ ****************************************************************************/
++
++#include <nuttx/config.h>
++#include <nuttx/irq.h>
++
++#if defined(CONFIG_SENSORS_MAX8614X)
++
++#define MAX8614X_DEVPATH  "/dev/max8614x"
++#define MAX8614X_ID_REG 0xFF
++#define MAX86140_PART_ID 0x24
++#define MAX86141_PART_ID 0x25
++
++/****************************************************************************
++ * Pre-processor Definitions
++ ****************************************************************************/
++
++#if defined(CONFIG_MAX8614X_SPI_125KHZ)
++#define SPI_FREQUENCY_MAX8614X      125000
++
++#elif defined(CONFIG_MAX8614X_SPI_250KHZ)
++#define SPI_FREQUENCY_MAX8614X      250000
++
++#elif defined(CONFIG_MAX8614X_SPI_500KHZ)
++#define SPI_FREQUENCY_MAX8614X      500000
++
++#elif defined(CONFIG_MAX8614X_SPI_1MHZ)
++#define SPI_FREQUENCY_MAX8614X      1000000
++
++#elif defined(CONFIG_MAX8614X_SPI_2MHZ)
++#define SPI_FREQUENCY_MAX8614X      2000000
++
++#elif defined(CONFIG_MAX8614X_SPI_4MHZ)
++#define SPI_FREQUENCY_MAX8614X      4000000
++
++#elif defined(CONFIG_MAX8614X_SPI_8MHZ)
++#define SPI_FREQUENCY_MAX8614X      8000000
++
++#else
++#error No SPI Frequency is configured for this sensor!!
++#endif
++
++#define MAX8614X_SPI_INTF   5
++
++/****************************************************************************
++ * Public Types
++ ****************************************************************************/
++
++struct spi_dev_s;
++
++/****************************************************************************
++ * Public Function Prototypes
++ ****************************************************************************/
++
++#ifdef __cplusplus
++#define EXTERN extern "C"
++extern "C"
++{
++#else
++#define EXTERN extern
++#endif
++
++/****************************************************************************
++ * Name: max8614x_register
++ *
++ * Description:
++ *  This function will register the max8614x driver as /dev/????N
++ *  where N is the minor device number
++ *
++ * Input Parameters:
++ *   devpath - The full path to the driver to register. E.g., "/dev/????0"
++ *   spi     - An instance of the SPI interface to use to communicate with
++ *             MAX8614x
++ *
++ * Returned Value:
++ *   Zero is returned on success.  Otherwise, a negated errno value is
++ *   returned to indicate the nature of the failure.
++ *
++ ****************************************************************************/
++
++int32_t max8614x_register(FAR const char *devpath, FAR struct sensor_config_s *config,
++                          FAR struct sensor_low_level_operations_s *ll_ops);
++
++void max8614x_event_handler(uint32_t pin, sensor_gpio_polarity_t action);
++
++#undef EXTERN
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* CONFIG_SENSORS_MAX8614X */
++#endif /* __INCLUDE_NUTTX_SENSORS_MAX8613X_H */
+diff --git a/include/nuttx/sensors/sensors.h b/include/nuttx/sensors/sensors.h
+new file mode 100644
+index 0000000000..9743d4f44e
+--- /dev/null
++++ b/include/nuttx/sensors/sensors.h
+@@ -0,0 +1,265 @@
++/********************************************************************************************
++ * include/nuttx/sensors/sensor.h
++ *
++ *   Copyright (C) 2016 DS-Automotion GmbH. All rights reserved.
++ *   Author: Alexander Entinger <a.entinger@ds-automotion.com>
++ *           Thomas Ilk
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name NuttX nor the names of its contributors may be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ *
++ ********************************************************************************************/
++
++#ifndef __INCLUDE_NUTTX_SENSORS_SENSOR_H
++#define __INCLUDE_NUTTX_SENSORS_SENSOR_H
++
++/********************************************************************************************
++ * Included Files
++ ********************************************************************************************/
++#include <nuttx/config.h>
++#include <nuttx/i2c/i2c_master.h>
++#include <nuttx/spi/spi.h>
++
++
++/********************************************************************************************
++ * Defines
++ ********************************************************************************************/
++#ifdef __cplusplus
++#define EXTERN extern "C"
++extern "C"
++{
++#else
++#define EXTERN extern
++#endif
++
++#if defined(CONFIG_SENSOR_INTF_SPI)
++#define IO__LOCK(a, b) SPI_LOCK(a, b)
++#define IO__SELECT(a, b, c) SPI_SELECT(a, b, c)
++#define IO__SETFREQUENCY(a, b) SPI_SETFREQUENCY(a, b)
++#define IO__SETDELAY(a, b, c, d) SPI_SETDELAY(a, b, c, d)
++#define IO__CMDDATA(a, b, c)  SPI_CMDDATA(a, b, c)
++#define IO__SNDBLOCK(d,b,l) SPI_SNDBLOCK(d,b,l)
++#define IO__RECVBLOCK(d,b,l) SPI_RECVBLOCK(d,b,l)
++#define IO__EXCHANGE(d,t,r,l) SPI_EXCHANGE(d,t,r,l)
++#define IO__SEND(d,wd) SPI_SEND(d,wd)
++#elif defined(CONFIG_SENSOR_INTF_I2C)
++#define IO_LOCK(a, b)
++#define IO__SELECT(a, b, c)
++#define IO__SETFREQUENCY(a, b)
++#define IO__SETDELAY(a, b, c, d)
++#define IO__CMDDATA(a, b, c)
++#define IO__SNDBLOCK(d,b,l)
++#define IO__RECVBLOCK(d,b,l)
++#define IO__EXCHANGE(d,t,r,l)
++#define IO__SEND(d,wd)
++#else
++#error One of SPI or I2C interfaces for the sensors must be configured.
++#endif
++
++
++#define I2C_TRANSFER(d,m,c) ((d)->ops->transfer(d,m,c))
++#  define I2C_RESET(d) ((d)->ops->reset(d))
++
++/********************************************************************************************
++ * Public Types
++ ********************************************************************************************/
++
++
++typedef enum sensor_ppg_program_e
++{
++  PPG_OXIMETER = 0,
++  PPG_HEART_RATE,
++} sensor_ppg_program_t;
++
++typedef enum sensor_interface_type_e
++{
++  SENSOR_INTF_SPI = 0,
++  SENSOR_INTF_I2C,
++  SENSOR_INTF_UNK,
++} sensor_interface_type_t;
++
++/* A reference to a structure of this type must be passed to the BMM150
++ * driver. This structure provides information about the configuration
++ * of the sensor and provides some board-specific hooks.
++ *
++ * Memory for this structure is provided by the caller.  It is not copied
++ * by the driver and is presumed to persist while the driver is active.
++ */
++
++
++/**
++ * @enum nrf_gpiote_polarity_t
++ * @brief Polarity for the GPIOTE channel.
++ */
++typedef enum sensor_gpio_polarity_e
++{
++  SENSOR_GPIO_POLARITY_NONE   = 0,
++  SENSOR_GPIO_POLARITY_LOTOHI,  ///<  Low to high.
++  SENSOR_GPIO_POLARITY_HITOLO,  ///<  High to low.
++  SENSOR_GPIO_POLARITY_TOGGLE,  ///<  Toggle.
++} sensor_gpio_polarity_t;
++
++struct sensor_i2c_config_s
++{
++  FAR struct i2c_master_s *i2c;/* Pointer to the i2c instance */
++  struct i2c_config_s config;
++};
++
++struct sensor_spi_config_s
++{
++  FAR struct spi_dev_s *dev;    /* Pointer to the SPI instance */
++  FAR uint32_t frequency;
++  FAR uint32_t devid;
++  uint8_t  bits;
++  FAR enum     spi_mode_e mode;
++};
++
++typedef union io_bus_config_s
++{
++  struct sensor_i2c_config_s i2c;
++  struct sensor_spi_config_s spi;
++} io_bus_config_u_t;
++
++struct sensor_config_s
++{
++  /*! 0 - I2C , 1 - SPI Interface */
++  union io_bus_config_s bus;
++  FAR struct sensor_low_level_operations_s *ll_ops;
++  FAR void *sensor_priv;                /* Holds device specific config and other data. */
++  enum sensor_interface_type_e  bus_selection;
++};
++
++typedef struct sensor_dev_s
++{
++  FAR struct sensor_dev_s *flink;
++
++  uint32_t dev_id;
++  sem_t sem_ioctl;
++  sem_t sem_read;
++  sem_t sem_write;
++  struct sensor_config_s config;
++  uint32_t samples;
++  uint32_t time_active;
++  struct work_s work;
++  FAR void *priv;                /* Holds device specific config and other data. */
++} sensor_dev_t;
++
++#if defined(ALTERNATE_PROTOS)
++typedef void (*sensor_gpio_handler_t)(uint32_t pin, bool action);
++typedef int  (*attach_irq)(FAR struct sensor_dev_s *dev, uint32_t *irq);
++typedef int  (*enable_int_pin)(FAR struct sensor_dev_s *dev, uint32_t irq, bool enable);
++typedef int  (*clear)(FAR struct sensor_dev_s *dev, uint32_t irq);
++#endif
++
++// void (*sensor_event_handler)(uint32_t pin, bool action);
++struct sensor_low_level_operations_s
++{
++
++  /*!
++   *  @brief This function is called when the device is registed. sensor has two
++   *  interrupt output pins, call this function to initialize the interrput pin
++   *  and attach the callback function to the corresponding GPIO interrput enent.
++   *
++   *  @param[in] int_channel     : interrput channel, INT_PIN_1 or INT_PIN_2
++   *  @param[in] cb            : callback function when the corresponding interrupt is happend.
++   *
++   *  @return Result of API execution status
++   *  @retval zero -> Success  / -ve value -> Error
++   */
++
++
++  CODE int (*attach_irq)(FAR struct sensor_dev_s *dev, uint32_t *irq, void (*sensor_event_handler)(uint32_t pin,
++                         sensor_gpio_polarity_t action));
++
++  /*!
++   *  @brief This function is called to enable or disable the sensor interrupt.
++   *         sensor has two interrupt output pins, call this function will enable
++   *         or disable corresponding GPIO interrput enent.
++   *
++   *  @param[in] int_channel: interrput channel, sensor
++   *                          or sensor
++   *  @param[in] enable: true if you want enable, false if you want disable
++   *
++   *  @return Result of API execution status
++   *  @retval zero -> Success  / -ve value -> Error
++   */
++  CODE int (*enable_gpio_pin)(FAR struct sensor_dev_s *dev, uint32_t irq, bool enable);
++
++  /*!
++   *  @brief This function is called to clear the interrupt if this sensor is directly
++   *         handled by Nuttx rather than a handler for GPIO pins redirecting to a sensor's
++   *         irq handler.
++   *
++   *  @param[in] pin or irq assignment:
++   *
++   *  @param[in] enable: true if you want enable, false if you want disable
++   *
++   *  @return Result of API execution status
++   *  @retval zero -> Success  / -ve value -> Error
++   */
++  CODE int (*clear)(FAR struct sensor_dev_s *dev, uint32_t irq);
++};
++
++/********************************************************************************************
++ * Private Function Prototypes
++ ********************************************************************************************/
++
++/*
++ *  To get at the priv structure element given a struct file pointer, *fp,
++ *  this macro will declare an inline static call correctly typed to get at
++ *  priv.
++ *
++ *  Use map_priv(name, type) to declare a static inline call of "name_priv"
++ *           map_priv(getpriv, struct foo_s);
++ *
++ *  which returns a "type ## _t *" and then in the code simply type:
++ *          struct foo_s *priv;
++ *          "priv = getpriv(filep);
++ *
++ */
++#define map_priv(name, type)                                    \
++static inline type ## _t * name ## _priv(struct file *fp)       \
++{                                                               \
++  DEBUGASSERT(fp != NULL && fp->f_inode != NULL);               \
++  FAR struct inode *inode;                                      \
++  inode = fp->f_inode;                                          \
++  DEBUGASSERT(inode->i_private != NULL);                        \
++  return (type ## _t *) inode->i_private;                       \
++}
++
++/********************************************************************************************
++ * Public Function Prototypes
++ ********************************************************************************************/
++
++FAR sensor_dev_t *sensor_initialize(uint8_t regaddr, uint8_t part_id);
++
++#undef EXTERN
++#ifdef __cplusplus
++}
++#endif
++
++#endif /*  __INCLUDE_NUTTX_SENSORS_SENSOR_H */
+diff --git a/include/nuttx/spi/spi.h b/include/nuttx/spi/spi.h
+index c38407eed3..598ca80810 100644
+--- a/include/nuttx/spi/spi.h
++++ b/include/nuttx/spi/spi.h
+@@ -460,6 +460,8 @@
+ #define SPIDEV_MAGNETOMETER(n)  SPIDEV_ID(SPIDEVTYPE_MAGNETOMETER,  (n))
+ #define SPIDEV_ACC_GYRO_COMB(n) SPIDEV_ID(SPIDEVTYPE_ACC_GYRO_COMB, (n))
+ #define SPIDEV_ZGLUE_FAST(n)    SPIDEV_ID(SPIDEVTYPE_ZGLUE_FAST,    (n))
++#define SPIDEV_OPTO_BIOMETRIC(n)SPIDEV_ID(SPIDEVTYPE_OPTO_BIOMETRIC,(n))
++#define SPIDEV_BATT_PWR_MGMT(n) SPIDEV_ID(SPIDEVTYPE_BATT_PWR_MGMT, (n))
+ #define SPIDEV_USER(n)          SPIDEV_ID(SPIDEVTYPE_USER,          (n))
+ 
+ /****************************************************************************
+@@ -499,18 +501,19 @@ enum spi_devtype_e
+   SPIDEVTYPE_MAGNETOMETER,  /* Select SPI Magnetometer device */
+   SPIDEVTYPE_ACC_GYRO_COMB, /* Select Accelerometer and gyro combine device*/
+   SPIDEVTYPE_ZGLUE_FAST,    /* Select SPI driver for fast API*/
++  SPIDEVTYPE_OPTO_BIOMETRIC,  /* Select SPI driver for optical biometric/heart rate devices */
++  SPIDEVTYPE_BATT_PWR_MGMT,   /* Select SPI driver for batter/power mangement devices */
+   SPIDEVTYPE_USER           /* Board-specific values start here
+                              * This must always be the last definition. */
+ };
+-
+ /* Certain SPI devices may required different clocking modes */
+ 
+ enum spi_mode_e
+ {
+-  SPIDEV_MODE0 = 0,     /* CPOL=0 CHPHA=0 */
+-  SPIDEV_MODE1,         /* CPOL=0 CHPHA=1 */
+-  SPIDEV_MODE2,         /* CPOL=1 CHPHA=0 */
+-  SPIDEV_MODE3          /* CPOL=1 CHPHA=1 */
++  SPIDEV_MODE0 = 0,       /* CPOL=0 CHPHA=0 */
++  SPIDEV_MODE1,           /* CPOL=0 CHPHA=1 */
++  SPIDEV_MODE2,           /* CPOL=1 CHPHA=0 */
++  SPIDEV_MODE3            /* CPOL=1 CHPHA=1 */
+ };
+ 
+ #ifdef CONFIG_SPI_HWFEATURES
+diff --git a/tools/Config.mk b/tools/Config.mk
+index 09023b97a0..19ee048d3b 100644
+--- a/tools/Config.mk
++++ b/tools/Config.mk
+@@ -239,6 +239,20 @@ define PRELINK
+ endef
+ endif
+ 
++# COPYFILE - Copy one file
++
++ifeq ($(CONFIG_WINDOWS_NATIVE),y)
++define COPYFILE
++	@echo "COPY: $1 $2"
++	$(Q) if exist $1 (copy /V /Y /Z /L $1 $2)
++endef
++else
++define COPYFILE
++	echo -e "CP: $1 to $2"
++	$(Q) cp -d $1 $2
++endef
++endif
++
+ # DELFILE - Delete one file
+ 
+ ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+@@ -282,10 +296,10 @@ define CLEAN
+ 	$(Q) if exist *$(OBJEXT) (del /f /q *$(OBJEXT))
+ 	$(Q) if exist *$(LIBEXT) (del /f /q *$(LIBEXT))
+ 	$(Q) if exist *~ (del /f /q *~)
+-	$(Q) if exist (del /f /q  .*.swp *.su)
++	$(Q) if exist (del /f /q  .*.swp *.su *.lock)
+ endef
+ else
+ define CLEAN
+-	$(Q) rm -f *$(OBJEXT) *$(LIBEXT) *~ .*.swp *.su
++	$(Q) rm -f *$(OBJEXT) *$(LIBEXT) *~ .*.swp *.su *.lock
+ endef
+ endif
+-- 
+2.17.1
+
