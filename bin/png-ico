@@ -1,0 +1,11 @@
+#!/bin/bash -x
+
+[ $# -lt 2 ] && echo "Need two args:  Input file, output file." 2>&1 && exit 2
+([ ! -f "$1" ] && echo "Not a file: <$1>" ) && exit 3
+INPUT_PNG="$1" ; shift
+OUTPUT_ICO="$1" ; shift
+
+convert -resize x16 -gravity center -crop 16x16+0+0 $INPUT_PNG -flatten \
+        -colors 256 -background transparent $OUTPUT_ICO 
+
+
