@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#
+# generate your CA key and certificate:
+#
+openssl genrsa -out ca.key 4096
+
+#
+# (provide the 'Common Name', ie: 'Example Internal CA')
+openssl req -new -x509 -days 365 -key ca.key -out ca.crt
+#
+
+#
+# generate your server key:
+#
+openssl genrsa -out server.key 4096
+
+#
+# make a signing request from the server key:
+# (you must provide the 'Common Name' here, ie: 'localhost' or 'test.internal')
+#
+openssl req -new -key server.key -out server.csr
+
+#
+# sign it with your CA key:
+#
+openssl x509 -req -days 365 \
+    -in server.csr -out server.crt \
+    -CA ca.crt -CAkey ca.key \
+    -CAserial ./caserial -CAcreateserial
+
+#
+# verify it (it should print "OK"):
+#
+openssl verify -CAfile ca.crt ./server.crt
+

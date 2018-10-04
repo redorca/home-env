@@ -30,3 +30,4 @@ bitbang-jtag
 external/
 copyright.*
 log.*
+Public/
