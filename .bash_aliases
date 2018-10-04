@@ -703,5 +703,5 @@ PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 #
 # Set display resolution according to ip addr /24
 #
-chk_debug || set_display_resolution
+chk_debug || set-display-resolution
 touch ~/.vimrc_color
