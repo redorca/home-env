@@ -47,11 +47,13 @@ svn_backed["astyle-code"]="svn checkout"
 svn_backed["xpra"]="svn checkout"
 svn_backed["FreeImage-svn"]="svn checkout"
 svn_backed["Moritz"]="svn checkout"
+svn_backed["codeblocks"]="svn checkout"
 
 #
 # Hash to match informal repo names to the canonical ones.
 #
 # RepoRename["freeimage"]="FreeImage-git"
+RepoRename["blocks"]="codeblocks"
 RepoRename["upgrade"]="nuttx-upgrade"
 RepoRename["repo"]="git-repo"
 RepoRename["astyle"]="astyle-code"
@@ -82,6 +84,8 @@ RepoRename["ctags"]="universal-ctags"
 # Hash translation from canonical repo target to  URI crafted to
 # hold enough info to clone/checkout the source.
 #
+Repo2Host["codeblocks"]="svn://svn.code.sf.net/p/codeblocks/code/trunk codeblocks"
+Repo2Host["scikit"]="master@https://github.com/scikit-learn/scikit-learn.git"
 Repo2Host["uncrustify"]="master@https://github.com/uncrustify/uncrustify.git"
 Repo2Host["alios"]="master@git@github.com/alibaba/AliOS-Things.git"
 Repo2Host["utags"]="master@git@github.com/universal-ctags/ctags.git"
@@ -486,6 +490,7 @@ clone_one()
         [ -z "$1" ] && return 1
         TrueTarget="$(resolve_clone_id $1)"
         dbg_echo "Target to clone: $TrueTarget"
+        dbg_echo ":: svn_backed[$TrueTarget] == ${svn_backed[$TrueTarget]}"
         if [ -n "${svn_backed[$TrueTarget]}" ] ; then
                 dbg_echo "svn_backed[$TrueTarget] == ${svn_backed[$TrueTarget]}"
                 CMD="${svn_backed[$TrueTarget]} ${Repo2Host[$TrueTarget]}"
@@ -494,7 +499,7 @@ clone_one()
                 dbg_echo  "hg_backed[fast_api] == ${hg_backed[fast_api]}"
                 CMD="${hg_backed[$TrueTarget]} ${Repo2Host[$TrueTarget]}"
         else
-                dbg_echo  "Repo2Host[$TruTarget] == ${Repo2Host[$TrueTarget]}"
+                dbg_echo  "Repo2Host[$TrueTarget] == ${Repo2Host[$TrueTarget]}"
                 CMD="$(set_cmd_git $TrueTarget)"
         fi
 

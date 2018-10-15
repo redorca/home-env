@@ -11,7 +11,7 @@ declare -A nRF52
 declare -A Program_Chip
 
 FLASH_KEYS=( "HEX_FILE" "FLASHER" "FLASH_RESET" "FLASH_ERASE" "FLASH_FLASH" )
-nRF52["HEX"]="nuttx.hex"
+nRF52["HEX_FILE"]="nuttx.hex"
 nRF52["BINHEX"]="output_binary.hex"
 nRF52["BINHEX_ADDR"]="0x60000"
 nRF52["MEMRD"]="--memrd"
