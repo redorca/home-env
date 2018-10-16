@@ -84,6 +84,8 @@ RepoRename["ctags"]="universal-ctags"
 # Hash translation from canonical repo target to  URI crafted to
 # hold enough info to clone/checkout the source.
 #
+Repo2Host["upython-lib"]="master@https://github.com/micropython/micropython-lib.git"
+Repo2Host["upython"]="master@https://github.com/micropython/micropython.git"
 Repo2Host["codeblocks"]="svn://svn.code.sf.net/p/codeblocks/code/trunk codeblocks"
 Repo2Host["scikit"]="master@https://github.com/scikit-learn/scikit-learn.git"
 Repo2Host["uncrustify"]="master@https://github.com/uncrustify/uncrustify.git"
