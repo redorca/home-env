@@ -1,0 +1,15 @@
+#!/bin/bash
+
+
+
+add_pkgs()
+{
+        sudo apt-get -y install "$@"
+
+}
+sudo apt-get update
+
+add_pkgs gcc g++ npm
+sudo npm install -g npm
+add_pkgs build-essential git libsecret-1-dev fakeroot rpm libx11-dev libxkbfile-dev libsecret-1-dev
+
