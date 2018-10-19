@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ATOM_SRCDIR=$HOME/.mnt/zeus/atom
+BLD_SCRIPT=script/bootstrap
 
 
 add_pkgs()
@@ -11,5 +13,12 @@ sudo apt-get update
 
 add_pkgs gcc g++ npm
 sudo npm install -g npm
+
 add_pkgs build-essential git libsecret-1-dev fakeroot rpm libx11-dev libxkbfile-dev libsecret-1-dev
+
+(
+        cd $ATOM_SRCDIR || die "Huh?"
+
+        $BLD_SCRIPT | tee /tmp/log.build.atom
+)
 
