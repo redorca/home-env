@@ -66,6 +66,8 @@ UBU_PKGS="git
 	smbclient
 	samba
 	mdns-scan
+        python-tk
+        ghostscript
 "
 
 dbg()
