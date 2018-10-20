@@ -119,6 +119,8 @@ git_config_for_use "Bill" "bill@zglue.com"
 
 git checkout .
 mk_vimrc_color
+cd bin
+ln -s clone klone
 
 BASHRC=~/.bashrc
 
