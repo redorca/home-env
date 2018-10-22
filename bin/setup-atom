@@ -1,24 +1,58 @@
 #!/bin/bash
 
 ATOM_SRCDIR=$HOME/.mnt/zeus/atom
-BLD_SCRIPT=script/bootstrap
+BOOTSCRIPT=script/bootstrap
+BLD_SCRIPT=script/build
+declare -a CMD
+PYTHON=/usr/bin/python2
 
+setup_atom_build()
+{
+
+        add_pkgs gcc g++ npm
+        sudo npm install -g npm
+
+        add_pkgs build-essential git libsecret-1-dev fakeroot rpm libx11-dev libxkbfile-dev libsecret-1-dev
+
+}
+
+setup_atom_install()
+{
+curl -sL https://packagecloud.io/AtomEditor/atom/gpgkey | sudo apt-key add -
+sudo sh -c 'echo "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main" > /etc/apt/sources.list.d/atom.list'
+}
 
 add_pkgs()
 {
         sudo apt-get -y install "$@"
 
 }
-sudo apt-get update
 
-add_pkgs gcc g++ npm
-sudo npm install -g npm
+atom_build()
+{
+        cd $ATOM_SRCDIR || die "Huh?"
+        $BLD_SCRIPT --install=/tmp | tee /tmp/log.build.atom
+}
 
-add_pkgs build-essential git libsecret-1-dev fakeroot rpm libx11-dev libxkbfile-dev libsecret-1-dev
+atom_install()
+{
+        add_pkgs atom
+        sudo apt-get autoremove
+}
+
+CMD=( "setup_atom_build" "&&" "sudo" "apt-get" "update" "&&" "atom_build" )
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        --install) CMD=( "setup_atom_install" "&&" "sudo" "apt-get" "update" "&&" "atom_install" )
+        ;;
+        --build) CMD=( "atom_build" )
+        ;;
+        esac
+        shift
+done
 
 (
-        cd $ATOM_SRCDIR || die "Huh?"
-
-        $BLD_SCRIPT | tee /tmp/log.build.atom
+        echo "${CMD[@]}"
+        ${CMD[@]}
 )
 
