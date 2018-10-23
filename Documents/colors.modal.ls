@@ -1,4 +1,5 @@
 # Configuration file for dircolors, a utility to help you set the
+# Configuration file for dircolors, a utility to help you set the
 # LS_COLORS environment variable used by GNU ls with the --color option.
 # Copyright (C) 1996-2013 Free Software Foundation, Inc.
 # Copying and distribution of this file, with or without modification,

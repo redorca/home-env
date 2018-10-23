@@ -1,7 +1,10 @@
-#!/bin/bash
+#!/bin/bash -x
 
 DEBUG=${DEBUG:-0}
 TMPFILE_EXEC=/tmp/.setup
+BDRIVE="UUID=a1a552cc-2cbf-4467-8b62-410129bdef0e /home/zglue/.mnt  ext4"
+FSTAB="/etc/fstab"
+
 #
 # Relocate so when we do a git checkout we don't overwrite ourselvves.
 #
@@ -131,4 +134,25 @@ if ! grep bash_aliases $BASHRC >/dev/null ; then
         echo -e "\\tsource ~/.bash_aliases" >> $BASHRC
         echo -e "fi\\n" >> $BASHRC
 fi
+
+
+mkdir ~/.mnt
+sudo -H mount /dev/sdb1  ~/.mnt
+(
+  cd ~ || die "No home dir found?"
+
+  for entry in $(ls ~/.mnt) ; do
+    [ ! -d "$entry" ] && continue
+    [ "$entry" = "Documents" ] && continue
+    ln -sf ".mnt/$entry"
+  done
+
+
+)
+
+#
+# Update $FSTAB to make the mount permanent.
+#
+CMD=( "sed" "-i" "-e" '$a'"$BDRIVE'"  "$FSTAB" )
+sudo "${CMD[@]}"
 
