@@ -146,8 +146,6 @@ sudo -H mount /dev/sdb1  ~/.mnt
     [ "$entry" = "Documents" ] && continue
     ln -sf ".mnt/$entry"
   done
-
-
 )
 
 #
@@ -155,4 +153,11 @@ sudo -H mount /dev/sdb1  ~/.mnt
 #
 CMD=( "sed" "-i" "-e" '$a'"$BDRIVE'"  "$FSTAB" )
 sudo "${CMD[@]}"
+
+cd $HOME
+tar -zxpf .mnt/keys.rsa.tgz
+mkdir tmp
+cd tmp
+tar -zxf ../.mnt/dot.config.tgz
+cp -a .config ../
 
