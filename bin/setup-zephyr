@@ -1,0 +1,28 @@
+#!/bin/bash
+
+ZEPHYR=$HOME/sources/zephyr
+ZEPHYR_SDKDIR=$HOME/.zephyr
+ZEPHYRRC=$HOME/.zephyrrc
+
+
+echo "export ZEPHYR_TOOLCHAIN_VARIANT=zephyr" >> $ZEPHYRRC
+echo "export ZEPHYR_SDK_INSTALL_DIR=$ZEPHYR_SDKDIR" >> $ZEPHYRRC
+
+mkdir -p $ZEPHYR_SDKDIR
+cd $ZEPHYR_SDKDIR
+wget https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/0.9.3/zephyr-sdk-0.9.3-setup.run
+$ZEPHYR_SDKDIR/zephyr-sdk-0.9.3-setup.run
+exit
+
+sudo apt-get update
+sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
+  ccache doxygen dfu-util device-tree-compiler \
+  python3-ply python3-pip python3-setuptools python3-wheel xz-utils file \
+  make gcc-multilib autoconf automake libtool librsvg2-bin \
+  texlive-latex-base texlive-latex-extra latexmk texlive-fonts-recommended
+
+sudo pip3 install --user -r scripts/requirements.txt
+
+wget https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/0.9.3/zephyr-sdk-0.9.3-setup.run
+
+

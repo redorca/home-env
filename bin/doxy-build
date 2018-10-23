@@ -1,0 +1,12 @@
+#!/bin/bash
+
+WORKDIR=build
+
+[ -f doc/Doxyfile ] || exit 3
+DOXY_SOURCE=$(pwd)
+[ -d "$WORKDIR" ] || mkdir -p "$WORKDIR"
+cd "$WORKDIR"
+cmake -Dbuild_doc=ON -G "Unix Makefiles" "$DOXY_SOURCE"
+make
+[ "$1" = "install" ] && sudo make install
+
