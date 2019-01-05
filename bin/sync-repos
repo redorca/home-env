@@ -146,9 +146,9 @@ git_sync_if()
                                         echo_err "Nothing to do.${RESET}" && \
                                         return 0
         if ! Tracker=$(get_tracking_ref) ; then
-                echo_err "Unable to determine tracking branch."
+                echo_err "No tracking branch available."
                 echo_dbg ""
-                return 1
+                return 2
         fi
         changes_in_flight && git stash save "Temp save while switching to $Tracker and pulling"
         if ! git checkout $Tracker ; then
