@@ -35,7 +35,7 @@ help_msg()
         echo "you need to provide as an argument.  svnco AStyle."
         echo "Empty args are, naturally, verboten or at least"
         echo "unacceptable.  If you ask for a project that is"
-        echo -e "unknown you will be told.\nThe projects available are:"
+        echo -e "unknown you will be told.\n\nThe projects available are:"
         do_for 'echo -e "\t$var"' "${Projects[@]}"
 }
 
@@ -50,7 +50,7 @@ svn_checkout()
                 return 1
         fi
         ASTYLE_HOST_URL=https://svn.code.sf.net/p/astyle/code/trunk/
-        echo svn co $ASTYLE_HOST_URL $PROJECT
+        svn co $ASTYLE_HOST_URL $PROJECT
 }
 
 [ -z "$1" ] && help_msg && exit 1
