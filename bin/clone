@@ -82,6 +82,7 @@ RepoRename["Doxygen"]="doxygen"
 RepoRename["ctags"]="universal-ctags"
 RepoRename["sumatra"]="sumatrapdf"
 
+Repo2Host["chromium"]="https://github.com/chromium/chromium.git"
 Repo2Host["alias"]="master@https://github.com/bjoernkarmann/project_alias"
 Repo2Host["sumatrapdf"]="master@https://github.com/sumatrapdfreader/sumatrapdf.git"
 Repo2Host["gitty"]="master@https://github.com/cyd01/KiTTY.git"
@@ -485,7 +486,9 @@ set_cmd_git()
         dbg_echo "Active branch: <$ActiveBranch>, Branch: <$Branch>, Info[Branch] <${Info[$Branch]}>"
         dbg_echo "Uri: <$Uri>,  Element count: ${#Info[@]}"
 #       echo "git clone -b "${Info[$Branch]}" $Proto://$Uri"
-        echo "git clone -b "$ActiveBranch" $Proto://$Uri"
+        BRANCH=( "-b" "$ActiveBranch" )
+        [ -z "$ActiveBranch" ] && BRANCH=()
+        echo "git clone "${BRANCH[@]}" $Proto://$Uri"
 }
 
 #
