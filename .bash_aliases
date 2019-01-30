@@ -482,6 +482,7 @@ SSH="ssh -Y"
 
 add-path /usr/share/doc/git/contrib/git-jump
 add-path ~/.cabal/bin
+add-path ~/usr/bin
 add-path ~/bin
 
 alias        path="echo $PATH | sed -e 's/^/	/' -e 's/:/	/g'"
