@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ $# -eq 0 ] ; then
+        echo "Please supply one or more filenames to process" >&2
+        exit 1
+fi
+
+ASTYLE=/home/zglue/bin/astyle
+
+declare -A Styles
+
+Styles["nuttx"]=/home/zglue/bin/astyle-nuttx
+
+CMD=( "$ASTYLE" "--options=${Styles[nuttx]}" "$@" )
+
+${CMD[@]}
+
