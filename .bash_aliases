@@ -170,8 +170,8 @@ function prune_path()
 }
 
 eval $(set_assoc_array Paths $(echo $PATH | sed -e 's/:/ /g'))
-echo -n ":${Foo[$@]}"
-echo "========================"
+dbg_echo -n ":${Foo[$@]}"
+dbg_echo "========================"
 
 prune_path A::a
 
