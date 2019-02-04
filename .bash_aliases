@@ -39,6 +39,13 @@ ip_to_display["default"]="1920x1080"
 ip_to_display["192.168.168"]="2048x1152"
 ip_to_display["192.168.183"]="1920x1080"
 
+on_exit()
+{
+    set +x
+}
+
+
+trap on_exit EXIT ERR
 
 function err_echo()
 {
@@ -673,6 +680,32 @@ function repo()
         Remote=( $(git status -sb | head -1 | sed -e 's/^.*\.\.\.//' -e 's/ //g' | awk -F'/' '{print $1 "  " $2}') ) 2>/dev/null
         [ "${#Remote[@]}" -eq 2 ] && Repo="${Remote[0]}"
         echo -n -e "$(bold $Kolor)$Repo${RESET}"
+}
+
+#
+# Generate a symlink from '/.../.mnt/zgle/$Dir' to ~src directory.
+#
+goo()
+{
+    ( [ -z "$@" ] && err_echo "Need a directory" ) && return 1
+
+    DISKMNT=$HOME/.mnt
+    HOME_SRCDIR=$HOME/src
+    SRCDIR="$1"
+    APPDIR="$DISKMNT/zglue/$SRCDIR"
+
+    if [ ! -d "$SRCDIR" ] ; then
+        if [ ! -d "$APPDIR" ] ; then
+            err_echo "No app or local directory exist"
+            return 1
+        fi
+    else
+        [ ! -d "$APPDIR" ] && cp -a "$SRCDIR" "${APPDIR%/*}"
+    fi
+
+
+    [ -d "$SRCDIR" ] && rm -rf "$SRCDIR"
+    ln -sf "$DISKMNT/zglue/$SRCDIR" "$HOME_SRCDIR"
 }
 
 if which apt-get >/dev/null 2>&1 ; then
