@@ -170,6 +170,9 @@ function prune_path()
 }
 
 eval $(set_assoc_array Paths $(echo $PATH | sed -e 's/:/ /g'))
+dbg_echo -n ":${Foo[$@]}"
+dbg_echo "========================"
+
 prune_path A::a
 
 function add-path()
@@ -177,13 +180,9 @@ function add-path()
         funame $@
         local Dir=
 
-#       set -x
-
         Dir="$1"
 
         [ ! -d "$Dir" ] && dbg_echo "No such path exists: ($Dir)" && return
-#       [  -d "$Dir" ] && echo "[  -d $Dir ]"
-#       dbg_echo "::({Paths[$Dir]}) (${Paths[$Dir]})"
 
         [ -n "${Paths[$Dir]}" ] && dbg_echo "Won't add path. Already present: $Dir" && return
         ([ -z "$PATH" ] && err_echo "Starting with empty PATH.")
@@ -486,6 +485,7 @@ add-path ~/usr/bin
 add-path ~/bin
 
 alias        path="echo $PATH | sed -e 's/^/	/' -e 's/:/	/g'"
+alias        paths="echo $PATH | sed -e 's/://g'"
 alias          po="popd >/dev/null && dirs -v"
 alias        dirs="dirs -v"
 alias           j="jobs -l"

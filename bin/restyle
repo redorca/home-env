@@ -1,0 +1,15 @@
+#!/bin/bash
+
+[ $# -eq 0 ] && echo "Please provide a list of files to style" >&2 && exit 1
+
+BINDIR=$HOME/bin
+ASTYLE_OPTIONS=$BINDIR/astyle-nuttx
+ASTYLE_BIN=$BINDIR/bin/astyle
+
+[ ! -f $ASTYLE_OPTIONS ] && echo "No $ASTYLE_OPTIONS found" >&2 && exit 2
+[ ! -x $ASTYLE_BIN ] && echo "No executable $ASTYLE_BIN found" >&2 && exit 3
+
+CMDS=( "$ASTYLE_BIN" "--options" "$ASTYLE_OPTIONS" "$@" )
+
+echo "CMD: ${CMDS[*]}"
+
