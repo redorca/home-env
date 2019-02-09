@@ -424,13 +424,15 @@ function trace()
 #
 # Edit a file in ~/bin from anywhere on the system.
 #
-function vimbin()
+function vbin()
 {
         funame $@
         local -a Files=
 
         Files="$*"
-        pushd ~/bin > /dev/null && vim $Files && popd >/dev/null
+        pushd ~/bin > /dev/null
+        vim $Files
+        popd >/dev/null
 }
 
 function vim_color_setup()

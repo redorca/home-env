@@ -144,6 +144,9 @@ Repo2Host["BMM050_driver"]="master@https://github.com/BoschSensortec/BMM050_driv
 Repo2Host["doxygen"]="master@https://github.com/doxygen/doxygen.git"
 Repo2Host["universal-ctags"]="master@https://github.com/universal-ctags/ctags.git"
 Repo2Host["eigen"]="master@${BITBUCKET_URL}/eigen/eigen.git"
+Repo2Host["build-webos"]="master@git@github.com/webosose/build-webos.git"
+Repo2Host["bitbake"]="master@git://git.openembedded.org/bitbake.git"
+
 FinalCmds=()
 FinalCmds["nuttx"]="setup_repo"
 FinalCmds["apps"]="setup_repo"

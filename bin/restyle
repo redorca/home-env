@@ -1,15 +1,24 @@
 #!/bin/bash
 
+[ "$TRACE" == 1 ] && set -x
+
 [ $# -eq 0 ] && echo "Please provide a list of files to style" >&2 && exit 1
 
 BINDIR=$HOME/bin
 ASTYLE_OPTIONS=$BINDIR/astyle-nuttx
-ASTYLE_BIN=$BINDIR/bin/astyle
+ASTYLE_BIN=$BINDIR/astyle
 
 [ ! -f $ASTYLE_OPTIONS ] && echo "No $ASTYLE_OPTIONS found" >&2 && exit 2
 [ ! -x $ASTYLE_BIN ] && echo "No executable $ASTYLE_BIN found" >&2 && exit 3
 
-CMDS=( "$ASTYLE_BIN" "--options" "$ASTYLE_OPTIONS" "$@" )
+if [ -d "$1" ] ; then
+        FILES=$(find $1 -type f -name "*.c" -o -name "*.h" | sed -e 's///g')
+fi
+[ -f "$1" ] && FILES=( "$@" )
+# echo "FILES: ${FILES[*]}"
 
+CMDS=( "$ASTYLE_BIN" "--options" "$ASTYLE_OPTIONS" "$FILES" )
 echo "CMD: ${CMDS[*]}"
+${CMDS["$@"]}
 
+set +x
