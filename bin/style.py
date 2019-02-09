@@ -28,8 +28,11 @@ CURDIR = "."
 
 def list_files(DIR):
     for Dir, Dirpath, File, in os.walk(DIR, topdown=True, followlinks=False):
-        print(Dirpath, "/", File, "\n")
-
+        if not Dir:
+            Dir = "."
+        print("Dir : " + Dir)
+        [ print("File: " + Dir + "/" +  x.strip())  for x in File if x.endswith(".h") or x.endswith(".c")]
+        print("=================================")
 
 list_files(CURDIR)
 
