@@ -69,6 +69,8 @@ RepoRename["BoardsX"]="bkboardsx"
 RepoRename["tools"]="bktools"
 RepoRename["riot"]="RIOT"
 RepoRename["apps"]="nuttx_apps"
+RepoRename["pygit"]="dulwich"
+
 # Setup in setup_repo_table() ## RepoRename["dialog"]="dialog_585_sdk_dev@3rd_Party_SDK"
 # Setup in setup_repo_table() ## RepoRename["dallas"]="dialog_585_sdk_dev@3rd_Party_SDK"
 # Setup in setup_repo_table() ## RepoRename["nordic"]="#$NORDIC_SDK"@3rd_Party_SDK"
@@ -146,6 +148,8 @@ Repo2Host["universal-ctags"]="master@https://github.com/universal-ctags/ctags.gi
 Repo2Host["eigen"]="master@${BITBUCKET_URL}/eigen/eigen.git"
 Repo2Host["build-webos"]="master@git@github.com/webosose/build-webos.git"
 Repo2Host["bitbake"]="master@git://git.openembedded.org/bitbake.git"
+Repo2Host["dulwich"]="master@git://github.com/dulwich/dulwich.git"
+
 
 FinalCmds=()
 FinalCmds["nuttx"]="setup_repo"
