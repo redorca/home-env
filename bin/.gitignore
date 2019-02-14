@@ -2,7 +2,7 @@
 # syntax: glob
 
 # home-env/bin
-home-env/
+home-env/*
 *.tgz
 *.patch
 

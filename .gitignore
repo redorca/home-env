@@ -71,6 +71,7 @@ Packages/
 usr/
 # bin/
 !bin/.gitignore
+!.gdbinit
 examples.desktop
 gerrit/
 zglue-bill/
