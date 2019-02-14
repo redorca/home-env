@@ -1,7 +1,11 @@
 #!/usr/bin/python3
 
 import os
+import subprocess
+
 CURDIR = "."
+ASTYLE_NUTTX    =  "/home/zglue/bin/astyle-nuttx"
+ASTYLE          =  "/home/zglue/bin/astyle"
 ## count = "100"
 ## spot = "init"
 ## cmd = "find "
@@ -31,6 +35,7 @@ def list_files(DIR):
         if not Dir:
             Dir = "."
         print("Dir : " + Dir)
+        subprocess.run(["astyle", "=".join(["--options", ASTYLE_NUTTX]), *[Dir + "/" + x.strip() for x in File if x.endswith(".h") or x.endswith(".c")]])
         [ print("File: " + Dir + "/" +  x.strip())  for x in File if x.endswith(".h") or x.endswith(".c")]
         print("=================================")
 
