@@ -11,9 +11,9 @@ declare -A Styles
 
 Styles["nuttx"]=/home/zglue/bin/astyle-nuttx
 
-# CMD_GDB=( "gdb" "--se=" )
+CMD_GDB=( "gdb" "--se=" "/home/zglue/bin/symbols.astyled")
 CMD=( "$ASTYLE" "--options=${Styles[nuttx]}" "$@" )
 
-# echo "${CMD_GDB[@]} ${CMD[@]}"
+echo "${CMD_GDB[@]} ${CMD[@]}"
 "${CMD_GDB[@]}" "${CMD[@]}"
 
