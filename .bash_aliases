@@ -506,7 +506,7 @@ alias      status="git status | sed -n -e '1,/^Untracked/p'"
 alias        mods="git status | grep modified:"
 alias       shlvl='echo "Shell Depth:   $SHLVL"'
 alias    resource="source ~/.bashrc"
-alias      launch="xdg-open"
+#alias     launch="xdg-open"
  alias        diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
 alias         cls="clear_console"
 alias        grep="grep --exclude=.git --exclude=cscope.out"
@@ -708,6 +708,17 @@ goo()
 
     [ -d "$SRCDIR" ] && rm -rf "$SRCDIR"
     ln -sf "$DISKMNT/zglue/$SRCDIR" "$HOME_SRCDIR"
+}
+
+#
+# Call xdg-open but disconnect from the terminal.
+#
+function launch()
+{
+    [ ! -e "$1" ] && return 99
+
+    xdg-open "$1" >/dev/null 2>&1
+
 }
 
 if which apt-get >/dev/null 2>&1 ; then
