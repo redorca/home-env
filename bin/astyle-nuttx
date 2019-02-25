@@ -1,4 +1,5 @@
 style=gnu
+suffix=none
 indent=spaces=2
 indent-switches
 indent-cases
