@@ -333,7 +333,7 @@ function show()
 #
 # Simplify creating a cscope tag database
 #
-function tag()
+function tag_by_cscope()
 {
         funame $@
         local  START_DIR=
@@ -349,8 +349,49 @@ function tag()
 }
 
 #
+# Create GTAGS used by the global command.
+# The tag file will live in the root dir
+# that gtags runs. Global will ascend to
+# look for it.
 #
-# Simplify creating a cscope tag database
+function tag_by_gtag()
+{
+        gtag .
+}
+
+#
+# Ascend the directory tree looking for a .git root.
+#
+function find_root_gitdir()
+{
+        trace_on_off
+        local Path="$1"
+        if [ $# -eq 0 ] ; then
+                err_echo "A directory path to search is required."
+                trace_on_off
+                exit 1
+        fi
+        if [ ! -d "$Path" && ! -L "$Path" ] ; then
+                err_echo "That path doesn't point to a directory."
+                trace_on_off
+                exit 1
+        fi
+        while [ ! -d $Path/.git ] ; do
+                if [ -d "$Path/home" ] && [ -d "$Path/boot" ] ; then
+                        dbg_echo "Hit the root dir '/', no .git dir found."
+                        trace_on_off
+                        return 1
+                fi
+                Path=$(dirname $Path)
+        done
+        echo "$Path"
+        trace_on_off
+}
+
+#
+#
+# Simplify creating a local cscope tag
+# database that is rooted.
 #
 function rtag()
 {
@@ -360,14 +401,7 @@ function rtag()
         local  CSCOPE_DBFILE=
 
         CSCOPE_DBFILE=cscope.out
-        Path=$(pwd)
-        while [ ! -d $Path/.git ] ; do
-                if [ -d "$Path/home" ] && [ -d "$Path/boot" ] ; then
-                        dbg_echo "Hit the root dir, not .git dir found."
-                        return 1
-                fi
-                Path=$(dirname $Path)
-        done
+        Path="$(find_root_gitdir $(pwd))"
         dbg_echo "==========================="
         chk_debug && ls -d $Path/../*/.git
         dbg_echo "==========================="
@@ -398,6 +432,16 @@ function chk_trace()
 {
         [ "$TRACE" = "1" ] && return 0
         return 1
+}
+
+#
+# If the TRACE var is set then turn
+# on shell tracing.
+#
+function trace_on_off()
+{
+        set +x
+        chk_trace && set -x
 }
 
 #
