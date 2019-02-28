@@ -16,6 +16,7 @@ run()
 
 ASTYLE="/home/zglue/bin/astyle"
 TARGET_DIR="$HOME/src/zglue/official/nuttx-official/arch/arm/src/imxrt"
+[ ! -d "$TARGET_DIR" ] && TARGET_DIR="$HOME/src/zeus/NuttX/nuttx-official/arch/arm/src/imxrt"
 pushd $TARGET_DIR || exit
 
 declare -A Styles
@@ -24,7 +25,10 @@ Styles["nuttx"]="/home/zglue/bin/astyle-nuttx"
 date +"== %m::%S::%h-%d"
 ls -l test.c
 
-CMD=( "git" "checkout" )
+CMD=( "git" "checkout" "." )
+run ${CMD[@]}
+
+CMD=( "git" "status" )
 run ${CMD[@]}
 
 ls -l test.c

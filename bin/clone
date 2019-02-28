@@ -84,6 +84,7 @@ RepoRename["Doxygen"]="doxygen"
 RepoRename["ctags"]="universal-ctags"
 RepoRename["sumatra"]="sumatrapdf"
 
+Repo2Host["chibios"]="https://svn.code.sf.net/p/chibios/svn2/trunk"
 Repo2Host["chromium"]="https://github.com/chromium/chromium.git"
 Repo2Host["alias"]="master@https://github.com/bjoernkarmann/project_alias"
 Repo2Host["sumatrapdf"]="master@https://github.com/sumatrapdfreader/sumatrapdf.git"
@@ -149,6 +150,8 @@ Repo2Host["eigen"]="master@${BITBUCKET_URL}/eigen/eigen.git"
 Repo2Host["build-webos"]="master@git@github.com/webosose/build-webos.git"
 Repo2Host["bitbake"]="master@git://git.openembedded.org/bitbake.git"
 Repo2Host["dulwich"]="master@git://github.com/dulwich/dulwich.git"
+Repo2Host["searchmonkey"]="master@https://git.code.sf.net/p/searchmonkey/GTK searchmonkey-GTK"
+Repo2Host["ksearchmonkey"]="master@https://git.code.sf.net/p/searchmonkey/KDE searchmonkey-KDE"
 
 
 FinalCmds=()
