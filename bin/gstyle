@@ -5,15 +5,31 @@ if [ $# -eq 0 ] ; then
         exit 1
 fi
 
-ASTYLE=/home/zglue/bin/astyle
+#
+# wrap a call with a printout.
+#
+run()
+{
+        echo "$*"
+        $@
+}
+
+ASTYLE="/home/zglue/bin/astyle"
+TARGET_DIR="$HOME/src/zglue/official/nuttx-official/arch/arm/src/imxrt"
+pushd $TARGET_DIR || exit
 
 declare -A Styles
+Styles["nuttx"]="/home/zglue/bin/astyle-nuttx"
 
-Styles["nuttx"]=/home/zglue/bin/astyle-nuttx
+date +"== %m::%S::%h-%d"
+ls -l test.c
 
-# CMD_GDB=( "gdb" "--se=" "/home/zglue/bin/symbols.astyled")
+CMD=( "git" "checkout" )
+run ${CMD[@]}
+
+ls -l test.c
 CMD=( "$ASTYLE" "--options=${Styles[nuttx]}" "$@" )
+run "${CMD[@]}"
 
-echo "${CMD_GDB[@]} ${CMD[@]}"
-"${CMD[@]}"
+popd
 
