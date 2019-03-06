@@ -121,4 +121,12 @@ klone
 /share
 /Downloads
 /bin/home-env
+/snap
+*.gz
+*.zip
+*.tar
+*.bz2
+*.7z
+*.pdf
+/bigbig
 

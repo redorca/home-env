@@ -1,4 +1,4 @@
 #!/bin/bash
 
-make astyle install clean
+make clean astyle install
 
