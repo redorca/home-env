@@ -1,4 +1,17 @@
 #!/bin/bash
 
-make clean astyle install
+declare DEFINES
+
+TARGET=astyle
+if [ $# -ne 0 ] ; then
+        TARGET=astyled
+        shift
+        echo "Target set to: $TARGET"
+        DEFINES=( "DBG" )
+fi
+
+CMD=( "make" "clean" "$TARGET" "install" "BIN=$TARGET" "DEFS=${DEFINES[@]}" )
+
+echo "${CMD[@]}"
+${CMD[@]}
 

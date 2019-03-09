@@ -10,11 +10,16 @@ fi
 #
 run()
 {
-        echo "$*"
+        echo "::: $*"
         $@
 }
 
 ASTYLE="/home/zglue/bin/astyle"
+if [ $# -gt 1 ] ; then
+        shift
+        ASTYLE="/home/zglue/bin/astyled"
+fi
+
 TARGET_DIR="$HOME/src/zglue/official/nuttx-official/arch/arm/src/imxrt"
 [ ! -d "$TARGET_DIR" ] && TARGET_DIR="$HOME/src/zeus/NuttX/nuttx-official/arch/arm/src/imxrt"
 pushd $TARGET_DIR || exit
