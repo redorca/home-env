@@ -82,7 +82,8 @@ workspace/
 home-env/bin
 
 # bin files not to be tracked
-# astyle
+astyle
+astyled
 # checkpatch.pl
 eclipse/
 embedded

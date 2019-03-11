@@ -14,30 +14,61 @@ run()
         $@
 }
 
-ASTYLE="/home/zglue/bin/astyle"
-if [ $# -gt 1 ] ; then
+#
+# Figure out which astyle/astyled to use and
+# where to find it.
+#
+set_astyle_path()
+{
+    ASTYLE=astyle
+    if [ "$DBG" == "dbg" ] ; then
+            ASTYLE="${ASTYLE}d"
+    fi
+    
+    ASTYLE_PATH=${HOME}/src/astyle-github/AStyle/build/gcc/bin/${ASTYLE}
+    if [ ! -f "$ASTYLE_PATH" ] ; then
+            echo "${ASTYLE_PATH} not found:  " >&2
+            ASTYLE_PATH="${HOME}/bin/${ASTYLE}"
+            if [ ! -f "$ASTYLE_PATH" ] ; then
+                    echo "${ASTYLE_PATH} not found." >&2
+                    exit
+            fi
+    fi
+    echo $ASTYLE_PATH
+}
+
+while [ $# -ne 1 ] ; do
+        case "$1" in
+        -d) DBG=dbg
+            ;;
+        esac
         shift
-        ASTYLE="/home/zglue/bin/astyled"
-fi
+done
+
+echo "@ $@"
 
 TARGET_DIR="$HOME/src/zglue/official/nuttx-official/arch/arm/src/imxrt"
 [ ! -d "$TARGET_DIR" ] && TARGET_DIR="$HOME/src/zeus/NuttX/nuttx-official/arch/arm/src/imxrt"
 pushd $TARGET_DIR || exit
 
 declare -A Styles
-Styles["nuttx"]="/home/zglue/bin/astyle-nuttx"
+Styles["nuttx"]="${HOME}/bin/astyle-nuttx"
 
 date +"== %m::%S::%h-%d"
 ls -l test.c
 
 CMD=( "git" "checkout" "." )
 run ${CMD[@]}
+ls -l test.c
 
 CMD=( "git" "status" )
 run ${CMD[@]}
 
-ls -l test.c
-CMD=( "$ASTYLE" "--options=${Styles[nuttx]}" "$@" )
+ASTYLE_PATH="$(set_astyle_path $@)"
+# NEW_ARGS="$(set_astyle_path $@)"
+
+echo "ASTYLE_PATH  ($ASTYLE_PATH)"
+CMD=( "${ASTYLE_PATH}" "--options=${Styles[nuttx]}" "$@" )
 run "${CMD[@]}"
 
 popd
