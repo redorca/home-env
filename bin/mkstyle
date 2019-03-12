@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare DEFINES
+declare -a DEFINES
 
 TARGET=astyle
 if [ $# -ne 0 ] ; then
