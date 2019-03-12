@@ -5,6 +5,8 @@ if [ $# -eq 0 ] ; then
         exit 1
 fi
 
+ASTYLE=astyle
+
 #
 # wrap a call with a printout.
 #
@@ -20,18 +22,25 @@ run()
 #
 set_astyle_path()
 {
-    ASTYLE=astyle
+#   ASTYLE=astyle
     if [ "$DBG" == "dbg" ] ; then
             ASTYLE="${ASTYLE}d"
     fi
+
+    HOST_OFFSET=/
+    HOST_OFFSET=/zeus/
+    ASTYLE_SRCROOT=${HOME}/src
+    ASTYLE_ROOT=astyle-github
+    ASTYLE_BLDROOT=AStyle/build/gcc
     
-    ASTYLE_PATH=${HOME}/src/astyle-github/AStyle/build/gcc/bin/${ASTYLE}
+#   ASTYLE_PATH=${HOME}/src${HOST_OFFSET}astyle-github/AStyle/build/gcc/bin/${ASTYLE}
+    ASTYLE_PATH=${ASTYLE_SRCROOT}${HOST_OFFSET}${ASTYLE_ROOT}/${ASTYLE_BLDROOT}/bin/${ASTYLE}
     if [ ! -f "$ASTYLE_PATH" ] ; then
             echo "${ASTYLE_PATH} not found:  " >&2
             ASTYLE_PATH="${HOME}/bin/${ASTYLE}"
             if [ ! -f "$ASTYLE_PATH" ] ; then
                     echo "${ASTYLE_PATH} not found." >&2
-                    exit
+                    return 1
             fi
     fi
     echo $ASTYLE_PATH
@@ -64,7 +73,17 @@ ls -l test.c
 CMD=( "git" "status" )
 run ${CMD[@]}
 
-ASTYLE_PATH="$(set_astyle_path $@)"
+if ! ASTYLE_PATH="$(set_astyle_path $@)" ; then
+        echo -e "\n==================================\n" >&2
+        exit 1
+fi
+
+if [ ! -f "${ASTYLE_PATH}" ] ; then
+        echo -e "\n==================================\n" >&2
+        echo "${ASTYLE_PATH} not found." >&2
+        exit 1
+fi
+
 # NEW_ARGS="$(set_astyle_path $@)"
 
 echo "ASTYLE_PATH  ($ASTYLE_PATH)"
