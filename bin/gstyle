@@ -1,11 +1,21 @@
 #!/bin/bash
 
+ASTYLE=astyle
+SYS_SRCROOT=${HOME}/src
+PATHS_SRCS=( "/zeus/" "/zglue/" "/" )
+
+#
+# Wrap echo with a redirect to stderr
+#
+err_echo()
+{
+        echo -e "$@" >&2
+}
+
 if [ $# -eq 0 ] ; then
-        echo "Please supply one or more filenames to process" >&2
+        err_echo "Please supply one or more filenames to process"
         exit 1
 fi
-
-ASTYLE=astyle
 
 #
 # wrap a call with a printout.
@@ -27,24 +37,21 @@ set_astyle_path()
             ASTYLE="${ASTYLE}d"
     fi
 
-    HOST_OFFSET=/
-    HOST_OFFSET=/zeus/
-    ASTYLE_SRCROOT=${HOME}/src
     ASTYLE_GITDIR=astyle-github
     ASTYLE_BLDROOT=AStyle/build/gcc
-    PATHS_ASTYLE=( "/zeus/" "/zglue/" "/" )
 
-    for path in ${PATHS_ASTYLE[@]} ; do
-        ASTYLE_PATH=${ASTYLE_SRCROOT}${path}${ASTYLE_GITDIR}/${ASTYLE_BLDROOT}/bin/${ASTYLE}
-        if [  -f "$ASTYE_PATH" ] ; then
+    for path in ${PATHS_SRCS[@]} ; do
+        ASTYLE_PATH=${SYS_SRCROOT}${path}${ASTYLE_GITDIR}/${ASTYLE_BLDROOT}/bin/${ASTYLE}
+        if [  -f "$ASTYLE_PATH" ] ; then
             break
-        else
-            continue 
         fi
-        echo "No astyle found." >&2
-        return 2
+        ASTYLE_PATH=""
     done
-    echo "Found $ASTYLE_PATH" >&2
+    if [ -z "$ASTYLE_PATH" ] ; then
+        err_echo "No astyle found."
+        return 2
+    fi
+    err_echo "Found $ASTYLE_PATH"
     echo $ASTYLE_PATH
 }
 
@@ -56,7 +63,8 @@ while [ $# -ne 1 ] ; do
         shift
 done
 
-TARGET_DIR="$HOME/src/zglue/official/nuttx-official/arch/arm/src/imxrt"
+# TARGET_DIR="$HOME/src/zglue/official/nuttx-official/arch/arm/src/imxrt"
+TARGET_DIR="$HOME/src/zeus/NuttX/official/nuttx-official/arch/arm/src/imxrt"
 [ ! -d "$TARGET_DIR" ] && TARGET_DIR="$HOME/src/zeus/NuttX/nuttx-official/arch/arm/src/imxrt"
 pushd $TARGET_DIR || exit
 
@@ -74,7 +82,6 @@ CMD=( "git" "status" )
 run ${CMD[@]}
 
 if ! ASTYLE_PATH="$(set_astyle_path)" ; then
-        echo -e "\n==================================\n" >&2
         exit 1
 fi
 
