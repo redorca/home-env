@@ -3,6 +3,11 @@
 ASTYLE=astyle
 SYS_SRCROOT=${HOME}/src
 PATHS_SRCS=( "/zeus/" "/zglue/" "/" )
+PATHS_ASTYLE=( "astyle-github" )
+PATHS_NUTTX=( "official/" "NuttX/" )
+ASTYLE_GITDIR=astyle-github
+ASTYLE_BLDROOT=AStyle/build/gcc
+NUTTX_DIR=nuttx-official/arch/arm/src/imxrt
 
 #
 # Wrap echo with a redirect to stderr
@@ -24,6 +29,49 @@ run()
 {
         echo "::: $*"
         $@
+}
+
+#
+# Figure out what the path from $HOME/src
+# to the desired destination should be.
+#
+set_path_to()
+{
+    local path=
+    local root=
+    local dest=
+    local full=
+
+    dest="$1" ; shift
+    root="$HOME/src"
+
+    for path in ${PATHS_SRCS[@]} ; do
+        full=${root}${path}${dest}
+        if [  -e "$full" ] ; then
+            break
+        fi
+        full=""
+    done
+    [ -z "$full" ] && return 2
+    echo "$full"
+}
+
+#
+# Find the right nuttx-official parent dir.
+#
+set_path_to_nuttx_official()
+{
+    local boo=
+    local blah=
+
+    for blah in "${PATHS_NUTTX[@]}" ; do
+        if boo=$(set_path_to ${blah}${NUTTX_DIR}) ; then
+            [ -d $boo ] && break
+        fi
+        blah=
+    done
+    [ -z "$blah" ] && return 3
+    echo "$boo"
 }
 
 #
@@ -64,8 +112,12 @@ while [ $# -ne 1 ] ; do
 done
 
 # TARGET_DIR="$HOME/src/zglue/official/nuttx-official/arch/arm/src/imxrt"
-TARGET_DIR="$HOME/src/zeus/NuttX/official/nuttx-official/arch/arm/src/imxrt"
-[ ! -d "$TARGET_DIR" ] && TARGET_DIR="$HOME/src/zeus/NuttX/nuttx-official/arch/arm/src/imxrt"
+# TARGET_DIR="$HOME/src/zeus/NuttX/official/nuttx-official/arch/arm/src/imxrt"
+if ! TARGET_DIR="$(set_path_to_nuttx_official)" ; then
+    err_echo "Unable to find any nuttx-official dir"
+    exit 1
+fi
+[ ! -d "$TARGET_DIR" ] && err_echo "Not found: $TARGET_DIR" && exit 1
 pushd $TARGET_DIR || exit
 
 declare -A Styles
@@ -81,10 +133,14 @@ ls -l test.c
 CMD=( "git" "status" )
 run ${CMD[@]}
 
-if ! ASTYLE_PATH="$(set_astyle_path)" ; then
+if ! ASTYLE_PATH="$(set_astyle_path ${ASTYLE_GITDIR}/${ASTYLE_BLDROOT}/${ASTYLE})" ; then
+        err_echo "Failed to set ${ASTYLE} path :: ${ASTYLE_PATH}"
         exit 1
 fi
-
+if [ ! -f "$ASTYLE_PATH" ] ; then
+        err_echo "No such astyle $ASTYLE_PATH"
+        exit 1
+fi
 CMD=( "${ASTYLE_PATH}" "--options=${Styles[nuttx]}" "$@" )
 run "${CMD[@]}"
 
