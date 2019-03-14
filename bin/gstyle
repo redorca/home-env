@@ -99,7 +99,6 @@ set_astyle_path()
         err_echo "No astyle found."
         return 2
     fi
-    err_echo "Found $ASTYLE_PATH"
     echo $ASTYLE_PATH
 }
 
