@@ -9,11 +9,11 @@ fi
 
 [ ! -d "$1" ] && echo "This is not a dir: $1" >&2 && exit 2
 SRCDIR="$1"
-APP_ID="FastAPI interface_documentation_-_v0.1"
-APP_ID="FastAPI_documentation"
+# APP_ID="FastAPI interface_documentation_-_v0.1"
+# APP_ID="FastAPI documentation"
 PUBLISHER="zGlue__support@zglue.com"
 
-OPTIONS=( "-iso-level 4" "-J" "-joliet-long" "-d" "-D" "-R" "-allow-multidot" "-allow-leading-dots" "-ldots" "-A" "$APP_ID" "-input-charset" "iso8859-1" "-publisher" "${PUBLISHER}" "-auto" "index.html" )
+OPTIONS=( "-iso-level 4" "-J" "-joliet-long" "-d" "-D" "-R" "-allow-multidot" "-allow-leading-dots" "-ldots" "-input-charset" "iso8859-1" "-publisher" "${PUBLISHER}" "-auto" "index.html" )
 
 
 CMD=( "genisoimage" "-o ${ISO_FILE}" ${OPTIONS[@]} "$SRCDIR" )
