@@ -1,0 +1,23 @@
+#!/bin/bash
+
+[  $# -lt 2 ] && echo "Need a name for the iso and a contents dir." >&2 && exit 1
+
+ISO_FILE="$1" ; shift
+if [ "${ISO_FILE: -4}" != ".iso" ] ; then
+        ISO_FILE=${ISO_FILE}.iso
+fi
+
+[ ! -d "$1" ] && echo "This is not a dir: $1" >&2 && exit 2
+SRCDIR="$1"
+APP_ID="FastAPI interface_documentation_-_v0.1"
+APP_ID="FastAPI_documentation"
+PUBLISHER="zGlue__support@zglue.com"
+
+OPTIONS=( "-iso-level 4" "-J" "-joliet-long" "-d" "-D" "-R" "-allow-multidot" "-allow-leading-dots" "-ldots" "-A" "$APP_ID" "-input-charset" "iso8859-1" "-publisher" "${PUBLISHER}" "-auto" "index.html" )
+
+
+CMD=( "genisoimage" "-o ${ISO_FILE}" ${OPTIONS[@]} "$SRCDIR" )
+# echo genisoimage -o ${ISO_FILE} ${OPTIONS} $SRCDIR
+echo "CMD: ${CMD[@]}"
+${CMD[@]}
+
