@@ -22,6 +22,9 @@ declare -A RepoRename
 declare -A CONFIGS
 declare -A svn_backed
 declare -A FinalCmds
+declare -A Options
+
+Options["astyle"]="--use-log-author"
 
 DOXYGEN="1.18.14"
 OfferRepos["NuttX"]="Official repo for Nuttx rtos on branch master"
@@ -145,6 +148,7 @@ Repo2Host["BMI160_driver"]="master@https://github.com/BoschSensortec/BMI160_driv
 Repo2Host["BME280_driver"]="master@https://github.com/BoschSensortec/BME280_driver.git"
 Repo2Host["BMM050_driver"]="master@https://github.com/BoschSensortec/BMM050_driver.git"
 Repo2Host["doxygen"]="master@https://github.com/doxygen/doxygen.git"
+Repo2Host["pandoc"]="master@git@github.com/jgm/pandoc.git"
 Repo2Host["universal-ctags"]="master@https://github.com/universal-ctags/ctags.git"
 Repo2Host["eigen"]="master@${BITBUCKET_URL}/eigen/eigen.git"
 Repo2Host["build-webos"]="master@git@github.com/webosose/build-webos.git"
