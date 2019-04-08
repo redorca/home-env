@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 DEBUG=${DEBUG:-0}
 TMPFILE_EXEC=/tmp/.setup
@@ -123,7 +123,7 @@ git_config_for_use "Bill" "bill@zglue.com"
 git checkout .
 mk_vimrc_color
 cd bin
-ln -s clone klone
+ln -sf clone klone
 
 BASHRC=~/.bashrc
 
@@ -136,17 +136,18 @@ if ! grep bash_aliases $BASHRC >/dev/null ; then
 fi
 
 
-mkdir ~/.mnt
-sudo -H mount /dev/sdb1  ~/.mnt
-(
-  cd ~ || die "No home dir found?"
+if [ -e /sys/block/sdb ] ; then
+        mkdir ~/.mnt
+        sudo -H mount /dev/sdb1  ~/.mnt
+        (
+                cd ~ || die "No home dir found?"
 
-  for entry in $(ls ~/.mnt) ; do
-    [ ! -d "$entry" ] && continue
-    [ "$entry" = "Documents" ] && continue
-    ln -sf ".mnt/$entry"
-  done
-)
+        for entry in $(ls ~/.mnt) ; do
+                [ ! -d "$entry" ] && continue
+                [ "$entry" = "Documents" ] && continue
+                ln -sf ".mnt/$entry"
+        done
+        )
 
 #
 # Update $FSTAB to make the mount permanent.
@@ -155,9 +156,11 @@ CMD=( "sed" "-i" "-e" '$a'"$BDRIVE'"  "$FSTAB" )
 sudo "${CMD[@]}"
 
 cd $HOME
-tar -zxpf .mnt/keys.rsa.tgz
-mkdir tmp
-cd tmp
-tar -zxf ../.mnt/dot.config.tgz
-cp -a .config ../
-
+if [ -f .mn/keys.rsa.tgz ] ; then
+	tar -zxpf .mnt/keys.rsa.tgz
+	mkdir tmp
+	cd tmp
+	tar -zxf ../.mnt/dot.config.tgz
+	cp -a .config ../
+fi
+fi
