@@ -31,6 +31,22 @@ MORE_PKGS="    \
     gperf    \
     libncursew5-dev    \
 "
+#
+# Enough to build guest editions aside from the MS_REMOUNT undeclared var.
+#
+MIN_PKGS="
+    git
+    gcc
+    make
+    vim-fugitive
+"
+
+WANT_PKGS="
+	doxygen
+	automake
+	autoconf
+	libtool
+"
 
 
 do_apt()
@@ -65,10 +81,14 @@ helpp()
 cat <<END
 
     $(basename $0):  [-i|-r]  [-m|-p]
+        -d  Do a debug run of packages.
         -i  Do an install of packages.
-        -r  Do an remove of packages.
-        -m  Install the "BASE" set of packages.
-        -p  Install the "MORE" set of packages.
+        -r  Do a remove of packages.
+
+        -0  Use the "MIN", bare minimum, set of packages.
+        -m  Use the "BASE" set of packages.
+        -p  Use the "MORE" set of packages.
+        -w  Use the "Wanted" set of packages.
 END
 }
 
@@ -77,17 +97,26 @@ declare -a CMD
 declare -A ARG
 declare -A PKGS
 
+#
+# Setup an hash of different package sets
+#
 PKGS["-p"]="$BASE_PKGS"
 PKGS["-m"]="$MORE_PKGS"
+PKGS["-0"]="$MIN_PKGS"
+PKGS["-w"]="$WANT_PKGS"
+#
+# The array of different actions.
+#
 ARG["-r"]=remove
 ARG["-i"]=install
+ARG["-d"]=debug
 
 while [ "$#" -ne 0 ] ; do
         case "$1" in
-        -i|-r)  [ -n "$Action" ]    &&  echo "Action already specified. [$Action]" >&2 && helpp && exit 2
+        -d|-i|-r)  [ -n "$Action" ]    &&  echo "Action already specified. [$Action]" >&2 && helpp && exit 2
             Action=${ARG[$1]}
             ;;
-        -m|-p) [ ${#CMD[@]} -ne 0 ] && echo "Set of packages to use already made." >&2 && helpp && exit 2
+        -0|-w|-m|-p) [ ${#CMD[@]} -ne 0 ] && echo "Set of packages to use already made." >&2 && helpp && exit 2
             CMD=( ${PKGS[$1]} )
             ;;
         *) helpp
@@ -98,3 +127,4 @@ while [ "$#" -ne 0 ] ; do
 done
 
 $Action "${CMD[@]}"
+
