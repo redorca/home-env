@@ -37,3 +37,5 @@
 [user]
 	name = Bill
 	email = bill@zglue.com
+[push]
+	default = simple
