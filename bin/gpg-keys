@@ -1,0 +1,15 @@
+[deb-distrib]
+    gpg: /home/hover/.gnupg/trustdb.gpg: trustdb created
+    gpg: key E84F65D09B445B4E marked as ultimately trusted
+    gpg: directory '/home/hover/.gnupg/openpgp-revocs.d' created
+    gpg: revocation certificate stored as '/home/hover/.gnupg/openpgp-revocs.d/7BC2979634763528302E7CC1E84F65D09B445B4E.rev'
+    public and secret key created and signed.
+    
+    pub   rsa3072 2019-04-20 [SC] [expires: 2021-04-19]
+          7BC2979634763528302E7CC1E84F65D09B445B4E
+    uid                      hover craft <bill@zglue.com>
+    sub   rsa3072 2019-04-20 [E] [expires: 2021-04-19]
+
+[xxx]
+
+

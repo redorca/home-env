@@ -14,9 +14,9 @@ BASE_PKGS="                \
     python2.7        \
     python2.7-doc        \
     python2.7-examples    \
-    python3.8        \
-    python3.8-doc        \
-    python3.8-examples    \
+    python3.7        \
+    python3.7-doc        \
+    python3.7-examples    \
     python-pip        \
     python3-pip        \
     autoconf        \
@@ -29,7 +29,7 @@ MORE_PKGS="    \
     bison    \
     gawk    \
     gperf    \
-    libncursew5-dev    \
+    libncursesw5-dev    \
 "
 #
 # Enough to build guest editions aside from the MS_REMOUNT undeclared var.
@@ -62,8 +62,8 @@ do_apt()
     esac
     shift
     Pkgs="$@"
-    echo "sudo apt-get -y $Action $Pkgs"
-    echo "sudo apt-get -y autoremove"
+    sudo apt-get -y $Action $Pkgs
+    sudo apt-get -y autoremove
 }
 
 install()
@@ -86,8 +86,8 @@ cat <<END
         -r  Do a remove of packages.
 
         -0  Use the "MIN", bare minimum, set of packages.
-        -m  Use the "BASE" set of packages.
-        -p  Use the "MORE" set of packages.
+        -m  Use the "MORE" set of packages.
+        -p  Use the "BASE" set of packages.
         -w  Use the "Wanted" set of packages.
 END
 }
