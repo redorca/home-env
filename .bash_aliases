@@ -175,21 +175,6 @@ dbg_echo "========================"
 
 prune_path A::a
 
-function add-path()
-{
-        funame $@
-        local Dir=
-
-        Dir="$1"
-
-        [ ! -d "$Dir" ] && dbg_echo "No such path exists: ($Dir)" && return
-
-        [ -n "${Paths[$Dir]}" ] && dbg_echo "Won't add path. Already present: $Dir" && return
-        ([ -z "$PATH" ] && err_echo "Starting with empty PATH.")
-        PATH="$Dir:$PATH"
-        set +x
-}
-
 #
 # Set a BOARD env var used by zmake to determine which configs dir to use.
 #
@@ -205,6 +190,30 @@ function board()
         echo "BOARD: [$BOARD]"
 }
 
+#
+# Recalculate the Paths hash based on the current PATHS var.
+#
+function reset_hash()
+{
+        eval $(set_assoc_array Paths $(echo $PATH | sed -e 's/:/ /g'))
+}
+
+function add-path()
+{
+        funame $@
+        local Dir=
+
+        Dir="$1"
+
+        [ ! -d "$Dir" ] && dbg_echo "No such path exists: ($Dir)" && return
+
+        [ -n "${Paths[$Dir]}" ] && dbg_echo "Path already present: $Dir" && return
+        ([ -z "$PATH" ] && err_echo "Starting with empty PATH.")
+        PATH="$Dir:$PATH"
+        reset_hash
+        set +x
+}
+
 function del-path()
 {
         funame $@
@@ -212,9 +221,12 @@ function del-path()
                 return
         fi
         FOO=$(echo $PATH | sed -e 's/:/ /g' | eval sed -e "'s:$1::'")
+        [ -z "${Paths["$1"]}" ] && dbg_echo "Path already gone." && return 0
+        Paths["$1"]=""
         if [ $? -eq 0 -a -n "$FOO" ] ; then
                 PATH=$(echo $FOO | sed -e 's/^ //' -e 's/  */:/g')
         fi
+        reset_hash
 }
 
 #
@@ -532,15 +544,14 @@ add-path ~/.local/bin
 add-path ~/bin
 
 alias     apt-zglue="sudo apt-get -y install"
-alias        path="echo $PATH | sed -e 's/^/	/' -e 's/:/	/g'"
-alias        paths="echo $PATH | sed -e 's/://g'"
+alias        path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
 alias          po="popd >/dev/null && dirs -v"
 alias        dirs="dirs -v"
-alias           j="jobs -l"
+alias          jo="jobs -l"
 alias        jobs="jobs -l"
 alias        home="pushd ~ >/dev/null && dirs -v"
 alias         bin="pushd ~/bin >/dev/null && dirs -v"
-alias          vi=vim
+alias          vi="vim"
 alias      valias="vim ~/.bash_aliases"
 alias     vignore="vim ~/.config/git/ignore"
 alias     vimtodo="vim ~/bin/TODO.now"

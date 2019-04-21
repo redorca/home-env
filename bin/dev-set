@@ -1,0 +1,130 @@
+#!/bin/bash
+
+#
+# Then need to finish by cloning nuttx tools and building kconfig-mconf, et al.
+# To get this to work you will need to synlink autmake-1.15 to automake-1.16.1
+#
+# Use ./configure --enable-mconf to enable "make menuconfig"
+
+#
+# Once Kconfig stuff is built copy the /usr/local/lib/libkconfig* to /usr/lib.
+#
+
+BASE_PKGS="                \
+    python2.7        \
+    python2.7-doc        \
+    python2.7-examples    \
+    python3.7        \
+    python3.7-doc        \
+    python3.7-examples    \
+    python-pip        \
+    python3-pip        \
+    autoconf        \
+    automake        \
+    autotools-dev        \
+"
+
+MORE_PKGS="    \
+    flex    \
+    bison    \
+    gawk    \
+    gperf    \
+    libncursesw5-dev    \
+"
+#
+# Enough to build guest editions aside from the MS_REMOUNT undeclared var.
+#
+MIN_PKGS="
+    git
+    gcc
+    make
+    vim-fugitive
+"
+
+WANT_PKGS="
+	doxygen
+	automake
+	autoconf
+	libtool
+"
+
+
+do_apt()
+{
+    local Action=
+    local Pkgs=
+
+    case "$1" in
+    remove|install) Action="$1"
+        ;;
+    *) return 1
+        ;;
+    esac
+    shift
+    Pkgs="$@"
+    sudo apt-get -y $Action $Pkgs
+    sudo apt-get -y autoremove
+}
+
+install()
+{
+    do_apt install $@
+}
+
+remove()
+{
+    do_apt remove $@
+}
+
+helpp()
+{
+cat <<END
+
+    $(basename $0):  [-i|-r]  [-m|-p]
+        -d  Do a debug run of packages.
+        -i  Do an install of packages.
+        -r  Do a remove of packages.
+
+        -0  Use the "MIN", bare minimum, set of packages.
+        -m  Use the "MORE" set of packages.
+        -p  Use the "BASE" set of packages.
+        -w  Use the "Wanted" set of packages.
+END
+}
+
+[ $# -lt 2 -o $# -gt 2 ] && echo "Too many args or none. [$#]" >&2 && helpp && exit 3
+declare -a CMD
+declare -A ARG
+declare -A PKGS
+
+#
+# Setup an hash of different package sets
+#
+PKGS["-p"]="$BASE_PKGS"
+PKGS["-m"]="$MORE_PKGS"
+PKGS["-0"]="$MIN_PKGS"
+PKGS["-w"]="$WANT_PKGS"
+#
+# The array of different actions.
+#
+ARG["-r"]=remove
+ARG["-i"]=install
+ARG["-d"]=debug
+
+while [ "$#" -ne 0 ] ; do
+        case "$1" in
+        -d|-i|-r)  [ -n "$Action" ]    &&  echo "Action already specified. [$Action]" >&2 && helpp && exit 2
+            Action=${ARG[$1]}
+            ;;
+        -0|-w|-m|-p) [ ${#CMD[@]} -ne 0 ] && echo "Set of packages to use already made." >&2 && helpp && exit 2
+            CMD=( ${PKGS[$1]} )
+            ;;
+        *) helpp
+           exit 5
+            ;;
+        esac
+        shift
+done
+
+$Action "${CMD[@]}"
+
