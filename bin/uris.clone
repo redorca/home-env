@@ -1,0 +1,20 @@
+
+[github] https://github.com/
+        cyrus-and/gdb-dashboard.git
+
+[bitbucket]
+
+[svn.freepascal.org] https://svn.freepascal.org
+    svn/fpc/trunk fpc
+
+[svn.code.sf.net/p] lazarus-ccr/svn/ lazarus-ccr-svn
+
+
+
+<svn>
+svn checkout
+
+<git>
+git clone
+
+
