@@ -1,0 +1,38 @@
+:: cat /etc/os-release 
+PRETTY_NAME="Debian GNU/Linux 9 (stretch)"
+NAME="Debian GNU/Linux"
+VERSION_ID="9"
+VERSION="9 (stretch)"
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+master@origin::wakko@wacom:~
+:: which gcc
+/usr/bin/gcc
+master@origin::wakko@wacom:~
+:: uname -a
+Linux wacom 4.9.0-8-amd64 #1 SMP Debian 4.9.144-3 (2019-02-02) x86_64 GNU/Linux
+master@origin::wakko@wacom:~
+:: cat /etc/os-release 
+PRETTY_NAME="Debian GNU/Linux 9 (stretch)"
+NAME="Debian GNU/Linux"
+VERSION_ID="9"
+VERSION="9 (stretch)"
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+master@origin::wakko@wacom:~
+:: find /lib/modules/ -type f | grep wacom
+/lib/modules/4.9.0-8-amd64/kernel/drivers/input/touchscreen/wacom_w8001.ko
+/lib/modules/4.9.0-8-amd64/kernel/drivers/input/tablet/wacom_serial4.ko
+/lib/modules/4.9.0-8-amd64/kernel/drivers/hid/wacom.ko
+master@origin::wakko@wacom:~
+:: lsb_release -da
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 9.8 (stretch)
+Release:        9.8
+Codename:       stretch
+
