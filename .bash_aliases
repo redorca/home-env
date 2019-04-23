@@ -543,6 +543,7 @@ add-path ~/usr/bin
 add-path ~/.local/bin
 add-path ~/bin
 
+alias     apt-zglue="sudo apt-get -y install"
 alias        path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
 alias          po="popd >/dev/null && dirs -v"
 alias        dirs="dirs -v"
