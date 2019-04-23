@@ -10,42 +10,41 @@
 # Once Kconfig stuff is built copy the /usr/local/lib/libkconfig* to /usr/lib.
 #
 
-BASE_PKGS="                \
-    python2.7        \
-    python2.7-doc        \
-    python2.7-examples    \
-    python3.7        \
-    python3.7-doc        \
-    python3.7-examples    \
-    python-pip        \
-    python3-pip        \
-    autoconf        \
-    automake        \
-    autotools-dev        \
+BASE_PKGS="             \
+    python2.7           \
+    python2.7-doc       \
+    python2.7-examples  \
+    python3.7           \
+    python3.7-doc       \
+    python3.7-examples  \
+    python-pip          \
+    python3-pip         \
+    autoconf            \
+    automake            \
+    autotools-dev       \
+    libtool             \
+    flex                \
+    bison               \
+    gawk                \
+    libncursesw5-dev    \
+    
 "
 
-MORE_PKGS="    \
-    flex    \
-    bison    \
-    gawk    \
-    gperf    \
-    libncursesw5-dev    \
+MORE_PKGS="     \
+    doxygen     \
+    gperf       \
 "
 #
 # Enough to build guest editions aside from the MS_REMOUNT undeclared var.
 #
 MIN_PKGS="
-    git
-    gcc
-    make
-    vim-fugitive
-"
-
-WANT_PKGS="
-	doxygen
-	automake
-	autoconf
-	libtool
+    git                 \
+    gcc                 \
+    cmake               \
+    make                \
+    vim-fugitive        \
+    ctags               \
+    global              \
 "
 
 
@@ -103,7 +102,6 @@ declare -A PKGS
 PKGS["-p"]="$BASE_PKGS"
 PKGS["-m"]="$MORE_PKGS"
 PKGS["-0"]="$MIN_PKGS"
-PKGS["-w"]="$WANT_PKGS"
 #
 # The array of different actions.
 #
