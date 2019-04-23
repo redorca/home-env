@@ -1,0 +1,10 @@
+
+
+[github]
+        apt-metalink = apt-meta tatsuhiro-t/apt-metalink.git
+        webui-aria2 = webaria   ziahamza/webui-aria2.git
+        aria.js = ariajs        sonnyp/aria2.js.git
+        aria2                   aria2/aria2.git
+
+[bitbucket]
+
