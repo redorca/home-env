@@ -88,9 +88,9 @@ cat <<END
         -r  Do a remove of packages.
 
         -0  Use the "MIN", bare minimum, set of packages.
+        -b  Use the "BASE" set of packages.
         -m  Use the "MORE" set of packages.
-        -p  Use the "BASE" set of packages.
-        -w  Use the "Wanted" set of packages.
+        -p  Use the "PYTHON" set of packages.
 END
 }
 
@@ -118,7 +118,7 @@ while [ "$#" -ne 0 ] ; do
         -d|-i|-r)  [ -n "$Action" ]    &&  echo "Action already specified. [$Action]" >&2 && helpp && exit 2
             Action=${ARG[$1]}
             ;;
-        -0|-b|-w|-m|-p) [ ${#CMD[@]} -ne 0 ] && echo "Set of packages to use already made." >&2 && helpp && exit 2
+        -0|-b|-m|-p) [ ${#CMD[@]} -ne 0 ] && echo "Set of packages to use already made." >&2 && helpp && exit 2
             CMD=( ${PKGS[$1]} )
             ;;
         *) helpp
