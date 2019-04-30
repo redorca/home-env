@@ -11,14 +11,6 @@
 #
 
 BASE_PKGS="             \
-    python2.7           \
-    python2.7-doc       \
-    python2.7-examples  \
-    python3.7           \
-    python3.7-doc       \
-    python3.7-examples  \
-    python-pip          \
-    python3-pip         \
     autoconf            \
     automake            \
     autotools-dev       \
@@ -27,13 +19,24 @@ BASE_PKGS="             \
     bison               \
     gawk                \
     libncursesw5-dev    \
-    
+"
+
+PYTHON_PKGS="
+    python2.7           \
+    python2.7-doc       \
+    python2.7-examples  \
+    python3.7           \
+    python3.7-doc       \
+    python3.7-examples  \
+    python-pip          \
+    python3-pip         \
 "
 
 MORE_PKGS="     \
     doxygen     \
     gperf       \
 "
+
 #
 # Enough to build guest editions aside from the MS_REMOUNT undeclared var.
 #
@@ -85,9 +88,9 @@ cat <<END
         -r  Do a remove of packages.
 
         -0  Use the "MIN", bare minimum, set of packages.
+        -b  Use the "BASE" set of packages.
         -m  Use the "MORE" set of packages.
-        -p  Use the "BASE" set of packages.
-        -w  Use the "Wanted" set of packages.
+        -p  Use the "PYTHON" set of packages.
 END
 }
 
@@ -99,9 +102,10 @@ declare -A PKGS
 #
 # Setup an hash of different package sets
 #
-PKGS["-p"]="$BASE_PKGS"
+PKGS["-b"]="$BASE_PKGS"
 PKGS["-m"]="$MORE_PKGS"
 PKGS["-0"]="$MIN_PKGS"
+PKGS["-p"]="$PYTHON_PKGS"
 #
 # The array of different actions.
 #
@@ -114,7 +118,7 @@ while [ "$#" -ne 0 ] ; do
         -d|-i|-r)  [ -n "$Action" ]    &&  echo "Action already specified. [$Action]" >&2 && helpp && exit 2
             Action=${ARG[$1]}
             ;;
-        -0|-w|-m|-p) [ ${#CMD[@]} -ne 0 ] && echo "Set of packages to use already made." >&2 && helpp && exit 2
+        -0|-b|-m|-p) [ ${#CMD[@]} -ne 0 ] && echo "Set of packages to use already made." >&2 && helpp && exit 2
             CMD=( ${PKGS[$1]} )
             ;;
         *) helpp
