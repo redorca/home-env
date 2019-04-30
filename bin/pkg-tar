@@ -1,0 +1,12 @@
+#!/bin/bash
+
+PKGDIR=nuttx-4.7.8
+TARFILE=$PKGDIR.tar.xz
+
+TAROPTS="--exclude-vcs --exclude=nuttx_apps/ --exclude=.gitignore --checkpoint=500"
+
+CMD="tar -Jcf $TARFILE $TAROPTS $PKGDIR"
+echo $CMD
+$CMD
+
+

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+manage()
+{
+        local Action=
+
+        [ $# -eq 0 ] && return 1
+
+        while [ $# -ne 0 ] ; do
+	        case "$1" in
+	                -r) Action="$1"
+	                ;;
+	                -i) Action="$1"
+	                ;;
+	                -d) ECHO=echo
+	                ;;
+	                *) echo "Not a useful argument: [$1]"
+	                   return 2
+	                ;;
+	        esac
+	        shift
+        done
+
+        [ -z "$Action" ] && \
+                echo "Need to specify i (install) or r (remove)." >&2 && \
+                return 3
+        for deb in $(ls *.deb) ; do
+                if [ "$Action" == "-i" ] ; then
+                        $ECHO sudo dpkg $Action $deb
+                else
+                        $ECHO sudo dpkg $Action ${deb%%_*}
+                fi
+        done
+}
+
+manage "$@"
+
