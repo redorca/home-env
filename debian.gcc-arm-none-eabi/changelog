@@ -1,5 +1,5 @@
-gcc-arm-none-eabi-8 (2018-q4-major-1) stable; urgency=medium
+gcc-arm-none-eabi-8 (2018-q4-major-1) phoo; urgency=medium
 
-  * Initial release (Closes: #2541)  <nnnn is the bug number of your ITP>
+  * Initial release (Closes: #899095)
 
  -- bill <bill@zglue.com>  Sat, 04 May 2019 23:28:32 -0700
