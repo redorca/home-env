@@ -1,0 +1,12 @@
+Document: gcc-arm-none-eabi
+Title: Annotations
+Abstract: 
+Author:   ARM
+Section:  devel
+
+Format: html
+Index: /usr/share/doc/gcc-arm-none-eabi/html/annotate/index.html
+Files: /usr/share/doc/gcc-arm-none-eabi/html/annotate/*.html
+
+Format: pdf
+Files: /usr/share/doc/gcc-arm-none-eabi/pdf/annotate.pdf

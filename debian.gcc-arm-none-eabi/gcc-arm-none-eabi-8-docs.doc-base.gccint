@@ -1,0 +1,12 @@
+Document: gcc-arm-none-eabi
+Title: 
+Abstract: 
+Author:   ARM
+Section:  devel
+
+Format:  html
+Index:   /usr/share/doc/gcc-arm-none-eabi/html/gccint/index.html
+Files:   /usr/share/doc/gcc-arm-none-eabi/html/gccint/*.html
+
+Format:  pdf
+Files:   /usr/share/doc/gcc-arm-none-eabi/pdf/gcc/gccint.pdf

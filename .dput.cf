@@ -17,20 +17,28 @@ passive_ftp		= 0
 default_host_main	= zglue
 allowed_distributions	= (?!UNRELEASED)
 progress_indicator	= 2
-distributions           = cosmic
 
 
 [zglue]
+distributions           = unstable
+incoming		= /var/www/html/zglue/dists/mini-dinstall/incoming
 method			= scp
-# fqdn                    = 192.168.73.120
 fqdn                    = localhost
-incoming		= /var/www/html/debian/mini-dinstall/incoming
 run_dinstall		= 0
-post_upload_command	= /usr/bin/mini-dinstall --batch
+post_upload_command	= /usr/bin/mini-dinstall --run
+
+[phoo]
+distributions           = phoo
+incoming		= /var/www/html/zglue/mini-dinstall/incoming
+method			= scp
+fqdn                    = localhost
+run_dinstall		= 0
+post_upload_command	= /usr/bin/mini-dinstall --run
 
 [local]
+distributions           = cosmic
+incoming		= /var/www/html/zglue/dists/mini-dinstall/incoming
 method			= local
-incoming		= /var/www/html/debian/mini-dinstall/incoming
 run_dinstall		= 0
-post_upload_command	= /usr/bin/mini-dinstall --batch
+post_upload_command	= /usr/bin/mini-dinstall --run
 

@@ -1,0 +1,13 @@
+Document: gcc-arm-none-eabi
+Title: 
+Abstract: 
+Author:   ARM
+Section:  devel
+
+Format: html
+Index: /usr/share/doc/gcc-arm-none-eabi/html/bfd.html/index.html
+Files: /usr/share/doc/gcc-arm-none-eabi/html/bfd.html/*.html
+
+Format: pdf
+Files: /usr/share/doc/gcc-arm-none-eabi/pdf/bfd.pdf
+

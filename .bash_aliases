@@ -778,6 +778,8 @@ function launch()
 
 }
 
+export GPG_TTY=$(tty)
+
 if which apt-get >/dev/null 2>&1 ; then
         echo "Set prompt for Debian sys-arch"
         PS1='${debian_chroot:+($debian_chroot)}$(branch 15)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
@@ -809,3 +811,4 @@ PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 #
 chk_debug || set-display-resolution
 touch ~/.vimrc_color
+

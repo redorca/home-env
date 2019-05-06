@@ -1,0 +1,24 @@
+#############################################################################
+#                                                                           #
+#        Copyright (C) 2019, Bill Rees                                      #
+#                                                                           #
+#                                                                           #
+#                                                                           #
+#                                                                           #
+#############################################################################
+
+TARGETDIR=usr/
+SOURCEDIR=gcc-arm-none-eabi
+
+all:
+	@echo "====================="
+
+install: $(TARGETDIR)
+	@cp -a arm-none-eabi/ $(DESTDIR)/$(TARGETDIR)
+	@cp -a bin/ $(DESTDIR)/$(TARGETDIR)
+	@cp -a lib/ $(DESTDIR)/$(TARGETDIR)
+	@cp -a share/ $(DESTDIR)/$(TARGETDIR)
+
+$(TARGETDIR):
+	@mkdir -p $(DESTDIR)/$@
+
