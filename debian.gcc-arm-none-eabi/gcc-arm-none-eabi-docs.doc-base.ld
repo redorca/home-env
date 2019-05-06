@@ -9,4 +9,4 @@ Index:  /usr/share/doc/gcc-arm-none-eabi/html/ld.html/index.html
 Files:  /usr/share/doc/gcc-arm-none-eabi/html/ld.html/*.html
 
 Format: pdf
-Files:  /usr/share/doc/gcc-arm-none-eabi/pdf/ld.pdf
+Files:  /usr/share/doc/gcc-arm-none-eabi/pdf/ld.pdf.gz

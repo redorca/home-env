@@ -5,5 +5,5 @@ Author:   ARM
 Section:  devel
 
 Format: pdf
-Files:  /usr/share/doc/gcc-arm-none-eabi/pdf/refcard.pdf
-  /usr/share/doc/gcc-arm-none-eabi/pdf/libiberty.pdf
+Files:  /usr/share/doc/gcc-arm-none-eabi/pdf/refcard.pdf.gz
+  /usr/share/doc/gcc-arm-none-eabi/pdf/libiberty.pdf.gz

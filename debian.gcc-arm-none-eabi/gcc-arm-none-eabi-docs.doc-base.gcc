@@ -9,5 +9,5 @@ Index:  /usr/share/doc/gcc-arm-none-eabi/html/gcc/index.html
 Files:  /usr/share/doc/gcc-arm-none-eabi/html/gcc/*.html
 
 Format: pdf
-Files: /usr/share/doc/gcc-arm-none-eabi/pdf/gcc/gcc.pdf
+Files: /usr/share/doc/gcc-arm-none-eabi/pdf/gcc/gcc.pdf.gz
 

@@ -9,4 +9,4 @@ Index: /usr/share/doc/gcc-arm-none-eabi/html/annotate/index.html
 Files: /usr/share/doc/gcc-arm-none-eabi/html/annotate/*.html
 
 Format: pdf
-Files: /usr/share/doc/gcc-arm-none-eabi/pdf/annotate.pdf
+Files: /usr/share/doc/gcc-arm-none-eabi/pdf/annotate.pdf.gz

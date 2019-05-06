@@ -9,5 +9,5 @@ Index: /usr/share/doc/gcc-arm-none-eabi/html/bfd.html/index.html
 Files: /usr/share/doc/gcc-arm-none-eabi/html/bfd.html/*.html
 
 Format: pdf
-Files: /usr/share/doc/gcc-arm-none-eabi/pdf/bfd.pdf
+Files: /usr/share/doc/gcc-arm-none-eabi/pdf/bfd.pdf.gz
 
