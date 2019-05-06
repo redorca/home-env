@@ -1,5 +1,5 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: gcc-arm-none-eabi-8
+Upstream-Name: gcc-arm-none-eabi
 Source:
 
 Files: *

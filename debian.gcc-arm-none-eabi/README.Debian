@@ -1,4 +1,4 @@
-gcc-arm-none-eabi-8 for Debian
+gcc-arm-none-eabi for Debian
 -----------------------------
 
         An unofficial .deb package of the ARM gnu gcc tools.
