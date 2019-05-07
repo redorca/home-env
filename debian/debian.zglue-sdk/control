@@ -1,0 +1,15 @@
+Source: zglue-sdk
+Section: devel
+Priority: optional
+Maintainer: bill <bill@zglue.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.2
+Homepage: 
+#Vcs-Git: https://anonscm.debian.org/git/collab-maint/nuttx.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/nuttx.git
+
+Package: zglue-sdk
+Architecture: any
+Depends: nuttx (>= 7.25), gcc-arm-none-eabi (>= 8)
+Description: To support SmartFabric with the Nuttx build tree.
+ The source tree for buildikng the Nuttx firmware to use with Smart Fabric.
