@@ -1,0 +1,15 @@
+Source: bills-dev
+Section: devel
+Priority: optional
+Maintainer: bill <bill@zglue.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.2
+Homepage: 
+#Vcs-Git: https://anonscm.debian.org/git/collab-maint/nuttx.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/nuttx.git
+
+Package: bills-dev
+Architecture: any
+Depends: vim-fugitive (>= 2.4), exuberant-ctags (>= 5.9), global (>= 6.6), openssh-server (>= 7.9), smbclient (>= 4.10), samba (>= 4.10)
+Description: To support SmartFabric with the Nuttx build tree.
+ The source tree for buildikng the Nuttx firmware to use with Smart Fabric.
