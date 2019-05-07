@@ -1,4 +1,4 @@
-gcc-arm-none-eabi (8.2018-q4-major-1) phoo; urgency=medium
+gcc-arm-none-eabi-zglue (8.2018-q4-major-1) phoo; urgency=medium
 
   * Initial release (Closes: #899095)
 
