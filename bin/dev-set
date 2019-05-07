@@ -19,6 +19,9 @@ BASE_PKGS="             \
     bison               \
     gawk                \
     libncursesw5-dev    \
+    libncurses5         \
+    python-pip          \
+    python3-pip         \
 "
 
 PYTHON_PKGS="
@@ -28,8 +31,6 @@ PYTHON_PKGS="
     python3.7           \
     python3.7-doc       \
     python3.7-examples  \
-    python-pip          \
-    python3-pip         \
 "
 
 MORE_PKGS="     \
@@ -45,9 +46,15 @@ MIN_PKGS="
     gcc                 \
     cmake               \
     make                \
+"
+
+FOR_BILL="              \
     vim-fugitive        \
     ctags               \
     global              \
+    openssh-server      \
+    smbclient           \
+    samba               \
 "
 
 

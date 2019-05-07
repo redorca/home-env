@@ -10,7 +10,7 @@ Homepage:
 
 Package: gcc-arm-none-eabi
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: libncurses5 (>= 6), libtinfo5 (>= 6), ${shlibs:Depends}, ${misc:Depends}
 Description: ARM gnu tools cross compiler
  Compiler and tools for building arm object binaries
  on an amd64 system.
