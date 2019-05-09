@@ -1,0 +1,13 @@
+Source:  libsmartfabric
+Section: devel
+Priority: optional
+Maintainer: bill <bill@zglue.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.2
+Homepage: 
+
+Package: libsmartfabric
+Architecture: any
+Depends: sdk-nuttx (>= 7.25)
+Description: Library of Smart Fabric API calls.
+ The API provided enables access to the smart fabric and its features.

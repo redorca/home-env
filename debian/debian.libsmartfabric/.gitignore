@@ -1,0 +1,7 @@
+debhelper-build-stamp
+files
+libsmartfabric/
+libsmartfabric.substvars
+*.ex
+*.EX
+.debhelper/

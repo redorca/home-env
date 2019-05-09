@@ -1,4 +1,5 @@
 debhelper-build-stamp
 files
-gcc-arm-none-eabi-zglue.substvars
-
+gcc-arm-none-eabi.substvars
+.debhelper/
+sdk-gcc-arm/

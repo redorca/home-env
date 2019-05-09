@@ -1,0 +1,7 @@
+libsmartfabric (1.1) phoo; urgency=low
+
+  * First release
+
+  * SmartFabric API <closes #898875>
+
+ -- Bill  <bill@zglue.com>  Thu, 09 May 2019 01:39:33 -0700
