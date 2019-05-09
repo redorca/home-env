@@ -1,6 +1,6 @@
-nuttx (7.25-1) phoo; urgency=medium
+sdk-nuttx (7.25-1) phoo; urgency=medium
 
-  * Initial release <closes #25501>
+  * Initial release <closes #925501>
 
  -- Bill  <bill@zglue.com>  Mon, 29 Apr 2019 11:39:33 -0700
 

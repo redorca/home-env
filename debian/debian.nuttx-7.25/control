@@ -1,4 +1,4 @@
-Source: nuttx
+Source: sdk-nuttx
 Section: devel
 Priority: optional
 Maintainer: bill <bill@zglue.com>
@@ -8,7 +8,7 @@ Homepage:
 #Vcs-Git: https://anonscm.debian.org/git/collab-maint/nuttx.git
 #Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/nuttx.git
 
-Package: nuttx
+Package: sdk-nuttx
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: To support SmartFabric with the Nuttx build tree.
