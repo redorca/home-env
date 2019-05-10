@@ -1,6 +1,0 @@
-
-
-[gpg-agent]
-  verbose
-  debug-level advanced
-  allow-preset-passphrase

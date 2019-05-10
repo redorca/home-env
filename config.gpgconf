@@ -1,0 +1,9 @@
+
+
+[gpg-agent]
+  default-cache-ttl 86400
+  max-cache-ttl 864000
+  disable-scdaemon
+  log-file /tmp/loglog.gpg-agent
+  verbose
+  debug-level guru
