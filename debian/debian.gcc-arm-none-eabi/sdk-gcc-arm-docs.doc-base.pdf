@@ -4,6 +4,6 @@ Abstract:
 Author:   ARM
 Section:  devel
 
-Format: pdf
-Files:  /usr/share/doc/gcc-arm-none-eabi/pdf/refcard.pdf.gz
+Format:   pdf
+Files:    /usr/share/doc/gcc-arm-none-eabi/pdf/refcard.pdf.gz
   /usr/share/doc/gcc-arm-none-eabi/pdf/libiberty.pdf.gz

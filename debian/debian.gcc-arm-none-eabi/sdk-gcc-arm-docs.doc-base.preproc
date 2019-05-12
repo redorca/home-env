@@ -4,9 +4,9 @@ Abstract: Use of the ARM GNU C preprocessor
 Author:   ARM
 Section:  devel
 
-Format: html
-Index:  /usr/share/doc/gcc-arm-none-eabi/html/cpp/index.html
-Files:  /usr/share/doc/gcc-arm-none-eabi/html/cpp/*.html
+Format:   html
+Index:    /usr/share/doc/gcc-arm-none-eabi/html/cpp/index.html
+Files:    /usr/share/doc/gcc-arm-none-eabi/html/cpp/*.html
 
-Format: pdf
-Files:  /usr/share/doc/gcc-arm-none-eabi/pdf/gcc/cpp.pdf.gz
+Format:   pdf
+Files:    /usr/share/doc/gcc-arm-none-eabi/pdf/gcc/cpp.pdf.gz

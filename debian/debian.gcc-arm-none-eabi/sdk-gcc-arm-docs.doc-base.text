@@ -4,7 +4,7 @@ Abstract:
 Author:   ARM
 Section:  devel
 
-Format:  text
-Files:   /usr/share/doc/gcc-arm-none-eabi/license.txt
+Format:   text
+Files:    /usr/share/doc/gcc-arm-none-eabi/license.txt
   /usr/share/doc/gcc-arm-none-eabi/release.txt
   /usr/share/doc/gcc-arm-none-eabi/readme.txt

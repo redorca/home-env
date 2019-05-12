@@ -4,9 +4,9 @@ Abstract:
 Author:   ARM
 Section:  devel
 
-Format:  html
-Index:   /usr/share/doc/gcc-arm-none-eabi/html/libm/index.html
-Files:   /usr/share/doc/gcc-arm-none-eabi/html/libm/*.html
+Format:   html
+Index:    /usr/share/doc/gcc-arm-none-eabi/html/libm/index.html
+Files:    /usr/share/doc/gcc-arm-none-eabi/html/libm/*.html
 
-Format:  pdf
-Files:   /usr/share/doc/gcc-arm-none-eabi/pdf/libm.pdf.gz
+Format:   pdf
+Files:    /usr/share/doc/gcc-arm-none-eabi/pdf/libm.pdf.gz
