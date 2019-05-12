@@ -20,7 +20,7 @@ export DEB_BUILD_OPTIONS = nostrip
 	dh $@
 
 
-override_dh_link:
+Override_dh_link:
 	@echo "===  MAKECMDGOALS: $(MAKECMDGOALS)"
 	@cat debian/package.links  | while read alpha beta ; do dh_link $$alpha $$beta; done
 
