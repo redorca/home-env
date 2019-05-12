@@ -10,6 +10,6 @@ Homepage:
 
 Package: zglue-sdk
 Architecture: any
-Depends: sdk-nuttx (>= 7.25), sdk-gcc-arm (>= 8)
+Depends: sdk-nuttx (>= 7.25), sdk-gcc-arm (>= 8), zglue-cleanup
 Description: To support SmartFabric with the Nuttx build tree.
  The source tree for buildikng the Nuttx firmware to use with Smart Fabric.
