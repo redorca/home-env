@@ -1,0 +1,10 @@
+Document: nuttx-tools
+Title: 
+Abstract: 
+Author:   ARM
+Section:  devel
+
+Format:   text
+Files:    usr/share/doc/kconfig-frontends/kconfig-language.txt
+  usr/share/doc/kconfig-frontends/kconfig.txt
+

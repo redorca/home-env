@@ -1,0 +1,10 @@
+usr/bin/kconfig
+usr/bin/kconfig-mconf
+usr/bin/kconfig-conf
+usr/bin/kconfig-diff
+usr/bin/kconfig-gettext
+usr/bin/kconfig-merge
+usr/bin/kconfig-nconf
+usr/bin/kconfig-qconf
+usr/bin/kconfig-tweak
+
