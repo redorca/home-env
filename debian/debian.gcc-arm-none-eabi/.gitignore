@@ -1,5 +1,0 @@
-debhelper-build-stamp
-files
-gcc-arm-none-eabi.substvars
-sdk-gcc-arm/
-.debhelper/

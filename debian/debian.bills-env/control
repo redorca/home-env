@@ -1,4 +1,4 @@
-Source: zglue-dev
+Source: bills-env
 Section: devel
 Priority: optional
 Maintainer: bill <bill@zglue.com>
@@ -8,8 +8,10 @@ Homepage:
 #Vcs-Git: https://anonscm.debian.org/git/collab-maint/nuttx.git
 #Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/nuttx.git
 
-Package: zglue-dev
+Package: bills-env
 Architecture: any
 Depends: vim-fugitive (>= 2.4), exuberant-ctags (>= 5.9), global (>= 6.6), openssh-server (>= 7.9), smbclient (>= 4.10), samba (>= 4.10)
-Description: To support SmartFabric with the Nuttx build tree.
- The source tree for buildikng the Nuttx firmware to use with Smart Fabric.
+Description: Meta package to add cifs tools and sharing, sshd, vim, etc.
+ Additional packages to make the work environment plus du glacee svp. So
+ cifs sharing is enabled, ssh access added, proper vim and tagging
+ (ctags/global), and anything else that makes developing easier/better.

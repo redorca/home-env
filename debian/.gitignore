@@ -1,6 +1,6 @@
 debhelper-build-stamp
 files
-nuttx/
-nuttx.substvars
+.debhelper/
+*.substvars
 *.ex
 *.EX
