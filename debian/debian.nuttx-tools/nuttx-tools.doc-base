@@ -1,0 +1,11 @@
+Document: nuttx-tools
+Title: Debian nuttx-tools Manual
+Author: nuttx et al.
+Abstract: This manual describes what nuttx-tools is
+ and how it can be used to configure nuttx via kconfig.
+Section: devel
+
+Format: text
+Files: /usr/share/doc/nuttx-tools/kconfig.txt.gz
+       /usr/share/doc/nuttx-tools/kconfig-language.txt.gz
+

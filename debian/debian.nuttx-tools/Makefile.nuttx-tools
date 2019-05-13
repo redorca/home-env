@@ -8,8 +8,15 @@
 #############################################################################
 
 TARGETDIR=usr/
-SOURCEDIR=gcc-arm-none-eabi
 
-%:
-	@echo "===================== $@"
+all:
+	@echo "====================="
+
+install: $(DESTDIR)/$(TARGETDIR)
+	 cp -a usr/lib $(DESTDIR)/$(TARGETDIR)
+	 cp -a usr/share $(DESTDIR)/$(TARGETDIR)
+	 cp -a usr/bin $(DESTDIR)/$(TARGETDIR)
+
+$(DESTDIR)/$(TARGETDIR):
+	@mkdir -p $@
 

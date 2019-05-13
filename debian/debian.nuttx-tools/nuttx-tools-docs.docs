@@ -1,4 +1,5 @@
 README.Debian
 README.source
-usr/local/share/doc/kconfig-frontends/kconfig.txt
-usr/local/share/doc/kconfig-frontends/kconfig-language.txt
+usr/share/doc/nuttx-tools/kconfig.txt.gz
+usr/share/doc/nuttx-tools/kconfig-language.txt.gz
+
