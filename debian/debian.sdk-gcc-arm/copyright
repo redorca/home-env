@@ -2,6 +2,10 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: sdk-gcc-arm
 Source:
 
+Files: /debian/*
+Copyright 2019 (C) bill <bill@zglue.com>
+License: LGPL-3
+
 Files: *
 Copyright: 2019 (C) ARM
 License: GPL-3

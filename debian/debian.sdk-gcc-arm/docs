@@ -85,7 +85,6 @@ share/doc/gcc-arm-none-eabi/html/ld.html/Output-Section-LMA.html
 share/doc/gcc-arm-none-eabi/html/ld.html/File-Commands.html
 share/doc/gcc-arm-none-eabi/html/ld.html/MEMORY.html
 share/doc/gcc-arm-none-eabi/html/ld.html/SPU-ELF.html
-
 share/doc/gcc-arm-none-eabi/html/gccint/index.html
 share/doc/gcc-arm-none-eabi/html/gccint/GIMPLE-sequences.html
 share/doc/gcc-arm-none-eabi/html/gccint/Plugin-API.html
@@ -500,7 +499,6 @@ share/doc/gcc-arm-none-eabi/html/gccint/GIMPLE_005fCOND.html
 share/doc/gcc-arm-none-eabi/html/gccint/Option-Index.html
 share/doc/gcc-arm-none-eabi/html/gccint/Passes.html
 share/doc/gcc-arm-none-eabi/html/gccint/Dump-types.html
-
 share/doc/gcc-arm-none-eabi/html/gcc/index.html
 share/doc/gcc-arm-none-eabi/html/gcc/MIPS-SIMD-Architecture-Built_002din-Functions.html
 share/doc/gcc-arm-none-eabi/html/gcc/Backwards-Compatibility.html
@@ -898,7 +896,6 @@ share/doc/gcc-arm-none-eabi/html/gcc/Restricted-Pointers.html
 share/doc/gcc-arm-none-eabi/html/gcc/Blackfin-Built_002din-Functions.html
 share/doc/gcc-arm-none-eabi/html/gcc/RS_002f6000-and-PowerPC-Pragmas.html
 share/doc/gcc-arm-none-eabi/html/gcc/Thread_002dLocal.html
-
 share/doc/gcc-arm-none-eabi/html/bfd.html/index.html
 share/doc/gcc-arm-none-eabi/html/bfd.html/typedef-asymbol.html
 share/doc/gcc-arm-none-eabi/html/bfd.html/Creating-a-Linker-Hash-Table.html
@@ -964,7 +961,6 @@ share/doc/gcc-arm-none-eabi/html/bfd.html/Section-Input.html
 share/doc/gcc-arm-none-eabi/html/bfd.html/aout.html
 share/doc/gcc-arm-none-eabi/html/bfd.html/Performing-the-Final-Link.html
 share/doc/gcc-arm-none-eabi/html/bfd.html/Targets.html
-
 share/doc/gcc-arm-none-eabi/html/annotate/index.html
 share/doc/gcc-arm-none-eabi/html/annotate/Annotations-Overview.html
 share/doc/gcc-arm-none-eabi/html/annotate/Prompting.html
@@ -981,7 +977,6 @@ share/doc/gcc-arm-none-eabi/html/annotate/Frame-Annotations.html
 share/doc/gcc-arm-none-eabi/html/annotate/Breakpoint-Info.html
 share/doc/gcc-arm-none-eabi/html/annotate/Source-Annotations.html
 share/doc/gcc-arm-none-eabi/html/annotate/GNU-Free-Documentation-License.html
-
 share/doc/gcc-arm-none-eabi/html/cpp/index.html
 share/doc/gcc-arm-none-eabi/html/cpp/Tokenization.html
 share/doc/gcc-arm-none-eabi/html/cpp/Object_002dlike-Macros.html
@@ -1053,7 +1048,6 @@ share/doc/gcc-arm-none-eabi/html/cpp/Operator-Precedence-Problems.html
 share/doc/gcc-arm-none-eabi/html/cpp/Conditional-Uses.html
 share/doc/gcc-arm-none-eabi/html/cpp/Option-Index.html
 share/doc/gcc-arm-none-eabi/html/cpp/Include-Operation.html
-
 share/doc/gcc-arm-none-eabi/html/binutils.html/index.html
 share/doc/gcc-arm-none-eabi/html/binutils.html/objcopy.html
 share/doc/gcc-arm-none-eabi/html/binutils.html/ar-scripts.html
@@ -1082,7 +1076,6 @@ share/doc/gcc-arm-none-eabi/html/binutils.html/def-file-format.html
 share/doc/gcc-arm-none-eabi/html/binutils.html/objdump.html
 share/doc/gcc-arm-none-eabi/html/binutils.html/Binutils-Index.html
 share/doc/gcc-arm-none-eabi/html/binutils.html/Selecting-the-Target-System.html
-
 share/doc/gcc-arm-none-eabi/html/as.html/index.html
 share/doc/gcc-arm-none-eabi/html/as.html/i386_002dTBM.html
 share/doc/gcc-arm-none-eabi/html/as.html/Section.html
@@ -1741,7 +1734,6 @@ share/doc/gcc-arm-none-eabi/html/as.html/i386_002dFloat.html
 share/doc/gcc-arm-none-eabi/html/as.html/MIPS-FP-ABIs.html
 share/doc/gcc-arm-none-eabi/html/as.html/Sparc_002dSize_002dTranslations.html
 share/doc/gcc-arm-none-eabi/html/as.html/Xtensa-Syntax.html
-
 share/doc/gcc-arm-none-eabi/html/stabs/index.html
 share/doc/gcc-arm-none-eabi/html/stabs/Flow.html
 share/doc/gcc-arm-none-eabi/html/stabs/Procedures.html
@@ -1835,7 +1827,6 @@ share/doc/gcc-arm-none-eabi/html/stabs/Cross_002dReferences.html
 share/doc/gcc-arm-none-eabi/html/stabs/N_005fPC.html
 share/doc/gcc-arm-none-eabi/html/stabs/N_005fNOMAP.html
 share/doc/gcc-arm-none-eabi/html/stabs/Stab-Sections.html
-
 share/doc/gcc-arm-none-eabi/html/gccinstall/index.html
 share/doc/gcc-arm-none-eabi/html/gccinstall/download.html
 share/doc/gcc-arm-none-eabi/html/gccinstall/prerequisites.html
@@ -1847,7 +1838,6 @@ share/doc/gcc-arm-none-eabi/html/gccinstall/gfdl.html
 share/doc/gcc-arm-none-eabi/html/gccinstall/specific.html
 share/doc/gcc-arm-none-eabi/html/gccinstall/old.html
 share/doc/gcc-arm-none-eabi/html/gccinstall/test.html
-
 share/doc/gcc-arm-none-eabi/html/libc/index.html
 share/doc/gcc-arm-none-eabi/html/libc/iswprint.html
 share/doc/gcc-arm-none-eabi/html/libc/_005fsbrk_005fr.html
@@ -2148,7 +2138,6 @@ share/doc/gcc-arm-none-eabi/html/libc/iswcntrl.html
 share/doc/gcc-arm-none-eabi/html/libc/viprintf.html
 share/doc/gcc-arm-none-eabi/html/libc/strcat.html
 share/doc/gcc-arm-none-eabi/html/libc/fputws.html
-
 share/doc/gcc-arm-none-eabi/html/gdb/index.html
 share/doc/gcc-arm-none-eabi/html/gdb/show-language.html
 share/doc/gcc-arm-none-eabi/html/gdb/interrupting-remote-targets.html
@@ -2870,7 +2859,6 @@ share/doc/gcc-arm-none-eabi/html/gdb/JIT-Interface.html
 share/doc/gcc-arm-none-eabi/html/gdb/I_002fO-Ports-in-Guile.html
 share/doc/gcc-arm-none-eabi/html/gdb/show-auto_002dload-gdb_002dscripts.html
 share/doc/gcc-arm-none-eabi/html/gdb/disconnected-tracing.html
-
 share/doc/gcc-arm-none-eabi/html/cppinternals/index.html
 share/doc/gcc-arm-none-eabi/html/cppinternals/Macro-Expansion.html
 share/doc/gcc-arm-none-eabi/html/cppinternals/Lexing-a-line.html
@@ -2883,7 +2871,6 @@ share/doc/gcc-arm-none-eabi/html/cppinternals/Conventions.html
 share/doc/gcc-arm-none-eabi/html/cppinternals/Lexer.html
 share/doc/gcc-arm-none-eabi/html/cppinternals/Line-Numbering.html
 share/doc/gcc-arm-none-eabi/html/cppinternals/Guard-Macros.html
-
 share/doc/gcc-arm-none-eabi/html/libm/index.html
 share/doc/gcc-arm-none-eabi/html/libm/cbrt.html
 share/doc/gcc-arm-none-eabi/html/libm/ctan.html
@@ -2971,7 +2958,6 @@ share/doc/gcc-arm-none-eabi/html/libm/floor.html
 share/doc/gcc-arm-none-eabi/html/libm/remquo.html
 share/doc/gcc-arm-none-eabi/html/libm/atanh.html
 share/doc/gcc-arm-none-eabi/html/libm/exp.html
-
 share/doc/gcc-arm-none-eabi/html/gprof.html/index.html
 share/doc/gcc-arm-none-eabi/html/gprof.html/Inaccuracy.html
 share/doc/gcc-arm-none-eabi/html/gprof.html/Assumptions.html
@@ -3002,10 +2988,8 @@ share/doc/gcc-arm-none-eabi/html/gprof.html/GNU-Free-Documentation-License.html
 share/doc/gcc-arm-none-eabi/html/gprof.html/Primary.html
 share/doc/gcc-arm-none-eabi/html/gprof.html/Cycles.html
 share/doc/gcc-arm-none-eabi/html/gprof.html/Call-Graph.html
-
 share/doc/gcc-arm-none-eabi/release.txt
 share/doc/gcc-arm-none-eabi/readme.txt
-
 share/doc/gcc-arm-none-eabi/info/gcc.info
 share/doc/gcc-arm-none-eabi/info/stabs.info
 share/doc/gcc-arm-none-eabi/info/annotate.info
@@ -3019,7 +3003,6 @@ share/doc/gcc-arm-none-eabi/info/ld.info
 share/doc/gcc-arm-none-eabi/info/cppinternals.info
 share/doc/gcc-arm-none-eabi/info/binutils.info
 share/doc/gcc-arm-none-eabi/info/gprof.info
-
 share/doc/gcc-arm-none-eabi/man/man5/arm-none-eabi-gdbinit.5
 share/doc/gcc-arm-none-eabi/man/man5/arm-none-eabi-gdbinit.5-py
 share/doc/gcc-arm-none-eabi/man/man1/arm-none-eabi-objcopy.1
@@ -3055,9 +3038,7 @@ share/doc/gcc-arm-none-eabi/man/man1/arm-none-eabi-windmc.1
 share/doc/gcc-arm-none-eabi/man/man7/fsf-funding.7
 share/doc/gcc-arm-none-eabi/man/man7/gfdl.7
 share/doc/gcc-arm-none-eabi/man/man7/gpl.7
-
 share/doc/gcc-arm-none-eabi/license.txt
-
 share/doc/gcc-arm-none-eabi/pdf/gprof.pdf
 share/doc/gcc-arm-none-eabi/pdf/stabs.pdf
 share/doc/gcc-arm-none-eabi/pdf/libc.pdf
