@@ -4,12 +4,14 @@
 #                                                                            #
 ##############################################################################
 
+TARGETDIR=
 all:
 	@echo "======================"
 
-install: $(DESTDIR)
-	@cp -a usr $(DESTDIR)/
+install: $(DESTDIR)$(TARGETDIR)
+	@echo "Install to $(DESTDIR)$(TARGETDIR)"
+	@cp -a usr $(DESTDIR)$(TARGETDIR)
 
-$(DESTDIR):
+$(DESTDIR)$(TARGETDIR):
 	@mkdir -p $@
 
