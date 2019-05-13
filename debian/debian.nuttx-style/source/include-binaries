@@ -1,0 +1,11 @@
+nuttx-tools-7.25/usr/bin/kconfig
+nuttx-tools-7.25/usr/bin/kconfig-mconf
+nuttx-tools-7.25/usr/bin/kconfig-conf
+nuttx-tools-7.25/usr/bin/kconfig-diff
+nuttx-tools-7.25/usr/bin/kconfig-gettext
+nuttx-tools-7.25/usr/bin/kconfig-merge
+nuttx-tools-7.25/usr/bin/kconfig-nconf
+nuttx-tools-7.25/usr/bin/kconfig-qconf
+nuttx-tools-7.25/usr/bin/kconfig-tweak
+nuttx-tools-7.25/usr/lib/libkconfig-parser-4.11.0.so
+

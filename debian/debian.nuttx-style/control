@@ -1,0 +1,17 @@
+Source: nuttx-style
+Section: devel
+Priority: optional
+Maintainer: bill <bill@zglue.com>
+Build-Depends: debhelper (>= 11)
+Standards-Version: 4.1.3
+Homepage:
+#Vcs-Browser: https://salsa.debian.org/debian/nuttx-tools
+#Vcs-Git: https://salsa.debian.org/debian/nuttx-tools.git
+
+Package: nuttx-style
+Architecture: any
+Depends: zglue-cleanup (>= 1.1)
+Description: Enforce nuttx style guide rules to source.
+ Source code may be formatted with respect to the nuttx style guide
+ using this package.
+
