@@ -1,4 +1,4 @@
-nuttx-style (3.0-1) phoo; urgency=medium
+nuttx-style (3.2-1) phoo; urgency=medium
 
   * Initial release (Closes: #899095)
 

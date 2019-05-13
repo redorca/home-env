@@ -13,9 +13,9 @@ all:
 	@echo "====================="
 
 install: $(DESTDIR)/$(TARGETDIR)
-	 cp -a usr/lib $(DESTDIR)/$(TARGETDIR)
-	 cp -a usr/share $(DESTDIR)/$(TARGETDIR)
-	 cp -a usr/bin $(DESTDIR)/$(TARGETDIR)
+	@echo "== Install share/ and bin/ to $(DESTDIR)/$(TARGETDIR)"
+	@cp -a usr/share $(DESTDIR)/$(TARGETDIR)
+	@cp -a usr/bin $(DESTDIR)/$(TARGETDIR)
 
 $(DESTDIR)/$(TARGETDIR):
 	@mkdir -p $@
