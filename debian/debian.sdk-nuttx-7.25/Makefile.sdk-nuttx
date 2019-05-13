@@ -12,10 +12,10 @@ TARGETDIR=usr/src/nuttx-7.25
 all:
 	@echo "====================="
 
-install: $(TARGETDIR)
+install: $(DESTDIR)/$(TARGETDIR)
 	@cp -a apps/ $(DESTDIR)/$(TARGETDIR)
 	@cp -a nuttx/ $(DESTDIR)/$(TARGETDIR)
 
-$(TARGETDIR):
-	@mkdir -p $(DESTDIR)/$@
+$(DESTDIR)/$(TARGETDIR):
+	@mkdir -p $@
 

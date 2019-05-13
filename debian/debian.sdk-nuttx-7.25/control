@@ -10,6 +10,6 @@ Homepage:
 
 Package: sdk-nuttx
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends} zglue-cleanup
+Depends: ${shlibs:Depends}, ${misc:Depends}, zglue-cleanup (>= 1.1)
 Description: To support SmartFabric with the Nuttx build tree.
- The source tree for buildikng the Nuttx firmware to use with Smart Fabric.
+ The source tree for building the Nuttx firmware to use with Smart Fabric.
