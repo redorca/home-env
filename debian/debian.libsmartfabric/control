@@ -8,6 +8,6 @@ Homepage:
 
 Package: libsmartfabric
 Architecture: any
-Depends: sdk-nuttx (>= 7.25)
+Depends: zglue-cleanup (>= 1.1)
 Description: Library of Smart Fabric API calls.
  The API provided enables access to the smart fabric and its features.

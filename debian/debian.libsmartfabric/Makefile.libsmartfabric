@@ -8,7 +8,7 @@ all:
 	@echo "======================"
 
 install: $(DESTDIR)
-	@cp -a usr $(DESTDIR)/usr
+	@cp -a usr $(DESTDIR)/
 
 $(DESTDIR):
 	@mkdir -p $@
