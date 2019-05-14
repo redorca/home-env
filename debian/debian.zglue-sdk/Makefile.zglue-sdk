@@ -11,11 +11,12 @@
 
 all:
 	@echo "====================="
+
 # 
-# install: $(TARGETDIR)
+# install: $(DESTDIR)$(TARGETDIR)
 # 	@cp -a apps/ $(DESTDIR)/$(TARGETDIR)
 # 	@cp -a nuttx/ $(DESTDIR)/$(TARGETDIR)
 # 
-# $(TARGETDIR):
+# $(DESTDIR)$(TARGETDIR):
 # 	@mkdir -p $(DESTDIR)/$@
 # 

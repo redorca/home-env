@@ -17,3 +17,10 @@ export DEB_BUILD_OPTIONS = nodoc nostrip
 
 .PHONY:
 
+#
+# As a virtual / meta package there is no need for
+# docs, copyright, licenses.
+#
+override_dh_installchangelogs:
+	@echo "Not installing files that would show up in /usr/share/doc/<>"
+
