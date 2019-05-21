@@ -1,5 +1,0 @@
-#
-# Point to the flat repo structure for zGlue sdk packages.
-#
-deb http://localhost/zglue/ phoo/
-
