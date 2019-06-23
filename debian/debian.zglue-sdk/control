@@ -1,4 +1,4 @@
-Source: zglue-sdk
+Source: zglue-dev
 Section: devel
 Priority: optional
 Maintainer: bill <bill@zglue.com>
@@ -15,3 +15,17 @@ Description: Meta or virtual package to represent the SDK as singular.
  For providing all of the components of the sdk having a stand-in package
  enables installing all of the pieces as a side effect of install this
  stand-in package.
+
+Package: zglue-cleanup
+Architecture: any
+Depends:
+Description: Virtual / Meta package required by all to facilitate remove all.
+  All zglue-dev packages, aside from this one (zglue-cleanup), depend upon
+  zglue-cleanup so that removing zglue-cleanup vi apt-get remove will enable
+  easy and quick removal of all zglue-dev packages installed.
+.
+  The trick is, hopefully, that apt-get absolutely removes zglue-cleanup and
+  zglue-sdk but then sets up the other packages as no longer in use or needed.
+  Running apt-get autoremove will then finish removing the other zglue-dev
+  okgs.
+
