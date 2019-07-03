@@ -108,6 +108,10 @@ function set-display-resolution()
         local CurrentRes=
         local IP_ADDR=
 
+        if ! which xdpyinfo >/dev/null 2>&1 ; then
+                dbg_echo "xdpyinfo not found."
+                return 1
+        fi
         [ $# -eq 1 ] &&  TargetRes="$1"
 
         IP_ADDR=$(get_home_ip)

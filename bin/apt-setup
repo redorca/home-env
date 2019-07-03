@@ -1,0 +1,13 @@
+#!/bin/bash
+
+GPG_KEYFILE=billy.gpg
+SOURCES_LISTFILE=zglue-sdk.list
+
+APT_ETCDIR=/etc/apt
+APT_TRUSTDIR=$APT_ETCDIR/trusted.gpg.d
+APT_SOURCESDIR=$APT_ETCDIR/sources.list.d
+
+
+cp $GPG_KEYFILE $APT_TRUSTDIR
+cp $SOURCES_LISTFILE $APT_SOURCESDIR
+

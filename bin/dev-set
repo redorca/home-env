@@ -89,10 +89,10 @@ helpp()
 {
 cat <<END
 
-    $(basename $0):  [-i|-r]  [-m|-p]
+    $(basename $0):  [-i|-R]  [-m|-p]
         -d  Do a debug run of packages.
         -i  Do an install of packages.
-        -r  Do a remove of packages.
+        -R  Do a remove of packages.
 
         -0  Use the "MIN", bare minimum, set of packages.
         -b  Use the "BASE" set of packages.
@@ -116,13 +116,13 @@ PKGS["-p"]="$PYTHON_PKGS"
 #
 # The array of different actions.
 #
-ARG["-r"]=remove
+ARG["-R"]=remove
 ARG["-i"]=install
 ARG["-d"]=debug
 
 while [ "$#" -ne 0 ] ; do
         case "$1" in
-        -d|-i|-r)  [ -n "$Action" ]    &&  echo "Action already specified. [$Action]" >&2 && helpp && exit 2
+        -d|-i|-R)  [ -n "$Action" ]    &&  echo "Action already specified. [$Action]" >&2 && helpp && exit 2
             Action=${ARG[$1]}
             ;;
         -0|-b|-m|-p) [ ${#CMD[@]} -ne 0 ] && echo "Set of packages to use already made." >&2 && helpp && exit 2

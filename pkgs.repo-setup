@@ -1,0 +1,16 @@
+apache2
+gpg-agent
+debconf
+debhelper
+debianutils
+debootstrap
+devscripts
+dh-make
+dh-autoreconf
+dh-python
+dh-strip-nondeterminism
+dpkg-dev
+dpkg
+mini-dinstall
+ssl-cert
+
