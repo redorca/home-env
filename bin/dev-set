@@ -2,7 +2,7 @@
 
 #
 # Then need to finish by cloning nuttx tools and building kconfig-mconf, et al.
-# To get this to work you will need to synlink autmake-1.15 to automake-1.16.1
+# To get this to work you will need to symlink autmake-1.15 to automake-1.16.1
 #
 # Use ./configure --enable-mconf to enable "make menuconfig"
 
