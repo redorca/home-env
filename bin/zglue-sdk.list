@@ -1,0 +1,5 @@
+#
+# Point to the repo holding zGlue sdk packages.
+#
+deb http://pkg-engine.com/zglue phoo/
+
