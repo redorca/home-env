@@ -38,6 +38,7 @@
 
 find_repo_root()
 {
+        return -1
 }
 
 find_repo()

@@ -10,3 +10,8 @@ CMD=( $BIN ${OPTS[@]} )
 echo "${CMD[*]}"
 ${CMD[@]}
 
+#
+# uid:-::::1556873369::4A32EB691A15BF7FCD39B01B23D24A5CFB82D14C::billy <bill@zglue.com>::::::::::0:
+#
+#
+
