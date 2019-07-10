@@ -8,9 +8,7 @@ manage()
 
         while [ $# -ne 0 ] ; do
 	        case "$1" in
-	                -r) Action="$1"
-	                ;;
-	                -i) Action="$1"
+	                -r|-i) Action="$1"
 	                ;;
 	                -d) ECHO=echo
 	                ;;

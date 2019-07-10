@@ -3,6 +3,7 @@
 GPG_KEYFILE=billy.gpg
 SOURCES_LISTFILE=zglue-sdk.list
 
+GPG_CONF=$HOME/.gnupg/gpg.conf
 APT_ETCDIR=/etc/apt
 APT_TRUSTDIR=$APT_ETCDIR/trusted.gpg.d
 APT_SOURCESDIR=$APT_ETCDIR/sources.list.d
@@ -10,4 +11,64 @@ APT_SOURCESDIR=$APT_ETCDIR/sources.list.d
 
 cp $GPG_KEYFILE $APT_TRUSTDIR
 cp $SOURCES_LISTFILE $APT_SOURCESDIR
+
+#
+# Add the repo key to this user's gnupg keyring.
+#
+activate_key()
+{
+        local Keyfile=
+
+        Keyfile="$1"
+        if [ ! -f $Keyfile ] ; then
+                echo "The keyfile not foind: <$Keyfile>." >&2
+                return 1
+        fi
+        if ! gpg --import $Keyfile ; then
+                echo "Importing the repo key failed." >&2
+                return 2
+        fi
+
+        return 0
+}
+
+#
+# Find the key id for the keyfile provided.
+#
+id_key()
+{
+        local KeyID=
+        local -a Fpr=
+
+        #
+        # Strip out any path elements.
+        keyID="${1##*/}"
+
+        #
+        # The details of the Key include multiples of the fingerprint
+        # where the first one is for the private key and others are
+        # for subkeys.
+        #
+        Fpr=( $(gpg --with-colons --list-keys ${keyID%.gpg} | awk -F':' '/^fpr/ {print $10}' ) )
+
+        echo ${Fpr[0]}
+}
+
+#
+# Insert keyring id into .dput.conf
+#
+notify_gpg_conf()
+{
+        local DefaultKey=
+        local -a DefLine=
+
+        DefaultKey=$1
+        DefLine=( $(grep default-key $GPG_CONF) )
+        if [ "${DefLine[1]}" == "$DefaultKey" ] ; then
+                echo "Default key is already set." >&2
+                return 0
+        fi
+        return 0
+}
+
 
