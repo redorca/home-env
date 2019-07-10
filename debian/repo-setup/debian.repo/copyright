@@ -1,0 +1,8 @@
+
+        Copyright (C) 2019, Bill Rees
+
+# If you want to use GPL v2 or later for the /debian/* files use 
+# the following clauses, or change it to suit. Delete these two lines
+Files: debian/*
+License: LGPL-3
+
