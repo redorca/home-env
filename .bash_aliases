@@ -35,7 +35,7 @@ unset TRACE
 unset DEBUG
 
 declare -A ip_to_display
-ip_to_display["default"]="1920x1080"
+ip_to_display["default"]="1600x900"
 ip_to_display["192.168.168"]="2048x1152"
 ip_to_display["192.168.183"]="1920x1080"
 
