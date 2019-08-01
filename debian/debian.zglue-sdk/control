@@ -10,7 +10,7 @@ Homepage:
 
 Package: zglue-sdk
 Architecture: any
-Depends: sdk-nuttx (>= 7.25), sdk-gcc-arm (>= 8), nuttx-tools (>= 7.25), zglue-cleanup (>= 1.1),
+Depends: sdk-nuttx (>= 7.25), sdk-gcc-arm (>= 8), nuttx-tools (>= 7.25), zglue-cleanup (>= 1.1), httpd
 Description: Meta or virtual package to represent the SDK as singular.
  For providing all of the components of the sdk having a stand-in package
  enables installing all of the pieces as a side effect of install this
