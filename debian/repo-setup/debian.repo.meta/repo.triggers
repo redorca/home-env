@@ -1,0 +1,9 @@
+#
+# Advertise repo-deb
+# watch httpd
+#
+
+activate REPO_DEB
+
+INTEREST HTTPD
+

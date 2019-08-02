@@ -4,7 +4,8 @@ KEY_FP=$(gpg --with-colons --list-keys | grep ^fpr | head -1 | sed -e 's/[fpr:]/
 [ -z "$KEY_FP" ] && echo "No key fingerprint found." >&2 && exit 1
 
 BIN=dpkg-buildpackage
-OPTS=( "-us" "-ui" "--build=binary" "--sign-key=$KEY_FP" )
+# OPTS=( "-us" "-ui" "--build=binary" "--sign-key=$KEY_FP" )
+OPTS=( "-us" "-ui" "--build=binary" "--sign-key=billy" )
 
 CMD=( $BIN ${OPTS[@]} )
 echo "${CMD[*]}"
