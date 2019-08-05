@@ -1,4 +1,4 @@
-Source: repo-debian
+Source: repo-tools
 Section: devel
 Priority: optional
 Maintainer: bill <bill@zglue.com>
