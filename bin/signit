@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/bash -x
 
-TARGET="$1"
+TARGET="$(basename $1)"
 [ ! -f "$TARGET" ] && echo "Not found <$TARGET>" >&2 && exit 5
 echo "Sign $TARGET"
 ROOT="${TARGET%.*}"
@@ -10,12 +10,13 @@ ROOT="${TARGET%.*}"
 SUFX="$(mktemp -u XXX)"
 
 # GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
-GPG_OPTS=( "--verbose" "--sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
-if ! gpg ${GPG_OPTS[@]} ; then
-        echo "Failed."
+GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
+# GPG_OPTS=( "--verbose" "--detach-sign"  "$TARGET" )
+if ! gpg ${GPG_OPTS[@]} >/tmp/loglog 2>&1 ; then
+        echo "Failed." >/tmp/loglog 2>&1
         exit 1
 fi
-mv "${ROOT}.${SUFX}" "$ROOT"
+# mv "${ROOT}.${SUFX}" "$ROOT"
 echo "Create gpg file."
 if gpg -abs  "${TARGET}" ; then
         mv "${TARGET}.asc" "${ROOT}.gpg"
