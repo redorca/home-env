@@ -1,4 +1,4 @@
-Source: debrepo
+Source: repo-tools
 Section: devel
 Priority: optional
 Maintainer: bill <bill@zglue.com>
@@ -8,14 +8,16 @@ Homepage:
 #Vcs-Git: https://anonscm.debian.org/git/collab-maint/nuttx.git
 #Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/nuttx.git
 
-Package: debrepo-add
+Package: repo-tools
 Architecture: any
-Depends:
-Description: To support SmartFabric with the Nuttx build tree.
- The source tree for building the Nuttx firmware to use with Smart Fabric.
+Depends: httpd, mini-dinstall, dpkg-dev, dput, gpg, gpg-agent, devscripts, debhlper (>=11), debmake (>=4.2.9)
+Description: Meta package pulling necessary tools to create and run a repo
 
-Package: debrepo-rm
+Package: repo-tools-remove
 Architecture: any
 Depends:
-Description: To support SmartFabric with the Nuttx build tree.
- The source tree for building the Nuttx firmware to use with Smart Fabric.
+Description: A universal dependency for anything installed to create a repo.
+        This serves as a universal dependency for anything installed
+        to support creating, running, maintaining, a repo.
+        A removal of this file will remove everything added by the
+        installation of the repo package.

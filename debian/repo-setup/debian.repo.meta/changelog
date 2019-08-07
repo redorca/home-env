@@ -1,4 +1,4 @@
-zglue-cleanup (1.1-1) phoo; urgency=medium
+repo-tools (1.1-1) phoo; urgency=medium
 
   * Initial release <closes #825501>
 

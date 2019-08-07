@@ -1,15 +1,22 @@
 #!/bin/bash
 
-[ ! -f "$1" ] && exit 5
-echo "Sign $1"
-ROOT=${1%%.*}
-echo "ROOT $ROOT"
-if gpg --verbose --clearsign -o ${ROOT}.xxx $1 ; then
-        mv ${ROOT}.xxx ${ROOT}
-        echo "Create gpg file."
-#        if gpg -abs -o Release.gpg.xxx $1 ; then
-#                mv Release.gpg.xxx Release.gpg
-#        fi
-else
+TARGET="$1"
+[ ! -f "$TARGET" ] && echo "Not found <$TARGET>" >&2 && exit 5
+echo "Sign $TARGET"
+ROOT="${TARGET%.*}"
+#
+# Generate a random ascii value.
+#
+SUFX="$(mktemp -u XXX)"
+
+# GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
+GPG_OPTS=( "--verbose" "--sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
+if ! gpg ${GPG_OPTS[@]} ; then
         echo "Failed."
+        exit 1
+fi
+mv "${ROOT}.${SUFX}" "$ROOT"
+echo "Create gpg file."
+if gpg -abs  "${TARGET}" ; then
+        mv "${TARGET}.asc" "${ROOT}.gpg"
 fi
