@@ -2,12 +2,14 @@
 
 [ ! -f "$1" ] && exit 5
 echo "Sign $1"
-if gpg --verbose --clearsign -o InRelease.xxx $1 ; then
-        mv InRelease.xxx InRelease
+ROOT=${1%%.*}
+echo "ROOT $ROOT"
+if gpg --verbose --clearsign -o ${ROOT}.xxx $1 ; then
+        mv ${ROOT}.xxx ${ROOT}
         echo "Create gpg file."
-        if gpg -abs -o Release.gpg.xxx $1 ; then
-                mv Release.gpg.xxx Release.gpg
-        fi
+#        if gpg -abs -o Release.gpg.xxx $1 ; then
+#                mv Release.gpg.xxx Release.gpg
+#        fi
 else
         echo "Failed."
 fi
