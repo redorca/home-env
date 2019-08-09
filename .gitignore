@@ -135,3 +135,6 @@ klone
 .gnupg/
 autorun/
 /Documents
+/.vim
+/Qt
+
