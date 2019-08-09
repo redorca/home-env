@@ -1,0 +1,21 @@
+#############################################################################
+#                                                                           #
+#        Copyright (C) 2019, Bill Rees                                      #
+#                                                                           #
+#                                                                           #
+#                                                                           #
+#                                                                           #
+#############################################################################
+
+## TARGETDIR=usr/src/nuttx-7.25
+
+all:
+	@echo "====================="
+
+install: $(DESTDIR)/$(TARGETDIR)
+	@cp -a apps/ $(DESTDIR)/$(TARGETDIR)
+	@cp -a nuttx/ $(DESTDIR)/$(TARGETDIR)
+
+$(DESTDIR)/$(TARGETDIR):
+	@mkdir -p $@
+

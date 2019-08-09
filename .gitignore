@@ -131,4 +131,10 @@ klone
 *.7z
 *.pdf
 /bigbig
+*.deb
+.gnupg/
+autorun/
+/Documents
+/.vim
+/Qt
 
