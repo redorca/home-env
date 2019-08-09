@@ -1,5 +1,14 @@
-#!/bin/bash -x
+#!/bin/bash
 
+
+#
+# Echo stuff to stderr
+#
+echo_dbg()
+{
+        return
+#       echo "$@" >&2
+}
 
 #
 # Echo stuff to stderr
@@ -18,14 +27,18 @@ echo_vars()
 
         Vars="$@"
         for var in $Vars ; do
-                echo_err $var ${!var}
+                echo_dbg $var ${!var}
         done
 }
 
 TARGET="$(basename $1)"
-[ ! -f "$TARGET" ] && echo "Not found <$TARGET>" >&2 && exit 5
-echo "Sign $TARGET"
+[ ! -f "$TARGET" ] && echo_err "Not found <$TARGET>" && exit 5
+echo_dbg "Sign $TARGET"
 ROOT="${TARGET%.*}"
+
+[ -f "$ROOT" ] && rm -f "$ROOT"
+[ -f "${ROOT}.gpg" ] && rm -f "${ROOT}.gpg"
+
 #
 # Generate a random ascii value.
 #
@@ -39,12 +52,13 @@ GPG_OPTS=( "--verbose" "--output" "$ROOT" "--clear-sign" "$TARGET" )
 echo_vars TARGET ROOT SUFX
 
 if ! gpg ${GPG_OPTS[@]} >/tmp/loglog 2>&1 ; then
-        echo "Failed." >/tmp/loglog 2>&1
+        echo_err "Failed." >/tmp/loglog 2>&1
         exit 1
 fi
 
+
 # mv "${ROOT}.${SUFX}" "$ROOT"
-echo "Create gpg file."
+echo_dbg "Create gpg file."
 if gpg -abs  --output ${ROOT}.gpg "${TARGET}" ; then
-        echo mv "${TARGET}.asc" "${ROOT}.gpg"
+        rm $TARGET
 fi
