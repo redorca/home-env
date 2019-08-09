@@ -1,5 +1,27 @@
 #!/bin/bash -x
 
+
+#
+# Echo stuff to stderr
+#
+echo_err()
+{
+        echo "$@" >&2
+}
+
+#
+# Print out variables and values.
+#
+echo_vars()
+{
+        local Vars=
+
+        Vars="$@"
+        for var in $Vars ; do
+                echo_err $var ${!var}
+        done
+}
+
 TARGET="$(basename $1)"
 [ ! -f "$TARGET" ] && echo "Not found <$TARGET>" >&2 && exit 5
 echo "Sign $TARGET"
@@ -10,14 +32,19 @@ ROOT="${TARGET%.*}"
 SUFX="$(mktemp -u XXX)"
 
 # GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
-GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
+# GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
+GPG_OPTS=( "--verbose" "--output" "$ROOT" "--clear-sign" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--detach-sign"  "$TARGET" )
+
+echo_vars TARGET ROOT SUFX
+
 if ! gpg ${GPG_OPTS[@]} >/tmp/loglog 2>&1 ; then
         echo "Failed." >/tmp/loglog 2>&1
         exit 1
 fi
+
 # mv "${ROOT}.${SUFX}" "$ROOT"
 echo "Create gpg file."
-if gpg -abs  "${TARGET}" ; then
-        mv "${TARGET}.asc" "${ROOT}.gpg"
+if gpg -abs  --output ${ROOT}.gpg "${TARGET}" ; then
+        echo mv "${TARGET}.asc" "${ROOT}.gpg"
 fi
