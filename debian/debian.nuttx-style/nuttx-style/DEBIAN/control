@@ -1,0 +1,11 @@
+Package: nuttx-style
+Version: 3.2-1
+Architecture: amd64
+Maintainer: bill <bill@zglue.com>
+Installed-Size: 511
+Depends: zglue-cleanup (>= 1.1)
+Section: devel
+Priority: optional
+Description: Enforce nuttx style guide rules to source.
+ Source code may be formatted with respect to the nuttx style guide
+ using this package.

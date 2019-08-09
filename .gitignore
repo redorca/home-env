@@ -132,4 +132,6 @@ klone
 *.pdf
 /bigbig
 *.deb
-
+.gnupg/
+autorun/
+/Documents
