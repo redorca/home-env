@@ -27,6 +27,16 @@ fqdn                    = localhost
 run_dinstall		= 0
 post_upload_command	= /usr/bin/mini-dinstall --run
 
+[zull]
+distributions           = unstable
+incoming		= /var/www/html/zull/dists/mini-dinstall/incoming
+# method			= scp
+method			= local
+login                   = zull
+fqdn                    = localhost
+run_dinstall		= 0
+post_upload_command	= /usr/bin/mini-dinstall --run
+
 [phoo]
 distributions           = phoo
 incoming		= /var/www/html/zglue/mini-dinstall/incoming
