@@ -3,7 +3,7 @@
 KEY_FP=$(gpg --with-colons --list-keys | grep ^fpr | head -1 | sed -e 's/[fpr:]//g')
 [ -z "$KEY_FP" ] && echo "No key fingerprint found." >&2 && exit 1
 
-OPTS="--allow-preset-passphrase"
+OPTS="--allow-preset-passphrase --daemon"
 
 gpg-agent $OPTS
 echo "Enter the passphrase for the secret key to insert into the agent's cache."
