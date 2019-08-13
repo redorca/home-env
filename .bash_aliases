@@ -816,3 +816,8 @@ PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 chk_debug || set-display-resolution
 touch ~/.vimrc_color
 
+#
+# Reset to home dir.
+#
+cd
+
