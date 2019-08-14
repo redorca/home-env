@@ -786,9 +786,12 @@ function expand_conf_vars()
 {
         local Var=
         local File=
+        local FileTempl=
 
         Var="$1"; shift
         File="$1"; shift
+        FileTempl=$(dirname $File)/.template$(basename $File)
+        [ -f "$FileTempl" -a ! -f $File ] && cp $FileTempl $File
         SED_OPTS=(  \
                 "-i" "-e"  \
                 "/::$Var/s,::$Var,${!Var},"  \
@@ -833,7 +836,7 @@ touch ~/.vimrc_color
 
 expand_conf_vars REPO_ARCHIVEDIR ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.mini-dinstall.conf
- 
+expand_conf_vars USER ~/.dput.cf 
 
 
 #
