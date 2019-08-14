@@ -159,7 +159,8 @@ Repo2Host["bitbake"]="master@git://git.openembedded.org/bitbake.git"
 Repo2Host["dulwich"]="master@git://github.com/dulwich/dulwich.git"
 Repo2Host["searchmonkey"]="master@https://git.code.sf.net/p/searchmonkey/GTK searchmonkey-GTK"
 Repo2Host["ksearchmonkey"]="master@https://git.code.sf.net/p/searchmonkey/KDE searchmonkey-KDE"
-
+Repo2Host["repogen"]="master@https://github.com/geek1011/repogen.git"
+Repo2Host["damn-repogen"]="master@https://github.com/zglue-bill/damn-repogen.git"
 
 FinalCmds=()
 FinalCmds["nuttx"]="setup_repo"
