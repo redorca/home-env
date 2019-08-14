@@ -31,9 +31,7 @@ post_upload_command	= /usr/bin/mini-dinstall --run
 distributions           = phoo
 incoming		= /var/www/html/zglue/mini-dinstall/incoming
 method			= scp
-# fqdn                    = localhost
-login                   = zull
-fqdn                    = pkg-engine.com
+fqdn                    = localhost
 run_dinstall		= 0
 post_upload_command	= /usr/bin/mini-dinstall --run
 
