@@ -1,11 +1,26 @@
-#!/bin/bash
+#!/bin/bash -x
 
 KEY_FP=$(gpg --with-colons --list-keys | grep ^fpr | head -1 | sed -e 's/[fpr:]//g')
 [ -z "$KEY_FP" ] && echo "No key fingerprint found." >&2 && exit 1
-
+GPG_OPTS=( '--list-secret-keys' '--fingerprint' '--with-colons' )
+AWK_OPTS=(  "-F':' '/uid/ {print $10}'" )
+KEY_UID=$( gpg ${GPG_OPTS[@]} | awk -F':' '/uid/ {print $10}')
+echo "KEY_UID :: $KEY_UID"
 BIN=dpkg-buildpackage
-# OPTS=( "-us" "-ui" "--build=binary" "--sign-key=$KEY_FP" )
-OPTS=( "-us" "-ui" "--build=binary" "--sign-key=billy" )
+
+while [ $# -gt 0 ] ; do
+        case "$1" in
+        --new-key) HOOK_BINARY=pkg-hook-binary
+        ;;
+        *) echo "Huh? $1"
+        ;;
+        esac
+        shift
+done
+
+OPTS=( "-us" "-ui" "--build=binary" "--sign-key=$KEY_FP" )
+# OPTS=( "-us" "-ui" "--build=binary" "--sign-key=billy" )
+[ -n "$HOOK_BINARY" ] && OPTS[${#Opts[@]}]="--hook-build=$HOOK_BINARY"
 
 CMD=( $BIN ${OPTS[@]} )
 echo "${CMD[*]}"

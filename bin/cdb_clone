@@ -19,3 +19,4 @@ git clone -b master https://github.com/BoschSensortec/BME280_driver.git
 git clone -b master git@github.com:alexmurray/cstyle.git
 git clone -b master git@github.com:zglue/dialog
 git clone -b master https://gerrit.googlesource.com/git-repo
+git clone -b master ssh://git@github.com/zglue-bill/home-env.git

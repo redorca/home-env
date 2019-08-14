@@ -1,0 +1,54 @@
+#!/bin/bash
+
+
+declare -A DebianDirs
+DebianDirs["pkg-engine"]="debian.pkg-engine"
+
+helpem()
+{
+        cat <<EOF
+    $(basename $0):
+        -p :  Package name to create
+        -h :  Emit this help message.
+EOF
+}
+
+build_pkgdirs()
+{
+        local Pkg="$1"
+        local DebDir=
+        local ChangeLog=
+
+        DebDir="${DebianDirs[$Pkg]}"
+        ChangeLog="$HOME/debian/$DebDir/changelog"
+        if [ -f "$ChangeLog" ] ; then
+                pushd ~/src/zglue/packaging/ >/dev/null
+                mkdir -p "repo.$Pkg"
+                cd "repo.$Pkg"
+                foo=( $(head -1 "$ChangeLog") )
+                foo[1]=${foo[1]:1}
+                targetdir=${foo[0]}-${foo[1]%%-*}
+                mkdir -p $targetdir
+                cd $targetdir
+                ln -s $HOME/debian/$DebDir debian
+                popd >/dev/null
+        fi
+}
+
+while [ $# -gt 0 ] ; do
+        case "$1" in
+        -p) PKG="$2"
+            [ -z "${DebianDirs[$PKG]}" ] && echo "No debian dir found:" >&2 && exit 1
+            shift
+         ;;
+        -h) helpem && exit
+         ;;
+        *) echo "No clue what you mean: \"$1\"" >&2
+           exit 1
+         ;;
+        esac
+        shift
+done
+
+build_pkgdirs $PKG
+

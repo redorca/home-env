@@ -1,13 +1,64 @@
 #!/bin/bash
 
-[ ! -f "$1" ] && exit 5
-echo "Sign $1"
-if gpg --verbose --clearsign -o InRelease.xxx $1 ; then
-        mv InRelease.xxx InRelease
-        echo "Create gpg file."
-        if gpg -abs -o Release.gpg.xxx $1 ; then
-                mv Release.gpg.xxx Release.gpg
-        fi
-else
-        echo "Failed."
+
+#
+# Echo stuff to stderr
+#
+echo_dbg()
+{
+        return
+#       echo "$@" >&2
+}
+
+#
+# Echo stuff to stderr
+#
+echo_err()
+{
+        echo "$@" >&2
+}
+
+#
+# Print out variables and values.
+#
+echo_vars()
+{
+        local Vars=
+
+        Vars="$@"
+        for var in $Vars ; do
+                echo_dbg $var ${!var}
+        done
+}
+
+TARGET="$(basename $1)"
+[ ! -f "$TARGET" ] && echo_err "Not found <$TARGET>" && exit 5
+echo_dbg "Sign $TARGET"
+ROOT="${TARGET%.*}"
+
+[ -f "$ROOT" ] && rm -f "$ROOT"
+[ -f "${ROOT}.gpg" ] && rm -f "${ROOT}.gpg"
+
+#
+# Generate a random ascii value.
+#
+SUFX="$(mktemp -u XXX)"
+
+# GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
+# GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
+GPG_OPTS=( "--verbose" "--output" "$ROOT" "--clear-sign" "$TARGET" )
+# GPG_OPTS=( "--verbose" "--detach-sign"  "$TARGET" )
+
+echo_vars TARGET ROOT SUFX
+
+if ! gpg ${GPG_OPTS[@]} >/tmp/loglog 2>&1 ; then
+        echo_err "Failed." >/tmp/loglog 2>&1
+        exit 1
+fi
+
+
+# mv "${ROOT}.${SUFX}" "$ROOT"
+echo_dbg "Create gpg file."
+if gpg -abs  --output ${ROOT}.gpg "${TARGET}" ; then
+        rm $TARGET
 fi
