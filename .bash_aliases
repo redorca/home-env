@@ -13,7 +13,7 @@ BLUE="\033[0;34m"
 PURPLE="\033[0;35m"
 LTBLUE="\033[0;36m"
 UNKNOWN="\033[0;37m"
-
+export REPO_ARCHIVEDIR="$(find /var/www -type d -name dists)"
 ITALIC=3
 BOLD=1
 UNDERL=4
@@ -39,7 +39,7 @@ ip_to_display["default"]="1600x900"
 ip_to_display["192.168.168"]="2048x1152"
 ip_to_display["192.168.183"]="1920x1080"
 
-on_exit()
+function on_exit()
 {
     set +x
 }
@@ -695,7 +695,7 @@ function gitchk()
         git rev-parse 2>/dev/null
 }
 
-foo_git()
+function foo_git()
 {
         funame $@
         pushd ./ >/dev/null
@@ -748,7 +748,7 @@ function repo()
 #
 # Generate a symlink from '/.../.mnt/zgle/$Dir' to ~src directory.
 #
-goo()
+function goo()
 {
     ( [ -z "$@" ] && err_echo "Need a directory" ) && return 1
 
@@ -780,6 +780,24 @@ function launch()
 
     xdg-open "$1" >/dev/null 2>&1
 
+}
+
+function expand_conf_vars()
+{
+        local Var=
+        local File=
+        local FileTempl=
+
+        Var="$1"; shift
+        File="$1"; shift
+        FileTempl=$(dirname $File)/.template$(basename $File)
+        [ -f "$FileTempl" -a ! -f $File ] && cp $FileTempl $File
+        SED_OPTS=(  \
+                "-i" "-e"  \
+                "/::$Var/s,::$Var,${!Var},"  \
+                "$File" \
+        )
+        sed ${SED_OPTS[@]}
 }
 
 export GPG_TTY=$(tty)
@@ -815,6 +833,11 @@ PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 #
 chk_debug || set-display-resolution
 touch ~/.vimrc_color
+
+expand_conf_vars REPO_ARCHIVEDIR ~/.mini-dinstall.conf
+expand_conf_vars USER ~/.mini-dinstall.conf
+expand_conf_vars USER ~/.dput.cf 
+
 
 #
 # Reset to home dir.

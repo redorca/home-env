@@ -1,0 +1,31 @@
+#!/bin/bash -x
+
+IDENT=$(mktemp -u fabro.XXXX)
+PKG_FILE=pkg-engine.public-key.gpg
+TMPKEY=$(mktemp -u XXXX.key)
+
+GPG_OPTS=( "--quick-generate-key" "--batch" "$IDENT" )
+echo "Generate key $IDENT"
+if ! gpg ${GPG_OPTS[@]} ; then
+        exit 1
+fi
+
+echo "Export secret key $IDENT as $TMPKEY"
+if !gpg --output=$TMPKEY --export-secret-key "$IDENT" ; then
+        exit 2
+fi
+echo "Export key $IDENT as $PKG_FILE"
+if ! gpg --output=$PKG_FILE --export "$IDENT" ; then
+        exit 3
+fi
+
+echo "Delete secret key $IDENT"
+if ! gpg --delete-secret-key "$IDENT" ; then
+        exit 4
+fi
+
+echo "Delete key $IDENT"
+if ! gpg --delete-key "$IDENT" ; then
+        exit 5
+fi
+

@@ -22,7 +22,8 @@ progress_indicator	= 2
 [zglue]
 distributions           = unstable
 incoming		= /var/www/html/zglue/dists/mini-dinstall/incoming
-method			= scp
+# method			= scp
+method			= local
 fqdn                    = localhost
 run_dinstall		= 0
 post_upload_command	= /usr/bin/mini-dinstall --run
@@ -53,7 +54,8 @@ login                   = zull
 fqdn                    = pkg-engine.com
 # fqdn                    = 40.78.25.159
 run_dinstall		= 0
-post_upload_command	= /usr/bin/mini-dinstall --run
+post_upload_command	= mini-wrap
+# post_upload_command	= /usr/bin/mini-dinstall --run
 
 [local]
 distributions           = cosmic

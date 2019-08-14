@@ -1,15 +1,18 @@
 #!/bin/bash
 
-PKGDIR=nuttx-7.25
-PKGDIR=zglue-sdk-1.1
-PKGDIR=gcc-arm-none-eabi-8.2018-q4-major
-PKGDIR=bills-dev-1.1
+( [ ! -d debian ] && [ ! -L debian ] ) && echo "Please run within package directory containing debian/" >&2 && exit 3
+
+PKGDIR=$(basename $(pwd))
+# PKGDIR=zglue-sdk-1.1
+# PKGDIR=gcc-arm-none-eabi-8.2018-q4-major
+# PKGDIR=bills-dev-1.1
 TARFILE=$PKGDIR.tar.xz
 
 TAROPTS=" --exclude-vcs --exclude-vcs-ignores --exclude=nuttx_apps/* --exclude=debian/* --exclude=.gitignore --record-size=10K --checkpoint=500"
 
+pushd ../ >/dev/null
 CMD="tar -Jcf $TARFILE $TAROPTS $PKGDIR"
 echo $CMD
 $CMD
-
+popd >/dev/null
 

@@ -7,8 +7,20 @@ AWK_OPTS=(  "-F':' '/uid/ {print $10}'" )
 KEY_UID=$( gpg ${GPG_OPTS[@]} | awk -F':' '/uid/ {print $10}')
 echo "KEY_UID :: $KEY_UID"
 BIN=dpkg-buildpackage
+
+while [ $# -gt 0 ] ; do
+        case "$1" in
+        --new-key) HOOK_BINARY=pkg-hook-binary
+        ;;
+        *) echo "Huh? $1"
+        ;;
+        esac
+        shift
+done
+
 OPTS=( "-us" "-ui" "--build=binary" "--sign-key=$KEY_FP" )
 # OPTS=( "-us" "-ui" "--build=binary" "--sign-key=billy" )
+[ -n "$HOOK_BINARY" ] && OPTS[${#Opts[@]}]="--hook-build=$HOOK_BINARY"
 
 CMD=( $BIN ${OPTS[@]} )
 echo "${CMD[*]}"
