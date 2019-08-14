@@ -1,0 +1,33 @@
+#!/bin/bash
+
+cap()
+{
+	Foo=( $(gpg --list-secret-keys --with-colons | awk -F':' '/^sec/,/uid/ \
+                        {print $1, \"$10\"}') )
+	Foo=( $(gpg --list-secret-keys --with-colons | awk -F':' '/^sec/,/uid/ \
+                        {print $1, $10}') )
+	Foo=( $(gpg --list-secret-keys --with-colons | awk -F':' '/^sec/,/uid/ \
+                        {print $1} {print $10}') )
+	$(gpg --list-secret-keys --with-colons | awk -F':' '/^sec/,/uid/ \
+                        {print $1} {print $10}')
+	gpg --list-secret-keys --with-colons | awk -F':' '/^sec/,/uid/ \
+                        {print $1} {print $10}'
+	gpg --list-secret-keys --with-colons | awk -F':' '/^sec/,/uid/ \
+                        {print $1,"\"" $10}'
+	gpg --list-secret-keys --with-colons
+}
+
+get_ids()
+{
+	gpg --list-secret-keys --with-colons | awk -F':' '/^sec/,/uid/ \
+                        {print $1, $10}'
+}
+
+Foo=( $(get_ids) )
+FooNum=${#Foo[@]}
+echo "Foo# ${#Foo[@]}"
+# echo "Foo@ ${Foo[@]}"
+for i in $(seq 0 2 $FooNum) ; do
+        echo "${Foo[$i]} ${Foo[$(( i + 1 ))]}"
+done
+echo ""

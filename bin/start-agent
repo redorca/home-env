@@ -1,11 +1,36 @@
 #!/bin/bash
 
+
+get_identifier()
+{
+        gpg --list-secret-keys --with-colons
+        return
+}
+
+get_fingerprint()
+{
+       return
+}
+
+get_keygrip()
+{
+       return
+}
+
 KEY_FP=$(gpg --with-colons --list-keys | grep ^fpr | head -1 | sed -e 's/[fpr:]//g')
 [ -z "$KEY_FP" ] && echo "No key fingerprint found." >&2 && exit 1
 
-OPTS="--allow-preset-passphrase"
+AGENT_OPTS=( "--allow-preset-passphrase" "--daemon" )
 
-gpg-agent $OPTS
+#
+# Make sure any running agents are shutdown.
+#
+gpgconf kill gpg-agent
+if ! gpg-agent ${AGENT_OPTS[@]} ; then
+        echo "Yikes!  Agent failed to start.<$?>" >&2
+        exit 1
+fi
+
 echo "Enter the passphrase for the secret key to insert into the agent's cache."
 /usr/lib/gnupg2/gpg-preset-passphrase --preset $KEY_FP
 
