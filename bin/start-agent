@@ -1,5 +1,7 @@
 #!/bin/bash
 
+SECONDS=0
+
 common_error_codes=( "Success."
                       "Debug is not turned on."
                       "Agent failed to launch."
@@ -14,11 +16,29 @@ common_error_codes=( "Success."
                     )
 
 #
+# Statement print for echoing info
+# needed to debug the script.
+#
+dbg_echo()
+{
+        local String=
+        local Spacing=
+
+        Spacing=$(echo $Indent | sed -e 's/=/ /g')
+        [ "$DEBUG" != DEBUG ] && return 1
+        String="$@"
+        echo "                  ${Spacing}${String}" >&2
+        return 0
+}
+
+#
 # Call tracing when debugging.
 #
 Caller()
 {
-        dbg_echo "$SECONDS ====> ${#FUNCNAME[@]} : ${FUNCNAME[1]} $@"
+        Indent="$Indent===="
+        [ "$DEBUG" != DEBUG ] && return 0
+        echo "[$SECONDS]       ${#FUNCNAME[@]} : ${Indent}> ${FUNCNAME[1]}:: $@"
         return 0
 }
 
@@ -38,18 +58,16 @@ Return()
         return $err
 }
 
-#
-# Statement print for echoing info
-# needed to debug the script.
-#
-dbg_echo()
+set_array()
 {
-        local String=
+        local AName=
+        local BName=
 
-        [ "$DEBUG" != DEBUG ] && return 1
-        String="$@"
-        echo "$String" >&2
-        return 0
+        AName="$1"; shift
+        BName="$1"; shift
+
+        declare -p ${AName} | eval sed -e 's/${AName}/${BName}/'
+#       declare -p Lines | sed -e 's/Lines/Key_tmp/'
 }
 
 get_key_entries()
@@ -83,8 +101,8 @@ get_key_entries()
                         continue
                 fi
 
-                declare -p Lines | eval sed -e 's/Lines/Key_tmp/'
-                exit 0
+                eval $(set_array Lines Key_tmp)
+                dbg_echo "Key_tmp ${#Key_tmp[@]}"
 
                 return 0
 #               return $(Return 0)
@@ -143,8 +161,7 @@ get_fpr_attrib()
         if ! get_key_attribute $Key_name fpr Key_tmp ; then
 #        Key_fp=$(get_key_entries $Key_name | grep ^fpr \
 #                 | head -1 | sed -e 's/[fpr:]//g')
-                [ -z "$Key_fp" ] && echo "No key fingerprint found." >&2
-                return $(Return 6)
+                return $(Return $?)
         fi
         dbg_echo "Found secret key $Key_fp" >&2
         exec ${Key_val}=${Key_tmp}
