@@ -31,6 +31,7 @@ echo_vars()
         done
 }
 
+KEY_NAME=billy
 TARGET="$(basename $1)"
 [ ! -f "$TARGET" ] && echo_err "Not found <$TARGET>" && exit 5
 echo_dbg "Sign $TARGET"
@@ -46,11 +47,12 @@ SUFX="$(mktemp -u XXX)"
 
 # GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
+# GPG_OPTS=( "--verbose" "--local-user" "$KEY_NAME" "--output" "$ROOT" "--clear-sign" "$TARGET" )
 GPG_OPTS=( "--verbose" "--output" "$ROOT" "--clear-sign" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--detach-sign"  "$TARGET" )
 
 echo_vars TARGET ROOT SUFX
-
+echo "gpg command: gpg ${GPG_OPTS[@]}"
 if ! gpg ${GPG_OPTS[@]} >/tmp/loglog 2>&1 ; then
         echo_err "Failed." >/tmp/loglog 2>&1
         exit 1

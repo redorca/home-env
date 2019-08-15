@@ -1,11 +1,18 @@
 #!/bin/bash
 
-KEY_FP=$(gpg --with-colons --list-keys | grep ^fpr | head -1 | sed -e 's/[fpr:]//g')
+KEY_NAME=billy
+KEY_FP=$(gpg --with-colons --list-secret-keys billy | grep ^grp | head -1 | sed -e 's/[grp:]//g')
 [ -z "$KEY_FP" ] && echo "No key fingerprint found." >&2 && exit 1
+echo "KEY_FP set to <$KEY_FP>"
 
-OPTS="--allow-preset-passphrase"
+OPTS=( "-vvv" "--daemon" "--allow-preset-passphrase" )
 
-gpg-agent $OPTS
+CMD="gpg-agent ${OPTS[@]}"
+echo "CMD <$CMD>"
+$CMD
+
 echo "Enter the passphrase for the secret key to insert into the agent's cache."
-/usr/lib/gnupg2/gpg-preset-passphrase --preset $KEY_FP
+CMD="/usr/lib/gnupg2/gpg-preset-passphrase --preset $KEY_FP"
+echo "CMD <$CMD>"
+$CMD
 
