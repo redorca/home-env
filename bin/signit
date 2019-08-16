@@ -1,13 +1,15 @@
 #!/bin/bash
 
 
+LOGFILE=/tmp/log.mini
+
 #
 # Echo stuff to stderr
 #
 echo_dbg()
 {
         return
-#       echo "$@" >&2
+        echo "$@" |& tee -a $LOGFILE
 }
 
 #
@@ -15,7 +17,7 @@ echo_dbg()
 #
 echo_err()
 {
-        echo "$@" >&2
+        echo "$@" |& tee -a $LOGFILE
 }
 
 #
@@ -48,19 +50,19 @@ SUFX="$(mktemp -u XXX)"
 # GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--local-user" "$KEY_NAME" "--output" "$ROOT" "--clear-sign" "$TARGET" )
-GPG_OPTS=( "--verbose" "--output" "$ROOT" "--clear-sign" "$TARGET" )
+GPG_OPTS=( "-vvvv" "--output" "$ROOT" "--clear-sign" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--detach-sign"  "$TARGET" )
 
 echo_vars TARGET ROOT SUFX
-echo "gpg command: gpg ${GPG_OPTS[@]}"
-if ! gpg ${GPG_OPTS[@]} >/tmp/loglog 2>&1 ; then
-        echo_err "Failed." >/tmp/loglog 2>&1
+dbg_echo "gpg command: gpg ${GPG_OPTS[@]}"
+if ! gpg ${GPG_OPTS[@]} |& tee -a $LOGFILE ; then
+        echo_err "Failed."
         exit 1
 fi
 
 
 # mv "${ROOT}.${SUFX}" "$ROOT"
 echo_dbg "Create gpg file."
-if gpg -abs  --output ${ROOT}.gpg "${TARGET}" ; then
+if gpg -abs  --output ${ROOT}.gpg "${TARGET}" |& tee -a $LOGFILE1 ; then
         rm $TARGET
 fi
