@@ -1,227 +1,131 @@
 #!/bin/bash
 
-SECONDS=0
 
-common_error_codes=( "Success."
-                      "Debug is not turned on."
-                      "Agent failed to launch."
-                      "No key matching that name was found."
-                      "No key attrib returned."
-                      "Insufficent number of arguments."
-                      "No fingerprint for this key found."
-                      "No grip found."
-                      "Unable to acquire fingerprint of key."
-                      ""
-                      ""
-                    )
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        -p|--pass) PRESELECT="yes"
+        ;;
+        -n|--name) KEY_NAME="$2" ; shift
+        ;;
+        -v|--verify) VERIFY_ONLY="yes"
+        ;;
+        -h|--help) sed -n -e '1,/^done/p' $0
+                   exit 0
+        ;;
+        *) echo "Huh?  <$1>"
+           exit 1
+        ;;
+        esac
+        shift
+done
 
 #
-# Statement print for echoing info
-# needed to debug the script.
+# Verify that the key name given actually exists and is valid.
+#
+verify_name()
+{
+        local KeyName=
+
+        KeyName="$@"
+        gpg --check-sig "$KeyName" >/tmp/log.verify
+}
+
+#
+# Print the given string if DEBUG=DEBUG
 #
 dbg_echo()
 {
-        local String=
-        local Spacing=
+        [ "$DEBUG" != "DEBUG" ] && return
+        echo -e "$@" >&2
+}
 
-        Spacing=$(echo $Indent | sed -e 's/=/ /g')
-        [ "$DEBUG" != DEBUG ] && return 1
-        String="$@"
-        echo "                  ${Spacing}${String}" >&2
-        return 0
+# Given a key name return the fingerprint via a cli arg.
+#
+# arg 1:  Name of the key to use.
+# arg 2:  Variable to hold the fingerprint on return
+# arg 3:  What record type to parse (ignored)
+#
+set_KEY_FP()
+{
+        local KeyName=
+        local KeyVar=
+        local KeyFP=
+#       local KeyTag=
+
+        KeyName="$1" ; shift
+        KeyVar="$1" ; shift
+#       KeyTag="$1" ; shift
+
+#       KEY_NAME=billy
+        KeyFP=$(gpg --with-colons --list-secret-keys $KeyName \
+                | grep ^fpr | head -1 | sed -e 's/[fpr:]//g')
+        [ -z "$KeyFP" ] && echo "No key fingerprint found." >&2 && return 1
+        dbg_echo "Key figerprint for $KeyName is  set to <$KeyFP>"
+        eval $KeyVar="$KeyFP"
 }
 
 #
-# Call tracing when debugging.
+# Start the agent.
 #
-Caller()
+start_agent()
 {
-        Indent="$Indent===="
-        [ "$DEBUG" != DEBUG ] && return 0
-        echo "[$SECONDS]       ${#FUNCNAME[@]} : ${Indent}> ${FUNCNAME[1]}:: $@"
-        return 0
-}
+        local CMD=
+        declare -a OPTS=()
 
-#
-# A way to print out error messages along
-# with returbn the error code back to the
-# return which will correctly return back
-# to the caller with the intended error code.
-#
-Return()
-{
-        local err=
-
-        err="$1"; shift
-        [ "$err" -eq 0 ] && [ "$DEBUG" != DEBUG ] && return 0
-        echo "${common_error_codes[$err]}"
-        return $err
-}
-
-set_array()
-{
-        local AName=
-        local BName=
-
-        AName="$1"; shift
-        BName="$1"; shift
-
-        declare -p ${AName} | eval sed -e 's/${AName}/${BName}/'
-#       declare -p Lines | sed -e 's/Lines/Key_tmp/'
-}
-
-get_key_entries()
-{
-        Caller $@
-        local Key_name=
-        local Key_tmp=
-        local Key_var=
-        local idx=
-        local Tmp=
-        declare -a Lines=()
-
-        idx=0
-        Key_name=$1; shift
-        Key_var=$1;  shift
-        gpg --list-secret-keys --with-colons | while read line ; do
-              Tmp=${line%%:*}
-              if [ "$Tmp" != "sec" ] && [ "$In_process" != "true" ] ; then
-                        Lines=()
-                        continue
-                fi
-              In_process="true"
-              dbg_echo "Lines[$idx]=$line"
-              Lines[$idx]="$line"
-              idx=$(( idx += 1 ))
-              if [ "$Tmp" == "uid" ] ; then
-                if [ "$(echo $line | awk -F':' '/^uid/ {print $10}')" \
-                        != "$Key_name" ] ; then
-                        In_process="false"
-                        Lines=()
-                        continue
-                fi
-
-                eval $(set_array Lines Key_tmp)
-                dbg_echo "Key_tmp ${#Key_tmp[@]}"
-
-                return 0
-#               return $(Return 0)
-              fi
-              done
-
-#       return $(Return 3)
-}
-
-#
-# Pick one of the attributes of the key
-# and store it in a var passed in.
-#
-# arg1:   Key name    Name of the key to use (the uid: line)
-# arg2:   Key attrib  Which line of a "gpg -K --with-colons" to grab.
-# arg3:   KEY_VAR     The return value.
-#
-get_key_attribute()
-{
-        Caller $@
-        local Key_attr=
-        local Key_tmp=
-        local Key_var=
-        local Key_name=
-        declare -a Sed_opts=()
-
-        Key_name=$1;   shift
-        dbg_echo "Key_name $Key_name"
-        Key_attrib=$1; shift
-        dbg_echo "Key_attrib $Key_attrib"
-        Key_var=$1;   shift
-        dbg_echo "Key variable to return is $Key_var"
-
-        Sed_opts=( "-e" "s/$Key_var:]//g"  )
-        if ! $(get_key_entries $Key_name $Key_var) ; then
-                return $(Return 4)
-        fi
-        dbg_echo "Key_var $Key_var ${!Key_var}"
-        return $(Return 0)
-}
-
-get_fpr_attrib()
-{
-        Caller $@
-        local Key_val=
-        local Key_tmp=
-        local Key_attrib=
-        local Key_name=
-
-        [ $# -ne 2 ] && return $(Return 5)
-
-        Key_name="$1"; shift
-        Key_val="$1"; shift
-        Key_attrib=fpr
-
-        if ! get_key_attribute $Key_name fpr Key_tmp ; then
-#        Key_fp=$(get_key_entries $Key_name | grep ^fpr \
-#                 | head -1 | sed -e 's/[fpr:]//g')
-                return $(Return $?)
-        fi
-        dbg_echo "Found secret key $Key_fp" >&2
-        exec ${Key_val}=${Key_tmp}
-
-        return $(Return 0)
-}
-
-get_grp_attrib()
-{
-        Caller $@
-        return $(Return 7)
-}
-
-launch_agent()
-{
-        Caller $@
-        AGENT_OPTS=( "-vvv" "--debug-level guru" "--allow-preset-passphrase" \
-                     "--daemon" )
-        #
-        # Make sure any running agents are shutdown.
-        #
-        # gpgconf kill gpg-agent
-        CMD="gpg-agent ${AGENT_OPTS[@]}"
+        OPTS=( "-vvv" "--daemon" "--allow-preset-passphrase" )
+        CMD="gpg-agent ${OPTS[@]}"
         echo "CMD <$CMD>"
-        [ "$1" == "DEBUG" ] && return
 
-        if ! $CMD ; then
-                echo "Yikes!  Agent failed to start.<$?>" >&2
-                return $(Return 2)
-        fi
-
-        return $(Return 0)
+        $CMD
 }
 
-preset_passphrase()
+#
+# Once the agent is running in --allow-preset-passphrase
+# set the passphrase for the key mentioned in arg 1.
+#
+# arg 1:   The key needing a passphrase
+#
+# Return:  The return value of setting the passphrase
+#          is returned to the caller
+#
+set_passphrase()
 {
-        Caller $@
-        local Key_fp=
-        local Key_name=
-        local err=
+        local KeyFP=
+        local GpgPhraseTool=
 
-        Key_fp="$1"  ; shift
-        Key_name="$1"; shift
-
-        echo "Enter the passphrase for the secret key to insert \
-              into the agent's cache."
-        get_fingerprint Key_fp $Key_name;
-        CMD="/usr/lib/gnupg2/gpg-preset-passphrase --preset $Key_fp"
-        echo "CMD <$CMD>"
-        [ "$1" == "DEBUG" ] && return $(Return 0)
-       $CMD
-        err=$?
-        return $(Return $err)
+        GpgPhraseTool=/usr/lib/gnupg2/gpg-preset-passphrase
+        KeyFP="$1"
+#       CMD="/usr/lib/gnupg2/gpg-preset-passphrase --preset $KeyFP"
+        CMD="$GpgPhraseTool --preset $KeyFP"
+        dbg_echo "CMD <$CMD>"
+        $CMD
 }
 
-if ! get_fpr_attrib billy HOLD ; then
-        rc=8
-
-        exit $(Return $rc)
+if ! verify_name "$KEY_NAME" ; then
+        echo "No such key or key is invalid. <$KEY_NAME>" >&2
+        exit 4
 fi
-dbg_echo "the fpr attrib returned $HOLD"
-exit $(Return 0)
 
+if [ "$VERIFY_ONLY" = "yes" ] ; then
+        exit 0
+fi
+
+echo "Enter the passphrase for the secret key to insert into the agent's cache."
+if ! set_KEY_FP $KEY_NAME KEY_FP ; then
+        echo "Unable to set a key attribute: <fingerprint fpr>" >&2
+        exit 3
+fi
+dbg_echo "Key fingerprint is <$KEY_FP>"
+
+start_agent
+# if [ "$PRESELECT" != "yes" ] && ! start_agent ; then
+#         echo "Agent failed to start."
+#         exit 5
+# fi
+
+if ! set_passphrase $KEY_FP ; then
+        echo "Setting the passphrase failed." >&2
+        exit 6
+fi
+
+exit 0

@@ -13,7 +13,7 @@ BLUE="\033[0;34m"
 PURPLE="\033[0;35m"
 LTBLUE="\033[0;36m"
 UNKNOWN="\033[0;37m"
-export REPO_ARCHIVEDIR="$(find /var/www/html/$USER -type d -name dists)"
+export REPO_ARCHIVEDIR="$(find /var/www/html -type d -name dists)"
 ITALIC=3
 BOLD=1
 UNDERL=4
@@ -831,9 +831,14 @@ PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 #
 # Set display resolution according to ip addr /24
 #
-chk_debug || set-display-resolution
+# chk_debug || set-display-resolution
 touch ~/.vimrc_color
 
+if [ -z "$REPO_ARCHIVEDIR" ] ; then
+        export REPO_ARCHIVEDIR=/var/www/html/$USER/dists
+        sudo mkdir -p /var/www/html/$USER/dists
+fi
+sudo chown -R $USER:$USER $REPO_ARCHIVEDIR
 expand_conf_vars REPO_ARCHIVEDIR ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.dput.cf 

@@ -1,13 +1,15 @@
 #!/bin/bash
 
 
+export SIGN_LOGFILE=/tmp/log.signit
+
 #
 # Echo stuff to stderr
 #
 echo_dbg()
 {
         return
-#       echo "$@" >&2
+        echo "$@" |& tee -a $SIGN_LOGFILE
 }
 
 #
@@ -15,7 +17,7 @@ echo_dbg()
 #
 echo_err()
 {
-        echo "$@" >&2
+        echo "$@" |& tee -a $SIGN_LOGFILE
 }
 
 #
@@ -31,7 +33,15 @@ echo_vars()
         done
 }
 
+rm -f $SIGN_LOGFILE
+KEY_NAME=hoops
+
+#
+# Make sure the file to sign is in the CWD.
+#
 TARGET="$(basename $1)"
+RELOCATE="$(dirname $1)"
+pushd $RELOCATE |& tee -a $SIGN_LOGFILE
 [ ! -f "$TARGET" ] && echo_err "Not found <$TARGET>" && exit 5
 echo_dbg "Sign $TARGET"
 ROOT="${TARGET%.*}"
@@ -46,19 +56,22 @@ SUFX="$(mktemp -u XXX)"
 
 # GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
-GPG_OPTS=( "--verbose" "--output" "$ROOT" "--clear-sign" "$TARGET" )
+# GPG_OPTS=( "--verbose" "--local-user" "$KEY_NAME" "--output" "$ROOT" "--clear-sign" "$TARGET" )
+GPG_OPTS=( "-vvvv" "--debug-level" "guru" "--output" "$ROOT" "--local-user" "$KEY_NAME" "--clear-sign" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--detach-sign"  "$TARGET" )
 
 echo_vars TARGET ROOT SUFX
-
-if ! gpg ${GPG_OPTS[@]} >/tmp/loglog 2>&1 ; then
-        echo_err "Failed." >/tmp/loglog 2>&1
+echo "gpg command: gpg ${GPG_OPTS[@]}" |& tee -a $SIGN_LOGFILE
+gpg ${GPG_OPTS[@]} |& tee -a $SIGN_LOGFILE
+Err=$?
+if [ $Err -ne 0 ] ; then
+        echo_err "Failed <$Err>."
         exit 1
 fi
 
 
 # mv "${ROOT}.${SUFX}" "$ROOT"
 echo_dbg "Create gpg file."
-if gpg -abs  --output ${ROOT}.gpg "${TARGET}" ; then
+if gpg -abs  --output ${ROOT}.gpg "${TARGET}" |& tee -a $SIGN_LOGFILE1 ; then
         rm $TARGET
 fi
