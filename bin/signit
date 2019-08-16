@@ -34,12 +34,14 @@ echo_vars()
 }
 
 rm -f $SIGN_LOGFILE
-KEY_NAME=billy
+KEY_NAME=hoops
 
 #
 # Make sure the file to sign is in the CWD.
 #
 TARGET="$(basename $1)"
+RELOCATE="$(dirname $1)"
+pushd $RELOCATE |& tee -a $SIGN_LOGFILE
 [ ! -f "$TARGET" ] && echo_err "Not found <$TARGET>" && exit 5
 echo_dbg "Sign $TARGET"
 ROOT="${TARGET%.*}"
@@ -55,12 +57,11 @@ SUFX="$(mktemp -u XXX)"
 # GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--local-user" "$KEY_NAME" "--output" "$ROOT" "--clear-sign" "$TARGET" )
-# GPG_OPTS=( "-vvvv" "--debug-level" "guru" "--output" "$ROOT" "--clear-sign" "$TARGET" )
-GPG_OPTS=( "-vvvv" "--debug-level" "guru" "--detach-sign" "--output" "$ROOT" "$TARGET" )
+GPG_OPTS=( "-vvvv" "--debug-level" "guru" "--output" "$ROOT" "--local-user" "$KEY_NAME" "--clear-sign" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--detach-sign"  "$TARGET" )
 
 echo_vars TARGET ROOT SUFX
-dbg_echo "gpg command: gpg ${GPG_OPTS[@]}"
+echo "gpg command: gpg ${GPG_OPTS[@]}" |& tee -a $SIGN_LOGFILE
 gpg ${GPG_OPTS[@]} |& tee -a $SIGN_LOGFILE
 Err=$?
 if [ $Err -ne 0 ] ; then

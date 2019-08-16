@@ -111,16 +111,17 @@ if [ "$VERIFY_ONLY" = "yes" ] ; then
 fi
 
 echo "Enter the passphrase for the secret key to insert into the agent's cache."
-if ! set_KEY_FP billy KEY_FP ; then
+if ! set_KEY_FP $KEY_NAME KEY_FP ; then
         echo "Unable to set a key attribute: <fingerprint fpr>" >&2
         exit 3
 fi
 dbg_echo "Key fingerprint is <$KEY_FP>"
 
-if [ "$PRESELECT" != "yes" ] && ! start_agent ; then
-        echo "Agent failed to start."
-        exit 5
-fi
+start_agent
+# if [ "$PRESELECT" != "yes" ] && ! start_agent ; then
+#         echo "Agent failed to start."
+#         exit 5
+# fi
 
 if ! set_passphrase $KEY_FP ; then
         echo "Setting the passphrase failed." >&2

@@ -19,7 +19,6 @@ while [ $# -gt 0 ] ; do
 done
 
 OPTS=( "-us" "-ui" "--build=binary" "--sign-key=$KEY_FP" )
-# OPTS=( "-us" "-ui" "--build=binary" "--sign-key=billy" )
 [ -n "$HOOK_BINARY" ] && OPTS[${#Opts[@]}]="--hook-build=$HOOK_BINARY"
 
 CMD=( $BIN ${OPTS[@]} )
