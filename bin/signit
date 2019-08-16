@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-LOGFILE=/tmp/log.mini
+export SIGN_LOGFILE=/tmp/log.signit
 
 #
 # Echo stuff to stderr
@@ -9,7 +9,7 @@ LOGFILE=/tmp/log.mini
 echo_dbg()
 {
         return
-        echo "$@" |& tee -a $LOGFILE
+        echo "$@" |& tee -a $SIGN_LOGFILE
 }
 
 #
@@ -17,7 +17,7 @@ echo_dbg()
 #
 echo_err()
 {
-        echo "$@" |& tee -a $LOGFILE
+        echo "$@" |& tee -a $SIGN_LOGFILE
 }
 
 #
@@ -33,7 +33,12 @@ echo_vars()
         done
 }
 
+rm -f $SIGN_LOGFILE
 KEY_NAME=billy
+
+#
+# Make sure the file to sign is in the CWD.
+#
 TARGET="$(basename $1)"
 [ ! -f "$TARGET" ] && echo_err "Not found <$TARGET>" && exit 5
 echo_dbg "Sign $TARGET"
@@ -50,19 +55,22 @@ SUFX="$(mktemp -u XXX)"
 # GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--local-user" "$KEY_NAME" "--output" "$ROOT" "--clear-sign" "$TARGET" )
-GPG_OPTS=( "-vvvv" "--output" "$ROOT" "--clear-sign" "$TARGET" )
+# GPG_OPTS=( "-vvvv" "--debug-level" "guru" "--output" "$ROOT" "--clear-sign" "$TARGET" )
+GPG_OPTS=( "-vvvv" "--debug-level" "guru" "--detach-sign" "--output" "$ROOT" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--detach-sign"  "$TARGET" )
 
 echo_vars TARGET ROOT SUFX
 dbg_echo "gpg command: gpg ${GPG_OPTS[@]}"
-if ! gpg ${GPG_OPTS[@]} |& tee -a $LOGFILE ; then
-        echo_err "Failed."
+gpg ${GPG_OPTS[@]} |& tee -a $SIGN_LOGFILE
+Err=$?
+if [ $Err -ne 0 ] ; then
+        echo_err "Failed <$Err>."
         exit 1
 fi
 
 
 # mv "${ROOT}.${SUFX}" "$ROOT"
 echo_dbg "Create gpg file."
-if gpg -abs  --output ${ROOT}.gpg "${TARGET}" |& tee -a $LOGFILE1 ; then
+if gpg -abs  --output ${ROOT}.gpg "${TARGET}" |& tee -a $SIGN_LOGFILE1 ; then
         rm $TARGET
 fi
