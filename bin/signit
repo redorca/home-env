@@ -4,6 +4,21 @@
 export SIGN_LOGFILE=/tmp/log.signit
 
 #
+#
+#
+on_exit()
+{
+        local Tmp=
+
+        echo "Args present: <$*>" > on_exit 2>&1
+        Tmp=$?
+        echo "FUNCNAME[1] ${FUNCNAME[1]}" > on_exit 2>&1
+        echo "Tmp is $Tmp" > on_exit 2>&1
+#  |& -a $SIGN_LOGFILE
+        return $Tmp
+}
+
+#
 # Echo stuff to stderr
 #
 echo_dbg()
@@ -33,19 +48,38 @@ echo_vars()
         done
 }
 
+#
+# Debugging aide. Print something.
+#
+mark()
+{
+        local Marker=
+        local Dir=
+
+        Marker="$1" ; shift
+        Dir="$1" ; shift
+        echo "=== $Marker" > $Marker 2>&1
+}
+
+trap on_exit EXIT ERR
+
+Err=0
+mark A
 rm -f $SIGN_LOGFILE
 KEY_NAME=hoops
 
 #
 # Make sure the file to sign is in the CWD.
 #
-TARGET="$(basename $1)"
+# TARGET="$(basename $1)"
+TARGET="$1"
 RELOCATE="$(dirname $1)"
 pushd $RELOCATE |& tee -a $SIGN_LOGFILE
 [ ! -f "$TARGET" ] && echo_err "Not found <$TARGET>" && exit 5
-echo_dbg "Sign $TARGET"
 ROOT="${TARGET%.*}"
+echo_dbg "Relocated to $RELOCATE Sign $TARGET  Output to $ROOT"
 
+mark B
 [ -f "$ROOT" ] && rm -f "$ROOT"
 [ -f "${ROOT}.gpg" ] && rm -f "${ROOT}.gpg"
 
@@ -57,21 +91,21 @@ SUFX="$(mktemp -u XXX)"
 # GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--local-user" "$KEY_NAME" "--output" "$ROOT" "--clear-sign" "$TARGET" )
-GPG_OPTS=( "-vvvv" "--debug-level" "guru" "--output" "$ROOT" "--local-user" "$KEY_NAME" "--clear-sign" "$TARGET" )
+GPG_OPTS=( "-vvvv" "--debug-level" "guru" "--local-user" "$KEY_NAME" "--clear-sign" "$TARGET" )
 # GPG_OPTS=( "--verbose" "--detach-sign"  "$TARGET" )
 
+mark C
 echo_vars TARGET ROOT SUFX
 echo "gpg command: gpg ${GPG_OPTS[@]}" |& tee -a $SIGN_LOGFILE
 gpg ${GPG_OPTS[@]} |& tee -a $SIGN_LOGFILE
-Err=$?
-if [ $Err -ne 0 ] ; then
-        echo_err "Failed <$Err>."
-        exit 1
-fi
+mark D
 
 
 # mv "${ROOT}.${SUFX}" "$ROOT"
 echo_dbg "Create gpg file."
-if gpg -abs  --output ${ROOT}.gpg "${TARGET}" |& tee -a $SIGN_LOGFILE1 ; then
+if gpg -abs  --output ${ROOT}.gpg "${TARGET}" |& tee -a $SIGN_LOGFILE ; then
         rm $TARGET
 fi
+
+mark ZZ
+exit 0
