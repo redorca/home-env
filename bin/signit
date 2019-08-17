@@ -3,109 +3,16 @@
 
 export SIGN_LOGFILE=/tmp/log.signit
 
-#
-#
-#
-on_exit()
+dbg_echo()
 {
-        local Tmp=
-
-        echo "Args present: <$*>" > on_exit 2>&1
-        Tmp=$?
-        echo "FUNCNAME[1] ${FUNCNAME[1]}" > on_exit 2>&1
-        echo "Tmp is $Tmp" > on_exit 2>&1
-#  |& -a $SIGN_LOGFILE
-        return $Tmp
+        echo -e "$*" |& tee -a $SIGN_LOGFILE
 }
+dbg_echo "......................"
 
-#
-# Echo stuff to stderr
-#
-echo_dbg()
-{
-        return
-        echo "$@" |& tee -a $SIGN_LOGFILE
-}
-
-#
-# Echo stuff to stderr
-#
-echo_err()
-{
-        echo "$@" |& tee -a $SIGN_LOGFILE
-}
-
-#
-# Print out variables and values.
-#
-echo_vars()
-{
-        local Vars=
-
-        Vars="$@"
-        for var in $Vars ; do
-                echo_dbg $var ${!var}
-        done
-}
-
-#
-# Debugging aide. Print something.
-#
-mark()
-{
-        local Marker=
-        local Dir=
-
-        Marker="$1" ; shift
-        Dir="$1" ; shift
-        echo "=== $Marker" > $Marker 2>&1
-}
-
-trap on_exit EXIT ERR
-
-Err=0
-mark A
-rm -f $SIGN_LOGFILE
-KEY_NAME=hoops
-
-#
-# Make sure the file to sign is in the CWD.
-#
-# TARGET="$(basename $1)"
-TARGET="$1"
-RELOCATE="$(dirname $1)"
-pushd $RELOCATE |& tee -a $SIGN_LOGFILE
-[ ! -f "$TARGET" ] && echo_err "Not found <$TARGET>" && exit 5
-ROOT="${TARGET%.*}"
-echo_dbg "Relocated to $RELOCATE Sign $TARGET  Output to $ROOT"
-
-mark B
-[ -f "$ROOT" ] && rm -f "$ROOT"
-[ -f "${ROOT}.gpg" ] && rm -f "${ROOT}.gpg"
-
-#
-# Generate a random ascii value.
-#
-SUFX="$(mktemp -u XXX)"
-
-# GPG_OPTS=( "--verbose" "--clear-sign" "-o" "${ROOT}.${SUFX}" "$TARGET" )
-# GPG_OPTS=( "--verbose" "--sign" "$TARGET" )
-# GPG_OPTS=( "--verbose" "--local-user" "$KEY_NAME" "--output" "$ROOT" "--clear-sign" "$TARGET" )
-GPG_OPTS=( "-vvvv" "--debug-level" "guru" "--local-user" "$KEY_NAME" "--clear-sign" "$TARGET" )
-# GPG_OPTS=( "--verbose" "--detach-sign"  "$TARGET" )
-
-mark C
-echo_vars TARGET ROOT SUFX
-echo "gpg command: gpg ${GPG_OPTS[@]}" |& tee -a $SIGN_LOGFILE
-gpg ${GPG_OPTS[@]} |& tee -a $SIGN_LOGFILE
-mark D
-
-
-# mv "${ROOT}.${SUFX}" "$ROOT"
-echo_dbg "Create gpg file."
-if gpg -abs  --output ${ROOT}.gpg "${TARGET}" |& tee -a $SIGN_LOGFILE ; then
-        rm $TARGET
+gpg --clearsign Release.dinstall-new |& tee -a $SIGN_LOGFILE
+if [ $? -eq 0 ] ; then
+        dbg_echo "========================="
 fi
 
-mark ZZ
+dbg_echo ",,,,,,,,,,,,,,,,,,,,,,,,,"
 exit 0
