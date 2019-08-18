@@ -1,5 +1,14 @@
 #!/bin/bash
 
+Help()
+{
+        if [ $# -ne 0 ] ; then
+                echo -e "$*" >&2
+        fi
+
+        sed -n -e '/^while/,/^done/p' $0 | grep ")"
+        return 0
+}
 
 while [ $# -ne 0 ] ; do
         case "$1" in
@@ -9,8 +18,7 @@ while [ $# -ne 0 ] ; do
         ;;
         -v|--verify) VERIFY_ONLY="yes"
         ;;
-        -h|--help) sed -n -e '1,/^done/p' $0
-                   exit 0
+        -h|--help) Help && exit 0
         ;;
         *) echo "Huh?  <$1>"
            exit 1
@@ -19,6 +27,7 @@ while [ $# -ne 0 ] ; do
         shift
 done
 
+[ -z "$KEY_NAME" ] && Help "\tName the damn key!\n" && exit 1
 #
 # Verify that the key name given actually exists and is valid.
 #
