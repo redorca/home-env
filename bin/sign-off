@@ -3,8 +3,7 @@
 [ ! -f "$1" ] && exit 5
 echo "Sign $1"
 
-if gpg --debug-level guru --verbose --clearsign -o ${1}.xxx $1; then
-        mv ${1}.xxx $1
+if gpg --debug-level guru --verbose --clearsign -o InRelease $1; then
         echo "Create gpg file."
         if gpg -abs -o Release.gpg.xxx $1 ; then
                 mv Release.gpg.xxx Release.gpg
@@ -12,3 +11,4 @@ if gpg --debug-level guru --verbose --clearsign -o ${1}.xxx $1; then
 else
         echo "Failed."
 fi
+

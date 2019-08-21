@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#
+# Empty a directory tree of any non directory elements:
+# symlinks, files, pipes, sockets, devnodes, ...
+#
+empty()
+{
+        local TreeDir=
+        local Print=
+
+        Print="$1" ; shift
+        TreeDir="$1" ; shift
+
+        [ ! -d "$TreeDir" ] && echo "Tree not a directory: <$TreeDir" >&2 && exit 4
+        find $TreeDir ! -type d -print -exec rm -f {} \;
+}
+
+[ $# -eq 0 ] && echo "Please provide a directory tree via -t or --tree." >&2 && exit 2
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        -t|--tree) [ ! -d "$2" ] && echo "No such Tree:  <$2>" >&2 && exit 1
+                   TREE="$2" ; shift
+        ;;
+        *) echo "Huh? <$1>" && exit 3
+        ;;
+        esac
+        shift
+done
+
+[ -z "$TREE" ] && echo "TREE not provided."
+empty "$PRINT" "$TREE"
+
