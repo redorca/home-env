@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if pgrep mini-dinstall ; then
+        echo "Shutting down running mini-dinstall."
+        mini-dinstall -k
+fi
+mini-dinstall -d -v
+
