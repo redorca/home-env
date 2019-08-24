@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if pgrep mini-dinstall >/dev/null ; then
+        mini-dinstall -k
+fi
+mini-dinstall -d -v
+
