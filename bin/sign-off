@@ -1,14 +1,28 @@
 #!/bin/bash
 
-[ ! -f "$1" ] && exit 5
-echo "Sign $1"
+export GPG_TTY=${GPG_TTY}
+LOGFILE=/tmp/log.sign-off
 
-if gpg --debug-level guru --verbose --clearsign -o InRelease $1; then
-        echo "Create gpg file."
-        if gpg -abs -o Release.gpg.xxx $1 ; then
-                mv Release.gpg.xxx Release.gpg
-        fi
-else
-        echo "Failed."
+[ ! -f "$1" ] && exit 5
+echo "Sign $1" |& tee -a $LOGFILE
+
+RELEASE_FILES=( $LOGFILE Release Release.gpg Inrelease )
+for fyle in ${RELEASE_FILES[@]} ; do
+        echo "Removing $fyle:" |& tee -a $LOGFILE
+        rm -f $fyle |& -a tee $LOGFILE
+done
+
+GPG_OPTIONS=( "--debug-level" "guru" "--verbose"
+              "--local-user" "hoops"  "--clearsign"
+              "-o" "Inrelease" "$1" )
+echo "Command: gpg ${GPG_OPTIONS[*]}" |& tee -a $LOGFILE
+
+if gpg ${GPG_OPTIONS[@]} |& tee -a $LOGFILE; then
+        echo "Failed. <$?>" |& tee -a $LOGFILE
+fi
+echo "Create gpg file." |& tee -a $LOGFILE
+if gpg -abs --local-user hoops -o Release.gpg.xxx $1  |& tee -a $LOGFILE; then
+        mv Release.gpg.xxx Release.gpg
 fi
 
+exit 0
