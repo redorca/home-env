@@ -12,13 +12,15 @@ Help()
 
 while [ $# -ne 0 ] ; do
         case "$1" in
-        -p|--pass) PRESELECT="yes"
+        -h|--help) Help && exit 0
+        ;;
+        -k|--kill) gpgconf kill gpg-agent ; exit
         ;;
         -n|--name) KEY_NAME="$2" ; shift
         ;;
-        -v|--verify) VERIFY_ONLY="yes"
+        -p|--pass) PRESELECT="yes"
         ;;
-        -h|--help) Help && exit 0
+        -v|--verify) VERIFY_ONLY="yes"
         ;;
         *) echo "Huh?  <$1>"
            exit 1
@@ -59,13 +61,10 @@ set_KEY_FP()
         local KeyName=
         local KeyVar=
         local KeyFP=
-#       local KeyTag=
 
         KeyName="$1" ; shift
         KeyVar="$1" ; shift
-#       KeyTag="$1" ; shift
 
-#       KEY_NAME=billy
         KeyFP=$(gpg --with-colons --list-secret-keys $KeyName \
                 | grep ^fpr | head -1 | sed -e 's/[fpr:]//g')
         [ -z "$KeyFP" ] && echo "No key fingerprint found." >&2 && return 1

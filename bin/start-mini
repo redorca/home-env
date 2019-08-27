@@ -4,5 +4,6 @@ if pgrep mini-dinstall ; then
         echo "Shutting down running mini-dinstall."
         mini-dinstall -k
 fi
+echo "Starting with: mini-dinstall -d -v"
 mini-dinstall -d -v
 

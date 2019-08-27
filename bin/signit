@@ -2,20 +2,26 @@
 
 
 export SIGN_LOGFILE=/tmp/log.signit
+rm $SIGN_LOGFILE
+rm Release Release.gpg Release.asc Inrelease InRelease Release.*.asc
+DETACHED_SIGN=Release.gpg
 
 dbg_echo()
 {
         echo -e "$*" |& tee -a $SIGN_LOGFILE
 }
-dbg_echo "......................"
 
-gpg --clear-sign Release.dinstall-new |& tee -a $SIGN_LOGFILE
+CMD="gpg --no-tty --local-user hoopster --clear-sign Release.dinstall-new"
+dbg_echo "$CMD"
+$CMD |& tee -a $SIGN_LOGFILE
+
 if [ $? -eq 0 ] ; then
         dbg_echo "========================="
-        gpg --no-tty -abs Release.dinstall-new
-        mv Release.dinstall-new.asc Release.gpg
-#       cp Release.dinstall-new.asc Release.dinstall-new
+        CMD="gpg --no-tty --local-user hoopster -abs -o $DETACHED_SIGN Release.dinstall-new"
+        dbg_echo "$CMD"
+        $CMD |& tee -a $SIGN_LOGFILE
+
+        mv -o $DETACHED_SIGN Release.gpg
 fi
 
-dbg_echo ",,,,,,,,,,,,,,,,,,,,,,,,,"
 exit 0
