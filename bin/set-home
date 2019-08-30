@@ -1,8 +1,9 @@
 #!/bin/bash
 
 DEBUG=${DEBUG:-0}
+TRACE=${TRACE:-0}
 TMPFILE_EXEC=/tmp/.setup
-BDRIVE="UUID=a1a552cc-2cbf-4467-8b62-410129bdef0e /home/zglue/.mnt  ext4"
+DRIVE_B="UUID=a1a552cc-2cbf-4467-8b62-410129bdef0e /home/zglue/.mnt  ext4"
 FSTAB="/etc/fstab"
 
 trace()
@@ -36,6 +37,14 @@ Func()
         echo "[${#FUNCNAME[@]}]  ${FUNCNAME[1]}::"
 }
 
+#
+# Restart from outside of the git tree so we don't
+# overwrite ourselves while running and maybe cause
+# an early exit or crash.
+#
+# This works because the file name changes so the if
+# check won't trigger the second time.
+#
 re-exec()
 {
         local TMPFILE_EXEC=
@@ -146,6 +155,9 @@ enable_sudo()
 
 mount_sdb()
 {
+        local DriveUUID=
+
+        DriveUUID="$1"
         mkdir ~/.mnt
         sudo -H mount /dev/sdb1  ~/.mnt
         (
@@ -161,7 +173,7 @@ mount_sdb()
         #
         # Update $FSTAB to make the mount permanent.
         #
-        CMD=( "sed" "-i" "-e" '$a'"$BDRIVE'"  "$FSTAB" )
+        CMD=( "sed" "-i" "-e" '$a'"$DriveUUID'"  "$FSTAB" )
         sudo "${CMD[@]}"
 
         cd $HOME
@@ -190,6 +202,8 @@ EOF
 	fi
 }
 
+re-exec
+
 # shellcheck disable=2164 pushd ~ >/dev/null
 
 _DIR=~/bin/home-env/.git
@@ -211,6 +225,6 @@ ln -sf clone klone
 
 enable_bash_aliases
 if [ -e /sys/block/sdb ] ; then
-        mount_sdb
+        mount_sdb $DRIVE_B
 fi
 
