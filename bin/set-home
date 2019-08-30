@@ -1,27 +1,10 @@
 #!/bin/bash
 
 DEBUG=${DEBUG:-0}
+TRACE=${TRACE:-0}
 TMPFILE_EXEC=/tmp/.setup
-BDRIVE="UUID=a1a552cc-2cbf-4467-8b62-410129bdef0e /home/zglue/.mnt  ext4"
+DRIVE_B="UUID=a1a552cc-2cbf-4467-8b62-410129bdef0e /home/zglue/.mnt  ext4"
 FSTAB="/etc/fstab"
-
-#
-# Relocate so when we do a git checkout we don't overwrite ourselvves.
-#
-if [ "$(basename "$0")" = "set-home" ] ; then
-        cat "$0" >  $TMPFILE_EXEC
-        cd /tmp ||  exit  1
-        chmod +x  $TMPFILE_EXEC
-        exec  $TMPFILE_EXEC
-fi
-
-# VIM_SHARE_DIR=/usr/share/vim
-# MSG="# Uncomment any one of the colors to provide vim with a color scheme"
-PREAMBLE="# COLOR="
-if [ ! -d  ~/bin/home-env/bin ] ; then
-        echo "The repo may not be placed correctly. Please make sure" >&2
-        echo "that the repo, home-env.git, is cloned into ~/bin." >&2
-fi
 
 trace()
 {
@@ -35,7 +18,12 @@ debug()
         return 1
 }
 
-echo_dbg()
+err_echo()
+{
+        echo -e "$@" >&2
+}
+
+dbg_echo()
 {
         debug || return
 
@@ -49,11 +37,52 @@ Func()
         echo "[${#FUNCNAME[@]}]  ${FUNCNAME[1]}::"
 }
 
+#
+# Restart from outside of the git tree so we don't
+# overwrite ourselves while running and maybe cause
+# an early exit or crash.
+#
+# This works because the file name changes so the if
+# check won't trigger the second time.
+#
+re-exec()
+{
+        local TMPFILE_EXEC=
+
+        TMPFILE_EXEC=$(mktemp -t /tmp .$(basename $0).XXXX)
+
+        #
+        # Relocate so when we do a git checkout we don't overwrite ourselves.
+        #
+        if [ "$(basename "$0")" = "set-home" ] ; then
+                cat "$0" >  $TMPFILE_EXEC
+                cd /tmp ||  exit  1
+                chmod +x  $TMPFILE_EXEC
+                exec  $TMPFILE_EXEC
+        fi
+}
+
+#
+# Make sure that the caller cloned home-env.git into ~/bin.
+# If not then we won't know how to setup ~/bin and ~
+#
+validate_layout()
+{
+        # MSG="# Uncomment any one of the colors to provide vim with a color scheme"
+        if [ ! -d  ~/bin/home-env/bin ] ; then
+                echo "The repo may not be placed correctly. Please make sure" >&2
+                echo "that the repo, home-env.git, is cloned into ~/bin." >&2
+                return 5
+        fi
+        return 0
+}
+
 mk_vimrc_color()
 {
         Func
         local File=
         local VimShareDir=
+        local PREAMBLE=
 
         File=~/.vimrc_color
         VimShareDir=/usr/share/vim
@@ -87,7 +116,7 @@ git_config_key_init()
         Val="$1" ; shift
 
         if [ -z "$(git config $Key)" ] ; then
-                echo_dbg "Set config $Key to $Val"
+                dbg_echo "Set config $Key to $Val"
                 git config "$Key" "$Val"
         fi
 }
@@ -109,15 +138,84 @@ git_config_for_use()
 #       git config_key_init color.status.untracked yellow
 }
 
+#
+# Create the sudoers file allowing seamless use;
+# no password requested.
+#
+enable_sudo()
+{
+        local UFile=
+
+        UFile=/etc/sudoers.d/$USER
+        [ -f $UFile ] && return 0
+
+        echo "$USER     ALL=(ALL:ALL) NOPASSWD: ALL" > $UFile
+        chmod go-w $UFile
+}
+
+mount_sdb()
+{
+        local DriveUUID=
+
+        DriveUUID="$1"
+        mkdir ~/.mnt
+        sudo -H mount /dev/sdb1  ~/.mnt
+        (
+                cd ~ || die "No home dir found?"
+
+                for entry in $(ls ~/.mnt) ; do
+                        [ ! -d "$entry" ] && continue
+                        [ "$entry" = "Documents" ] && continue
+                        ln -sf ".mnt/$entry"
+                done
+        )
+
+        #
+        # Update $FSTAB to make the mount permanent.
+        #
+        CMD=( "sed" "-i" "-e" '$a'"$DriveUUID'"  "$FSTAB" )
+        sudo "${CMD[@]}"
+
+        cd $HOME
+        if [ -f .mn/keys.rsa.tgz ] ; then
+	        tar -zxpf .mnt/keys.rsa.tgz
+	        mkdir tmp
+	        cd tmp
+	        tar -zxf ../.mnt/dot.config.tgz
+	        cp -a .config ../
+        fi
+
+}
+
+enable_bash_aliases()
+{
+	local BASHRC=~/.bashrc
+        local BASH_ALIASES=~/.bash_aliases	
+	if ! grep "$(basename $BASH_ALIASES)" "$BASHRC" >/dev/null ; then
+	        dbg_echo "Setting up bash aliases."
+	        # shellcheck disable=2129
+                cat > "$BASH_ALIASES" <<"EOF"
+	        if [ -f ~/.bash_aliases ] ; then
+	                source ~/.bash_aliases
+	        fi
+EOF
+	fi
+}
+
+re-exec
+
 # shellcheck disable=2164 pushd ~ >/dev/null
 
-_DIR=.git
-_DIR=git
+_DIR=~/bin/home-env/.git
 
 cd $HOME
+if [ -d .git ] ; then
+        err_echo "Home environment already setup."
+        exit 1
+fi
 
-[ ! -d bin/home-env/.git ] && echo "No $_DIR found in bin/set-home" && exit 1
-ln -sf bin/home-env/.git
+[ ! -d _DIR ] && echo "No ${_DIR: -4} dir found in bin/set-home" && exit 1
+ln -sf _DIR 
 git_config_for_use "Bill" "bill@zglue.com"
 
 git checkout .
@@ -125,42 +223,8 @@ mk_vimrc_color
 cd bin
 ln -sf clone klone
 
-BASHRC=~/.bashrc
-
-if ! grep bash_aliases $BASHRC >/dev/null ; then
-        echo_dbg "Setting up bash aliases."
-        # shellcheck disable=2129
-        echo -e "\\nif [ -f ~/.bash_aliases ] ; then" >> $BASHRC
-        echo -e "\\tsource ~/.bash_aliases" >> $BASHRC
-        echo -e "fi\\n" >> $BASHRC
-fi
-
-
+enable_bash_aliases
 if [ -e /sys/block/sdb ] ; then
-        mkdir ~/.mnt
-        sudo -H mount /dev/sdb1  ~/.mnt
-        (
-                cd ~ || die "No home dir found?"
-
-        for entry in $(ls ~/.mnt) ; do
-                [ ! -d "$entry" ] && continue
-                [ "$entry" = "Documents" ] && continue
-                ln -sf ".mnt/$entry"
-        done
-        )
-
-#
-# Update $FSTAB to make the mount permanent.
-#
-CMD=( "sed" "-i" "-e" '$a'"$BDRIVE'"  "$FSTAB" )
-sudo "${CMD[@]}"
-
-cd $HOME
-if [ -f .mn/keys.rsa.tgz ] ; then
-	tar -zxpf .mnt/keys.rsa.tgz
-	mkdir tmp
-	cd tmp
-	tar -zxf ../.mnt/dot.config.tgz
-	cp -a .config ../
+        mount_sdb $DRIVE_B
 fi
-fi
+
