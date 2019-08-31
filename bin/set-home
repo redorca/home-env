@@ -190,7 +190,7 @@ mount_sdb()
 enable_bash_aliases()
 {
 	local BASHRC=~/.bashrc
-        local BASH_ALIASES=~/.bash_aliases	
+        local BASH_ALIASES=~/.bash_aliases
 	if ! grep "$(basename $BASH_ALIASES)" "$BASHRC" >/dev/null ; then
 	        dbg_echo "Setting up bash aliases."
 	        # shellcheck disable=2129
@@ -215,7 +215,7 @@ if [ -d .git ] ; then
 fi
 
 [ ! -d _DIR ] && echo "No ${_DIR: -4} dir found in bin/set-home" && exit 1
-ln -sf _DIR 
+ln -sf _DIR
 git_config_for_use "Bill" "bill@zglue.com"
 
 git checkout .
@@ -227,4 +227,3 @@ enable_bash_aliases
 if [ -e /sys/block/sdb ] ; then
         mount_sdb $DRIVE_B
 fi
-
