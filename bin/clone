@@ -109,19 +109,19 @@ Repo2Host["scikit"]="master@https://github.com/scikit-learn/scikit-learn.git"
 Repo2Host["uncrustify"]="master@https://github.com/uncrustify/uncrustify.git"
 Repo2Host["alios"]="master@git@github.com/alibaba/AliOS-Things.git"
 Repo2Host["utags"]="master@git@github.com/universal-ctags/ctags.git"
-Repo2Host["webdox"]="master@git@github.com/zglue-bill/zglue-bill.github.io.git"
+Repo2Host["webdox"]="master@$ZGLUE_BILL_HOST/zglue-bill.github.io.git"
 Repo2Host["zdkdox"]="master@git@github.com/zglue/zglue_doc.git"
 Repo2Host["cmake"]="master@https://gitlab.kitware.com/cmake/cmake.git"
 Repo2Host["spresence"]="master@https://github.com/sonydevworld/spresense.git"
-Repo2Host["nuttx-upgrade"]="master@git@github.com/zglue-bill/nuttx-upgrade.git"
+Repo2Host["nuttx-upgrade"]="master@$ZGLUE_BILL_HOST/nuttx-upgrade.git"
 Repo2Host["notepad-plus-plus"]="master@https://github.com/notepad-plus-plus/notepad-plus-plus.git"
 Repo2Host["mbed-os"]="master@git@github.com/ARMmbed/mbed-os.git"
 Repo2Host["qemu"]="master@git://git.qemu.org/qemu.git"
 Repo2Host["oclint"]="master@git@github.com/oclint/oclint.git"
 Repo2Host["tinyara"]="master@git@github.com/Samsung/TinyAra.git"
 Repo2Host["tizen"]="master@git@github.com/Samsung/TizenRT.git"
-Repo2Host["blah"]="z@git@github.com/zglue-bill/blah.git"
-Repo2Host["blah_apps"]="zapps@git@github.com/zglue-bill/blah_apps.git"
+Repo2Host["blah"]="z@$ZGLUE_BILL_HOST/blah.git"
+Repo2Host["blah_apps"]="zapps@$ZGLUE_BILL_HOST/blah_apps.git"
 Repo2Host["texworks"]="master@git@github.com/Texworks/texworks.git,manual.git,website.git"
 Repo2Host["mynewt-core"]="master@git@github.com/apache/mynewt-core.git"
 Repo2Host["NimBLE"]="master@git@github.com/apache/mynewt-nimble.git"
@@ -161,7 +161,7 @@ Repo2Host["dulwich"]="master@git://github.com/dulwich/dulwich.git"
 Repo2Host["searchmonkey"]="master@https://git.code.sf.net/p/searchmonkey/GTK searchmonkey-GTK"
 Repo2Host["ksearchmonkey"]="master@https://git.code.sf.net/p/searchmonkey/KDE searchmonkey-KDE"
 Repo2Host["repogen"]="master@https://github.com/geek1011/repogen.git"
-Repo2Host["damn-repogen"]="master@https://github.com/zglue-bill/damn-repogen.git"
+Repo2Host["damn-repogen"]="master@$ZGLUE_BILL_HOST/damn-repogen.git"
 
 FinalCmds=()
 FinalCmds["nuttx"]="setup_repo"
@@ -591,7 +591,7 @@ dual_source_repos()
 {
         Func $@
         git remote rename origin gerrit
-        git remote add github ssh://git@github.com/zglue-bill
+        git remote add github ssh://$ZGLUE_BILL_HOST
 }
 
 hhelp()
