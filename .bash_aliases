@@ -370,9 +370,9 @@ function tag_by_cscope()
 # that gtags runs. Global will ascend to
 # look for it.
 #
-function tag_by_gtag()
+function tag_by_gtags()
 {
-        gtag .
+        gtags .
 }
 
 #
