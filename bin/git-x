@@ -267,6 +267,7 @@ while [ $# -ne 0 ] ; do
         -n) DRY_RUN=1; echo "DRY_RUN = $DRY_RUN"
            ;;
         -P) page_size=$2; echo "page size: $page_size"
+            shift
            ;;
         #
         # Push to the configured repo defined by the name "origin"
