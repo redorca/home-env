@@ -1,0 +1,86 @@
+#!/bin/bash
+
+
+do-exit()
+{
+        local ErrCode=
+
+        ErrCode="$1"; shift
+        ErrMsg="$@"
+
+        echo -e "$ErrMsg" >&2
+        exit $ErrCode
+}
+
+gen-docfile()
+{
+        local DocFile=
+
+        DocFile="$1"; shift
+        find share/doc -type f > $DocFile
+}
+
+gen-infopages()
+{
+        local DocFile=
+        local InfoPages=
+
+        DocFile="$1"; shift
+        InfoPages="$1" ; shift
+
+        sed -n -e '/\/info\//p' $DocFile | sed -e 's,.xz$,,' > $InfoPages
+}
+
+gen-manpages()
+{
+        local DocFile=
+        local ManPages=
+
+        DocFile="$1"; shift
+        ManPages="$1" ; shift
+
+        sed -n -e '/\/man\//p' $DocFile | sed -e 's,.xz$,,' > $ManPages
+}
+
+gen-deb-docsfile()
+{
+        local DocFile=
+        local DebDocFile=
+
+        DocFile="$1" ; shift
+        DebDocFile="$1" ; shift
+        TmpFile=$(mktemp -p /tmp Doc.XXXX)
+        cp $DocFile $TmpFile
+        sed -i -e '/\/info\//d' $TmpFile
+        sed -i -e '/\/man\//d' $TmpFile
+        sed -e 's,.xz$,,' $TmpFile > $DebDocFile
+}
+
+run()
+{
+	echo "Running $@"
+        if ! $@ ; then
+                echo "$@ failed." >&2
+                exit 1
+        fi
+}
+
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        --pkg|-p) PKGROOT="$2"; shift
+                  [ -z "$PKGROOT" ] && do-exit 2 "No package arg supplied."
+        ;;
+        *)
+        do-exit 1 "Not a known argument: <$1>"
+        ;;
+        esac
+        shift
+done
+
+TempFile=$(mktemp -p /tmp DocsInProcess.XXXX)
+run gen-docfile $TempFile
+run gen-manpages "$TempFile" $PKGROOT.manpages
+run gen-infopages "$TempFile" $PKGROOT.info
+run gen-deb-docsfile "$TempFile" $PKGROOT.deb.docs
+rm $TempFile
+
