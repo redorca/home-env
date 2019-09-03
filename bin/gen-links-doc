@@ -1,0 +1,64 @@
+#!/bin/bash
+
+
+do-help()
+{
+        cat <<EOF
+        $(basename $0) [-h | --help] [[ -p | --pkgroot ] <arg>]
+
+EOF
+
+}
+
+do-exit()
+{
+        local ErrCode=
+        local ErrStr=
+
+        ErrCode="$1" ; shift
+        ErrStr="$@"
+        echo "Err: $ErrStr" >&2
+        exit $ErrCode
+}
+
+run()
+{
+        if $@ ; then
+                return 0
+        fi
+        do-exit 5 "$@ failed."
+}
+
+create_dot_linksfile()
+{
+        local Dir=
+        local PkgRoot=
+        local TmpFile=
+
+        TmpFile="$(mktemp -p /tmp Links.XXXX)"
+        Dir="$1" ; shift
+        PkgRoot="$1" ; shift
+
+        [ ! -d "$Dir" ] && do-exit 4 "No such dir? <$Dir>"
+        find "$Dir" -type l -exec ls -l {} \;  \
+           | awk '{print "/usr/lib/"$11, "/usr/"$9}' > $TmpFile
+        cat $TmpFile >> debian/$PkgRoot.links
+}
+
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        --dir|-d) TargetDir="$2" ; shift
+        ;;
+        --pkgroot|-p) PKG_ROOT="$2" ; shift
+        ;;
+        --help|-h) do-help && exit
+        ;;
+        *)do-exit 1 "Unknown arg: <$1>"
+        ;;
+        esac
+        shift
+done
+( [ ! -d "$TargetDir" ] || [ -z "$PKG_ROOT" ] ) && do-exit 3 "Missing an arg."
+create_dot_linksfile "$TargetDir" "$PKG_ROOT"
+
+

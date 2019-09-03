@@ -1,0 +1,55 @@
+#!/bin/bash
+
+
+do-help()
+{
+        cat <<EOF
+        $(basename $0) [-h | --help] [[ -p | --pkgroot ] <arg>]
+
+EOF
+
+}
+
+do-exit()
+{
+        local ErrCode=
+        local ErrStr=
+
+        ErrCode="$1" ; shift
+        ErrStr="$@"
+        echo "Err: $ErrStr" >&2
+        exit $ErrCode
+}
+
+run()
+{
+        if $@ ; then
+                return 0
+        fi
+        do-exit 5 "$@ failed."
+}
+
+xz_compress_dir()
+{
+        local Dir=
+
+        Dir="$1" ; shift
+
+        [ ! -d "$Dir" ] && do-exit 4 "No such dir? <$Dir>"
+        find $Dir -type f -exec xz {} \;
+}
+
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        --dir|-d) TargetDir="$2" ; shift
+        ;;
+        --help|-h) do-help && exit
+        ;;
+        *)do-exit 1 "Unknown arg: <$1>"
+        ;;
+        esac
+        shift
+done
+xz_compress_dir $TargetDir
+
+

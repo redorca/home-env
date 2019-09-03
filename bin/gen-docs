@@ -65,6 +65,7 @@ run()
         fi
 }
 
+[ $# -eq 0 ] && do-exit 3 "Need a pkg root (-p pkg-root)"
 while [ $# -ne 0 ] ; do
         case "$1" in
         --pkg|-p) PKGROOT="$2"; shift
@@ -81,6 +82,6 @@ TempFile=$(mktemp -p /tmp DocsInProcess.XXXX)
 run gen-docfile $TempFile
 run gen-manpages "$TempFile" $PKGROOT.manpages
 run gen-infopages "$TempFile" $PKGROOT.info
-run gen-deb-docsfile "$TempFile" $PKGROOT.deb.docs
-rm $TempFile
+run gen-deb-docsfile "$TempFile" $PKGROOT.docs
+# rm $TempFile
 
