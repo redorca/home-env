@@ -3,11 +3,7 @@
 
 do-help()
 {
-        cat <<EOF
-        $(basename $0) [-h | --help] [[ -p | --pkgroot ] <arg>]
-
-EOF
-
+        sed -n -e '/^while/,/^done/p' $0
 }
 
 do-exit()
