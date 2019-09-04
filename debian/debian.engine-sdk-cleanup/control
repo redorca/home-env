@@ -1,14 +1,14 @@
-Source: zglue-cleanup
+Source: engine-sdk
 Section: devel
 Priority: optional
-Maintainer: bill <bill@zglue.com>
+Maintainer: bill <redskyorca@icloud.com>
 Build-Depends: debhelper (>= 11)
 Standards-Version: 4.1.3
 Homepage: 
 #Vcs-Git: https://anonscm.debian.org/git/collab-maint/nuttx.git
 #Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/nuttx.git
 
-Package: zglue-cleanup
+Package: engine-sdk
 Architecture: any
 Depends:
 Description: To support SmartFabric with the Nuttx build tree.

@@ -3,7 +3,7 @@
 
 declare -A DebianDirs
 DebianDirs["engine-sdk"    ]="engine-sdk"
-DebianDirs["engine"        ]="engine-sdk-cleanup"
+DebianDirs["engine-clean"  ]="engine-sdk-cleanup"
 DebianDirs["pkg-engine"    ]="pkg-engine"
 DebianDirs["nuttx-tools"   ]="nuttx-tools"
 DebianDirs["nuttx-style"   ]="nuttx-style"
@@ -13,19 +13,33 @@ DebianDirs["sdk-gcc-arm"   ]="sdk-gcc-arm"
 helpem()
 {
         cat <<EOF
-    $(basename $0):
+    $(basename $0): [-p <pkg-name> ] | [ -h]
         -p :  Package name to create
         -h :  Emit this help message.
 EOF
 }
 
+do-exit()
+{
+        local ErrCode=
+        local ErrMsg=
+
+        ErrCode="$1" ; shift
+        ErrMsg="$@"
+
+        echo -e "$ErrMsg" >&2
+        exit $ErrCode
+}
+
 build_pkgdirs()
 {
-        local Pkg="$1"
+        local Pkg=
         local DebDir=
         local ChangeLog=
 
-        DebDir="${DebianDirs[$Pkg]}"
+        Pkg="$1" ; shift
+
+        DebDir="debian.${DebianDirs[$Pkg]}"
         ChangeLog="$HOME/debian/$DebDir/changelog"
         if [ -f "$ChangeLog" ] ; then
                 pushd ~/src/zglue/packaging/ >/dev/null
@@ -41,20 +55,20 @@ build_pkgdirs()
         fi
 }
 
+[ $# -eq 0 ] && helpem && do-exit 3 ""
 while [ $# -gt 0 ] ; do
         case "$1" in
         -p) PKG="$2"
-            [ -z "${DebianDirs[$PKG]}" ] && echo "No debian dir found:" >&2 && exit 1
+            [ -z "${DebianDirs[$PKG]}" ] && do-exit 1 "Not a known debian dir:"
             shift
          ;;
         -h) helpem && exit
          ;;
-        *) echo "No clue what you mean: \"$1\"" >&2
-           exit 1
+        *) do-exit 1 "No clue what you mean: \"$1\""
          ;;
         esac
         shift
 done
-
+[ -z "$PKG" ] && do-exit 2 "Bad package name: <$PKG>"
 build_pkgdirs $PKG
 

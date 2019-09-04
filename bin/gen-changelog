@@ -1,0 +1,93 @@
+#!/bin/bash
+
+declare -A PKG_ATTRIBS
+declare -A DISTRIBS
+declare -A DevAttrs
+DevAttrs["developer"]=bill
+DevAttrs["email"]=redskyorca@icloud.com
+
+DISTRIBS["phoo"]="phoo,"
+DISTRIBS["random"]="random,"
+DISTRIBS["beggers"]="beggers,"
+DISTRIBS["banquat"]="banquat,"
+
+do-exit()
+{
+        local ErrCode=
+        local ErrMsg=
+
+        ErrCode="$1" ; shift
+        ErrMsg="$@"
+
+        echo -e "$ErrMsg" >&2
+        exit $ErrCode
+}
+
+#
+# The dir name passed in is expected to have
+# the form:
+#       [/*/*/*/]xxxxx[_-][0-9][0-9]*.[0-9][0-9]*xxxxx
+#
+set-pkg-attribs()
+{
+        local ThisDir=
+        local Tmp=
+
+        ThisDir="$1" ; shift
+
+        Tmp=$(basename $ThisDir)
+        PkgRoot="${ThisDir%[_-][0-9].[0-9]*}"
+        PKG_ATTRIBS["PkgRoot"]=$PkgRoot
+        PKG_ATTRIBS["PkgVer"]="${ThisDir#$PkgRoot[_-]}"
+        PKG_ATTRIBS["DebVer"]="${PKG_ATTRIBS[PkgVer]}-1"
+}
+
+dump-pkg-attribs()
+{
+        for iii in ${!PKG_ATTRIBS[@]} ; do
+                echo -e "  PKG_ATTRIBS[\"$iii\"] \t== ${PKG_ATTRIBS[$iii]}"
+        done
+}
+
+gen-changelog()
+{
+        local Distrib=
+        local Developer=
+        local Email=
+        local PkgVer=
+        local PkgUrgency=
+        local Date=
+
+        PkgVer="$1" ; shift
+        PkgUrgency="$1" ; shift
+        Developer="$1" ; shift
+        Email="$1" ; shift
+        Date=$(date -R)
+        Distrib="${DISTRIBS[@]}"
+
+        echo -ne "${PKG_ATTRIBS["PkgRoot"]} ($PkgVer) ${Distrib%,};\t" > changelog
+        echo -e "urgency=$PkgUrgency\n\n" >> changelog
+        echo -e "$Developer <$Email>\t$Date" >> changelog
+        return
+}
+
+while [ $# -ne 0 ] ; do
+        case "$1" in
+        --dist|-d) Distrib[foo]+=$2; shift
+        ;;
+        --file|-f) DescrFile="$2"; shift
+                   [ ! -f "$DescrFile" ] && do-exit 8 "$DescrFile not found"
+        ;;
+        --pkg|-p) Package="$2"; shift
+        ;;
+        *) do-exit 99 "Not a valid arg: $1"
+        ;;
+        esac
+        shift
+done
+
+set-pkg-attribs $Package
+# dump-pkg-attribs
+gen-changelog ${PKG_ATTRIBS["PkgVer"]} medium ${DevAttrs["developer"]} \
+		   ${DevAttrs["email"]}
+
