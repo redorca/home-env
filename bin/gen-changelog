@@ -65,8 +65,9 @@ gen-changelog()
         Date=$(date -R)
         Distrib="${DISTRIBS[@]}"
 
-        echo -ne "${PKG_ATTRIBS["PkgRoot"]} ($PkgVer) ${Distrib%,};\t" > changelog
+        echo -ne "${PKG_ATTRIBS["PkgRoot"]} (${PkgVer}-1) ${Distrib%,};\t" > changelog
         echo -e "urgency=$PkgUrgency\n\n" >> changelog
+        echo -e "\tInitial set.\n\n" >> changelog
         echo -e "$Developer <$Email>\t$Date" >> changelog
         return
 }
