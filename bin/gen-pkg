@@ -2,6 +2,8 @@
 
 
 declare -A DebianDirs
+DebianDirs["engine-sdk"    ]="engine-sdk"
+DebianDirs["engine"        ]="engine-sdk-cleanup"
 DebianDirs["pkg-engine"    ]="pkg-engine"
 DebianDirs["nuttx-tools"   ]="nuttx-tools"
 DebianDirs["nuttx-style"   ]="nuttx-style"
