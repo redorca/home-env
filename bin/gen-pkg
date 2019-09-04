@@ -2,7 +2,11 @@
 
 
 declare -A DebianDirs
-DebianDirs["pkg-engine"]="debian.pkg-engine"
+DebianDirs["pkg-engine"    ]="pkg-engine"
+DebianDirs["nuttx-tools"   ]="nuttx-tools"
+DebianDirs["nuttx-style"   ]="nuttx-style"
+DebianDirs["sdk-nuttx-7.25"]="sdk-nuttx-7.25"
+DebianDirs["sdk-gcc-arm"   ]="sdk-gcc-arm"
 
 helpem()
 {
