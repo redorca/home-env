@@ -87,6 +87,7 @@ RepoRename["Doxygen"]="doxygen"
 RepoRename["ctags"]="universal-ctags"
 RepoRename["sumatra"]="sumatrapdf"
 
+Repo2Host["x-sdk"]="zdk@git@github.com/redorca/external.git"
 Repo2Host["phusion"]="master@https://github.com/phusion/debian-packaging-for-the-modern-developer.git"
 Repo2Host["geniso"]="master@git@github.com/Distrotech/cdrkit.git"
 Repo2Host["chibios"]="https://svn.code.sf.net/p/chibios/svn2/trunk"
