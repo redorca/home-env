@@ -1,15 +1,5 @@
 #!/bin/bash
 
-declare -A PKG_ATTRIBS
-declare -A DISTRIBS
-declare -A DevAttrs
-DevAttrs["developer"]=bill
-DevAttrs["email"]=redskyorca@icloud.com
-
-DISTRIBS["phoo"]="phoo,"
-DISTRIBS["random"]="random,"
-DISTRIBS["beggers"]="beggers,"
-DISTRIBS["banquat"]="banquat,"
 
 do-exit()
 {
@@ -23,30 +13,35 @@ do-exit()
         exit $ErrCode
 }
 
-#
-# The dir name passed in is expected to have
-# the form:
-#       [/*/*/*/]xxxxx[_-][0-9][0-9]*.[0-9][0-9]*xxxxx
-#
-set-pkg-attribs()
+dump-hash()
 {
-        local ThisDir=
-        local Tmp=
+        local HashName=
+        local iii=
+        local ppp=
 
-        ThisDir="$1" ; shift
-
-        Tmp=$(basename $ThisDir)
-        PkgRoot="${ThisDir%[_-][0-9].[0-9]*}"
-        PKG_ATTRIBS["PkgRoot"]=$PkgRoot
-        PKG_ATTRIBS["PkgVer"]="${ThisDir#$PkgRoot[_-]}"
-        PKG_ATTRIBS["DebVer"]="${PKG_ATTRIBS[PkgVer]}-1"
+        for ppp in $@ ; do
+                echo "declare -p ${ppp}"
+                declare -p ${ppp} | sed -e 's,^declare*=(,,'
+        done
 }
 
-dump-pkg-attribs()
+#
+# Generate output suitable for initializing
+# a hash arrray: declare -A ...
+#
+set-hash()
 {
-        for iii in ${!PKG_ATTRIBS[@]} ; do
-                echo -e "  PKG_ATTRIBS[\"$iii\"] \t== ${PKG_ATTRIBS[$iii]}"
+        local KeyVal=
+        local Hash=
+
+        Hash="$1" ; shift
+        while [ $# -ne 0 ] ; do
+                KeyVal="$1"
+                eval ${Hash[${KeyVal%=*}]}=[${KeyVal#*=}]
+                shift
         done
+
+        return
 }
 
 gen-changelog()
@@ -65,30 +60,78 @@ gen-changelog()
         Date=$(date -R)
         Distrib="${DISTRIBS[@]}"
 
-        echo -ne "${PKG_ATTRIBS["PkgRoot"]} (${PkgVer}-1) ${Distrib%,};\t" > changelog
-        echo -e "urgency=$PkgUrgency\n\n" >> changelog
-        echo -e "\tInitial set.\n\n" >> changelog
-        echo -e "$Developer <$Email>\t$Date" >> changelog
+        cat ${DEBDIRS["apt"]}/${PKG_ATTRIBS["PkgRoot"]}.changelog <<EOF
+        "${PKG_ATTRIBS["PkgRoot"]} (${PkgVer}-1) ${Distrib%,};\t"
+        "urgency=$PkgUrgency\n\n"
+        "\tInitial set.\n\n"
+        "$Developer <$Email>\t$Date"
+EOF
         return
 }
+
+#
+# Set by set-pkg-atribs
+#
+declare -a Package=()
 
 while [ $# -ne 0 ] ; do
         case "$1" in
         --dist|-d) Distrib[foo]+=$2; shift
         ;;
-        --file|-f) DescrFile="$2"; shift
+        --File|-F) DescrFile="$2"; shift
                    [ ! -f "$DescrFile" ] && do-exit 8 "$DescrFile not found"
         ;;
-        --pkg|-p) Package="$2"; shift
+        --pkg|-p) [ ${#Package[@]} -ne 0 ] \
+                  && do-exit 3  \
+                     "A Package already present. Use -p for primary pkg"
+                  Package[0]="$2"; shift
+        ;;
+        # Allow specifing multiple packages
+        # for the build.
+        #
+        --xtra|-x) Package[${#Package[@]}]="$2"; shift
+        ;;
+        # Which debian package meta file to work on.
+        # Valid values are changelog, control, compat,
+        # copyright.
+        #
+        --file|-f) DEBFILE="$2"; shift
         ;;
         *) do-exit 99 "Not a valid arg: $1"
         ;;
         esac
         shift
 done
+[ ${#Package[@]} -eq 0 ] && do-exit 4 "No primary package name set."
+declare -A PKG_ATTRIBS
+declare -A DISTRIBS
+declare -A DevAttrs
+declare -A DISTRIBS
+declare -A DEBFILES
+declare -A DevAttrs
+set-hash DevAttrs "developer=bill" "email=redskyorca@icloud.com"
 
-set-pkg-attribs $Package
-# dump-pkg-attribs
-gen-changelog ${PKG_ATTRIBS["PkgVer"]} medium ${DevAttrs["developer"]} \
-		   ${DevAttrs["email"]}
+for ppp in $(seq 1 ${#Package[@]}) ; do
+
+        # Setup basic PKG_ATTRIBS hash and do
+        # so early so other the hashes can
+        # reflect each Package entry.
+        #
+        ThisDir=$(pwd)
+        set-hash PKG_ATTRIBS "PkgRoot=${ThisDir%[_-]*}" "PkgVer=${ThisDir#$PkgRoot[_-]}" "DebVer=${PKG_ATTRIBS[PkgVer]}-1"
+
+        set-hash DISTRIBS "phoo=phoo" "random=random" "beggers=beggers" "banquat=banquat"
+
+        PKGROOT=${PKG_ATTRIBS["PkgRoot"]}
+        set-hash DEBFILES "changelog=changelog" "compat=compat" \
+                        "control=control" "copyright=copyright" "links=links" \
+                        "docs=${PKGROOT}.docs" "man=${PKGROOT}.manpages" \
+                        "info=${PKGROOT}.info"
+
+        dump-hash DevAttrs  PKG_ATTRIB DISTRIBS DEBFILES
+
+
+        gen-changelog ${PKG_ATTRIBS["PkgVer"]} medium ${DevAttrs["developer"]} \
+                       ${DevAttrs["email"]}
+done
 
