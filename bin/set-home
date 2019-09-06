@@ -49,7 +49,7 @@ re-exec()
 {
         local TMPFILE_EXEC=
 
-        TMPFILE_EXEC=$(mktemp -t /tmp .$(basename $0).XXXX)
+        TMPFILE_EXEC=$(mktemp -p /tmp .$(basename $0).XXXX)
 
         #
         # Relocate so when we do a git checkout we don't overwrite ourselves.
@@ -214,8 +214,8 @@ if [ -d .git ] ; then
         exit 1
 fi
 
-[ ! -d _DIR ] && echo "No ${_DIR: -4} dir found in bin/set-home" && exit 1
-ln -sf _DIR
+[ ! -d $_DIR ] && echo "No ${_DIR: -4} dir found in ${__DIR:0: -4}" && exit 1
+ln -sf $_DIR
 git_config_for_use "Bill" "bill@zglue.com"
 
 git checkout .
