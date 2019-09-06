@@ -35,7 +35,7 @@
 #  old = red bold
 #  new = green bold
 [user]
-	name = Bill
-	email = bill@zglue.com
+	email = redskyorca@icloud.com <bill rees>
+	name = redskyorca
 [push]
 	default = simple
