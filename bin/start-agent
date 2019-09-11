@@ -1,121 +1,33 @@
 #!/bin/bash
 
-Help()
+get_identifier()
 {
-        if [ $# -ne 0 ] ; then
-                echo -e "$*" >&2
-        fi
-
-        sed -n -e '/^while/,/^done/p' $0 | grep ")"
-        return 0
+        gpg --list-secret-keys --with-colons
+        return
 }
 
-while [ $# -ne 0 ] ; do
-        case "$1" in
-        -h|--help) Help && exit 0
-        ;;
-        -k|--kill) gpgconf kill gpg-agent ; exit
-        ;;
-        -n|--name) KEY_NAME="$2" ; shift
-        ;;
-        -p|--pass) PRESELECT="yes"
-        ;;
-        -v|--verify) VERIFY_ONLY="yes"
-        ;;
-        *) echo "Huh?  <$1>"
-           exit 1
-        ;;
-        esac
-        shift
-done
-
-[ -z "$KEY_NAME" ] && Help "\tName the damn key!\n" && exit 1
-#
-# Verify that the key name given actually exists and is valid.
-#
-verify_name()
+get_fingerprint()
 {
-        local KeyName=
-
-        KeyName="$@"
-        gpg --check-sig "$KeyName" >/tmp/log.verify
+       return
 }
 
-#
-# Print the given string if DEBUG=DEBUG
-#
-dbg_echo()
+get_keygrip()
 {
-        [ "$DEBUG" != "DEBUG" ] && return
-        echo -e "$@" >&2
+       return
 }
 
-# Given a key name return the fingerprint via a cli arg.
-#
-# arg 1:  Name of the key to use.
-# arg 2:  Variable to hold the fingerprint on return
-# arg 3:  What record type to parse (ignored)
-#
-set_KEY_FP()
-{
-        local KeyName=
-        local KeyVar=
-        local KeyFP=
+KEY_FP=$(gpg --with-colons --list-keys | grep ^fpr | head -1 | sed -e 's/[fpr:]//g')
+[ -z "$KEY_FP" ] && echo "No key fingerprint found." >&2 && exit 1
 
-        KeyName="$1" ; shift
-        KeyVar="$1" ; shift
-
-        KeyFP=$(gpg --with-colons --list-secret-keys $KeyName \
-                | grep ^fpr | head -1 | sed -e 's/[fpr:]//g')
-        [ -z "$KeyFP" ] && echo "No key fingerprint found." >&2 && return 1
-        dbg_echo "Key figerprint for $KeyName is  set to <$KeyFP>"
-        eval $KeyVar="$KeyFP"
-}
+AGENT_OPTS=( "--allow-preset-passphrase" "--daemon" )
 
 #
-# Start the agent.
+# Make sure any running agents are shutdown.
 #
-start_agent()
-{
-        local CMD=
-        declare -a OPTS=()
-
-        OPTS=( "-vvv" "--daemon" "--allow-preset-passphrase" )
-        CMD="gpg-agent ${OPTS[@]}"
-        echo "CMD <$CMD>"
-
-        $CMD
-}
-
-#
-# Once the agent is running in --allow-preset-passphrase
-# set the passphrase for the key mentioned in arg 1.
-#
-# arg 1:   The key needing a passphrase
-#
-# Return:  The return value of setting the passphrase
-#          is returned to the caller
-#
-set_passphrase()
-{
-        local KeyFP=
-        local GpgPhraseTool=
-
-        GpgPhraseTool=/usr/lib/gnupg2/gpg-preset-passphrase
-        KeyFP="$1"
-#       CMD="/usr/lib/gnupg2/gpg-preset-passphrase --preset $KeyFP"
-        CMD="$GpgPhraseTool --preset $KeyFP"
-        dbg_echo "CMD <$CMD>"
-        $CMD
-}
-
-if ! verify_name "$KEY_NAME" ; then
-        echo "No such key or key is invalid. <$KEY_NAME>" >&2
-        exit 4
-fi
-
-if [ "$VERIFY_ONLY" = "yes" ] ; then
-        exit 0
+gpgconf kill gpg-agent
+if ! gpg-agent ${AGENT_OPTS[@]} ; then
+        echo "Yikes!  Agent failed to start.<$?>" >&2
+        exit 1
 fi
 
 echo "Enter the passphrase for the secret key to insert into the agent's cache."
