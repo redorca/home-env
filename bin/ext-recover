@@ -1,0 +1,30 @@
+#!/bin/bash
+
+EXE=ext4magic
+
+#       "-RQ"
+#       "-f"
+#       "Pictures"
+#       "src"
+OPTIONS1=(
+        "/dev/sdb1"
+        "-Lx"
+)
+
+OPTIONS2=(
+        "/dev/sdb1"
+        "-RQ"
+        "-f"
+        "Pictures"
+        "-a"
+        "$(date -d "-2day" +%s)"
+        "-b"
+        "$(date -d "-1day" +%s)"
+        "-d"
+        "/home/zglue/recovered"
+)
+
+echo "$EXE ${OPTIONS2[@]}"
+$EXE ${OPTIONS2[@]}
+
+
