@@ -592,7 +592,7 @@ alias          halt="deactivate"
 #
 # Activate a virtualenv
 #
-function groove()
+function pybox()
 {
         local VDir=
 
