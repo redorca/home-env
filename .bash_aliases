@@ -58,6 +58,18 @@ function dbg_echo()
         err_echo "$@"
 }
 
+function do-exit()
+{
+        local ErrCode=
+        local ErrMsg=
+
+        ErrCode="$1" ; shift
+        ErrMsg="$@"
+        echo "$ErrMsg" >&2
+
+        exit $ErrCode
+}
+
 function funame()
 {
         dbg_echo "==> ${FUNCNAME[1]} ($@)"
@@ -548,7 +560,8 @@ add-path ~/.local/bin
 add-path ~/bin
 
 alias preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
-alias     apt-zglue="sudo apt-get -y install"
+alias    apt-install="sudo apt-get -y install"
+alias     apt-remoce="sudo apt-get -y remove"
 alias          path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
 alias            po="popd >/dev/null && dirs -v"
 alias          dirs="dirs -v"
@@ -574,6 +587,20 @@ alias          grep="grep --exclude=.git --exclude=cscope.out"
 alias          halt="sudo /sbin/shutdown -h -t now"
 alias          sudo="sudo -H"
 alias       restart="sudo systemctl restart"
+alias          halt="deactivate"
+
+#
+# Activate a virtualenv
+#
+function groove()
+{
+        local VDir=
+
+        VDir="$1"
+        [ ! -d "$VDir" ] && do-exit 1 "Not a dir: $VDir"
+
+        source $VDir/bin/activate
+}
 
 #
 # Map a standard tool to an arm directed tool name.

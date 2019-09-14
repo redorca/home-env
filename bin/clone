@@ -87,6 +87,8 @@ RepoRename["Doxygen"]="doxygen"
 RepoRename["ctags"]="universal-ctags"
 RepoRename["sumatra"]="sumatrapdf"
 
+Repo2Host["click"]="master@https://github.com/pallets/click.git"
+Repo2Host["dh-golang"]="master@https://github.com/Debian/dh-make-golang.git"
 Repo2Host["x-sdk"]="zdk@git@github.com/redorca/external.git"
 Repo2Host["phusion"]="master@https://github.com/phusion/debian-packaging-for-the-modern-developer.git"
 Repo2Host["geniso"]="master@git@github.com/Distrotech/cdrkit.git"
@@ -221,7 +223,7 @@ RESET='\033[0;39;49m'
 
 CURRENT_FUNC=
 
-echo_err()
+err_echo()
 {
         echo -e "$@${RESET}" >&2
 }
@@ -234,7 +236,22 @@ dbg_echo()
 
         [ "${FUNCNAME[1]}" = "$CURRENT_FUNC" ] && Offset='\t'
 #       CURRENT_FUNC="${FUNCNAME[1]}"
-        echo_err "$Offset" "$@"
+        err_echo "$Offset" "$@"
+}
+
+#
+# Wrap the usual error exit pattern.
+do-exit()
+{
+        local ErrCode=
+        local ErrMsg=
+
+        ErrCode="$1"; shift
+        ErrMsg="$@"
+
+        err_echo "$ErrMsg"
+
+        exit $ErrCode
 }
 
 #
@@ -304,17 +321,17 @@ setup_repo_table()
 dump_Repo2Host()
 {
         Func $@
-        echo_err  "\tRepo names to clone and their repo urls"
-        echo_err  "\tFormat of repo url:  branch@name@url/x.git"
+        err_echo  "\tRepo names to clone and their repo urls"
+        err_echo  "\tFormat of repo url:  branch@name@url/x.git"
         for key in ${!Repo2Host[@]} ; do
-                echo_err -n "Repo: ${YELLOW}$key\t"
-                [ "${#key}" -le 9 ] && echo_err -n "\t"
-                echo_err "${BLUE}${Repo2Host[$key]}${RESET}"
+                err_echo -n "Repo: ${YELLOW}$key\t"
+                [ "${#key}" -le 9 ] && err_echo -n "\t"
+                err_echo "${BLUE}${Repo2Host[$key]}${RESET}"
         done
-        echo_err -e "\t\tAliases"
+        err_echo -e "\t\tAliases"
         for key in ${!RepoRename[@]} ; do
                 for="${RepoRename[$key]}"
-                echo_err -e "alias: ${BLUE}$key\t\t${RED}${for#*@}${RESET}"
+                err_echo -e "alias: ${BLUE}$key\t\t${RED}${for#*@}${RESET}"
         done
 }
 
@@ -322,14 +339,14 @@ dump_OfferRepos()
 {
         Func $@
 
-        echo_err "\t${YLWGRN}\tRepos supported"
-        echo_err "\t${YLWGRN}\t               "
-        echo_err "\t${YLWGRN}Repo:\t\t\tDescription"
-        echo_err "\t${YLWGRN}     \t\t\t           "
+        err_echo "\t${YLWGRN}\tRepos supported"
+        err_echo "\t${YLWGRN}\t               "
+        err_echo "\t${YLWGRN}Repo:\t\t\tDescription"
+        err_echo "\t${YLWGRN}     \t\t\t           "
         for key in ${!OfferRepos[@]} ; do
-                echo_err -n "      ${YEllOW}$key\t"
-                [ "${#key}" -le 9 ] && echo_err -n -e "\t"
-                echo_err "${BLUE}${OfferRepos[$key]}"
+                err_echo -n "      ${YEllOW}$key\t"
+                [ "${#key}" -le 9 ] && err_echo -n -e "\t"
+                err_echo "${BLUE}${OfferRepos[$key]}"
         done
 }
 
@@ -338,7 +355,7 @@ dump_targets()
         Func $@
 
         for target in ${TARGETS[@]} ; do
-                echo_err "\ttarget\t$target"
+                err_echo "\ttarget\t$target"
         done
 }
 
@@ -348,20 +365,20 @@ dump_targets()
 info()
 {
         Func $@
-        echo_err "\tKeyword\t\tRepo\t\tBranch"
-        echo_err "\t3rd_Party_SDK\t3rd_Party_SDK :: master"
-        echo_err "\tnordic\t\t3rd_Party_SDK :: SDK_13.1.0"
-        echo_err "\tsdk_13_1\t3rd_Party_SDK :: SDK_13.1.0"
-        echo_err "\tsdk_13\t\t3rd_Party_SDK :: SDK_13.0.0-1"
-        echo_err "\tsdk_14\t\t3rd_Party_SDK :: SDK_14.0.0"
-        echo_err ""
-        echo_err "\tdallas\t\t3rd_Party_SDK :: dialog_585_sdk_dev"
-        echo_err ""
-        echo_err -e "\tapps\t\tnuttx_apps :: zdk"
-        echo_err -e "\tnuttx_apps\tnuttx_apps :: zdk"
-        echo_err -e "\tnuttx\t\tnuttx :: zdk"
-        echo_err -e "\tbknuttx\t\toffcial nuttx :: master"
-        echo_err -e "\tauto_test\tauto_test :: master"
+        err_echo "\tKeyword\t\tRepo\t\tBranch"
+        err_echo "\t3rd_Party_SDK\t3rd_Party_SDK :: master"
+        err_echo "\tnordic\t\t3rd_Party_SDK :: SDK_13.1.0"
+        err_echo "\tsdk_13_1\t3rd_Party_SDK :: SDK_13.1.0"
+        err_echo "\tsdk_13\t\t3rd_Party_SDK :: SDK_13.0.0-1"
+        err_echo "\tsdk_14\t\t3rd_Party_SDK :: SDK_14.0.0"
+        err_echo ""
+        err_echo "\tdallas\t\t3rd_Party_SDK :: dialog_585_sdk_dev"
+        err_echo ""
+        err_echo -e "\tapps\t\tnuttx_apps :: zdk"
+        err_echo -e "\tnuttx_apps\tnuttx_apps :: zdk"
+        err_echo -e "\tnuttx\t\tnuttx :: zdk"
+        err_echo -e "\tbknuttx\t\toffcial nuttx :: master"
+        err_echo -e "\tauto_test\tauto_test :: master"
 }
 
 #
@@ -388,7 +405,7 @@ setup_repo()
         local Repo=
         local tmp=
 
-        [ ! -d "$1" ] && echo_err "No directory specified to setup." && return 1
+        [ ! -d "$1" ] && err_echo "No directory specified to setup." && return 1
         Repo="$1"
     (
         cd "$Repo" || return 1
@@ -451,7 +468,7 @@ get_info()
                 Branch=${Repo2Host[$Key]}
                 dbg_echo "Repo2Host[$Key] : <$Branch>"
         fi
-        [ -z "$Branch" ] && echo_err "No repo info found." && return 1
+        [ -z "$Branch" ] && err_echo "No repo info found." && return 1
         dbg_echo "Branch: <$Branch>"
         break_apart "$Branch"
 }
@@ -489,7 +506,7 @@ set_cmd_git()
 
         target="$1"
         if ! Info=( $(get_info $target) ) ; then
-                echo_err "Repo not found <$target>"
+                err_echo "Repo not found <$target>"
                 return 1
         fi
         dbg_echo "Info: [ ${Info[*]} ]"
@@ -556,7 +573,7 @@ clone_one()
 
         dbg_echo "$CMD"
         if ! $CMD ; then
-                echo_err "Not cloned."
+                err_echo "Not cloned."
                 return 1
         fi
         [ -n "$MSG" ] && dbg_echo "== ${MSG} $TrueTarget"
@@ -583,7 +600,7 @@ clone()
                 Key=${Target%%.git}
 
                 if ! clone_one "$Target" ; then
-                        echo_err "Not cloned: [$Target]"
+                        err_echo "Not cloned: [$Target]"
                         exit 5
                 fi
         done
@@ -660,7 +677,7 @@ parse_cli()
                 ;;
                  -d)   [ -n "$2" ] && dbg_echo "Found a \$2: $2"
                         if ! make_a_dir "$2" ; then
-                                echo_err "Unable to create directory path $2"
+                                err_echo "Unable to create directory path $2"
                                 exit 1
                         fi
                         PARENT_DIR="$2" ; shift
@@ -679,6 +696,12 @@ parse_cli()
                 ;;
                 -p | --print) dump_Repo2Host && exit 0
                 ;;
+                   #
+                   # output the url for the provided repo reference name.
+                -P | --PRINT) dbg_echo "Print repo $2"
+                              [ -z "${Repo2Host[$2]}" ] && do-exit 5 "No such repo found: $2."
+                              echo -e "\t$2 :: ${Repo2Host[$2]}" && do-exit 0 ""
+                ;;
         # set a particular url to clone the desired repo from.
                 -R | --repo) SRC_REPO_URL="$2"; shift # set the repo to init with.
                 ;;
@@ -686,9 +709,9 @@ parse_cli()
                         if [ "$(basename $0)" = "klone" ] ; then
                                 klone_parse "$1"
                         elif [ -z "${OfferRepos[$1]}" ] ; then
-                                echo_err "Not a supported repo: $1."
-                                exit
-                        else
+                                err_echo "Not a supported repo: $1 but, clone anyway."
+#                               exit
+#                       else
                                 dbg_echo "Adding target $1 to TARGETS"
                                 TARGETS[${#TARGETS[@]}]="$1"; # The repo name to clone.
                         fi
@@ -745,7 +768,7 @@ dbg_echo "hg_backed[fast_Api] == ${hg_backed[fast_api]}"
         fi
         parse_cli $@
 
-        [ -z "${TARGETS[*]}" ] && echo_err "Nothing to clone." >&2 && exit
+        [ -z "${TARGETS[*]}" ] && err_echo "Nothing to clone." >&2 && exit
         [ -n "$PARENT_DIR" ] && dbg_echo "Create <$PARENT_DIR>" && mkdir -p "$PARENT_DIR"
         [ -z "$PARENT_DIR" ] && dbg_echo "set PARENT_DIR to  './'" && PARENT_DIR="./"
         (
