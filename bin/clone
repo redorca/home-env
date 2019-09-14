@@ -2,6 +2,7 @@
 
 ASTYLE_CO="svn checkout https://svn.code.sf.net/p/astyle/code/trunk astyle-code"
 ZGLUE_BILL_HOST=git@github.com/zglue-bill
+REDORCA_HOST=git@github.com/redorca
 GIT_UNAME=bill
 GERRIT_HOST=101.132.142.37
 GERRIT_SSH_PORT=30149
@@ -137,8 +138,8 @@ Repo2Host["bkdocsx"]="master@${BITBUCKET_URL}/nuttx/Documentation.git"
 Repo2Host["bkboardsx"]="master@${BITBUCKET_URL}/nuttx/boards.git"
 Repo2Host["bkapps"]="master@${BITBUCKET_URL}/nuttx/apps.git"
 Repo2Host["fw_devtools"]="master@$ZGLUE_BILL_HOST/fw_devtools.git"
-Repo2Host["home-env"]="master@$ZGLUE_BILL_HOST/home-env.git"
-Repo2Host["sdk-pkgs"]="master@$ZGLUE_BILL_HOST/sdk-pkgs.git"
+Repo2Host["home-env"]="master@$REDORCA_HOST/home-env.git"
+Repo2Host["sdk-pkgs"]="master@$REDORCA_HOST/sdk-pkgs.git"
 Repo2Host["nuttx-local"]="zdk@$ZGLUE_BILL_HOST/nuttx-local.git"
 Repo2Host["apps-local"]="zdk@$ZGLUE_BILL_HOST/apps-local.git"
 # Repo2Host["linux"]="master@git@github.com/torvalds/linux.git"
