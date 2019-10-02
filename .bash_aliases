@@ -559,35 +559,28 @@ add-path ~/usr/bin
 add-path ~/.local/bin
 add-path ~/bin
 
-alias preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
-alias    apt-install="sudo apt-get -y install"
-alias     apt-remoce="sudo apt-get -y remove"
-alias          path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
-alias            po="popd >/dev/null && dirs -v"
-alias          dirs="dirs -v"
-alias            jo="jobs -l"
-alias          jobs="jobs -l"
-alias          home="pushd ~ >/dev/null && dirs -v"
-alias           bin="pushd ~/bin >/dev/null && dirs -v"
-alias            vi="vim"
-alias        valias="vim ~/.bash_aliases"
-alias       vignore="vim ~/.config/git/ignore"
-alias       vimtodo="vim ~/bin/TODO.now"
-alias     bincommit="bash -c 'cd ~/bin && git-x.sh -c'"
-alias       binpush="bash -c 'cd ~/bin && git-x.sh -p'"
-alias         asize="arm-none-eabi-size"
-alias          relf="arm-none-eabi-readelf"
-alias        status="git status | sed -n -e '1,/^Untracked/p'"
-alias          mods="git status | grep modified:"
-alias         shlvl='echo "Shell Depth:   $SHLVL"'
-alias      resource="source ~/.bashrc"
-alias          diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
-alias           cls="clear_console"
-alias          grep="grep --exclude=.git --exclude=cscope.out"
-alias          halt="sudo /sbin/shutdown -h -t now"
-alias          sudo="sudo -H"
-alias       restart="sudo systemctl restart"
-alias          halt="deactivate"
+alias  preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
+alias            apt="sudo apt-get -y"
+alias           path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
+alias             po="popd >/dev/null && dirs -v"
+alias           dirs="dirs -v"
+alias             jo="jobs -l"
+alias           jobs="jobs -l"
+alias           home="pushd ~ >/dev/null && dirs -v"
+alias            bin="pushd ~/bin >/dev/null && dirs -v"
+alias             vi="vim"
+alias         valias="vim ~/.bash_aliases"
+alias         status="git status | sed -n -e '1,/^Untracked/p'"
+alias           mods="git status | grep modified:"
+alias          shlvl='echo "Shell Depth:   $SHLVL"'
+alias       resource="source ~/.bashrc"
+alias           diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
+alias            cls="clear_console"
+alias           grep="grep --exclude=.git --exclude=cscope.out"
+alias           halt="sudo /sbin/shutdown -h -t now"
+alias           sudo="sudo -H"
+alias        restart="sudo systemctl restart"
+alias          deact="deactivate"
 
 #
 # Activate a virtualenv
