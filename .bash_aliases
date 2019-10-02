@@ -560,7 +560,7 @@ add-path ~/.local/bin
 add-path ~/bin
 
 alias  preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
-alias            apt="sudo apt-get -y"
+# alias            apt="sudo apt-get -y"
 alias           path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
 alias             po="popd >/dev/null && dirs -v"
 alias           dirs="dirs -v"
@@ -819,6 +819,26 @@ function expand_conf_vars()
         )
         sed ${SED_OPTS[@]}
 }
+
+function apt()
+{
+        local Action=
+        local Cmd=
+
+        [ $# -eq 0 ] && return 1
+
+        Cmd="sudo /usr/bin/apt-get -y"
+
+        case "$1" in
+        search)
+                Cmd=/usr/bin/apt
+        ;;
+        esac
+
+        echo "$Cmd $@" >&2
+        $Cmd $@
+}
+
 
 export GPG_TTY=$(tty)
 
