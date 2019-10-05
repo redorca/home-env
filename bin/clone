@@ -87,7 +87,10 @@ RepoRename["notepad"]="notepad-plus-plus"
 RepoRename["Doxygen"]="doxygen"
 RepoRename["ctags"]="universal-ctags"
 RepoRename["sumatra"]="sumatrapdf"
+RepoRename["requests"]="python-requests"
 
+
+Repo2Host["python-requests"]="master@git@github.com/psf/requests.git"
 Repo2Host["click"]="master@https://github.com/pallets/click.git"
 Repo2Host["dh-golang"]="master@https://github.com/Debian/dh-make-golang.git"
 Repo2Host["x-sdk"]="zdk@git@github.com/redorca/external.git"

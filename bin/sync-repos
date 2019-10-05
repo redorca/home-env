@@ -28,7 +28,7 @@ YLWLTBLU="\033[1;33;46m"
 
 Func()
 {
-        echo_dbg "=== ${FUNCNAME[1]}()"
+        dbg_echo "=== ${FUNCNAME[1]}()"
 }
 
 trace()
@@ -49,15 +49,15 @@ color()
         return 1
 }
 
-echo_err()
+err_echo()
 {
         echo -e "$@" >&2
 }
 
-echo_dbg()
+dbg_echo()
 {
         debug || return 1
-        echo_err "$@"
+        err_echo "$@"
 }
 
 color_on()
@@ -132,32 +132,32 @@ git_sync_if()
 
         if ! RemoteHash=$(git ls-remote --exit-code 2>&1 | sed -n -e '2p' -e 's/  *.*//') ; then
                 # it is possible the remote repo no longer exists
-                echo_dbg "No remote hash found so return 0 given there's nothing to be done."
+                dbg_echo "No remote hash found so return 0 given there's nothing to be done."
                 color_on RESET
                 return 0
         fi
         LocalHash=$(git reflog -1)
         Ahh=$(cat .git/HEAD)
         LocalHash=$(cat .git/${Ahh#* })
-        echo_dbg "RemoteHash: ${RemoteHash%[ 	]*}"
-        echo_dbg "LocalHash:  ${LocalHash}"
+        dbg_echo "RemoteHash: ${RemoteHash%[ 	]*}"
+        dbg_echo "LocalHash:  ${LocalHash}"
 
         [ "${RemoteHash%[ 	]*}" = "$LocalHash" ] && \
-                                        echo_err "Nothing to do.${RESET}" && \
+                                        err_echo "Nothing to do.${RESET}" && \
                                         return 0
         if ! Tracker=$(get_tracking_ref) ; then
-                echo_err "No tracking branch available."
-                echo_dbg ""
+                err_echo "No tracking branch available."
+                dbg_echo ""
                 return 2
         fi
         changes_in_flight && git stash save "Temp save while switching to $Tracker and pulling"
         if ! git checkout $Tracker ; then
-                echo_dbg "Checkout of $Tracker ... Failed."
+                dbg_echo "Checkout of $Tracker ... Failed."
                 color_on RESET
                 return 1
         fi
         if ! git pull ; then
-                echo_dbg "git pull failed."
+                dbg_echo "git pull failed."
                 color_on RESET
                 return 1
         fi
@@ -193,10 +193,10 @@ echo "Logging results to $TMPFILE"
         find -L . -type d -name .svn -o -type d -name .git | while read Path ; do
                 Path=${Path:2}
                 repo_type="$(basename $Path)"
-                echo_dbg "repo_type:  $repo_type"
+                dbg_echo "repo_type:  $repo_type"
                 Repo="$(basename ${Path%/$repo_type})"
-                echo_dbg "pushd to ${Path}"
-                echo_dbg "Path: $Path, {Path%/*} : ${Path%/*}, dirname Path : $(dirname $Path)"
+                dbg_echo "pushd to ${Path}"
+                dbg_echo "Path: $Path, {Path%/*} : ${Path%/*}, dirname Path : $(dirname $Path)"
                 echo  "Sync ${Path%/$repo_type} ... "
                 if ! eval "${PUSHD[@]}" "${Path%/*}" ; then
                         echo "Failed for ${Path%/*}"
@@ -204,12 +204,12 @@ echo "Logging results to $TMPFILE"
                         sleep 2
                         continue
                 fi
-                echo_dbg ${SYNC_REPOS["${Path##*.}"]}
-                echo_dbg "repo type: $repo_type"
+                dbg_echo ${SYNC_REPOS["${Path##*.}"]}
+                dbg_echo "repo type: $repo_type"
                 if ! eval ${SYNC_REPOS["${Path##*.}"]} ; then
                         color_on YLWRED
-                        echo_dbg "Path: $(dirname $Path), ./ == $(pwd) cmd=${SYNC_REPOS["${Path##*.}"]}"
-                        echo_err "\nFailed to sync repo $Path${RESET}"
+                        dbg_echo "Path: $(dirname $Path), ./ == $(pwd) cmd=${SYNC_REPOS["${Path##*.}"]}"
+                        err_echo "\nFailed to sync repo $Path${RESET}"
                         debug && exit 3
                         eval ${POPD[*]}
                         sleep 3
@@ -218,8 +218,8 @@ echo "Logging results to $TMPFILE"
                 echo ""
                 debug && dirs -v
                 eval ${POPD[*]}
-                echo_err "========================================================="
-                echo_err "========================================================="
+                err_echo "========================================================="
+                err_echo "========================================================="
                 sleep 1
         done
     ) |&  tee -a $TMPFILE
