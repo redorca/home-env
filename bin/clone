@@ -90,6 +90,7 @@ RepoRename["sumatra"]="sumatrapdf"
 RepoRename["requests"]="python-requests"
 
 
+Repo2Host["urllib3"]="master@https://github.com/urllib3/urllib3.git"
 Repo2Host["python-requests"]="master@git@github.com/psf/requests.git"
 Repo2Host["click"]="master@https://github.com/pallets/click.git"
 Repo2Host["dh-golang"]="master@https://github.com/Debian/dh-make-golang.git"
