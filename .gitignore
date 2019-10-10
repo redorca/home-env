@@ -137,4 +137,7 @@ autorun/
 /Documents
 /.vim
 /Qt
-
+GTAGS
+GRTAGS
+GPATH
+__pycache__/
