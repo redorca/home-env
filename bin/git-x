@@ -328,7 +328,7 @@ fi
                 add_patch
         fi
 
-
+        pwd
        list_files FILTER | while read key file ; do
                         if ! RESULTS="$(stage_line "$key" "$file") $RESULTS" ; then
                                 echo "Did not stage: [$line]"

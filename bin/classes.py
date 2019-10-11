@@ -21,9 +21,7 @@ class SymLinks(object):
         '''
 
         self.filename = pkgname + ".links"
-        self.data = dict()
-        self.entries = list()
-        self.indices = list([0, 0])
+        self.entries = list("")
 
     def add_entry(self, real, virt):
         '''
@@ -31,13 +29,12 @@ class SymLinks(object):
             virt is the link back to the base.
         '''
 
-        if virt in self.data.values():
-            print(virt + " already in values.")
-            return
-        if real in self.data.keys():
-            print(real + " already in keys.")
-            return
-        self.data[real] = virt
+        if not real in self.entries[0]:
+            print("initial set for " + real)
+            self.entries[0] = [real, virt]
+        if  real in self.entries[0]:
+            print("append " + virt + " to " +real)
+            self.entries[1].append(virt)
 
     def flush(self):
         '''
@@ -45,12 +42,13 @@ class SymLinks(object):
         '''
 
         with open(self.filename, 'w') as f_f:
-            for alpha, beta in self.data.items():
-                f_f.write(alpha + "  " + beta + "\n")
+            for alpha in self.entries:
+                f_f.write("\t".join(alpha))
+                f_f.write("\n")
 
     def dump(self):
         '''
             reveal contents of data dictionary.
         '''
-        for alpha, beta in self.data.items():
-            print("\t" +  alpha + "   " + beta)
+        for alpha in self.entries:
+            print("\t" +  str(alpha))

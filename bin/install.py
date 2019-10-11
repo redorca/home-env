@@ -17,6 +17,7 @@ PKG = "foo"
 
 BLAH = SymLinks(PKG)
 BLAH.add_entry("lib/libfoo.so.0.0.0", "lib/libfoo.so")
+BLAH.add_entry("lib/libfoo.so.0.0.0", "lib/libfoo.so.0")
 BLAH.add_entry("lib/libbah.so.0.0.0", "lib/libbah.so.0")
 BLAH.dump()
 BLAH.flush()
