@@ -324,12 +324,14 @@ fi
         Dir="$(git rev-parse --show-toplevel)" || exit 1
         echo_dbg "cd to $Dir"
         cd "$Dir" || exit 1
+        #
+        # Make a copy of the diffs --cached so a rough history is
+        # maintained of all of the amended action here.
         if [ "${POST_ACTION[2]}" = "--amend" ] ; then
                 add_patch
         fi
 
-        pwd
-       list_files FILTER | while read key file ; do
+        list_files FILTER | while read key file ; do
                         if ! RESULTS="$(stage_line "$key" "$file") $RESULTS" ; then
                                 echo "Did not stage: [$line]"
                         fi
@@ -339,5 +341,11 @@ fi
 
         "${POST_ACTION[@]}"
         [  "${#POST_ACTION[@]}" -eq 0 ] && git status
+        if [ -L "$Dir"/.git ] ; then
+                echo "Syncing a backing git tree."
+                DirPath=$(ls -l "$Dir"/.git | awk '{print $NF}')
+                Dir=$(dirname $DirPath)
+                cd $Dir && git checkout .
+        fi
 )
 
