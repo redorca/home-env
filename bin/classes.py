@@ -4,7 +4,7 @@
 '''
 import abc
 
-class DebHelperFiles(abc.ABC):
+class DebHelperClass(abc.ABC):
     '''
         Formatting  used for generating symbolic links in the packaging
         directory (commonly debian/<pkg-name> ) used for staging the build.
@@ -67,7 +67,7 @@ class DebHelperFiles(abc.ABC):
             those pages are placed who knows where.
         '''
 
-class SymLinks(DebHelperFiles):
+class SymLinks(DebHelperClass):
     '''
         Special case of a DebianHelperFile that dh_link uses to
         install symlinks and verify/process them.
@@ -80,7 +80,7 @@ class SymLinks(DebHelperFiles):
 
         return
 
-class ManPages(DebHelperFiles):
+class ManPages(DebHelperClass):
     '''
         Debhelper uses dh_installman to place manpages based upon the section
         field in the .TH and .Dt entries.
