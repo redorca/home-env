@@ -1,10 +1,10 @@
-
 '''
     Class definitions defining formatting for various files used by
     debian packaging; that is, files found in the debian/ dir.
 '''
+import abc
 
-class SymLinks():
+class DebHelperFiles(abc.ABC):
     '''
         Formatting  used for generating symbolic links in the packaging
         directory (commonly debian/<pkg-name> ) used for staging the build.
@@ -57,3 +57,41 @@ class SymLinks():
         '''
         for alpha in self.entries:
             print("\t".join(alpha))
+
+    @abc.abstractmethod
+    def validate(self, *args):
+        '''
+            Context specific method to make sure the files handled conform to
+            debhelper's expectations. In particular manpages are placed based
+            on parsing the .TH and .DT headers so they better be right else
+            those pages are placed who knows where.
+        '''
+
+class SymLinks(DebHelperFiles):
+    '''
+        Special case of a DebianHelperFile that dh_link uses to
+        install symlinks and verify/process them.
+    '''
+
+    def validate(self, *args):
+        '''
+            Make sure the paths provided are absolute paths.
+        '''
+
+        return
+
+class ManPages(DebHelperFiles):
+    '''
+        Debhelper uses dh_installman to place manpages based upon the section
+        field in the .TH and .Dt entries.
+
+        This class will  need to realize a validate() method to make sure the
+        .Dt and .TH section fields make sense (properly declared).
+    '''
+
+    def validate(self, *args):
+        '''
+            Make sure the .TH and .Dt section fields are properly declared.
+            Fix them up if possible else raise an error.
+        '''
+        return
