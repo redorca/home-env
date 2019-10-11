@@ -29,12 +29,12 @@ class SymLinks(object):
             virt is the link back to the base.
         '''
 
-        if not real in self.entries[0]:
+        if not real in self.entries:
             print("initial set for " + real)
-            self.entries[0] = [real, virt]
+            self.entries.append([real, virt])
+            print("===" + str(self.entries[0]))
         if  real in self.entries[0]:
             print("append " + virt + " to " +real)
-            self.entries[1].append(virt)
 
     def flush(self):
         '''
