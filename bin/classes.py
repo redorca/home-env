@@ -13,14 +13,14 @@ class DebHelperClass(abc.ABC):
         tree (as in tmp/foo/bah/dobo.fy) and dst is the
     '''
 
-    def __init__(self, pkgname):
+    def __init__(self, pkgname, extension):
         '''
             Initialize in the name of pkgname for creating a links file
             suitable for use in building Debian packages using dpkg or
             dh_build.
         '''
 
-        self.filename = pkgname + ".links"
+        self.filename = ".".join([pkgname, extension])
         self.entries = list("")
 
     def add_entry(self, target, *args):
@@ -73,12 +73,19 @@ class SymLinks(DebHelperClass):
         install symlinks and verify/process them.
     '''
 
+    def __init__(self, pkg):
+        '''
+            Set use specific values then super init.
+        '''
+        super().__init__(pkg, "links")
+
     def validate(self, *args):
         '''
             Make sure the paths provided are absolute paths.
         '''
 
         return
+
 
 class ManPages(DebHelperClass):
     '''
@@ -89,9 +96,87 @@ class ManPages(DebHelperClass):
         .Dt and .TH section fields make sense (properly declared).
     '''
 
+    def __init__(self, pkg):
+        '''
+            Set use specific values then super init.
+        '''
+        super().__init__(pkg, "manpages")
+
     def validate(self, *args):
         '''
             Make sure the .TH and .Dt section fields are properly declared.
             Fix them up if possible else raise an error.
         '''
         return
+
+
+class InfoPages(DebHelperClass):
+    '''
+    '''
+
+    def __init__(self, pkg):
+        '''
+            Set use specific values then super init.
+        '''
+        super().__init__(pkg, "info")
+
+    def validate(self, *args):
+        '''
+            Make sure the .TH and .Dt section fields are properly declared.
+            Fix them up if possible else raise an error.
+        '''
+        return
+
+
+class Documents(DebHelperClass):
+    '''
+    '''
+
+    def __init__(self, pkg):
+        '''
+            Set use specific values then super init.
+        '''
+        super().__init__(pkg, "docs")
+
+    def validate(self, *args):
+        '''
+            Make sure the .TH and .Dt section fields are properly declared.
+            Fix them up if possible else raise an error.
+        '''
+        return
+
+
+class DocBase(DebHelperClass):
+    '''
+    '''
+
+    def __init__(self, pkg):
+        '''
+            Set use specific values then super init.
+        '''
+        super().__init__(pkg, "doc-base")
+
+    def validate(self, *args):
+        '''
+            Make sure the .TH and .Dt section fields are properly declared.
+            Fix them up if possible else raise an error.
+        '''
+        return
+
+
+class Systemd(DebHelperClass):
+    '''
+        boo
+    '''
+
+
+class SysVInit(DebHelperClass):
+    '''
+        boo
+    '''
+
+
+class Examples(DebHelperClass):
+    '''
+        boo
+    '''
