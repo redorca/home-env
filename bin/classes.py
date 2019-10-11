@@ -57,4 +57,3 @@ class SymLinks():
         '''
         for alpha in self.entries:
             print("\t".join(alpha))
-
