@@ -23,18 +23,23 @@ class SymLinks():
         self.filename = pkgname + ".links"
         self.entries = list("")
 
-    def add_entry(self, real, virt):
+    def add_entry(self, target, *args):
         '''
-            real is the binary file used as the base for the link
-            virt is the link back to the base.
+            Similar to the 'ln' command save the paths are absolute
+            with the leading '/' optional.
+
+            target  : The binary file used as the base for the link
+            *args   : The set of links to set to target. E.g. libs.
         '''
 
-        if not real in self.entries:
-            print("initial set for " + real)
-            self.entries.append([real, virt])
-            print("===" + str(self.entries[0]))
-        if  real in self.entries[0]:
-            print("append " + virt + " to " +real)
+        links = list(args)
+        if not target in self.entries:
+#           print("initial set for " + target)
+            self.entries.append([target, "\t\n\t\t\t".join(links)])
+#           print("===(" + str(len(self.entries)) + ") " + str(self.entries[0]))
+#       if  target in self.entries[0]:
+#           print("append " + link + " to " + target)
+#           self.entries[0][1].append(link)
 
     def flush(self):
         '''
@@ -51,4 +56,5 @@ class SymLinks():
             reveal contents of data dictionary.
         '''
         for alpha in self.entries:
-            print("\t" +  str(alpha))
+            print("\t".join(alpha))
+
