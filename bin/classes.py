@@ -4,7 +4,7 @@
     debian packaging; that is, files found in the debian/ dir.
 '''
 
-class SymLinks(object):
+class SymLinks():
     '''
         Formatting  used for generating symbolic links in the packaging
         directory (commonly debian/<pkg-name> ) used for staging the build.
