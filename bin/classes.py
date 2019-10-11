@@ -14,14 +14,23 @@ class SymLinks(object):
     '''
 
     def __init__(self, pkgname):
-        self.filename = pkgname + ".links";
+        '''
+            Initialize in the name of pkgname for creating a links file
+            suitable for use in building Debian packages using dpkg or
+            dh_build.
+        '''
+
+        self.filename = pkgname + ".links"
         self.data = dict()
+        self.entries = list()
+        self.indices = list([0, 0])
 
     def add_entry(self, real, virt):
         '''
             real is the binary file used as the base for the link
             virt is the link back to the base.
         '''
+
         if virt in self.data.values():
             print(virt + " already in values.")
             return
@@ -34,14 +43,14 @@ class SymLinks(object):
         '''
             Create the <pkg>.links file from the set of dictionaries.
         '''
-        with open(self.filename, 'w') as ff:
-            for a, b in self.data.items():
-                ff.write(a + "  " + b + "\n")
+
+        with open(self.filename, 'w') as f_f:
+            for alpha, beta in self.data.items():
+                f_f.write(alpha + "  " + beta + "\n")
 
     def dump(self):
         '''
             reveal contents of data dictionary.
         '''
-        for a, b in self.data.items():
-            print("\t" +  a + "   " + b)
-
+        for alpha, beta in self.data.items():
+            print("\t" +  alpha + "   " + beta)
