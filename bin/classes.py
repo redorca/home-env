@@ -34,12 +34,7 @@ class DebHelperClass(abc.ABC):
 
         links = list(args)
         if not target in self.entries:
-#           print("initial set for " + target)
             self.entries.append([target, "\t\n\t\t\t".join(links)])
-#           print("===(" + str(len(self.entries)) + ") " + str(self.entries[0]))
-#       if  target in self.entries[0]:
-#           print("append " + link + " to " + target)
-#           self.entries[0][1].append(link)
 
     def flush(self):
         '''
@@ -67,6 +62,12 @@ class DebHelperClass(abc.ABC):
             those pages are placed who knows where.
         '''
 
+    @abc.abstractmethod
+    def keyword(self, *args):
+        '''
+            return the keyword for use as a search term for this particular class.
+        '''
+
 class SymLinks(DebHelperClass):
     '''
         Special case of a DebianHelperFile that dh_link uses to
@@ -82,6 +83,11 @@ class SymLinks(DebHelperClass):
     def validate(self, *args):
         '''
             Make sure the paths provided are absolute paths.
+        '''
+
+    def keyword(self, *args):
+        '''
+                Provide a search term to be used for finding files to process.
         '''
 
         return
@@ -109,9 +115,15 @@ class ManPages(DebHelperClass):
         '''
         return
 
+    def keyword(self, *args):
+        '''
+            return the keyword for use as a search term for this particular class.
+        '''
+
 
 class InfoPages(DebHelperClass):
     '''
+        boo
     '''
 
     def __init__(self, pkg):
@@ -127,9 +139,15 @@ class InfoPages(DebHelperClass):
         '''
         return
 
+    def keyword(self, *args):
+        '''
+            return the keyword for use as a search term for this particular class.
+        '''
+
 
 class Documents(DebHelperClass):
     '''
+        boo
     '''
 
     def __init__(self, pkg):
@@ -145,9 +163,15 @@ class Documents(DebHelperClass):
         '''
         return
 
+    def keyword(self, *args):
+        '''
+            return the keyword for use as a search term for this particular class.
+        '''
+
 
 class DocBase(DebHelperClass):
     '''
+        boo
     '''
 
     def __init__(self, pkg):
@@ -163,11 +187,28 @@ class DocBase(DebHelperClass):
         '''
         return
 
+    def keyword(self, *args):
+        '''
+            return the keyword for use as a search term for this particular class.
+        '''
+
 
 class Systemd(DebHelperClass):
     '''
         boo
     '''
+
+    def validate(self, *args):
+        '''
+            Make sure the .TH and .Dt section fields are properly declared.
+            Fix them up if possible else raise an error.
+        '''
+        return
+
+    def keyword(self, *args):
+        '''
+            return the keyword for use as a search term for this particular class.
+        '''
 
 
 class SysVInit(DebHelperClass):
@@ -175,8 +216,32 @@ class SysVInit(DebHelperClass):
         boo
     '''
 
+    def validate(self, *args):
+        '''
+            Make sure the .TH and .Dt section fields are properly declared.
+            Fix them up if possible else raise an error.
+        '''
+        return
+
+    def keyword(self, *args):
+        '''
+            return the keyword for use as a search term for this particular class.
+        '''
+
 
 class Examples(DebHelperClass):
     '''
         boo
     '''
+
+    def validate(self, *args):
+        '''
+            Make sure the .TH and .Dt section fields are properly declared.
+            Fix them up if possible else raise an error.
+        '''
+        return
+
+    def keyword(self, *args):
+        '''
+            return the keyword for use as a search term for this particular class.
+        '''
