@@ -89,7 +89,7 @@ RepoRename["ctags"]="universal-ctags"
 RepoRename["sumatra"]="sumatrapdf"
 RepoRename["requests"]="python-requests"
 
-
+Repo2Host["aptly"]="master@https://github.com/aptly-dev/aptly.git"
 Repo2Host["urllib3"]="master@https://github.com/urllib3/urllib3.git"
 Repo2Host["python-requests"]="master@git@github.com/psf/requests.git"
 Repo2Host["click"]="master@https://github.com/pallets/click.git"
