@@ -839,6 +839,21 @@ function apt()
         $Cmd $@
 }
 
+#
+#
+#
+function acton()
+{
+        [ $# -ne 1 ] && return 1
+
+        local ActDir=
+
+        ActDir="$1" ; shift
+
+        [ ! -f "$ActDir/bin/activate" ] && dbg_echo "No activate file found" && return 2
+
+        source "$ActDir/bin/activate"
+}
 
 export GPG_TTY=$(tty)
 
