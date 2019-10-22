@@ -78,9 +78,8 @@
 
 '''
 
-import click
+option_dir = ["-d", "--directory", "dir_element" ]
 
-@click.command
-@click.args
+              treat all arguments as directory names; create all components of the specified directories
 
 
