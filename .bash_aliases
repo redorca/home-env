@@ -852,11 +852,15 @@ function apt()
 #        or if the object is only the module,
 #           pyhelp(requests)
 #
-pyhelp()
+function pyhelp()
 {
     local Target=
     local Module=
     declare -a Phrase=()
+
+    if [ $# -eq 0 ] ; then
+        return
+    fi
 
     Target="$1"; shift
     Module=${Target%%.*}
