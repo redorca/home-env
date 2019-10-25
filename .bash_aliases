@@ -889,17 +889,26 @@ function pyhelp()
 # Start up a virtual environment by running
 # activate from bin/ in the directory passed.
 #
+# param: Name of the project.
+#
 function acton()
 {
         [ $# -ne 1 ] && return 1
 
         local ActDir=
+        local ProjPath=
 
         ActDir="$1" ; shift
+        ProjPath="$ActDir/bin/activate"
+        if [ ! -f "$ProjPath" ] ; then
+                ProjPath="$HOME/src/$ProjPath"
+                if [ ! -f "$ProjPath" ] ; then
+                        err_echo "No activate file found" && return 2
+                fi
+        fi
 
-        [ ! -f "$ActDir/bin/activate" ] && dbg_echo "No activate file found" && return 2
-
-        source "$ActDir/bin/activate"
+        source "$ProjPath"
+        cd ${ProjPath%/bin/activate}
 }
 
 export GPG_TTY=$(tty)
