@@ -840,7 +840,50 @@ function apt()
 }
 
 #
+# Access available python modules info without
+# interactive control. The commands assembled
+# are echoed inline through a pipe to the python
+# executable with output pushed to stdin.
 #
+# param: The topic of interest fully specified
+#        by prefixing with its module name.
+#           pyhelp(requests.status_codes)
+#
+#        or if the object is only the module,
+#           pyhelp(requests)
+#
+pyhelp()
+{
+    local Target=
+    local Module=
+    declare -a Phrase=()
+
+    Target="$1"; shift
+    Module=${Target%%.*}
+    if [ "$Module" == "${Target}" ] ; then
+        Target=${Target#$Module}
+    else
+        Target=${Target#${Module}}
+    fi
+
+    if [ -n "$1" ] ; then
+        dbg_echo "Two args were passed:"
+        Target=."$1" ; shift
+    fi
+    dbg_echo "Target $Target , Module $Module"
+
+    Phrase=( "echo" """ "import" "$Module" "\;" "help\(${Module}${Target}\)" """ )
+#   Phrase=( "echo" """ "import" "$Module" """ ";" """ 'help' "(${Module}${Target})" """ )
+
+    echo "${Phrase[*]}"
+    ${Phrase[@]} | python
+ 
+}
+
+
+#
+# Start up a virtual environment by running
+# activate from bin/ in the directory passed.
 #
 function acton()
 {
