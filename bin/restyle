@@ -5,10 +5,10 @@
 [ $# -eq 0 ] && echo "Please provide a list of files to style" >&2 && exit 1
 
 BINDIR=$HOME/bin
-ASTYLE_OPTIONS=$BINDIR/astyle-nuttx
+ASTYLE_STYLECONFIG=$BINDIR/astyle-nuttx
 ASTYLE_BIN=$BINDIR/astyle
 
-[ ! -f $ASTYLE_OPTIONS ] && echo "No $ASTYLE_OPTIONS found" >&2 && exit 2
+[ ! -f $ASTYLE_STYLECONFIG ] && echo "No $ASTYLE_STYLECONFIG found" >&2 && exit 2
 [ ! -x $ASTYLE_BIN ] && echo "No executable $ASTYLE_BIN found" >&2 && exit 3
 
 if [ -d "$1" ] ; then
@@ -17,7 +17,7 @@ fi
 [ -f "$1" ] && FILES=( "$@" )
 # echo "FILES: ${FILES[*]}"
 
-CMDS=( "$ASTYLE_BIN" "--options" "$ASTYLE_OPTIONS" "$FILES" )
+CMDS=( "$ASTYLE_BIN" "--options" "$ASTYLE_STYLECONFIG" "$FILES" )
 echo "CMD: ${CMDS[*]}"
 ${CMDS["$@"]}
 
