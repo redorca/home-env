@@ -561,6 +561,7 @@ add-path ~/bin
 
 alias  preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
 # alias            apt="sudo apt-get -y"
+alias             ve="virtualenv -p /usr/bin/python3"
 alias           path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
 alias             po="popd >/dev/null && dirs -v"
 alias           dirs="dirs -v"
@@ -862,8 +863,10 @@ function pyhelp()
         return
     fi
 
-    Target="$1"; shift
-    Module=${Target%%.*}
+    #
+    # Ensure module names are snake style compliant.
+    Target="$(echo $1 | tr - _)"; shift
+    Module=${Target%.*}
     if [ "$Module" == "${Target}" ] ; then
         Target=${Target#$Module}
     else
