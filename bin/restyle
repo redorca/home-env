@@ -19,6 +19,10 @@ fi
 # echo "FILES: ${FILES[*]}"
 
 # CMDS=( "$ASTYLE_BIN" "--options" "$ASTYLE_STYLECONFIG" "$FILES" )
+GITCMDS=( "git" "checkout" "$FILES" )
+echo "GIT CMD ${GITCMDS[*]}"
+${GITCMDS[@]}
+
 CMDS=( "$ASTYLE_BIN" "--options=$ASTYLE_STYLECONFIG" "$FILES" )
 echo "CMD: ${CMDS[*]}"
 ${CMDS[@]}

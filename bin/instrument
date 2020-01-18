@@ -1,0 +1,22 @@
+#!/bin/bash
+
+[ ! -f "$1" ] && echo "No legit filename provided." >&2 && exit 2
+
+#
+# Add code to files that print out new function entry, exits,
+# and indent according to call stack depth.
+#
+
+while [ $# -ne 0 ] ; do
+
+        [ ! -f "$1" ] && shift && continue
+
+        sed -i -e '/^{/a  \\tMARK_ENTRY();'                     \
+               -e '/^}/i \\tMARK_EXIT();'                       \
+               -e '/return/s/return \(.*\);.*/RETURN(\1)\;/'       \
+               $1
+
+        shift
+done
+# sed -i -e '/MARK/s/^/	/' $1
+
