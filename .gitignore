@@ -124,6 +124,7 @@ klone
 /Downloads
 /bin/home-env
 /snap
+/work
 *.gz
 *.zip
 *.tar
