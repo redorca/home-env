@@ -1,147 +1,29 @@
 #!/bin/bash
 
-ASTYLE=astyle
-SYS_SRCROOT=${HOME}/src
-PATHS_SRCS=( "/zeus/" "/zglue/" "/" )
-PATHS_ASTYLE=( "astyle-github" )
-PATHS_NUTTX=( "official/" "NuttX/" )
-ASTYLE_GITDIR=astyle-github
-ASTYLE_BLDROOT=AStyle/build/gcc
-NUTTX_DIR=nuttx-official/arch/arm/src/imxrt
+[ "$TRACE" == 1 ] && set -x
 
-#
-# Wrap echo with a redirect to stderr
-#
-err_echo()
-{
-        echo -e "$@" >&2
-}
+[ $# -eq 0 ] && echo "Please provide a list of files to style" >&2 && exit 1
 
-if [ $# -eq 0 ] ; then
-        err_echo "Please supply one or more filenames to process"
-        exit 1
+BINDIR=$HOME/usr/bin
+ASTYLE_STYLECONFIG=$BINDIR/astyle-nuttx
+ASTYLE_BIN=$BINDIR/astyle
+ASTYLE_BIN=$BINDIR/astyled
+
+[ ! -f $ASTYLE_STYLECONFIG ] && echo "No $ASTYLE_STYLECONFIG found" >&2 && exit 2
+[ ! -x $ASTYLE_BIN ] && echo "No executable $ASTYLE_BIN found" >&2 && exit 3
+
+if [ -d "$1" ] ; then
+        FILES=$(find $1 -type f -name "*.c" -o -name "*.h" | sed -e 's///g')
 fi
+[ -f "$1" ] && FILES=( "$@" )
+# echo "FILES: ${FILES[*]}"
 
-#
-# wrap a call with a printout.
-#
-run()
-{
-        echo "::: $*"
-        $@
-}
+GITCMDS=( "git" "checkout" "$FILES" )
+echo "GIT CMD ${GITCMDS[*]}"
+${GITCMDS[@]}
 
-#
-# Figure out what the path from $HOME/src
-# to the desired destination should be.
-#
-set_path_to()
-{
-    local path=
-    local root=
-    local dest=
-    local full=
+GDBCMDS=( "gdb" "--options=$ASTYLE_STYLECONFIG" "$FILES" )
+echo "GDBCMDS: ${GDBCMDS[*]}"
+${GDBCMDS[@]}
 
-    dest="$1" ; shift
-    root="$HOME/src"
-
-    for path in ${PATHS_SRCS[@]} ; do
-        full=${root}${path}${dest}
-        if [  -e "$full" ] ; then
-            break
-        fi
-        full=""
-    done
-    [ -z "$full" ] && return 2
-    echo "$full"
-}
-
-#
-# Find the right nuttx-official parent dir.
-#
-set_path_to_nuttx_official()
-{
-    local boo=
-    local blah=
-
-    for blah in "${PATHS_NUTTX[@]}" ; do
-        if boo=$(set_path_to ${blah}${NUTTX_DIR}) ; then
-            [ -d $boo ] && break
-        fi
-        blah=
-    done
-    [ -z "$blah" ] && return 3
-    echo "$boo"
-}
-
-#
-# Figure out which astyle/astyled to use and
-# where to find it.
-#
-set_astyle_path()
-{
-#   ASTYLE=astyle
-    if [ "$DBG" == "dbg" ] ; then
-            ASTYLE="${ASTYLE}d"
-    fi
-
-    ASTYLE_GITDIR=astyle-github
-    ASTYLE_BLDROOT=AStyle/build/gcc
-
-    for path in ${PATHS_SRCS[@]} ; do
-        ASTYLE_PATH=${SYS_SRCROOT}${path}${ASTYLE_GITDIR}/${ASTYLE_BLDROOT}/bin/${ASTYLE}
-        if [  -f "$ASTYLE_PATH" ] ; then
-            break
-        fi
-        ASTYLE_PATH=""
-    done
-    if [ -z "$ASTYLE_PATH" ] ; then
-        err_echo "No astyle found."
-        return 2
-    fi
-    echo $ASTYLE_PATH
-}
-
-while [ $# -ne 1 ] ; do
-        case "$1" in
-        -d) DBG=dbg
-            ;;
-        esac
-        shift
-done
-
-# TARGET_DIR="$HOME/src/zglue/official/nuttx-official/arch/arm/src/imxrt"
-# TARGET_DIR="$HOME/src/zeus/NuttX/official/nuttx-official/arch/arm/src/imxrt"
-if ! TARGET_DIR="$(set_path_to_nuttx_official)" ; then
-    err_echo "Unable to find any nuttx-official dir"
-    exit 1
-fi
-[ ! -d "$TARGET_DIR" ] && err_echo "Not found: $TARGET_DIR" && exit 1
-pushd $TARGET_DIR || exit
-
-declare -A Styles
-Styles["nuttx"]="${HOME}/bin/astyle-nuttx"
-
-date +"== %m::%S::%h-%d"
-ls -l test.c
-
-CMD=( "git" "checkout" "." )
-run ${CMD[@]}
-ls -l test.c
-
-CMD=( "git" "status" )
-run ${CMD[@]}
-
-if ! ASTYLE_PATH="$(set_astyle_path ${ASTYLE_GITDIR}/${ASTYLE_BLDROOT}/${ASTYLE})" ; then
-        err_echo "Failed to set ${ASTYLE} path :: ${ASTYLE_PATH}"
-        exit 1
-fi
-if [ ! -f "$ASTYLE_PATH" ] ; then
-        err_echo "No such astyle $ASTYLE_PATH"
-        exit 1
-fi
-CMD=( "${ASTYLE_PATH}" "--options=${Styles[nuttx]}" "$@" )
-run "${CMD[@]}"
-
-popd
-
+set +x
