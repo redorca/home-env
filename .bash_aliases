@@ -246,6 +246,14 @@ function del-path()
 }
 
 #
+# Test for a paths presence in $PATH
+#
+function has-path()
+{
+        echo $PATH | grep $1 >/dev/null
+}
+
+#
 # Export DEBUG = 1 (on) or disable (0)
 #
 function dbg()
