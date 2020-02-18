@@ -1,17 +1,27 @@
 define foo
-         run --options=/home/zglue/bin/astyle-nuttx ./test.c
+         run --options=$HOME/usr/bin/astyle-nuttx ./test.c
 end
-set args --options=/home/hal/usr/bin/astyle-nuttx ./blue.h
+# set args --options=$HOME/usr/bin/astyle-nuttx blue.h
 
+define boo
+        !git checkout blue.c
+         run --options=$HOME/usr/bin/astyle-nuttx blue.c
+end
 define blue
-!git checkout blue.h
+        !git checkout blue.*
 end
 
 define goo
-        file /home/zglue/bin/astyled
+#       file /home/zglue/bin/astyled
 #       run $FILE  --options=/home/zglue/bin/astyle-nuttx ./test.c
 #       b adjustComments
-        run /home/zglue/bin/astyled --options=/home/zglue/bin/astyle-nuttx ./test.c
+        !git checkout blue.h
+        run --options=$HOME/usr/bin/astyle-nuttx blue.h
 
+end
+
+define line
+        p currentLine
+        p formattedLine
 end
 
