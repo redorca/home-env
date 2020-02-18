@@ -1,0 +1,19 @@
+#!/bin/bash
+
+
+OPTS=( "--with-openssl" "--with-curl" "--with-expat" "--prefix=$HOME/usr" )
+
+
+
+while [ $# -ne 0 ] ; do
+
+        case "$1" in
+        "git"|"GIT")
+                ./configure ${OPTS[@]}
+                ;;
+        *) echo "Can't do that: $1" >&2
+                exit 1
+                ;;
+        esac
+        shift
+done
