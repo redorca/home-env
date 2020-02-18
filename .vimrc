@@ -5,5 +5,7 @@ set csprg=gtags-cscope
 cs  add GTAGS
 
 syntax enable
+set foldmethod=marker
+set foldmarker=vvv,^^^
 
 source ~/.vimrc_color
