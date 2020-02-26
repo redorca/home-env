@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OPTIONS=( "--idutils" "--skip-unreadable" "--skip-symlink" "--accept-dotfiles" )
+OPTIONS=( "--skip-unreadable" "--skip-symlink" "--accept-dotfiles" )
 # "--explain"
 CMD=gtags
 

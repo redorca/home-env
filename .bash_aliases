@@ -922,6 +922,12 @@ function acton()
         cd ${ProjPath%/bin/activate}
 }
 
+function gclone()
+{
+        GITHUB_SSH="ssh://github@github.com/"
+        git clone ${GITHUB_SSH}$1.git $1
+}
+
 export GPG_TTY=$(tty)
 
 if which apt-get >/dev/null 2>&1 ; then
