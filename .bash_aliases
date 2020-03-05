@@ -973,7 +973,9 @@ expand_conf_vars USER ~/.dput.cf
 
 
 #
-# Reset to home dir.
+# Reset to home dir unless VIRTUAL_ENV is set.
 #
-cd
+[ -z "$VIRTUAL_ENV" ] && VIRTUAL_ENV="$HOME"
+cd "$VIRTUAL_ENV"
+
 
