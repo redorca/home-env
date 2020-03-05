@@ -202,11 +202,22 @@ EOF
 	fi
 }
 
+#
+# Setup constants
+#
+instantiate()
+{
+	declare -g _DIR=~/bin/home-env/.git
+	if [ ! -d "$_DIR" ] ; then
+		[ ! -d $HOME/.local/bin/home-env/.git ] && echo "No home-env/.git found" >&2 && exit 2
+		_DIR="$HOME/.local/bin/home-env/.git"
+	fi
+
+}
+
 re-exec
 
 # shellcheck disable=2164 pushd ~ >/dev/null
-
-_DIR=~/bin/home-env/.git
 
 cd $HOME
 if [ -d .git ] ; then
@@ -216,7 +227,7 @@ fi
 
 [ ! -d $_DIR ] && echo "No ${_DIR: -4} dir found in ${__DIR:0: -4}" && exit 1
 ln -sf $_DIR
-git_config_for_use "Bill" "bill@zglue.com"
+git_config_for_use "Bill" "zgluebill@icloud.com"
 
 git checkout .
 mk_vimrc_color
