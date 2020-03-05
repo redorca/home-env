@@ -1,8 +1,7 @@
 #!/bin/bash
 
 ASTYLE_CO="svn checkout https://svn.code.sf.net/p/astyle/code/trunk astyle-code"
-ZGLUE_BILL_HOST=git@$GITHUB/zglue-bill
-REDORCA_HOST=git@$GITHUB/redorca
+# ZGLUE_BILL_HOST=git@$GITHUB/zglue-bill
 GIT_UNAME=bill
 GERRIT_HOST=101.132.142.37
 GERRIT_SSH_PORT=30149
@@ -19,6 +18,7 @@ SDK_14="SDK_14.0.0"
 DIALOG_SDK=dialog_585_sdk_dev
 NORDIC_SDK="$SDK_13_1"
 SRC_REPO_URL="$GERRIT_HOST_URL"
+REDORCA_HOST=git@$GITHUB/redorca
 
 declare -A OfferRepos
 declare -A Repo2Host
@@ -78,6 +78,9 @@ RepoRename["tools"]="bktools"
 RepoRename["riot"]="RIOT"
 RepoRename["apps"]="nuttx_apps"
 RepoRename["pygit"]="dulwich"
+RepoRename["mynuttx"]="nuttxr"
+RepoRename["myapps"]="appsx"
+RepoRename["myastyle"]="astyle-github"
 
 # Setup in setup_repo_table() ## RepoRename["dialog"]="dialog_585_sdk_dev@3rd_Party_SDK"
 # Setup in setup_repo_table() ## RepoRename["dallas"]="dialog_585_sdk_dev@3rd_Party_SDK"
@@ -150,6 +153,9 @@ Repo2Host["bkboardsx"]="master@${BITBUCKET_URL}/nuttx/boards.git"
 Repo2Host["bkapps"]="master@${BITBUCKET_URL}/nuttx/apps.git"
 Repo2Host["fw_devtools"]="master@$ZGLUE_BILL_HOST/fw_devtools.git"
 Repo2Host["home-env"]="master@$REDORCA_HOST/home-env.git"
+Repo2Host["nuttxr"]="master@$REDORCA_HOST/nuttxr.git"
+Repo2Host["appsx"]="master@$REDORCA_HOST/appsx.git"
+Repo2Host["astyle-github"]="master@$REDORCA_HOST/astyle-github.git"
 Repo2Host["sdk-pkgs"]="master@$REDORCA_HOST/sdk-pkgs.git"
 Repo2Host["nuttx-local"]="zdk@$ZGLUE_BILL_HOST/nuttx-local.git"
 Repo2Host["apps-local"]="zdk@$ZGLUE_BILL_HOST/apps-local.git"
