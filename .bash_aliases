@@ -266,6 +266,8 @@ function dbg()
         ;;
         0|off)  DEBUG= && ${PUBLISH[@]}
         ;;
+        Func) DEBUG=Func && ${PUBLISH[@]}
+        ;;
         *) [ -z "$1" ]  && ${PUBLISH[@]}
            [ ! -z "$1" ] && echo "WTF?! [ $1 ]"
         ;;

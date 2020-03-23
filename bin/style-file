@@ -18,9 +18,11 @@ Func()
 	local Back=
 	local ARGS=
 
+        [ "$DEBUG" != "1" ] && return
+
 	Back=1
-#	[ -n "$@" ] && ARGS="  $@"
-	echo_dbg "...${FUNCNAME[$Back]}()${ARGS}"
+ 	[ $# -ne 0 ] && ARGS=( $@ )
+	echo_err "${FUNCNAME[$Back]}()${ARGS[@]}"
 }
 
 #
@@ -276,8 +278,8 @@ filter_style()
 
         Files=( "$@" )
         # shellcheck disable=2207
-        SRCS=( $(filter_for_srcfiles "${Files[@]}") )
-        [ -z "${SRCS[*]}" ] && return
+#       SRCS=( $(filter_for_srcfiles "${Files[@]}") )
+#       [ -z "${SRCS[*]}" ] && return
         #
         # Look first in the local directory (ORIGIN) to see if
         # astyle is local and executable.  If not then try /usr/bin
@@ -286,34 +288,40 @@ filter_style()
         # report "" (nothing).
         #
         ASTYLE=${ORIGIN}astyle
-        [ ! -x "$ASTYLE" ] && ASTYLE=/usr/bin/astyle
+        ([ ! -x "$ASTYLE" ] || [ ! -f "$ASTYLE" ]) && ASTYLE=/usr/bin/astyle
         [ ! -x "$ASTYLE" ] && ASTYLE=$(which astyle)
         [ ! -x "$ASTYLE" ] && echo_err "Unable to find the astyle program" && return 1
         echo_dbg "$ASTYLE will be used."
 
-        ASTYLE_OPTS=astyle-nuttx
-        STYLE_OPTIONS=${ORIGIN}${ASTYLE_OPTS}
-        ZGLUE_OPTS_DIR=/usr/share/zglue/styles
-        [ ! -f "$STYLE_OPTIONS" ] && STYLE_OPTIONS=$ZGLUE_OPTS_DIR/${ASTYLE_OPTS}
-        echo_dbg "$STYLE_OPTIONS will be used with astyle."
+#       ASTYLE_OPTS=astyle-nuttx
+#       STYLE_OPTIONS=${ORIGIN}${ASTYLE_OPTS}
+#       ZGLUE_OPTS_DIR=/usr/share/zglue/styles
+#       ZGLUE_OPTS_DIR=$HOME/usr/bin
+#       [ ! -f "$STYLE_OPTIONS" ] && STYLE_OPTIONS=$ZGLUE_OPTS_DIR/${ASTYLE_OPTS}
+#       echo_dbg "$STYLE_OPTIONS will be used with astyle."
 
-        QUIET='-q'
-        [ "$DEBUG"  = "1" ]  && QUIET='-v'
-        echo_dbg "$ASTYLE $STYLE_OPTIONS"
+#       QUIET="-q"
+#       [ "$DEBUG"  = "1" ]  && QUIET="-v"
+#       echo_err "$ASTYLE $STYLE_OPTIONS"
 
-        [ -f "$STYLE_OPTIONS" ] || echo_err "Missing [$STYLE_OPTIONS]" || return 1
+#       [ -f "$STYLE_OPTIONS" ] || echo_err "Missing [$STYLE_OPTIONS]" || return 1
 
         #
         # style check the files to commit, quietly unless DEBUG is set.
         #
         # shellcheck disable=2206
-        CMD=( "$ASTYLE" "--options=$STYLE_OPTIONS" $QUIET "${SRCS[@]}" )
-        echo_dbg "${CMD[@]}"
-        if ! "${CMD[@]}" ; then
+#       CMD=( "$ASTYLE" "--options=$STYLE_OPTIONS" $QUIET ${SRCS[@]} )
+#       CMD=( "$ASTYLE" "$QUIET" ${SRCS[@]} )
+        CMD=( "$ASTYLE" "$QUIET" ${Files[@]} )
+        echo_err "Files encounted: ${#Files[@]}, srcs found ${#SRCS[@]}"
+
+        echo_dbg "Command: ${#CMD[@]} ${CMD[*]}"
+        echo_err "Command: ${#CMD[@]} ${CMD[*]}"
+        if ! ${CMD[@]} ; then
                 echo_err "${RED}Fail"
                 return 1
         fi
-
+return 0
         #
         # Adjust the results to account for minor variations from astyle
         # Create temp script to post process files styled by astyle
@@ -490,7 +498,9 @@ filter_if_0()
         Msg="XXX Please remove or rename \\'if 0\\'"
         for i in "${Files[@]}" ; do
                 if grep "$Key" "$i" >/dev/null  2>&1 ; then
-                        eval sed -i -e \'/"$Key"/i"$Msg"\' "$i"
+                        if ! eval sed -i -e \'/"$Key"/i"$Msg"\' "$i" >/dev/null 2>&1 ; then
+                               echo_err "Key <$Key>, Msg <$Msg>" 
+                        fi
                 fi
         done
 }
@@ -502,8 +512,7 @@ filter_if_0()
 #
 filter_out_dirs()
 {
-	Func
-	echo_dbg " :: $@"
+	Func $@
         local Dir=
         local Flag=
 
@@ -519,8 +528,7 @@ filter_out_dirs()
 #
 filter_for_dirs()
 {
-	Func
-	echo_dbg " :: $@"
+	Func $@
         local file=
         local Dir=
         local A_CMD=
@@ -622,6 +630,7 @@ any_protected_dirs()
 #
 filter_for_externs()
 {
+	Func $@
         declare -a Files=
         local Results=
 
@@ -642,7 +651,7 @@ filter_for_externs()
 #
 filter_files()
 {
-	Func
+	Func $@
         local RepoRoot=
         declare -a Files=
         local Results=
@@ -664,7 +673,6 @@ filter_files()
         # shellcheck disable=2206
         Files=( "$@" )
         echo_dbg " === Files has ${#Files[@]} elements"
-        echo_err "${BLUE}\$1 is (${Files[0]})"
 
         strip_edge_ws "${Files[@]}"
         if [ "${Files:0:1}" = " " ] ; then
@@ -743,7 +751,7 @@ in_managed_repo()
 #
 filter_for_srcfiles()
 {
-	Func
+	Func $@
         local file=
         local tmpo=
         declare -a tmpe=
@@ -804,11 +812,10 @@ fi
 #
 # Help nessage describing the command line options
 #
-help()
+Help()
 {
+        echo -e "\t$(basename $0): [-h] [--git] [--add] [--file|-f] [<file 1> <file2> ... ]"
         cat <<"EOF"
-
-        $(basename $0): [-h] [--git] [--add] [--file|-f] [<file 1> <file2> ... ]
                 style_file examines the local environment for c source files to
                 apply formatting rules to.  For every file listed on the command
                 line style_file will format only the *.c *.h files and generate
@@ -822,24 +829,28 @@ help()
                 found then style_file examines the set of files in the moxt
                 recent commit and format the source files in that check-in.
 
-   -h|  --help       Display this message
-
-   -g|  --git        Look to the git index and recent commits for the
-                     set of files to check.
-
    -a | --add        Run 'git add ' on the files formatted
 
    -f | --file       Provide the list of files to format as a file
                      conbtaining the set of files to format
 
-   -p                Refrain from checking for sacred dirs.
+   -d | --dir        Sub directory containing set of files to process.
 
-   +p  <dir>         Add a directory to the protected list. May appear more
-                     than once on the command line to add multiple dirs.
+   -g|  --git        Look to the git index and recent commits for the
+                     set of files to check.
+
+   -h|  --help       Display this message
 
    -I                Do not ignore any directories
 
    +I  <dir>         Add a directory to the ignore list. May appear more
+                     than once on the command line to add multiple dirs.
+
+   -M | --MANAGED    Disable checking whether this repo is under management.
+
+   -p                Refrain from checking for sacred dirs.
+
+   +p  <dir>         Add a directory to the protected list. May appear more
                      than once on the command line to add multiple dirs.
 
         *            Files provided on the command line
@@ -865,6 +876,7 @@ set_env()
                 -c|--color-off) COLOR_OFF=0
                         ;;
                 -f|--file) [ ! -f "$2" ] && echo_err "No file? [$2]" && exit 1
+                          [ ${#FILES[@]} -ne 0 ] && echo "Set of files already set!" >&2 && exit 3
                         [ -f "$2" ] && FILES=( $(sed -e 's/^[ 	]*//' "$2") ) && shift
                         echo_dbg "From containing file, list of files is \\n(${FILES[*]})"
                         if [ -z "${FILES[*]}" ] ; then
@@ -873,11 +885,16 @@ set_env()
                         fi
                         [ -n "${FILES[*]}" ] && echo_dbg "Found files."
                         ;;
+                -d|--dir) [ ! -d "$2" ] && echo "No such dir found: $2" >&2 && exit 2
+                          [ ${#FILES[@]} -ne 0 ] && echo "Set of files already set!" >&2 && exit 3
+                          FILES=( $(find "$2" -type f) ) && shift
+                        ;;
                 -g|--git) FILES=( $(git_committed) )
+                          [ ${#FILES[@]} -ne 0 ] && echo "Set of files already set!" >&2 && exit 3
                         [ -z "${FILES[*]}" ] && echo_err "No files found to process." ; exit 0
                         echo_dbg "${FILES[@]}"
                         ;;
-                -h|--help) help; exit 0;
+                -h|--help) Help; exit 0;
                         ;;
                 +I)  [ ! -d "$2" ] && echo "Not a dir: [$2]" >&2 && help && exit 1
                      echo -n -e "Ignoring ${#IGNORE_DIRS[@]} directories\t"
@@ -887,6 +904,9 @@ set_env()
                      shift
                         ;;
                 -I)  IGNORE_DIRS=()
+                        ;;
+                -M|--MANAGED) # disable check that this repo is under management
+                              MANAGE="no"
                         ;;
                 +p)  [ ! -d "$2" ] && echo "Not a dir: [$2]" >&2 && help && exit 1
                      echo -n -e "Protecting ${#NUTTX_PROTECTED_DIRS[@]} directories\t"
@@ -925,6 +945,8 @@ set_env()
 IGNORE_DIRS=( "external/" "zmodem/" "CppUTest/" "cpput/" "uClibc++/" )
 export FILTERS_NRF="/nrf52/ /nrf52832_dk/"
 export FILTER_FUNCTIONS="filter_out_whitespace filter_if_0 filter_for_externs filter_set_noexec"
+export FILTER_FUNCTIONS="filter_out_whitespace filter_set_noexec"
+export FILTER_FUNCTIONS=""
 
 REPO_HOST="101.132.142.37"
 ACTIVELY_MANAGED_REPOS=( \
@@ -967,12 +989,14 @@ THIS_REPO=( $(git remote -v | grep fetch | sed -e 's/(.*)$//' | awk -F'/' '{prin
 #
 # Check whether this repo is to be styled.
 #
-if ! in_managed_repo "${ACTIVELY_MANAGED_REPOS[@]}" ; then
-        echo_dbg "This working tree is not from an actively managed repo."
-        echo_dbg "Do nothing."
-        exit 0
+if [ "$MANAGE" != "no" ] ; then
+        if ! in_managed_repo "${ACTIVELY_MANAGED_REPOS[@]}" ; then
+                echo_err "This working tree is not from an actively managed repo."
+                echo_err "Do nothing, exit."
+                exit 3
+        fi
+        echo_dbg "This repo is actively managed."
 fi
-echo_dbg "This repo is actively managed."
 
 # shellcheck disable=2207
 [ -z "${FILES[*]}" ] && FILES=( $(set_files "$ALT") ) && echo_dbg " :: now FILES :==> ${FILES[*]}"
