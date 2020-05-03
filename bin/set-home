@@ -3,7 +3,8 @@
 DEBUG=${DEBUG:-0}
 TRACE=${TRACE:-0}
 TMPFILE_EXEC=/tmp/.setup
-DRIVE_B="UUID=a1a552cc-2cbf-4467-8b62-410129bdef0e /home/zglue/.mnt  ext4"
+# DRIVE_B=( "UUID=a1a552cc-2cbf-4467-8b62-410129bdef0e" "/home/zglue/.mnt" "ext4" )
+DRIVE_B=( sdb1 /home/$USER/.mnt ext4 )
 FSTAB="/etc/fstab"
 
 trace()
@@ -157,9 +158,22 @@ mount_sdb()
 {
         local DriveUUID=
 
-        DriveUUID="$1"
-        mkdir ~/.mnt
-        sudo -H mount /dev/sdb1  ~/.mnt
+        [ "${1:0:3}" == "UUID" ] && DriveUUID=$1
+	case "${1:0:4}" in
+	/dev) [ -b /dev/$1 ] && [ -z "$DriveUUID" ] && Drive=$1 && break
+		return 1
+		;;
+	UUID)  [ -z "$Drive" ] && DriveUUID=$1
+		;;
+	*)
+		echo "Bad arg passed in: $1" >&2
+		exit 3
+		;;
+	esac
+	[ -z "$Drive" -a -z "$DriveUUID" ] && echo "No idea what drive to use." >&2 && return 4
+	[ ! -d "~/.mnt" ] && mkdir -p ~/.mnt
+        [ -n "$DriveUUID" ]  && sudo -H mount UUID=$DriveUUID  ~/.mnt
+        [ -n "$Drive" ]  && sudo -H mount /dev/$Drive  ~/.mnt
         (
                 cd ~ || die "No home dir found?"
 
@@ -202,39 +216,86 @@ EOF
 	fi
 }
 
+gitcheckout()
+{
+	local TargetDir=
+	local Repo=
+
+	TargetDir=${1%%bin/*} ; shift
+	Repo=${1##*/bin/} ; shift
+	( cd $TargetDir && [ -d .git ] && git checkout . ) || echo "No .git dir found in $TargetDir" >&2
+	cd $TargetDir && git_config_for_use "Bill" "zgluebill@icloud.com"
+}
+
+#
+# Clone a repo from github.
+#
+gitclone()
+{
+	local repo=
+	local rootdir=
+
+	rootdir=$1 ; shift
+	repo=$1 ; shift
+	[ -z "$repo" ] && return 1
+
+	[ ! -d $rootdir ] && mkdir -p $rootdir
+	cd $rootdir
+	git clone https://github.com/$repo
+}
+
 #
 # Setup constants
 #
 instantiate()
 {
-	declare -g _DIR=~/bin/home-env/.git
+	declare -g _DIR=~/.local/bin/home-env/.git
 	if [ ! -d "$_DIR" ] ; then
-		[ ! -d $HOME/.local/bin/home-env/.git ] && echo "No home-env/.git found" >&2 && exit 2
+		[ ! -d $HOME/.local/bin/home-env/.git ] && echo "No home-env/.git found" >&2 && gitclone $HOME/.local/bin  redorca/home-env.git
 		_DIR="$HOME/.local/bin/home-env/.git"
 	fi
 
+	echo $_DIR
+}
+
+#
+# Descend a directory symbolically linking every non dir
+# element back to the mentioned home.
+#
+ln_recursive()
+{
+	local TargetDir=
+
+	TargetDir=$1
+	find $1 ! -type d -exec ln -sf {} \;
 }
 
 re-exec
 
 # shellcheck disable=2164 pushd ~ >/dev/null
 
-cd $HOME
-if [ -d .git ] ; then
+_DIR=$(instantiate)
+
+if [ -d $_DIR/.git ] ; then
         err_echo "Home environment already setup."
         exit 1
 fi
 
-[ ! -d $_DIR ] && echo "No ${_DIR: -4} dir found in ${__DIR:0: -4}" && exit 1
-ln -sf $_DIR
-git_config_for_use "Bill" "zgluebill@icloud.com"
-
-git checkout .
+[ ! -d $_DIR ] && echo "No ${_DIR: -4} dir found in ${_DIR:0: -4}" && exit 1
+( cd ${_DIR%%bin/*} && ln -sf $_DIR ) || exit 2
+gitcheckout $_DIR
 mk_vimrc_color
-cd bin
-ln -sf clone klone
-
+cd $HOME
+for targ in ~/.local/.??* ; do
+	echo "$targ"
+	[ -d $targ ] && ln_recursive $targ && continue
+	ln -sf $targ
+done
 enable_bash_aliases
-if [ -e /sys/block/sdb ] ; then
-        mount_sdb $DRIVE_B
+if [ -e /sys/block/$DRIVE_B ] ; then
+        if ! mount_sdb $DRIVE_B ; then
+		echo "No $DRIVE_B to mount."
+		exit 1
+	fi
 fi
+

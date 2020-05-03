@@ -567,7 +567,8 @@ add-path /usr/share/doc/git/contrib/git-jump
 add-path ~/.cabal/bin
 add-path ~/usr/bin
 add-path ~/.local/bin
-add-path ~/bin
+[ ! -d "$HOME/.local/bin" ] && add-path ~/bin
+[   -d "$HOME/.local/bin" ] && add-path ~/.local/bin
 
 alias  preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
 # alias            apt="sudo apt-get -y"
