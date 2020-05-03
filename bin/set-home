@@ -267,7 +267,11 @@ ln_recursive()
 	local TargetDir=
 
 	TargetDir=$1
-	find $1 ! -type d -exec ln -sf {} \;
+	cd
+	find $1 ! -type d | while read Path ; do
+		Scruff=${Path##*/.local/}
+		(mkdir -p ${Scruff%/*} && cd ${Scruff%/*} && ln -sf $Path)
+	done
 }
 
 re-exec
@@ -291,6 +295,7 @@ for targ in ~/.local/.??* ; do
 	[ -d $targ ] && ln_recursive $targ && continue
 	ln -sf $targ
 done
+exit
 enable_bash_aliases
 if [ -e /sys/block/$DRIVE_B ] ; then
         if ! mount_sdb $DRIVE_B ; then
