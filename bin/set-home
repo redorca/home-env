@@ -160,6 +160,15 @@ git_populate()
 }
 
 #
+# Maybe these files were cloned via https. Make sure
+# the orgin remote is based on ssh instead.
+#
+git_fixup_origin()
+{
+	sed -i -e 's,https://,ssh://git@,' .git/config
+}
+
+#
 # Create the sudoers file allowing seamless use;
 # no password requested.
 #
@@ -284,6 +293,7 @@ PATH="$BINDIR:$PATH"
 git_config_for_use "Bill" "zgluebill@icloud.com"
 
 git_populate "${BINDIR%/bin}"
+git_fixup_origin
 cd $HOME
 mk_vimrc_color
 
