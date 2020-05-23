@@ -12,6 +12,7 @@ GITGITHUB=git@github.com
 GITHUB_HTTPS="https://github.com"
 GITHUB_SSH="ssh://github.com"
 BITBUCKET_URL="https://bitbucket.org"
+APACHE_INCUB8R="${GITHUB_HTTPS}/apache/incubator-"
 SDK_13="SDK_13.0.0-1"
 SDK_13_1="SDK_13.1.0"
 SDK_14="SDK_14.0.0"
@@ -70,13 +71,13 @@ RepoRename["review"]="git-review"
 RepoRename["mynewt"]="mynewt-core"
 RepoRename["nimble"]="NimBLE"
 RepoRename["fast"]="fast_api"
-RepoRename["NuttX"]="bknuttx"
+RepoRename["nuttx"]="incubator-nuttx"
 RepoRename["AppsX"]="bkapps"
 RepoRename["DocsX"]="bkdocsx"
 RepoRename["BoardsX"]="bkboardsx"
-RepoRename["tools"]="bktools"
+RepoRename["tools"]="incubator-nuttx-tools"
 RepoRename["riot"]="RIOT"
-RepoRename["apps"]="nuttx_apps"
+RepoRename["apps"]="incubator-nuttx-apps"
 RepoRename["pygit"]="dulwich"
 RepoRename["mynuttx"]="nuttxr"
 RepoRename["myapps"]="appsx"
@@ -183,6 +184,9 @@ Repo2Host["dulwich"]="master@$GITHUB_HTTPS/dulwich/dulwich.git"
 Repo2Host["searchmonkey"]="master@https://git.code.sf.net/p/searchmonkey/GTK searchmonkey-GTK"
 Repo2Host["ksearchmonkey"]="master@https://git.code.sf.net/p/searchmonkey/KDE searchmonkey-KDE"
 Repo2Host["repogen"]="master@$GITHUB_HTTPS/geek1011/repogen.git"
+Repo2Host["incubator-nuttx"]="master@${APACHE_INCUB8R}nuttx.git"
+Repo2Host["incubator-nuttx-apps"]="master@${APACHE_INCUB8R}nuttx-apps.git"
+Repo2Host["incubator-nuttx-tools"]="master@${APACHE_INCUB8R}nuttx-tools.git"
 Repo2Host["damn-repogen"]="master@$ZGLUE_BILL_HOST/damn-repogen.git"
 
 FinalCmds=()
@@ -289,6 +293,7 @@ trace()
 {
         set +x
         [ "$TRACE" = "1" ] || return 1
+	dbg_echo "Tracing on ..."
         set -x
         return  0
 }
@@ -726,15 +731,8 @@ parse_cli()
                 -R | --repo) SRC_REPO_URL="$2"; shift # set the repo to init with.
                 ;;
                 *)
-                        if [ "$(basename $0)" = "klone" ] ; then
-                                klone_parse "$1"
-                        elif [ -z "${OfferRepos[$1]}" ] ; then
-                                err_echo "Not a supported repo: $1 but, clone anyway."
-#                               exit
-#                       else
                                 dbg_echo "Adding target $1 to TARGETS"
                                 TARGETS[${#TARGETS[@]}]="$1"; # The repo name to clone.
-                        fi
                 ;;
                 esac
                 shift
@@ -802,7 +800,7 @@ dbg_echo "hg_backed[fast_Api] == ${hg_backed[fast_api]}"
         )
         exit
 # fi
-
+set -x
 # klone_parse $@
 trace
 parse_cli $@
