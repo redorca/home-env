@@ -3,13 +3,12 @@
 DEBUG=${DEBUG:-0}
 TRACE=${TRACE:-0}
 TMPFILE_EXEC=/tmp/.setup
-# DRIVE_B=( "UUID=a1a552cc-2cbf-4467-8b62-410129bdef0e" "/home/zglue/.mnt" "ext4" )
-DRIVE_B=( sdb1 /home/$USER/.mnt ext4 )
+DRIVE_B="UUID=a1a552cc-2cbf-4467-8b62-410129bdef0e /home/zglue/.mnt  ext4"
 FSTAB="/etc/fstab"
 
 trace()
 {
-        [ "$TRACE" = "1" ] && return 0
+        [ "$TRACE" = "1" ] && set -x && return 0
         return 1
 }
 
@@ -28,14 +27,12 @@ dbg_echo()
 {
         debug || return
 
-        echo -e "$@" >&2
+        err_echo "[d] $@"
 }
 
 Func()
 {
-        debug || return
-
-        echo "[${#FUNCNAME[@]}]  ${FUNCNAME[1]}::"
+        dbg_echo "[${#funcname[@]}]  ${funcname[1]}:: <$@>"
 }
 
 #
@@ -49,7 +46,9 @@ Func()
 re-exec()
 {
         local TMPFILE_EXEC=
+	local Args=
 
+	Args="$@"
         TMPFILE_EXEC=$(mktemp -p /tmp .$(basename $0).XXXX)
 
         #
@@ -59,23 +58,8 @@ re-exec()
                 cat "$0" >  $TMPFILE_EXEC
                 cd /tmp ||  exit  1
                 chmod +x  $TMPFILE_EXEC
-                exec  $TMPFILE_EXEC
+                exec  $TMPFILE_EXEC $Args
         fi
-}
-
-#
-# Make sure that the caller cloned home-env.git into ~/bin.
-# If not then we won't know how to setup ~/bin and ~
-#
-validate_layout()
-{
-        # MSG="# Uncomment any one of the colors to provide vim with a color scheme"
-        if [ ! -d  ~/bin/home-env/bin ] ; then
-                echo "The repo may not be placed correctly. Please make sure" >&2
-                echo "that the repo, home-env.git, is cloned into ~/bin." >&2
-                return 5
-        fi
-        return 0
 }
 
 mk_vimrc_color()
@@ -107,6 +91,27 @@ EOF
         debug && cat $File
 }
 
+#
+# Well, duh.
+#
+is_git_tree()
+{
+	local Here=
+
+	[ $# -gt 0 ] && Here="$1"
+	(
+		dbg_echo "Here : <$Here>"
+		[ -d "$Here" ] || return 2
+		cd "$Here"
+		if ! git rev-parse --git-dir >/dev/null 2>&1 ; then
+			err_echo "Not within a git tree."
+			return 1
+		fi
+	) || return 1
+	dbg_echo "Success"
+	return 0
+}
+
 git_config_key_init()
 {
         Func
@@ -124,7 +129,7 @@ git_config_key_init()
 
 git_config_for_use()
 {
-        Func
+        Func $@
         local Name=
         local Email=
 
@@ -137,6 +142,20 @@ git_config_for_use()
         git_config_key_init color.status.staged green
         git_config_key_init color.status.unstaged red
 #       git config_key_init color.status.untracked yellow
+}
+
+#
+# Checkout the repo into the passed in location.
+#
+git_populate()
+{
+	local GitDir=
+
+	Func $@
+	GitDir="$1" && shift
+	[ -z "$GitDir" ] && GitDir="."
+
+	cd ${GitDir%.git} && git checkout > /dev/null
 }
 
 #
@@ -158,22 +177,9 @@ mount_sdb()
 {
         local DriveUUID=
 
-        [ "${1:0:3}" == "UUID" ] && DriveUUID=$1
-	case "${1:0:4}" in
-	/dev) [ -b /dev/$1 ] && [ -z "$DriveUUID" ] && Drive=$1 && break
-		return 1
-		;;
-	UUID)  [ -z "$Drive" ] && DriveUUID=$1
-		;;
-	*)
-		echo "Bad arg passed in: $1" >&2
-		exit 3
-		;;
-	esac
-	[ -z "$Drive" -a -z "$DriveUUID" ] && echo "No idea what drive to use." >&2 && return 4
-	[ ! -d "~/.mnt" ] && mkdir -p ~/.mnt
-        [ -n "$DriveUUID" ]  && sudo -H mount UUID=$DriveUUID  ~/.mnt
-        [ -n "$Drive" ]  && sudo -H mount /dev/$Drive  ~/.mnt
+        DriveUUID="$1"
+        mkdir ~/.mnt
+        sudo -H mount /dev/sdb1  ~/.mnt
         (
                 cd ~ || die "No home dir found?"
 
@@ -201,47 +207,22 @@ mount_sdb()
 
 }
 
+#
+# Make sure .bashrc includes .bash_aliases
+#
 enable_bash_aliases()
 {
 	local BASHRC=~/.bashrc
-        local BASH_ALIASES=~/.bash_aliases
+        local BASH_ALIASES=~/.local/.bash_aliases
 	if ! grep "$(basename $BASH_ALIASES)" "$BASHRC" >/dev/null ; then
 	        dbg_echo "Setting up bash aliases."
 	        # shellcheck disable=2129
                 cat > "$BASH_ALIASES" <<"EOF"
-	        if [ -f ~/.bash_aliases ] ; then
-	                source ~/.bash_aliases
+	        if [ -f "${BASH_ALIASES}" ] ; then
+	                source "${BASH_ALIASES}"
 	        fi
 EOF
 	fi
-}
-
-gitcheckout()
-{
-	local TargetDir=
-	local Repo=
-
-	TargetDir=${1%%bin/*} ; shift
-	Repo=${1##*/bin/} ; shift
-	( cd $TargetDir && [ -d .git ] && git checkout . ) || echo "No .git dir found in $TargetDir" >&2
-	cd $TargetDir && git_config_for_use "Bill" "zgluebill@icloud.com"
-}
-
-#
-# Clone a repo from github.
-#
-gitclone()
-{
-	local repo=
-	local rootdir=
-
-	rootdir=$1 ; shift
-	repo=$1 ; shift
-	[ -z "$repo" ] && return 1
-
-	[ ! -d $rootdir ] && mkdir -p $rootdir
-	cd $rootdir
-	git clone https://github.com/$repo
 }
 
 #
@@ -249,58 +230,63 @@ gitclone()
 #
 instantiate()
 {
-	declare -g _DIR=~/.local/bin/home-env/.git
+	local _DIR=
+	local Tmp=
+
+	Tmp="${0%/*$USER/}"
+	_DIR=$HOME/${Tmp%/*}
+	dbg_echo "DIR ${_DIR}   Tmp ${Tmp}"
+
 	if [ ! -d "$_DIR" ] ; then
-		[ ! -d $HOME/.local/bin/home-env/.git ] && echo "No home-env/.git found" >&2 && gitclone $HOME/.local/bin  redorca/home-env.git
-		_DIR="$HOME/.local/bin/home-env/.git"
+		err_echo "No home-env/.git found"
+		return 2
 	fi
 
-	echo $_DIR
+	echo "${_DIR}"
+	return 0
 }
 
-#
-# Descend a directory symbolically linking every non dir
-# element back to the mentioned home.
-#
-ln_recursive()
-{
-	local TargetDir=
+trace
 
-	TargetDir=$1
-	cd
-	find $1 ! -type d | while read Path ; do
-		Scruff=${Path##*/.local/}
-		(mkdir -p ${Scruff%/*} && cd ${Scruff%/*} && ln -sf $Path)
-	done
-}
+#
+# List of args to pass to the exec call
+#
+EXEC_ARGS=( "BINDIR=$BINDIR" "DEBUG=$DEBUG" "TRACE=$TRACE" )
+FOO=$(echo "${EXEC_ARGS[@]}" | sed -e 's:=[^ ]* :\|:g' -e 's:=[^ ]*$::')
+while [ $# -gt 0 ] ; do
+	case "${1%=*}" in
+	${FOO})
+		eval "export $1"
+		;;
+	*)
+		;;
+	esac
+	shift
+done
 
-re-exec
+[ -z "$BINDIR" ] && BINDIR=$(instantiate)
+dbg_echo "BINDIR :: ${BINDIR}"
+re-exec ${EXEC_ARGS[@]}
 
 # shellcheck disable=2164 pushd ~ >/dev/null
 
-_DIR=$(instantiate)
+cd "${BINDIR%/bin}"
+dbg_echo "In dir $(pwd)"
 
-if [ -d $_DIR/.git ] ; then
+ln -sf bin/home-env/.git
+if is_git_tree ; then
         err_echo "Home environment already setup."
-        exit 1
+        exit 0
 fi
 
-[ ! -d $_DIR ] && echo "No ${_DIR: -4} dir found in ${_DIR:0: -4}" && exit 1
-( cd ${_DIR%%bin/*} && ln -sf $_DIR ) || exit 2
-gitcheckout $_DIR
-mk_vimrc_color
+PATH="$BINDIR:$PATH"
+git_config_for_use "Bill" "zgluebill@icloud.com"
+
+git_populate "${BINDIR%/bin}"
 cd $HOME
-for targ in ~/.local/.??* ; do
-	echo "$targ"
-	[ -d $targ ] && ln_recursive $targ && continue
-	ln -sf $targ
-done
-exit
-enable_bash_aliases
-if [ -e /sys/block/$DRIVE_B ] ; then
-        if ! mount_sdb $DRIVE_B ; then
-		echo "No $DRIVE_B to mount."
-		exit 1
-	fi
-fi
+mk_vimrc_color
 
+enable_bash_aliases
+if [ -e /sys/block/sdb ] && [ -b /dev/sdb1 ] ; then
+        mount_sdb $DRIVE_B
+fi
