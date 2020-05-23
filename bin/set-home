@@ -32,7 +32,7 @@ dbg_echo()
 
 Func()
 {
-        dbg_echo "[${#funcname[@]}]  ${funcname[1]}:: <$@>"
+        dbg_echo "[${#FUNCNAME[@]}]  ${FUNCNAME[1]}:: <$@>"
 }
 
 #
@@ -154,8 +154,9 @@ git_populate()
 	Func $@
 	GitDir="$1" && shift
 	[ -z "$GitDir" ] && GitDir="."
+	dbg_echo "GitDir $GitDir :: ${GitDir%.git}"
 
-	cd ${GitDir%.git} && git checkout > /dev/null
+	cd ${GitDir%.git} && git checkout . > /dev/null
 }
 
 #
@@ -214,13 +215,13 @@ enable_bash_aliases()
 {
 	local BASHRC=~/.bashrc
         local BASH_ALIASES=~/.local/.bash_aliases
-	if ! grep "$(basename $BASH_ALIASES)" "$BASHRC" >/dev/null ; then
+	if ! grep "${BASH_ALIASES}" "$BASHRC" >/dev/null ; then
 	        dbg_echo "Setting up bash aliases."
 	        # shellcheck disable=2129
-                cat > "$BASH_ALIASES" <<"EOF"
-	        if [ -f "${BASH_ALIASES}" ] ; then
-	                source "${BASH_ALIASES}"
-	        fi
+                cat >> "$BASHRC" <<EOF
+if [ -f "${BASH_ALIASES}" ] ; then
+	source "${BASH_ALIASES}"
+fi
 EOF
 	fi
 }
@@ -273,7 +274,7 @@ re-exec ${EXEC_ARGS[@]}
 cd "${BINDIR%/bin}"
 dbg_echo "In dir $(pwd)"
 
-ln -sf bin/home-env/.git
+ln -sf home-env/.git
 if is_git_tree ; then
         err_echo "Home environment already setup."
         exit 0

@@ -822,7 +822,7 @@ function expand_conf_vars()
 
         Var="$1"; shift
         File="$1"; shift
-        FileTempl=$(dirname $File)/.template$(basename $File)
+        FileTempl=$(dirname $File)/.local/.template$(basename $File)
         [ -f "$FileTempl" -a ! -f $File ] && cp $FileTempl $File
         SED_OPTS=(  \
                 "-i" "-e"  \
