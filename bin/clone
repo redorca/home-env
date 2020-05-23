@@ -312,6 +312,8 @@ setup_repo_table()
 {
         Func $@
         local repo_host_url=
+	dbg_echo "${FUNCNAME[0]} Deprecated ..."
+	return 0
 
         [ -z "$1" ] && dbg_echo "No repo provided." && return 1
         repo_host_url="$1"; shift
@@ -705,8 +707,8 @@ parse_cli()
                 ;;
                  -hh)  hhelp && exit
                 ;;
-                 -l)   [ "$(basename $0)" != "clone" ] && dump_Repo2Host && exit
-                        dump_OfferRepos && exit
+                 -l)   dump_Repo2Host && exit
+                       #dump_OfferRepos && exit
                 ;;
         # Rename origin to something else.
                 -O | --no-origin)
