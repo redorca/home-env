@@ -512,7 +512,7 @@ function vbin()
         local -a Files=
 
         Files="$*"
-        pushd ~/bin > /dev/null
+        pushd ~/.local/bin > /dev/null
         vim $Files
         popd >/dev/null
 }
@@ -567,7 +567,8 @@ add-path /usr/share/doc/git/contrib/git-jump
 add-path ~/.cabal/bin
 add-path ~/usr/bin
 add-path ~/.local/bin
-add-path ~/bin
+[ ! -d "$HOME/.local/bin" ] && add-path ~/bin
+[   -d "$HOME/.local/bin" ] && add-path ~/.local/bin
 
 alias  preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
 # alias            apt="sudo apt-get -y"
@@ -578,13 +579,13 @@ alias           dirs="dirs -v"
 alias             jo="jobs -l"
 alias           jobs="jobs -l"
 alias           home="pushd ~ >/dev/null && dirs -v"
-alias            bin="pushd ~/bin >/dev/null && dirs -v"
+alias            bin="pushd ~/.local/bin >/dev/null && dirs -v"
 alias             vi="vim"
-alias         valias="vim ~/.bash_aliases"
+alias         valias="vim ~/.local/.bash_aliases"
 alias         status="git status | sed -n -e '1,/^Untracked/p'"
 alias           mods="git status | grep modified:"
 alias          shlvl='echo "Shell Depth:   $SHLVL"'
-alias       resource="source ~/.bashrc"
+alias       resource="source ~/.local/.bashrc"
 alias           diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
 alias            cls="clear_console"
 alias           grep="grep --exclude=.git --exclude=cscope.out"
@@ -821,7 +822,7 @@ function expand_conf_vars()
 
         Var="$1"; shift
         File="$1"; shift
-        FileTempl=$(dirname $File)/.template$(basename $File)
+        FileTempl=$(dirname $File)/.local/.template$(basename $File)
         [ -f "$FileTempl" -a ! -f $File ] && cp $FileTempl $File
         SED_OPTS=(  \
                 "-i" "-e"  \
@@ -948,7 +949,7 @@ else
         echo "Set prompt for Redhat sys-arch"
         PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
 fi
-LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
+LS_COLOR_DATA_FILE=~/.local/Documents/colors.modal.ls
 [ -f $LS_COLOR_DATA_FILE ] && eval $(dircolors -b $LS_COLOR_DATA_FILE)
 
 #

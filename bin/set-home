@@ -8,7 +8,7 @@ FSTAB="/etc/fstab"
 
 trace()
 {
-        [ "$TRACE" = "1" ] && return 0
+        [ "$TRACE" = "1" ] && set -x && return 0
         return 1
 }
 
@@ -27,14 +27,12 @@ dbg_echo()
 {
         debug || return
 
-        echo -e "$@" >&2
+        err_echo "[d] $@"
 }
 
 Func()
 {
-        debug || return
-
-        echo "[${#FUNCNAME[@]}]  ${FUNCNAME[1]}::"
+        dbg_echo "[${#FUNCNAME[@]}]  ${FUNCNAME[1]}:: <$@>"
 }
 
 #
@@ -48,7 +46,9 @@ Func()
 re-exec()
 {
         local TMPFILE_EXEC=
+	local Args=
 
+	Args="$@"
         TMPFILE_EXEC=$(mktemp -p /tmp .$(basename $0).XXXX)
 
         #
@@ -58,23 +58,8 @@ re-exec()
                 cat "$0" >  $TMPFILE_EXEC
                 cd /tmp ||  exit  1
                 chmod +x  $TMPFILE_EXEC
-                exec  $TMPFILE_EXEC
+                exec  $TMPFILE_EXEC $Args
         fi
-}
-
-#
-# Make sure that the caller cloned home-env.git into ~/bin.
-# If not then we won't know how to setup ~/bin and ~
-#
-validate_layout()
-{
-        # MSG="# Uncomment any one of the colors to provide vim with a color scheme"
-        if [ ! -d  ~/bin/home-env/bin ] ; then
-                echo "The repo may not be placed correctly. Please make sure" >&2
-                echo "that the repo, home-env.git, is cloned into ~/bin." >&2
-                return 5
-        fi
-        return 0
 }
 
 mk_vimrc_color()
@@ -106,6 +91,27 @@ EOF
         debug && cat $File
 }
 
+#
+# Well, duh.
+#
+is_git_tree()
+{
+	local Here=
+
+	[ $# -gt 0 ] && Here="$1"
+	(
+		dbg_echo "Here : <$Here>"
+		[ -d "$Here" ] || return 2
+		cd "$Here"
+		if ! git rev-parse --git-dir >/dev/null 2>&1 ; then
+			err_echo "Not within a git tree."
+			return 1
+		fi
+	) || return 1
+	dbg_echo "Success"
+	return 0
+}
+
 git_config_key_init()
 {
         Func
@@ -123,7 +129,7 @@ git_config_key_init()
 
 git_config_for_use()
 {
-        Func
+        Func $@
         local Name=
         local Email=
 
@@ -136,6 +142,30 @@ git_config_for_use()
         git_config_key_init color.status.staged green
         git_config_key_init color.status.unstaged red
 #       git config_key_init color.status.untracked yellow
+}
+
+#
+# Checkout the repo into the passed in location.
+#
+git_populate()
+{
+	local GitDir=
+
+	Func $@
+	GitDir="$1" && shift
+	[ -z "$GitDir" ] && GitDir="."
+	dbg_echo "GitDir $GitDir :: ${GitDir%.git}"
+
+	cd ${GitDir%.git} && git checkout . > /dev/null
+}
+
+#
+# Maybe these files were cloned via https. Make sure
+# the orgin remote is based on ssh instead.
+#
+git_fixup_origin()
+{
+	sed -i -e 's,https://,ssh://git@,' .git/config
 }
 
 #
@@ -187,17 +217,20 @@ mount_sdb()
 
 }
 
+#
+# Make sure .bashrc includes .bash_aliases
+#
 enable_bash_aliases()
 {
 	local BASHRC=~/.bashrc
-        local BASH_ALIASES=~/.bash_aliases
-	if ! grep "$(basename $BASH_ALIASES)" "$BASHRC" >/dev/null ; then
+        local BASH_ALIASES=~/.local/.bash_aliases
+	if ! grep "${BASH_ALIASES}" "$BASHRC" >/dev/null ; then
 	        dbg_echo "Setting up bash aliases."
 	        # shellcheck disable=2129
-                cat > "$BASH_ALIASES" <<"EOF"
-	        if [ -f ~/.bash_aliases ] ; then
-	                source ~/.bash_aliases
-	        fi
+                cat >> "$BASHRC" <<EOF
+if [ -f "${BASH_ALIASES}" ] ; then
+	source "${BASH_ALIASES}"
+fi
 EOF
 	fi
 }
@@ -207,34 +240,64 @@ EOF
 #
 instantiate()
 {
-	declare -g _DIR=~/bin/home-env/.git
+	local _DIR=
+	local Tmp=
+
+	Tmp="${0%/*$USER/}"
+	_DIR=$HOME/${Tmp%/*}
+	dbg_echo "DIR ${_DIR}   Tmp ${Tmp}"
+
 	if [ ! -d "$_DIR" ] ; then
-		[ ! -d $HOME/.local/bin/home-env/.git ] && echo "No home-env/.git found" >&2 && exit 2
-		_DIR="$HOME/.local/bin/home-env/.git"
+		err_echo "No home-env/.git found"
+		return 2
 	fi
 
+	echo "${_DIR}"
+	return 0
 }
 
-re-exec
+trace
+
+#
+# List of args to pass to the exec call
+#
+EXEC_ARGS=( "BINDIR=$BINDIR" "DEBUG=$DEBUG" "TRACE=$TRACE" )
+FOO=$(echo "${EXEC_ARGS[@]}" | sed -e 's:=[^ ]* :\|:g' -e 's:=[^ ]*$::')
+while [ $# -gt 0 ] ; do
+	case "${1%=*}" in
+	${FOO})
+		eval "export $1"
+		;;
+	*)
+		;;
+	esac
+	shift
+done
+
+[ -z "$BINDIR" ] && BINDIR=$(instantiate)
+dbg_echo "BINDIR :: ${BINDIR}"
+re-exec ${EXEC_ARGS[@]}
 
 # shellcheck disable=2164 pushd ~ >/dev/null
 
-cd $HOME
-if [ -d .git ] ; then
+cd "${BINDIR%/bin}"
+dbg_echo "In dir $(pwd)"
+
+ln -sf home-env/.git
+if is_git_tree ; then
         err_echo "Home environment already setup."
-        exit 1
+        exit 0
 fi
 
-[ ! -d $_DIR ] && echo "No ${_DIR: -4} dir found in ${__DIR:0: -4}" && exit 1
-ln -sf $_DIR
+PATH="$BINDIR:$PATH"
 git_config_for_use "Bill" "zgluebill@icloud.com"
 
-git checkout .
+git_populate "${BINDIR%/bin}"
+git_fixup_origin
+cd $HOME
 mk_vimrc_color
-cd bin
-ln -sf clone klone
 
 enable_bash_aliases
-if [ -e /sys/block/sdb ] ; then
+if [ -e /sys/block/sdb ] && [ -b /dev/sdb1 ] ; then
         mount_sdb $DRIVE_B
 fi
