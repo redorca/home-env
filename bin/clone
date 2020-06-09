@@ -96,6 +96,7 @@ RepoRename["ctags"]="universal-ctags"
 RepoRename["sumatra"]="sumatrapdf"
 RepoRename["requests"]="python-requests"
 
+Repo2Host["supercollider"]="master@$GITGITHUB/supercollider/supercollider.git"
 Repo2Host["git"]="master@$GITGITHUB/git/git.git"
 Repo2Host["workers"]="master@$GITHUB_HTTPS/Pinterest/service-workers"
 Repo2Host["enlightenment"]="master@$GITHUB_HTTPS/Enlightenment/enlightenment.git"
