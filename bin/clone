@@ -26,6 +26,7 @@ declare -A Repo2Host
 declare -A RepoRename
 declare -A CONFIGS
 declare -A svn_backed
+declare -A  hg_backed
 declare -A FinalCmds
 declare -A Options
 
@@ -513,7 +514,7 @@ resolve_clone_id()
         if [ -n "$ALTNAME" ] ; then
                 echo "$ALTNAME"
         else
-                echo "$Target"
+                echo "${Target##*/}"
         fi
 }
 
@@ -568,7 +569,8 @@ clone_one()
         [ -z "$1" ] && return 1
         TrueTarget="$(resolve_clone_id $1)"
         dbg_echo "Target to clone: $TrueTarget"
-        dbg_echo ":: svn_backed[$TrueTarget] == ${svn_backed[$TrueTarget]}"
+        dbg_echo ":: svn_backed[$TrueTarget] == <${svn_backed[$TrueTarget]}>"
+        dbg_echo "::  hg_backed[$TrueTarget] == <${hg_backed[$TrueTarget]}>"
         if [ -n "${svn_backed[$TrueTarget]}" ] ; then
                 dbg_echo "svn_backed[$TrueTarget] == ${svn_backed[$TrueTarget]}"
                 CMD="${svn_backed[$TrueTarget]} ${Repo2Host[$TrueTarget]}"
@@ -667,6 +669,22 @@ make_a_dir()
         mkdir -p $Dir
 }
 
+#
+# For repo urls provided on the command
+# line config supporting structures.
+#
+setup_cli_repo()
+{
+        local Repo=
+        local Project=
+
+        [ $# -eq 0 ] && return 1
+        Repo=$1
+        Project=${Repo##*/}
+        dbg_echo "Project set to $Project Repo $Repo"
+        Repo2Host[${Project%.git}]="master@${Repo}"
+}
+
 help()
 {
         Func $@
@@ -699,6 +717,7 @@ parse_cli()
                  -c)   shift ; TARGETS=( $@ )
                         dbg_echo "Target based on $@"
                         shift ${#TARGETS[@]}
+                        setup_cli_repo "${TARGETS[0]}"
                         dbg_echo "\$# = $#, shifted ${#TARGETS[@]}, Target(s): ${TARGETS[*]}"
                 ;;
                  -d)   [ -n "$2" ] && dbg_echo "Found a \$2: $2"
