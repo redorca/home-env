@@ -512,7 +512,7 @@ function vbin()
         local -a Files=
 
         Files="$*"
-        pushd ~/.local/bin > /dev/null
+        pushd ~/${LOCAL}bin > /dev/null
         vim $Files
         popd >/dev/null
 }
@@ -562,13 +562,13 @@ export EDITOR=vim
 export GOPATH=$HOME/src/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
-
+LOCAL=
 add-path /usr/share/doc/git/contrib/git-jump
 add-path ~/.cabal/bin
 add-path ~/usr/bin
-add-path ~/.local/bin
-[ ! -d "$HOME/.local/bin" ] && add-path ~/bin
-[   -d "$HOME/.local/bin" ] && add-path ~/.local/bin
+add-path ~/${LOCAL}bin
+[ ! -d "$HOME/${LOCAL}bin" ] && add-path ~/bin
+[   -d "$HOME/${LOCAL}bin" ] && add-path ~/${LOCAL}bin
 
 alias  preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
 # alias            apt="sudo apt-get -y"
@@ -579,13 +579,13 @@ alias           dirs="dirs -v"
 alias             jo="jobs -l"
 alias           jobs="jobs -l"
 alias           home="pushd ~ >/dev/null && dirs -v"
-alias            bin="pushd ~/.local/bin >/dev/null && dirs -v"
+alias            bin="pushd ~/${LOCAL}bin >/dev/null && dirs -v"
 alias             vi="vim"
-alias         valias="vim ~/.local/.bash_aliases"
+alias         valias="vim ~/${LOCAL}.bash_aliases"
 alias         status="git status | sed -n -e '1,/^Untracked/p'"
 alias           mods="git status | grep modified:"
 alias          shlvl='echo "Shell Depth:   $SHLVL"'
-alias       resource="source ~/.local/.bashrc"
+alias       resource="source ~/${LOCAL}.bashrc"
 alias           diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
 alias            cls="clear_console"
 alias           grep="grep --exclude=.git --exclude=cscope.out"
@@ -822,7 +822,7 @@ function expand_conf_vars()
 
         Var="$1"; shift
         File="$1"; shift
-        FileTempl=$(dirname $File)/.local/.template$(basename $File)
+        FileTempl=$(dirname $File)/${LOCAL}.template$(basename $File)
         [ -f "$FileTempl" -a ! -f $File ] && cp $FileTempl $File
         SED_OPTS=(  \
                 "-i" "-e"  \
@@ -934,6 +934,7 @@ function gclone()
 export GPG_TTY=$(tty)
 
 if which apt-get >/dev/null 2>&1 ; then
+        unalias ls && alias ls='ls -F --color=auto'
         echo "Set prompt for Debian sys-arch"
         PS1='${debian_chroot:+($debian_chroot)}$(branch 15)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
 else
@@ -945,11 +946,11 @@ else
         alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
         alias egrep='egrep --color=auto'
         alias fgrep='fgrep --color=auto'
-        alias ls='ls --color=auto'
+        alias ls='ls -F --color=auto'
         echo "Set prompt for Redhat sys-arch"
         PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
 fi
-LS_COLOR_DATA_FILE=~/.local/Documents/colors.modal.ls
+LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
 [ -f $LS_COLOR_DATA_FILE ] && eval $(dircolors -b $LS_COLOR_DATA_FILE)
 
 #
