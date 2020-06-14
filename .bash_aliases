@@ -558,8 +558,9 @@ function zee()
         echo $CMD && $CMD
 }
 
+SRCDIR=Projects
 export EDITOR=vim
-export GOPATH=$HOME/src/GOlang/newt
+export GOPATH=$HOME/${SRCDIR}/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
 LOCAL=
@@ -778,32 +779,6 @@ function repo()
 }
 
 #
-# Generate a symlink from '/.../.mnt/zgle/$Dir' to ~src directory.
-#
-function goo()
-{
-    ( [ -z "$@" ] && err_echo "Need a directory" ) && return 1
-
-    DISKMNT=$HOME/.mnt
-    HOME_SRCDIR=$HOME/src
-    SRCDIR="$1"
-    APPDIR="$DISKMNT/zglue/$SRCDIR"
-
-    if [ ! -d "$SRCDIR" ] ; then
-        if [ ! -d "$APPDIR" ] ; then
-            err_echo "No app or local directory exist"
-            return 1
-        fi
-    else
-        [ ! -d "$APPDIR" ] && cp -a "$SRCDIR" "${APPDIR%/*}"
-    fi
-
-
-    [ -d "$SRCDIR" ] && rm -rf "$SRCDIR"
-    ln -sf "$DISKMNT/zglue/$SRCDIR" "$HOME_SRCDIR"
-}
-
-#
 # Call xdg-open but disconnect from the terminal.
 #
 function launch()
@@ -915,7 +890,7 @@ function acton()
         ActDir="$1" ; shift
         ProjPath="$ActDir/bin/activate"
         if [ ! -f "$ProjPath" ] ; then
-                ProjPath="$HOME/src/$ProjPath"
+                ProjPath="$HOME/${SRCDIR}/$ProjPath"
                 if [ ! -f "$ProjPath" ] ; then
                         err_echo "No activate file found" && return 2
                 fi
