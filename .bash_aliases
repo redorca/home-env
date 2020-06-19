@@ -946,6 +946,6 @@ expand_conf_vars USER ~/.dput.cf
 # Reset to home dir unless VIRTUAL_ENV is set.
 #
 TOPDIR=$HOME
-[ -n "$THIS_PROJECT" ] && [ -d ~/Projects/"$THIS_PROJECT" ] && TOPDIR="~/Projects/$THIS_PROJECT"
+[ -n "$THIS_PROJECT" ] && [ -d ~/Projects/"$THIS_PROJECT" ] && TOPDIR="$HOME/Projects/$THIS_PROJECT"
 cd $TOPDIR
 
