@@ -316,6 +316,13 @@ function pd()
 	dirs -v
 }
 
+function po()
+{
+	popd $1 >/dev/null
+	dirs -v
+}
+
+# alias             po="popd >/dev/null && dirs -v"
 #
 # Find all files of type ARG2 and remove them. E.G to get rid of all
 # .rej files resulting from patch call rm-fu .rej. ARG1 specifies what
@@ -563,19 +570,22 @@ export EDITOR=vim
 export GOPATH=$HOME/${SRCDIR}/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
-LOCAL=
+LOCAL=.local/
 add-path /usr/share/doc/git/contrib/git-jump
 add-path ~/.cabal/bin
 add-path ~/usr/bin
-add-path ~/${LOCAL}bin
-[ ! -d "$HOME/${LOCAL}bin" ] && add-path ~/bin
-[   -d "$HOME/${LOCAL}bin" ] && add-path ~/${LOCAL}bin
+if [   -d "$HOME/.local/bin" ] ; then
+    LOCAL=.local/
+    add-path ~/${LOCAL}bin
+else
+        [ ! -d "$HOME/bin" ] && add-path ~/bin
+fi
 
 alias  preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
 # alias            apt="sudo apt-get -y"
 alias             ve="virtualenv -p /usr/bin/python3"
 alias           path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
-alias             po="popd >/dev/null && dirs -v"
+# alias             po="popd >/dev/null && dirs -v"
 alias           dirs="dirs -v"
 alias             jo="jobs -l"
 alias           jobs="jobs -l"
@@ -594,19 +604,6 @@ alias           halt="sudo /sbin/shutdown -h -t now"
 alias           sudo="sudo -H"
 alias        restart="sudo systemctl restart"
 alias          deact="deactivate"
-
-#
-# Activate a virtualenv
-#
-function pybox()
-{
-        local VDir=
-
-        VDir="$1"
-        [ ! -d "$VDir" ] && do-exit 1 "Not a dir: $VDir"
-
-        source $VDir/bin/activate
-}
 
 #
 # Map a standard tool to an arm directed tool name.
@@ -880,31 +877,25 @@ function pyhelp()
 #
 # param: Name of the project.
 #
-function acton()
-{
-        [ $# -ne 1 ] && return 1
-
-        local ActDir=
-        local ProjPath=
-
-        ActDir="$1" ; shift
-        ProjPath="$ActDir/bin/activate"
-        if [ ! -f "$ProjPath" ] ; then
-                ProjPath="$HOME/${SRCDIR}/$ProjPath"
-                if [ ! -f "$ProjPath" ] ; then
-                        err_echo "No activate file found" && return 2
-                fi
-        fi
-
-        source "$ProjPath"
-        cd ${ProjPath%/bin/activate}
-}
-
-function gclone()
-{
-        GITHUB_SSH="ssh://github@github.com/"
-        git clone ${GITHUB_SSH}$1.git $1
-}
+# function acton()
+# {
+#         [ $# -ne 1 ] && return 1
+# 
+#         local ActDir=
+#         local ProjPath=
+# 
+#         ActDir="$1" ; shift
+#         ProjPath="$ActDir/bin/activate"
+#         if [ ! -f "$ProjPath" ] ; then
+#                 ProjPath="$HOME/${SRCDIR}/$ProjPath"
+#                 if [ ! -f "$ProjPath" ] ; then
+#                         err_echo "No activate file found" && return 2
+#                 fi
+#         fi
+# 
+#         source "$ProjPath"
+#         cd ${ProjPath%/bin/activate}
+# }
 
 export GPG_TTY=$(tty)
 
@@ -954,7 +945,7 @@ expand_conf_vars USER ~/.dput.cf
 #
 # Reset to home dir unless VIRTUAL_ENV is set.
 #
-[ -z "$VIRTUAL_ENV" ] && VIRTUAL_ENV="$HOME"
-cd "$VIRTUAL_ENV"
+cd $HOME
+[ -n "$THIS_PROJECT" ] && [ -d ~/Projects/"$THIS_PROJECT" ] && cd ~/Projects/"$THIS_PROJECT"
 
 
