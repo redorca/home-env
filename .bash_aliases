@@ -870,6 +870,17 @@ function pyhelp()
  
 }
 
+#
+# Apply colors.modal.ls settings to bash terminal.
+#
+set_term_colors()
+{
+        local LS_COLOR_DATA_FILE=
+
+        LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
+        [ ! -f $LS_COLOR_DATA_FILE ] && return 1
+        eval $(dircolors -b $LS_COLOR_DATA_FILE)
+}
 
 #
 # Start up a virtual environment by running
@@ -916,8 +927,8 @@ else
         echo "Set prompt for Redhat sys-arch"
         PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
 fi
-LS_COLOR_DATA_FILE=~/Documents/colors.modal.ls
-[ -f $LS_COLOR_DATA_FILE ] && eval $(dircolors -b $LS_COLOR_DATA_FILE)
+
+set_term_colors
 
 #
 # To satisfy .vimrcs need for a file to source until I know
