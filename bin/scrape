@@ -7,8 +7,15 @@
 PAGES=1
 [ $# -eq 0 ] && echo "No web page provided" >&2 && exit 1
 WEBSITE=https:"${1#http*:}" ; shift
-# WEBSITE="$1" ; shift
-echo "Website :: ${WEBSITE}"
+
+get_page_count()
+{
+        local Source=
+
+        Source=$1 ; shift
+        [ ! -f "${Source}" ] && return 1
+        sed -n -e 's/^.*\([0-9][0-9]*\) *Pages.*/\1/p' ${Source}
+}
 
 [ $# -ne 0 ] && PAGES=$1 ; shift
 while [ $PAGES -ne 0 ] ; do
