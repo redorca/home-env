@@ -7,7 +7,7 @@
 PAGES=1
 [ $# -eq 0 ] && echo "No web page provided" >&2 && exit 1
 WEBSITE=https:"${1#http*:}" ; shift
-
+echo "Website :: <$WEBSITE>"
 get_page_count()
 {
         local Source=
@@ -18,17 +18,54 @@ get_page_count()
 }
 
 [ $# -ne 0 ] && PAGES=$1 ; shift
-while [ $PAGES -ne 0 ] ; do
-        NAME="${WEBSITE}?page=$PAGES"
-        wget \
-             --recursive \
-             --page-requisites \
-             --html-extension \
-             --convert-links \
-             --domains ${WEBSITE%%/*} \
-             --no-parent \
-                ${NAME}
-        ls ${NAME#https://}.html
-        sed -i -e '/page=/s,https://,file:///home/zglue/,g' -e 's,?page=\([0-9]\)",%3Fpage=\1.html",g' ${NAME#https://}.html
-        PAGES=$(( PAGES - 1 ))
-done
+
+#
+# Keep pulling the next page until no more pages.
+#
+get_story()
+{
+        local Pages=
+        local Name=
+        local Website=
+
+        Website="$1"
+        Pages=1
+	Name="${Website}?page=$Pages"
+	while wget \
+	             --recursive \
+	             --page-requisites \
+	             --html-extension \
+	             --convert-links \
+	             --domains ${Website%%/*} \
+	             --no-parent \
+	                ${Name} ; do
+	        [ ! -f ${Name#https://}.html ] && return 1
+	        sed -i -e '/page=/s,https://,file:///home/zglue/,g' -e 's,?page=\([0-9]\)",%3Fpage=\1.html",g' ${Name#https://}.html
+	        Pages=$(( Pages + 1 ))
+	        Name="${Website}?page=$Pages"
+                echo "Page# ${Pages}, Name $Name"
+                sleep 2
+	done
+}
+
+
+grab_story()
+{
+	while [ $PAGES -ne 0 ] ; do
+	        NAME="${WEBSITE}?page=$PAGES"
+	        wget \
+	             --recursive \
+	             --page-requisites \
+	             --html-extension \
+	             --convert-links \
+	             --domains ${WEBSITE%%/*} \
+	             --no-parent \
+	                ${NAME}
+	        ls ${NAME#https://}.html
+	        sed -i -e '/page=/s,https://,file:///home/zglue/,g' -e 's,?page=\([0-9]\)",%3Fpage=\1.html",g' ${NAME#https://}.html
+	        PAGES=$(( PAGES - 1 ))
+	done
+}
+
+# get_story ${WEBSITE}
+grab_story
