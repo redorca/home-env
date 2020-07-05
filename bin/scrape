@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#
+# Save a web page and all associated components needed to function fully.
+# Recurse to pick up multi page stories.
+#
+PAGES=1
+[ $# -eq 0 ] && echo "No web page provided" >&2 && exit 1
+WEBSITE=https:"${1#http*:}" ; shift
+# WEBSITE="$1" ; shift
+echo "Website :: ${WEBSITE}"
+
+[ $# -ne 0 ] && PAGES=$1 ; shift
+while [ $PAGES -ne 0 ] ; do
+        NAME="${WEBSITE}?page=$PAGES"
+        wget \
+             --recursive \
+             --page-requisites \
+             --html-extension \
+             --convert-links \
+             --domains ${WEBSITE%%/*} \
+             --no-parent \
+                ${NAME}
+        ls ${NAME#https://}.html
+        sed -i -e '/page=/s,https://,file:///home/zglue/,g' -e 's,?page=\([0-9]\)",%3Fpage=\1.html",g' ${NAME#https://}.html
+        PAGES=$(( PAGES - 1 ))
+done
