@@ -312,13 +312,17 @@ function find-fu()
 
 function pd()
 {
+	[ "$(type -t deactivate)" == "function" ] && deactivate
 	pushd $1 >/dev/null
+	[ -f bin/activate ] && source bin/activate
 	dirs -v
 }
 
 function po()
 {
+	[ "$(type -t deactivate)" == "function" ] && deactivate
 	popd $1 >/dev/null
+	[ -f bin/activate ] && source bin/activate
 	dirs -v
 }
 
