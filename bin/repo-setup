@@ -1,45 +1,47 @@
 #!/bin/env python3
 
 '''
-	Initialize a git repo, set the config.name and config.email, and initialize .gitignore
+    Initialize a git repo, set the config.name and config.email, and initialize .gitignore
 '''
 
 import subprocess
 
 class GitRepo():
-	'''
-		Represent the actions a git repo uses for initialization, configs, status, branching, working
-		with remotes, push, fetch, pull, ... ?
-	'''
-	def __init__(self):
-		'''
-			Setup the command and config dictionaries with the basic elements common to
-			different git commands.
-		'''
-		self.name = "Git"
-		self.command = dict()
-		self.command["init"] = list('"git", "init" ')
-		self.command["config"] = list('"git", "config", "--local"' )
-		self.command["show"] = [ "git", "config", "--local", "--list" ]
-		self.config       = list("name, email")
+    '''
+        Represent the actions a git repo uses for initialization, configs, status, branching, working
+        with remotes, push, fetch, pull, ... ?
+    '''
+    def __init__(self):
+        '''
+            Setup the command and config dictionaries with the basic elements common to
+            different git commands.
+        '''
+        self.name = "Git"
+        self.command = dict()
+        self.command["init"] = "git, init"
+        self.command["config"] = list('"git", "config", "--local"' )
+        self.command["show"] = [ "git", "config", "--local", "--list" ]
+        self.config       = list("name, email")
 
 
-	def config_setup(self, user, email):
-		'''
-			Duh.
-		'''
-		subprocess.run(self.command["init"])
-#		self.config.name   = self.command["config"] + list('"config.user", user')
-#		self.config.email  = self.command["config"] + list('"config.email", email')
-#		subprocess.run(self.config.name)
-#		subprocess.run(self.config.email)
+    def config_setup(self, user, email):
+        '''
+            Duh.
+        '''
+        print("command[init] ::" self.command["init"])
+#       subprocess.run(["git", "init"])
+#       subprocess.run(self.command["init"])
+#       self.config.name   = self.command["config"] + list('"config.user", user')
+#       self.config.email  = self.command["config"] + list('"config.email", email')
+#       subprocess.run(self.config.name)
+#       subprocess.run(self.config.email)
 
 
-	def configuration(self):
-		'''
-			Duh.
-		'''
-		subprocess.run(self.command["show"])
+    def configuration(self):
+        '''
+            Duh.
+        '''
+        subprocess.run(self.command["show"])
 
 repo = GitRepo()
 repo.configuration()
