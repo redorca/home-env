@@ -4,6 +4,8 @@
     Initialize a git repo, set the config.name and config.email, and initialize .gitignore
 '''
 
+import os
+import posix
 import subprocess
 
 class GitRepo():
@@ -18,35 +20,58 @@ class GitRepo():
         '''
         self.name = "Git"
         self.command = dict()
-        self.command["init"] = "git, init"
-        self.command["config"] = list('"git", "config", "--local"' )
-        self.command["show"] = [ "git", "config", "--local", "--list" ]
-        self.config       = list("name, email")
-
+        self.command["init"] = "git init"
+        self.command["config"] = "git config --global"
+        self.command["show"] = "git config --global --list"
+        self.config = dict()
 
     def config_setup(self, user, email):
         '''
             Duh.
         '''
-        print("command[init] ::" self.command["init"])
-#       subprocess.run(["git", "init"])
-#       subprocess.run(self.command["init"])
-#       self.config.name   = self.command["config"] + list('"config.user", user')
-#       self.config.email  = self.command["config"] + list('"config.email", email')
-#       subprocess.run(self.config.name)
-#       subprocess.run(self.config.email)
-
+        self.config["name"]   = " ".join([self.command["config"], "user.name",  user])
+        self.config["email"]  = " ".join([self.command["config"], "user.email", email])
+        subprocess.run(list(self.config["name"].split(' ')), check=True)
+        subprocess.run(list(self.config["email"].split(' ')), check=True)
 
     def configuration(self):
         '''
             Duh.
         '''
-        subprocess.run(self.command["show"])
+        subprocess.run(list(self.command["show"].split(' ')), check=True)
 
-repo = GitRepo()
-repo.configuration()
+    def init(self):
+        '''
+            Duh.
+        '''
+        def statobj(entry):
+            posix.stat(entry)
+
+        def do_init():
+            subprocess.run(list(self.command["init"].split(' ')), check=True)
+
+        try:
+            statobj(".git")
+            print("Repo already exists")
+            return True
+
+        except:
+            print("do init")
+            do_init()
+
+try:
+    repo = GitRepo()
+except:
+    print("Unable to acquire a repo object")
+    exit(1)
+
+try:
+    repo.init()
+except:
+    print("Unable to iniialize a git repository")
+    exit(1)
+
 repo.config_setup("Bill Hooper", "me@billrees.io")
 repo.configuration()
-
 
 
