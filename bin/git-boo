@@ -8,6 +8,22 @@ import os
 import posix
 import subprocess
 
+class DoRun():
+    '''
+    '''
+    def __init__(self):
+        self.keywords = dict()
+        self.keywords["check"] = True
+        self.keywords["capture_output"] = True
+
+
+    def Exec(self, *args):
+        '''
+        '''
+        print("number of args? ", len(args))
+        subprocess.run(list(args), **self.keywords)
+
+
 class GitRepo():
     '''
         Represent the actions a git repo uses for initialization, configs, status, branching, working
@@ -24,6 +40,9 @@ class GitRepo():
         self.command["config"] = "git config --global"
         self.command["show"] = "git config --global --list"
         self.config = dict()
+        self.keywords = dict()
+        self.keywords["check"] = True
+        self.keywords["capture_output"] = True
 
     def config_setup(self, user, email):
         '''
@@ -40,6 +59,29 @@ class GitRepo():
         '''
         subprocess.run(list(self.command["show"].split(' ')), check=True)
 
+    def __Exec__(self, *args):
+        '''
+        '''
+        print("number of args? ", len(args))
+        print("args? ", args)
+        print("keywords? ", self.keywords)
+        try:
+            foo = subprocess.run(*args, **self.keywords)
+            print("foo :: ", foo.stdout)
+        except CalledProcessError as e:
+            print("foo :: ", foo.stderr)
+
+#           subprocess.run(list(self.command["init"].split(' ')), check=True)
+    def do_init(self):
+        try:
+            self.__Exec__((list(self.command["init"].split(' '))))
+            print("done init ::")
+
+        except CalledProcessError as e:
+            print("cmd: ", e.cmd)
+            print("rval ", e.returncode)
+            return(3)
+
     def init(self):
         '''
             Duh.
@@ -47,17 +89,17 @@ class GitRepo():
         def statobj(entry):
             posix.stat(entry)
 
-        def do_init():
-            subprocess.run(list(self.command["init"].split(' ')), check=True)
-
         try:
             statobj(".git")
             print("Repo already exists")
             return True
 
         except:
-            print("do init")
-            do_init()
+            try:
+                print("do init ::")
+                self.do_init()
+            except:
+                raise(Error)
 
 try:
     repo = GitRepo()
