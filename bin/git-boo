@@ -1,42 +1,74 @@
 #!/bin/env python3
 
 '''
-    Initialize a git repo, set the config.name and config.email, and initialize .gitignore
+    Initialize a git repo, set the config.name and
+    config.email, and initialize .gitignore
 '''
 
-import os
 import posix
 import subprocess
+import sys
+
+
+class BooRepoError(Exception):
+    '''
+        Duh.
+    '''
+    def __init__(self):
+        super(BooRepoError, self).__init__()
+        self.returncode = 5
+        self.message = "Boo Boo on the Repo"
+
+
+class BooInitError(Exception):
+    '''
+        Duh.
+    '''
+    def __init__(self):
+        super(BooInitError, self).__init__()
+        self.returncode = 4
+        self.message = "Boo Boo on the git repo initialization."
+
 
 class DoRun():
     '''
+        Duh.
     '''
     def __init__(self):
+        super(DoRun, self).__init__()
         self.keywords = dict()
         self.keywords["check"] = True
         self.keywords["capture_output"] = True
 
-
-    def Exec(self, *args):
+    def do_exec(self, *args):
         '''
+            Duh.
         '''
         print("number of args? ", len(args))
         subprocess.run(list(args), **self.keywords)
 
+    def stuff(self):
+        '''
+            Duh.
+        '''
+        print("Dummy public func", list(self.keywords))
+
 
 class GitRepo():
     '''
-        Represent the actions a git repo uses for initialization, configs, status, branching, working
-        with remotes, push, fetch, pull, ... ?
+        Represent the actions a git repo uses for initialization,
+        configs, status, branching, working with remotes, push,
+        fetch, pull, ... ?
     '''
     def __init__(self):
         '''
-            Setup the command and config dictionaries with the basic elements common to
-            different git commands.
+            Setup the command and config dictionaries with the
+            basic elements common to different git commands.
         '''
+        super(GitRepo, self).__init__()
         self.name = "Git"
         self.command = dict()
-        self.command["init"] = "git init"
+        self.command["init"] = "git iinit"
         self.command["config"] = "git config --global"
         self.command["show"] = "git config --global --list"
         self.config = dict()
@@ -48,8 +80,10 @@ class GitRepo():
         '''
             Duh.
         '''
-        self.config["name"]   = " ".join([self.command["config"], "user.name",  user])
-        self.config["email"]  = " ".join([self.command["config"], "user.email", email])
+        self.config["name"] = " ".join([self.command["config"],
+                                        "user.name", user])
+        self.config["email"] = " ".join([self.command["config"],
+                                         "user.email", email])
         subprocess.run(list(self.config["name"].split(' ')), check=True)
         subprocess.run(list(self.config["email"].split(' ')), check=True)
 
@@ -59,28 +93,26 @@ class GitRepo():
         '''
         subprocess.run(list(self.command["show"].split(' ')), check=True)
 
-    def __Exec__(self, *args):
+    def __exec__(self, *args):
         '''
+            Duh.
         '''
-        print("number of args? ", len(args))
-        print("args? ", args)
-        print("keywords? ", self.keywords)
-        try:
-            foo = subprocess.run(*args, **self.keywords)
-            print("foo :: ", foo.stdout)
-        except CalledProcessError as e:
-            print("foo :: ", foo.stderr)
+        phoo = subprocess.run(*args, **self.keywords)
+        print("foo :: ", phoo.stdout)
 
-#           subprocess.run(list(self.command["init"].split(' ')), check=True)
     def do_init(self):
+        '''
+            Duh.
+        '''
         try:
-            self.__Exec__((list(self.command["init"].split(' '))))
+            self.__exec__(self.command["init"].split(' '))
             print("done init ::")
-
-        except CalledProcessError as e:
-            print("cmd: ", e.cmd)
-            print("rval ", e.returncode)
-            return(3)
+            return True
+        except subprocess.CalledProcessError as e_e:
+            print("cmd: ", e_e.cmd)
+            print("rval ", e_e.returncode)
+            print("stderr ", e_e.stderr)
+            return False
 
     def init(self):
         '''
@@ -88,32 +120,26 @@ class GitRepo():
         '''
         def statobj(entry):
             posix.stat(entry)
-
         try:
             statobj(".git")
             print("Repo already exists")
             return True
+        except ValueError:
+            print("Value Error '.git'")
+            return False
+        if not self.do_init():
+            print("Failed to init git.")
+            return False
 
-        except:
-            try:
-                print("do init ::")
-                self.do_init()
-            except:
-                raise(Error)
 
-try:
-    repo = GitRepo()
-except:
+REPO = GitRepo()
+if not REPO:
     print("Unable to acquire a repo object")
-    exit(1)
+    sys.exit(1)
 
-try:
-    repo.init()
-except:
+if not REPO.init():
     print("Unable to iniialize a git repository")
-    exit(1)
+    sys.exit(1)
 
-repo.config_setup("Bill Hooper", "me@billrees.io")
-repo.configuration()
-
-
+REPO.config_setup("Bill Hooper", "me@billrees.io")
+REPO.configuration()
