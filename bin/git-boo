@@ -1,4 +1,5 @@
 #!/bin/env python3
+#pylint: disable=invalid-name
 
 '''
     Initialize a git repo, set the config.name and
@@ -45,6 +46,7 @@ class DoRun():
             Duh.
         '''
         print("number of args? ", len(args))
+        #pylint: disable=subprocess-run-check
         subprocess.run(list(args), **self.keywords)
 
     def stuff(self):
@@ -84,6 +86,7 @@ class GitRepo():
                                         "user.name", user])
         self.config["email"] = " ".join([self.command["config"],
                                          "user.email", email])
+        #pylint: disable=subprocess-run-check
         subprocess.run(list(self.config["name"].split(' ')), check=True)
         subprocess.run(list(self.config["email"].split(' ')), check=True)
 
@@ -97,6 +100,7 @@ class GitRepo():
         '''
             Duh.
         '''
+        #pylint: disable=subprocess-run-check
         phoo = subprocess.run(*args, **self.keywords)
         print("foo :: ", phoo.stdout)
 
