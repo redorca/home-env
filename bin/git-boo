@@ -70,7 +70,7 @@ class GitRepo():
         super(GitRepo, self).__init__()
         self.name = "Git"
         self.command = dict()
-        self.command["init"] = "git iinit"
+        self.command["init"] = "git init"
         self.command["config"] = "git config --global"
         self.command["show"] = "git config --global --list"
         self.config = dict()
@@ -82,6 +82,9 @@ class GitRepo():
         '''
             Duh.
         '''
+        if self.creds() is [user, email]:
+            return True
+
         self.config["name"] = " ".join([self.command["config"],
                                         "user.name", user])
         self.config["email"] = " ".join([self.command["config"],
@@ -103,6 +106,12 @@ class GitRepo():
         #pylint: disable=subprocess-run-check
         phoo = subprocess.run(*args, **self.keywords)
         print("foo :: ", phoo.stdout)
+
+    def creds(self):
+        '''
+            Return the user.email and user.name config values if there are any.
+        '''
+        Proc = subprocess.run(list(self.command["show"].split(' ')), check=True)
 
     def do_init(self):
         '''
@@ -128,12 +137,12 @@ class GitRepo():
             statobj(".git")
             print("Repo already exists")
             return True
-        except ValueError:
-            print("Value Error '.git'")
-            return False
-        if not self.do_init():
-            print("Failed to init git.")
-            return False
+        except FileNotFoundError:
+            print("FileNotFoundError '.git'")
+            if self.do_init():
+                return True
+        print("Failed to init git.")
+        return False
 
 
 REPO = GitRepo()
@@ -142,8 +151,15 @@ if not REPO:
     sys.exit(1)
 
 if not REPO.init():
-    print("Unable to iniialize a git repository")
+    print("Unable to initialize a git repository")
     sys.exit(1)
 
 REPO.config_setup("Bill Hooper", "me@billrees.io")
 REPO.configuration()
+
+# >>> Phu = subprocess.run(['ls', '-a' ], check=True, capture_output=True)
+# >>> Gah = dict([ x.split('=') for x in list(str(Phu.stdout).split('\\n')) if x !=  "'"])
+# >>> if Gah.get("user.name") == user
+# >>> if Gah.get("user.email") == email
+#
+
