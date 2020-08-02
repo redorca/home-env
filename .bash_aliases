@@ -585,11 +585,11 @@ else
         [ ! -d "$HOME/bin" ] && add-path ~/bin
 fi
 
-alias  preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
+# alias             po="popd >/dev/null && dirs -v"
 # alias            apt="sudo apt-get -y"
+alias  preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
 alias             ve="virtualenv -p /usr/bin/python3"
 alias           path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
-# alias             po="popd >/dev/null && dirs -v"
 alias           dirs="dirs -v"
 alias             jo="jobs -l"
 alias           jobs="jobs -l"
@@ -608,6 +608,7 @@ alias           halt="sudo /sbin/shutdown -h -t now"
 alias           sudo="sudo -H"
 alias        restart="sudo systemctl restart"
 alias          deact="deactivate"
+alias         flake8="flake8 --max-line-length=131"
 
 #
 # Map a standard tool to an arm directed tool name.

@@ -1,5 +1,5 @@
 #!/bin/env python3
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 
 '''
     Initialize a git repo, set the config.name and
@@ -46,7 +46,7 @@ class DoRun():
             Duh.
         '''
         print("number of args? ", len(args))
-        #pylint: disable=subprocess-run-check
+        # pylint: disable=subprocess-run-check
         subprocess.run(list(args), **self.keywords)
 
     def stuff(self):
@@ -82,7 +82,8 @@ class GitRepo():
         '''
             Duh.
         '''
-        if entries := self.config_entries('global'):
+        entries = self.config_entries('--global')
+        if entries is not None:
             if entries["user.name"] == user and entries["user.email"] == email:
                 return
 
@@ -90,7 +91,7 @@ class GitRepo():
                                         "user.name", user])
         self.config["email"] = " ".join([self.command["config"],
                                          "user.email", email])
-        #pylint: disable=subprocess-run-check
+        # pylint: disable=subprocess-run-check
         subprocess.run(list(self.config["name"].split(' ')), check=True)
         subprocess.run(list(self.config["email"].split(' ')), check=True)
 
@@ -104,23 +105,25 @@ class GitRepo():
         '''
             Duh.
         '''
-        #pylint: disable=subprocess-run-check
+        # pylint: disable=subprocess-run-check
         phoo = subprocess.run(*args, **self.keywords)
         print("foo :: ", phoo.stdout)
 
     def config_entries(self, domain):
         '''
             Return the config entries as a dictonary. The specific config
-            domain is passed in with the domain variable: 'system', 'global', 'local'
+            domain passed in must be one of:
+            '--global', '--local', '--system'
         '''
         DOMAINS = list('--global', '--local', '--system')
-        if not domain in DOMAINS:
+        if domain not in DOMAINS:
             return False
         try:
             Proc = subprocess.run(list(self.command["show" + " " + domain]),
                                   check=True, capture_output=True)
             return dict([x.split('=') for x in list(str(Proc.stdout).split('\\n')) if x != "'"])
         except subprocess.CalledProcessError as e_e:
+            print(e_e.stderr)
             return e_e.returncode
 
     def do_init(self):
@@ -167,7 +170,8 @@ REPO.config_setup("Bill Hooper", "me@billrees.io")
 REPO.configuration()
 
 # >>> Phu = subprocess.run(['ls', '-a' ], check=True, capture_output=True)
-# >>> Gah = dict([ x.split('=') for x in list(str(Phu.stdout).split('\\n')) if x !=  "'"])
+# >>> Gah = dict([ x.split('=') for x in list(str(Phu.stdout).split('\\n'))
+#                                       if x != "'"])
 # >>> if Gah.get("user.name") == user
 # >>> if Gah.get("user.email") == email
 #
