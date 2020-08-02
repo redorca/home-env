@@ -72,7 +72,7 @@ class GitRepo():
         self.command = dict()
         self.command["init"] = "git init"
         self.command["config"] = "git config --global"
-        self.command["show"] = "git config --global --list"
+        self.command["show"] = "git config --list"
         self.config = dict()
         self.keywords = dict()
         self.keywords["check"] = True
@@ -82,8 +82,9 @@ class GitRepo():
         '''
             Duh.
         '''
-        if self.creds() is [user, email]:
-            return True
+        if entries := self.config_entries('global'):
+            if entries["user.name"] == user and entries["user.email"] == email:
+                return
 
         self.config["name"] = " ".join([self.command["config"],
                                         "user.name", user])
@@ -107,11 +108,20 @@ class GitRepo():
         phoo = subprocess.run(*args, **self.keywords)
         print("foo :: ", phoo.stdout)
 
-    def creds(self):
+    def config_entries(self, domain):
         '''
-            Return the user.email and user.name config values if there are any.
+            Return the config entries as a dictonary. The specific config
+            domain is passed in with the domain variable: 'system', 'global', 'local'
         '''
-        Proc = subprocess.run(list(self.command["show"].split(' ')), check=True)
+        DOMAINS = list('--global', '--local', '--system')
+        if not domain in DOMAINS:
+            return False
+        try:
+            Proc = subprocess.run(list(self.command["show" + " " + domain]),
+                                  check=True, capture_output=True)
+            return dict([x.split('=') for x in list(str(Proc.stdout).split('\\n')) if x != "'"])
+        except subprocess.CalledProcessError as e_e:
+            return e_e.returncode
 
     def do_init(self):
         '''
@@ -119,7 +129,6 @@ class GitRepo():
         '''
         try:
             self.__exec__(self.command["init"].split(' '))
-            print("done init ::")
             return True
         except subprocess.CalledProcessError as e_e:
             print("cmd: ", e_e.cmd)
@@ -162,4 +171,3 @@ REPO.configuration()
 # >>> if Gah.get("user.name") == user
 # >>> if Gah.get("user.email") == email
 #
-
