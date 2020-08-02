@@ -70,9 +70,9 @@ class GitRepo():
         super(GitRepo, self).__init__()
         self.name = "Git"
         self.command = dict()
-        self.command["init"] = "git init"
-        self.command["config"] = "git config --global"
-        self.command["show"] = "git config --list"
+        self.command["init"] = ["git", "init"]
+        self.command["config"] = ["git", "config", "--global"]
+        self.command["show"] = ["git", "config", "--list"]
         self.config = dict()
         self.keywords = dict()
         self.keywords["check"] = True
@@ -115,8 +115,9 @@ class GitRepo():
             domain passed in must be one of:
             '--global', '--local', '--system'
         '''
-        DOMAINS = list('--global', '--local', '--system')
+        DOMAINS = ['--global', '--local', '--system']
         if domain not in DOMAINS:
+            print("Not a known domain", domain, DOMAINS)
             return False
         try:
             Proc = subprocess.run(list(self.command["show" + " " + domain]),
