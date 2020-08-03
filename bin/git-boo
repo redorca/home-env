@@ -74,11 +74,10 @@ class GitRepo():
         '''
             Duh.
         '''
-        print(f"::  do_run ({args})", args)
+        # print(f"::  do_run ({args})", args)
         # pylint: disable=subprocess-run-check
         try:
             phoo = subprocess.run(args, capture_output=True, check=True)
-            print("foo :: ", phoo.stdout)
             return phoo
         except subprocess.CalledProcessError as e_e:
             print("foo :: ", e_e.stderr, e_e.returncode)
