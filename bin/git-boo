@@ -41,14 +41,6 @@ class DoRun():
         self.keywords["check"] = True
         self.keywords["capture_output"] = True
 
-    def do_exec(self, *args):
-        '''
-            Duh.
-        '''
-        print("number of args? ", len(args))
-        # pylint: disable=subprocess-run-check
-        subprocess.run(list(args), **self.keywords)
-
     def stuff(self):
         '''
             Duh.
@@ -71,41 +63,49 @@ class GitRepo():
         self.name = "Git"
         self.command = dict()
         self.command["init"] = ["git", "init"]
-        self.command["config"] = ["git", "config", "--global"]
-        self.command["show"] = ["git", "config", "--list"]
+        self.command["config"] = ["git", "config"]
+        self.command["show"] = [*self.command["config"], "--list", "--global"]
         self.config = dict()
         self.keywords = dict()
         self.keywords["check"] = True
         self.keywords["capture_output"] = True
 
+    def do_run(self, *args):
+        '''
+            Duh.
+        '''
+        print(f"::  do_run ({args})", args)
+        # pylint: disable=subprocess-run-check
+        try:
+            phoo = subprocess.run(args, capture_output=True, check=True)
+            print("foo :: ", phoo.stdout)
+            return phoo
+        except subprocess.CalledProcessError as e_e:
+            print("foo :: ", e_e.stderr, e_e.returncode)
+            return None
+
     def config_setup(self, user, email):
         '''
             Duh.
         '''
-        entries = self.config_entries('--global')
+        domain = "--global"
+        entries = self.config_entries(domain)
         if entries is not None:
-            if entries["user.name"] == user and entries["user.email"] == email:
+            if entries.get("user.name") == user and entries.get("user.email") == email:
                 return
 
-        self.config["name"] = " ".join([self.command["config"], "user.name", user])
-        self.config["email"] = " ".join([self.command["config"], "user.email", email])
-        # pylint: disable=subprocess-run-check
-        subprocess.run(list(self.config["name"].split(' ')), check=True)
-        subprocess.run(list(self.config["email"].split(' ')), check=True)
+        self.command["user.name"] = user
+        self.command["user.email"] = email
+        self.config["name"] = [*self.command["config"], domain, "user.name", user]
+        self.config["email"] = [*self.command["config"], domain, "user.email", email]
+        self.do_run(*self.config["name"])
+        self.do_run(*self.config["email"])
 
     def configuration(self):
         '''
             Duh.
         '''
-        subprocess.run(list(self.command["show"].split(' ')), check=True)
-
-    def __exec__(self, *args):
-        '''
-            Duh.
-        '''
-        # pylint: disable=subprocess-run-check
-        phoo = subprocess.run(*args, **self.keywords)
-        print("foo :: ", phoo.stdout)
+        self.do_run(*self.command["show"])
 
     def config_entries(self, domain):
         '''
@@ -118,10 +118,9 @@ class GitRepo():
             print("Not a known domain", domain, DOMAINS)
             return False
         try:
-            Proc = subprocess.run(self.command["show"].append(domain), check=True, capture_output=True)
+            Proc = self.do_run(*self.command["show"])
             return dict([x.split('=') for x in list(str(Proc.stdout).split('\\n')) if x != "'"])
         except subprocess.CalledProcessError as e_e:
-            print(e_e.stderr)
             return e_e.returncode
 
     def do_init(self):
@@ -129,7 +128,7 @@ class GitRepo():
             Duh.
         '''
         try:
-            self.__exec__(*self.command["init"])
+            self.do_run(*self.command["init"])
             return True
         except subprocess.CalledProcessError as e_e:
             print("cmd: ", e_e.cmd)
@@ -166,10 +165,3 @@ if not REPO.init():
 
 REPO.config_setup("Bill Hooper", "me@billrees.io")
 REPO.configuration()
-
-# >>> Phu = subprocess.run(['ls', '-a' ], check=True, capture_output=True)
-# >>> Gah = dict([ x.split('=') for x in list(str(Phu.stdout).split('\\n'))
-#                                       if x != "'"])
-# >>> if Gah.get("user.name") == user
-# >>> if Gah.get("user.email") == email
-#
