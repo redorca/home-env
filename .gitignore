@@ -143,4 +143,7 @@ GRTAGS
 GPATH
 __pycache__/
 /home-env/
-
+patch.*
+freeze.*
+*.patch
+*.freeze
