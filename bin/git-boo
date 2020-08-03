@@ -87,10 +87,8 @@ class GitRepo():
             if entries["user.name"] == user and entries["user.email"] == email:
                 return
 
-        self.config["name"] = " ".join([self.command["config"],
-                                        "user.name", user])
-        self.config["email"] = " ".join([self.command["config"],
-                                         "user.email", email])
+        self.config["name"] = " ".join([self.command["config"], "user.name", user])
+        self.config["email"] = " ".join([self.command["config"], "user.email", email])
         # pylint: disable=subprocess-run-check
         subprocess.run(list(self.config["name"].split(' ')), check=True)
         subprocess.run(list(self.config["email"].split(' ')), check=True)
@@ -120,8 +118,7 @@ class GitRepo():
             print("Not a known domain", domain, DOMAINS)
             return False
         try:
-            Proc = subprocess.run(list(self.command["show" + " " + domain]),
-                                  check=True, capture_output=True)
+            Proc = subprocess.run(self.command["show"].append(domain), check=True, capture_output=True)
             return dict([x.split('=') for x in list(str(Proc.stdout).split('\\n')) if x != "'"])
         except subprocess.CalledProcessError as e_e:
             print(e_e.stderr)
@@ -132,7 +129,7 @@ class GitRepo():
             Duh.
         '''
         try:
-            self.__exec__(self.command["init"].split(' '))
+            self.__exec__(*self.command["init"])
             return True
         except subprocess.CalledProcessError as e_e:
             print("cmd: ", e_e.cmd)

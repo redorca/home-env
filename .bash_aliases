@@ -600,7 +600,7 @@ alias         valias="vim ~/${LOCAL}.bash_aliases"
 alias         status="git status | sed -n -e '1,/^Untracked/p'"
 alias           mods="git status | grep modified:"
 alias          shlvl='echo "Shell Depth:   $SHLVL"'
-alias       resource="source ~/${LOCAL}.bashrc"
+alias       resource="source ~/.bashrc"
 alias           diff="diff --exclude=\".git\" --exclude=\"out.*\" --exclude=\"*.patch\" --exclude=\"patch.*\""
 alias            cls="clear_console"
 alias           grep="grep --exclude=.git --exclude=cscope.out"
@@ -609,6 +609,7 @@ alias           sudo="sudo -H"
 alias        restart="sudo systemctl restart"
 alias          deact="deactivate"
 alias         flake8="flake8 --max-line-length=131"
+alias         pylint="pylint --max-line-length=131"
 
 #
 # Map a standard tool to an arm directed tool name.
