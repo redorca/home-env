@@ -45,7 +45,7 @@ class DoRun():
         '''
             Duh.
         '''
-        print("Dummy public func", list(self.keywords))
+        print("    Dummy public func", list(self.keywords))
 
 
 class GitRepo():
@@ -80,7 +80,7 @@ class GitRepo():
             phoo = subprocess.run(args, capture_output=True, check=True)
             return phoo
         except subprocess.CalledProcessError as e_e:
-            print("foo :: ", e_e.stderr, e_e.returncode)
+            print("    foo :: ", e_e.stderr, e_e.returncode)
             return None
 
     def config_setup(self, user, email):
@@ -114,12 +114,15 @@ class GitRepo():
         '''
         DOMAINS = ['--global', '--local', '--system']
         if domain not in DOMAINS:
-            print("Not a known domain", domain, DOMAINS)
-            return False
+            print("    Not a known domain", domain, DOMAINS)
+            return None
         try:
             Proc = self.do_run(*self.command["show"])
+            if len(Proc.stdout) == 0:
+                return None
             return dict([x.split('=') for x in list(str(Proc.stdout).split('\\n')) if x != "'"])
         except subprocess.CalledProcessError as e_e:
+            print("    Error text: ", Proc.stderr)
             return e_e.returncode
 
     def do_init(self):
@@ -130,9 +133,9 @@ class GitRepo():
             self.do_run(*self.command["init"])
             return True
         except subprocess.CalledProcessError as e_e:
-            print("cmd: ", e_e.cmd)
-            print("rval ", e_e.returncode)
-            print("stderr ", e_e.stderr)
+            print("    cmd: ", e_e.cmd)
+            print("    rval ", e_e.returncode)
+            print("    stderr ", e_e.stderr)
             return False
 
     def init(self):
@@ -143,23 +146,24 @@ class GitRepo():
             posix.stat(entry)
         try:
             statobj(".git")
-            print("Repo already exists")
+            print("    Repo already exists")
             return True
         except FileNotFoundError:
-            print("FileNotFoundError '.git'")
+            print("    FileNotFoundError '.git'")
+            print("    Creating .git repository ...")
             if self.do_init():
                 return True
-        print("Failed to init git.")
+        print("    Failed to init git.")
         return False
 
 
 REPO = GitRepo()
 if not REPO:
-    print("Unable to acquire a repo object")
+    print("    Unable to acquire a repo object")
     sys.exit(1)
 
 if not REPO.init():
-    print("Unable to initialize a git repository")
+    print("    Unable to initialize a git repository")
     sys.exit(1)
 
 REPO.config_setup("Bill Hooper", "me@billrees.io")
