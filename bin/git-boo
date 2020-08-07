@@ -80,7 +80,9 @@ class GitRepo():
             phoo = subprocess.run(args, capture_output=True, check=True)
             return phoo
         except subprocess.CalledProcessError as e_e:
-            print("    foo :: ", e_e.stderr, e_e.returncode)
+            print("    Command :: ", e_e.cmd)
+            print("    Message :: ", e_e.stderr)
+            print("     Return :: ", e_e.returncode)
             return None
 
     def config_setup(self, user, email):
