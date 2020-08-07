@@ -117,7 +117,8 @@ class GitRepo():
             print("    Not a known domain", domain, DOMAINS)
             return None
         try:
-            Proc = self.do_run(*self.command["show"])
+            if (Proc := self.do_run(*self.command["show"])) is None:
+                return None
             if len(Proc.stdout) == 0:
                 return None
             return dict([x.split('=') for x in list(str(Proc.stdout).split('\\n')) if x != "'"])

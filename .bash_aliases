@@ -958,6 +958,11 @@ expand_conf_vars REPO_ARCHIVEDIR ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.dput.cf 
 
+PROPER_MODE="2560x1600"
+if [ "$(display-geo)" != "$PROPER_MODE" ] ; then
+	echo "Reset mode from $(display-geo) to $PROPER_MODE"
+	xrandr --output Virtual1 --mode "$PROPER_MODE"
+fi
 
 #
 # Reset to home dir unless VIRTUAL_ENV is set.
