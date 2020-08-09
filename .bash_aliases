@@ -101,6 +101,12 @@ function get_home_ip()
 
 function display-geo()
 {
+        if ! which xdpyinfo >/dev/null 2>&1 ; then
+                dbg_echo "xdpyinfo not found."
+                return 1
+        fi
+        [ $# -eq 1 ] &&  TargetRes="$1"
+
         xdpyinfo | grep dimension | awk '{print $2}'
 }
 
@@ -120,35 +126,15 @@ function set-display-resolution()
         local CurrentRes=
         local IP_ADDR=
 
-        if ! which xdpyinfo >/dev/null 2>&1 ; then
-                dbg_echo "xdpyinfo not found."
-                return 1
-        fi
-        [ $# -eq 1 ] &&  TargetRes="$1"
+	TargetRes="2560x1600"
+        if ! CurrentRes=$(display-geo) ; then
+		return 1
+	fi
 
-        IP_ADDR=$(get_home_ip)
-        dbg_echo "Found IP_ADDR: $IP_ADDR"
+        [ "$TargetRes" == "$CurrentRes" ] && return 0
+        err_echo "Reset display to $TargetRes." && xrandr -s $TargetRes
 
-        [ -z "$TargetRes" ] && TargetRes=${ip_to_display["$IP_ADDR"]}
-        [ -z "$TargetRes" ] && dbg_echo "No resolution matches that ip addr, use default." \
-                           && TargetRes="${ip_to_display[default]}"
-
-        CurrentRes=$(display-geo)
-
-#         Geometry=( $(echo $CurrentRes | awk -F'x' '{print $1 "  " $2}') )
-#         if [ "${Geometry[0]}" -gt 1440 ] && [ "${Geometry[1]}" -gt 900 ] ; then
-#                 Geometry[0]=1680
-#                 Geometry[1]=1050
-#         elif [ "${Geometry[0]}" -gt 1600 ] && [ "${Geometry[1]}" -gt 900 ] ; then
-#                 Geometry[0]=2048
-#                 Geometry[1]=1152
-#         fi
-
-        [ -z "$TargetRes" ] && echo "No target resolution set, keep the current one." && return 1
-        dbg_echo " TargetRes : ($TargetRes), CurrentRes : ($CurrentRes)"
-
-        [ "$TargetRes" = "$CurrentRes" ] && return 0
-        echo "Reset display to $TargetRes." && xrandr -s $TargetRes
+	return 0
 }
 
 function set_assoc_array()
@@ -310,19 +296,36 @@ function find-fu()
         set +x
 }
 
+#
+# if a python virtual environment is present
+# for this dir then activate it.
+#
+function enter-any-venv()
+{
+	[ -f bin/activate ] && source bin/activate && return 0
+
+	return 1
+}
+
+function exit-any-venv()
+{
+	[ "$(type -t deactivate)" == "function" ] && deactivate && return 0
+	return 1
+}
+
 function pd()
 {
-	[ "$(type -t deactivate)" == "function" ] && deactivate
+	exit-any-venv
 	pushd $1 >/dev/null
-	[ -f bin/activate ] && source bin/activate
+	enter-any-venv
 	dirs -v
 }
 
 function po()
 {
-	[ "$(type -t deactivate)" == "function" ] && deactivate
+	exit-any-venv
 	popd $1 >/dev/null
-	[ -f bin/activate ] && source bin/activate
+	enter-any-venv
 	dirs -v
 }
 
@@ -889,52 +892,45 @@ set_term_colors()
 }
 
 #
-# Start up a virtual environment by running
-# activate from bin/ in the directory passed.
+# Make sure screen size is big enough. Assumes we are running as a VM.
 #
-# param: Name of the project.
+function initialize-main-window()
+{
+	set_term_colors
+	#
+	# Force display resolution to 2560x1600. Assumes 4k display
+	#
+	return $(set-display-resolution)
+}
+
 #
-# function acton()
-# {
-#         [ $# -ne 1 ] && return 1
-# 
-#         local ActDir=
-#         local ProjPath=
-# 
-#         ActDir="$1" ; shift
-#         ProjPath="$ActDir/bin/activate"
-#         if [ ! -f "$ProjPath" ] ; then
-#                 ProjPath="$HOME/${SRCDIR}/$ProjPath"
-#                 if [ ! -f "$ProjPath" ] ; then
-#                         err_echo "No activate file found" && return 2
-#                 fi
-#         fi
-# 
-#         source "$ProjPath"
-#         cd ${ProjPath%/bin/activate}
-# }
+# Customize to distribution type (debian, fedora/redhat/centos, opensuse, ... )
+#
+function set-os-personality()
+{
+	if which apt-get >/dev/null 2>&1 ; then
+	        unalias ls && alias ls='ls -F --color=auto'
+	        echo "Set prompt for Debian sys-arch"
+	        PS1='${debian_chroot:+($debian_chroot)}$(branch 15)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+	else
+	        # disable gnome-ssh-askpass
+	        unset SSH_ASKPASS
+	        #
+	        #  Aliases found in my Ubuntu bash environment by default.
+	        #
+	        alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+	        alias egrep='egrep --color=auto'
+	        alias fgrep='fgrep --color=auto'
+	        alias ls='ls -F --color=auto'
+	        echo "Set prompt for Redhat sys-arch"
+	        PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+	fi
+}
 
 export GPG_TTY=$(tty)
 
-if which apt-get >/dev/null 2>&1 ; then
-        unalias ls && alias ls='ls -F --color=auto'
-        echo "Set prompt for Debian sys-arch"
-        PS1='${debian_chroot:+($debian_chroot)}$(branch 15)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
-else
-        # disable gnome-ssh-askpass
-        unset SSH_ASKPASS
-        #
-        #  Aliases found in my Ubuntu bash environment by default.
-        #
-        alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
-        alias egrep='egrep --color=auto'
-        alias fgrep='fgrep --color=auto'
-        alias ls='ls -F --color=auto'
-        echo "Set prompt for Redhat sys-arch"
-        PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
-fi
-
-set_term_colors
+initialize-main-window
+set-os-personality
 
 #
 # To satisfy .vimrcs need for a file to source until I know
@@ -943,10 +939,6 @@ set_term_colors
 prune_path A::b
 PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 
-#
-# Set display resolution according to ip addr /24
-#
-# chk_debug || set-display-resolution
 touch ~/.vimrc_color
 
 if [ -z "$REPO_ARCHIVEDIR" ] ; then
@@ -967,7 +959,9 @@ fi
 #
 # Reset to home dir unless VIRTUAL_ENV is set.
 #
-TOPDIR=$HOME
-[ -n "$THIS_PROJECT" ] && [ -d ~/Projects/"$THIS_PROJECT" ] && TOPDIR="$HOME/Projects/$THIS_PROJECT"
-cd $TOPDIR
+STARTING_DIR="$(pwd)"
+
+[ "$(basename $STARTING_DIR)" == "Desktop" ] && STARTING_DIR="$HOME"
+cd $STARTING_DIR && enter-any-venv
+
 
