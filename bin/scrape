@@ -65,7 +65,6 @@ reset_hrefs()
 	for dafile in $(ls ${Stem}\?*) ; do
 		Page=_page-${dafile#*page=}
 		[ "$dafile" == "${Stem}.html" ] && continue
-#		FileName="tmp/${Stem}${Page}"
 		FileName="${Stem}${Page}"
 		dbg_echo "cp $dafile ${FileName}"
 		cp $dafile ${FileName}
@@ -96,13 +95,11 @@ get_story()
 		get_page "${Story}?page=$Count"
 		Count=$(( Count + 1 ))
 	done
+
+	reset_hrefs $Story
 }
 
 
 fecho "Download the story ${WEBSITE##*/s/}"
-# get_story "$WEBSITE"
-if ! reset_hrefs "$WEBSITE" ; then
-	fecho "Unable to reset $WEBSITE" >&2
-fi
-exit
+get_story "$WEBSITE"
 
