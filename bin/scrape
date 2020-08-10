@@ -1,15 +1,27 @@
 #!/bin/bash
 
+fecho()
+{
+	echo -e "  $*" >&2
+}
 #
 # Save a web page and all associated components needed to function fully.
 # Recurse to pick up multi page stories.
 #
-PAGES=1
-[ $# -eq 0 ] && echo "No web page provided" >&2 && exit 1
-SHORTFORM=${1%%http*/}
-WEBSITE="https://www.literotica.com/s/${SHORTFORM}"
+
+[ $# -eq 0 ] && fecho "No web page provided" >&2 && exit 1
+SHORTFORM=${1#*//}
+WEBSITE="https://${SHORTFORM}"
 # WEBSITE=https:"${1#http*:}" ; shift
-echo "Website :: <$WEBSITE>"
+fecho "Website :: <$WEBSITE>"
+
+# DEBUG=1
+dbg_echo()
+{
+	[ "$DEBUG" = "1" ] || return
+	echo -e "$1" >&2
+}
+
 get_page_count()
 {
         local Source=
@@ -39,7 +51,25 @@ get_page()
 	return 0
 }
 
-[ $# -ne 0 ] && PAGES=$1 ; shift
+reset_hrefs()
+{
+	local Url=
+	local Page=
+	local Stem=
+	local FileName=
+
+	Url="$1"
+	Stem="${Url#https://}" ; shift
+	set -x
+	for dafile in $(ls ${Stem}*) ; do
+		Page=_page-${dafile#*page=}
+		[ "$dafile" == "${Stem}.html" ] && continue
+		FileName="tmp/${Stem}${Page}"
+		dbg_echo "cp $dafile ${FileName}"
+		cp $dafile ${FileName}
+		eval sed -i -e "'"s,href=.https://"\("${dafile%?page=*}"\)".page="\("[0-9]"*""\)",href='"'\\1_page-\\2\\.html,g"'" $FileName
+	done
+}
 
 #
 # Keep pulling the next page until no more pages.
@@ -59,7 +89,7 @@ get_story()
 	if Doh=$(grep Pages: $File) 2>/dev/null ; then
 		Pages=$(echo $Doh | sed -e 's,^.*>\([0-9][0-9]*\)[	 ]*Pages:.*,\1,')
 	fi
-	[ $Pages -gt -0 ] && echo "This story is $Pages pages long"
+	[ $Pages -gt -0 ] && fecho "This story is $Pages pages long"
 	while [ $Count -le $Pages ] ; do
 		get_page "${Story}?page=$Count"
 		Count=$(( Count + 1 ))
@@ -67,6 +97,10 @@ get_story()
 }
 
 
-echo "Download the story ${WEBSITE##*/s/}"
-get_story "$WEBSITE"
+fecho "Download the story ${WEBSITE##*/s/}"
+# get_story "$WEBSITE"
+if ! reset_hrefs "$WEBSITE" ; then
+	fecho "Unable to reset $WEBSITE" >&2
+fi
+exit
 
