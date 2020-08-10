@@ -61,13 +61,15 @@ reset_hrefs()
 	Url="$1"
 	Stem="${Url#https://}" ; shift
 	set -x
-	for dafile in $(ls ${Stem}*) ; do
+	HERE=$(pwd)
+	for dafile in $(ls ${Stem}\?*) ; do
 		Page=_page-${dafile#*page=}
 		[ "$dafile" == "${Stem}.html" ] && continue
-		FileName="tmp/${Stem}${Page}"
+#		FileName="tmp/${Stem}${Page}"
+		FileName="${Stem}${Page}"
 		dbg_echo "cp $dafile ${FileName}"
 		cp $dafile ${FileName}
-		eval sed -i -e "'"s,href=.https://"\("${dafile%?page=*}"\)".page="\("[0-9]"*""\)",href='"'\\1_page-\\2\\.html,g"'" $FileName
+		eval sed -i -e "'"s,href=.https://"\("${dafile%?page=*}"\)".page="\("[0-9]"*""\)",href='"'file://$HERE/\\1_page-\\2\\.html,g"'" $FileName
 	done
 }
 
