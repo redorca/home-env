@@ -820,6 +820,7 @@ function apt()
 
         [ $# -eq 0 ] && return 1
 
+	sudo apt-get update >/dev/null >/dev/null
         Cmd="sudo /usr/bin/apt-get -y"
 
         case "$1" in
