@@ -10,8 +10,9 @@ fecho()
 #
 
 [ $# -eq 0 ] && fecho "No web page provided" >&2 && exit 1
-SHORTFORM=${1#*//}
-WEBSITE="https://${SHORTFORM}"
+# SHORTFORM=${1#*//}
+SHORTFORM=${1##*/}
+WEBSITE="https://www.literotica.com/s/${SHORTFORM}"
 # WEBSITE=https:"${1#http*:}" ; shift
 fecho "Website :: <$WEBSITE>"
 
