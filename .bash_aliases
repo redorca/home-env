@@ -817,10 +817,17 @@ function apt()
 {
         local Action=
         local Cmd=
+	local TIMEOUT=
+
+	TIMEOUT=14400
 
         [ $# -eq 0 ] && return 1
 
-	sudo apt-get update >/dev/null >/dev/null
+	if [ $SECONDS -gt $TIMEOUT ] ; then
+		echo "But first, run update." >&2
+		sudo apt-get update >/dev/null >/dev/null
+		SECONDS=0
+	fi
         Cmd="sudo /usr/bin/apt-get -y"
 
         case "$1" in
