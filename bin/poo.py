@@ -1,39 +1,49 @@
 #!/bin/env python3
 
-import subprocess
-import posix
-import sys
+'''
+    Run through all of the python modules and upgrade them all.
+'''
 
-pip_keywords = {"check":True, "capture_output":True, "timeout":85}
+import subprocess
+# import posix
+# import sys
+
+
 def freeze():
     '''
         Grab output from "pip3 freeze" into a dictionary
     '''
-    PipFreeze = [ "pip3", "freeze" ]
-    rout = subprocess.run(PipFreeze, check=True, capture_output=True)
-    return [ x for x in dict( x.split('==') for x in [str(x) for x in rout.stdout.split()]).keys()]
+    pip_freeze = ["pip3", "freeze"]
+    rout = subprocess.run(pip_freeze, check=True, capture_output=True)
+    new_list = list(rout.stdout.split())
+    return [x.split(b'=')[0] for x in new_list]
+
 
 def do_run(cmd):
     '''
         Provide a hard coded execution call so the caller has to knonw nothing.
     '''
-    return subprocess.run(cmd, **pip_keywords)
+    run_keywords = {"check": True, "capture_output": True, "timeout": 85}
+    return subprocess.run(cmd, **run_keywords)
 
-def upgrade(modules):
+
+def upgrade(*modules):
     '''
         run through the list of modules and upgrade each.
     '''
-    PipUpgradeCmd = [ "sudo", "python3", "-m", "pip", "install", "--upgrade" ]
+    pip_upgrade_cmd = ["sudo", "python3", "-m", "pip", "install", "--upgrade"]
     for xxxx in modules:
-        print(xxxx.strip())
+        print("xxxx: ", xxxx)
         try:
-            do_run([*PipUpgradeCmd, xxxx.strip()])
+            result = do_run([*pip_upgrade_cmd, xxxx])
+            print(result.stdout.split())
         except subprocess.CalledProcessError as e_e:
-            print(e_e.stderr)
-            return e_e.returncode
-        except:
-            print(e_e.stderr)
+            print("CalledProcessError: code ",
+                  e_e.returncode, str(e_e.stderr, encoding="utf-8"))
+            return False
+    return True
 
-ice = freeze()
-upgrade(ice)
 
+ICE = freeze()
+print("Frozen @ ", ICE)
+upgrade(*ICE)

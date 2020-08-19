@@ -9,12 +9,22 @@ fecho()
 # Recurse to pick up multi page stories.
 #
 
-[ $# -eq 0 ] && fecho "No web page provided" >&2 && exit 1
-# SHORTFORM=${1#*//}
-SHORTFORM=${1##*/}
-WEBSITE="https://www.literotica.com/s/${SHORTFORM}"
-# WEBSITE=https:"${1#http*:}" ; shift
-fecho "Website :: <$WEBSITE>"
+
+
+#
+# Given a url or story name convert it to a canonical form
+#
+convert()
+{
+	local ShortForm=
+	local WebSite=
+
+	[ $# -eq 0 ] && fecho "No web page provided" >&2 && exit 1
+	ShortForm=${1##*/}
+	WebSite="https://www.literotica.com/s/${ShortForm}"
+	# WEBSITE=https:"${1#http*:}" ; shift
+	echo "$WebSite"
+}
 
 # DEBUG=1
 dbg_echo()
@@ -117,6 +127,10 @@ get_story()
 }
 
 
-fecho "Download the story ${WEBSITE##*/s/}"
-get_story "$WEBSITE"
+while [ $# -ne 0 ] ; do
+	WEBSITE=$(convert $1) ; shift
+	fecho "Download the story ${WEBSITE##*/s/}"
+	get_story "$WEBSITE"
+	sleep 1
+done
 
