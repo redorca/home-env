@@ -577,12 +577,14 @@ export EDITOR=vim
 export GOPATH=$HOME/${SRCDIR}/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
-LOCAL=./.local/
+LOCAL=/.local/
+add-path ~${LOCAL}bin
 add-path /usr/share/doc/git/contrib/git-jump
 add-path ~/.cabal/bin
 add-path ~/usr/bin
-if [   -d "$HOME/.local/bin" ] ; then
-    LOCAL=./.local/
+if [   ! -d "$HOME/.local/bin" ] ; then
+    del_path ~${LOCAL}bin
+    LOCAL=/
     add-path ~${LOCAL}bin
 else
         [ ! -d "$HOME/bin" ] && add-path ~/bin
