@@ -526,7 +526,7 @@ function vbin()
         local -a Files=
 
         Files="$*"
-        pushd ~/${LOCAL}bin > /dev/null
+        pushd ~${LOCAL}bin > /dev/null
         vim $Files
         popd >/dev/null
 }
@@ -577,13 +577,13 @@ export EDITOR=vim
 export GOPATH=$HOME/${SRCDIR}/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
-LOCAL=.local/
+LOCAL=./.local/
 add-path /usr/share/doc/git/contrib/git-jump
 add-path ~/.cabal/bin
 add-path ~/usr/bin
 if [   -d "$HOME/.local/bin" ] ; then
-    LOCAL=.local/
-    add-path ~/${LOCAL}bin
+    LOCAL=./.local/
+    add-path ~${LOCAL}bin
 else
         [ ! -d "$HOME/bin" ] && add-path ~/bin
 fi
@@ -596,10 +596,10 @@ alias           path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
 alias           dirs="dirs -v"
 alias             jo="jobs -l"
 alias           jobs="jobs -l"
-alias           home="pushd ~ >/dev/null && dirs -v"
-alias            bin="pushd ~/${LOCAL}bin >/dev/null && dirs -v"
+alias           home="pushd ~${LOCAL} >/dev/null && dirs -v"
+alias            bin="pushd ~${LOCAL}bin >/dev/null && dirs -v"
 alias             vi="vim"
-alias         valias="vim ~/${LOCAL}.bash_aliases"
+alias         valias="vim ~${LOCAL}.bash_aliases"
 alias         status="git status | sed -n -e '1,/^Untracked/p'"
 alias           mods="git status | grep modified:"
 alias          shlvl='echo "Shell Depth:   $SHLVL"'
@@ -803,7 +803,7 @@ function expand_conf_vars()
 
         Var="$1"; shift
         File="$1"; shift
-        FileTempl=$(dirname $File)/${LOCAL}.template$(basename $File)
+        FileTempl=$(dirname $File)${LOCAL}.template$(basename $File)
         [ -f "$FileTempl" -a ! -f $File ] && cp $FileTempl $File
         SED_OPTS=(  \
                 "-i" "-e"  \
