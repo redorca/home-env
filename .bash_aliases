@@ -615,7 +615,8 @@ alias        restart="sudo systemctl restart"
 alias          deact="deactivate"
 alias         flake8="flake8 --max-line-length=131"
 alias         pylint="pylint --max-line-length=131"
-
+alias  	       pypip="python3 -m pip"
+alias		 pip=pypip
 #
 # Map a standard tool to an arm directed tool name.
 #
