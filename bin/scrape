@@ -1,13 +1,38 @@
 #!/bin/bash
 
+fecho()
+{
+	echo -e "  $*" >&2
+}
 #
 # Save a web page and all associated components needed to function fully.
 # Recurse to pick up multi page stories.
 #
-PAGES=1
-[ $# -eq 0 ] && echo "No web page provided" >&2 && exit 1
-WEBSITE=https:"${1#http*:}" ; shift
-echo "Website :: <$WEBSITE>"
+
+
+
+#
+# Given a url or story name convert it to a canonical form
+#
+convert()
+{
+	local ShortForm=
+	local WebSite=
+
+	[ $# -eq 0 ] && fecho "No web page provided" >&2 && exit 1
+	ShortForm=${1##*/}
+	WebSite="https://www.literotica.com/s/${ShortForm}"
+	# WEBSITE=https:"${1#http*:}" ; shift
+	echo "$WebSite"
+}
+
+# DEBUG=1
+dbg_echo()
+{
+	[ "$DEBUG" = "1" ] || return
+	echo -e "$1" >&2
+}
+
 get_page_count()
 {
         local Source=
@@ -17,7 +42,62 @@ get_page_count()
         sed -n -e 's/^.*\([0-9][0-9]*\) *Pages.*/\1/p' ${Source}
 }
 
-[ $# -ne 0 ] && PAGES=$1 ; shift
+get_page()
+{
+	local Website=
+	local StoryPage=
+
+	StoryPage="$1"
+	Website=${StoryPage%%s/*}
+	wget --recursive \
+	     --page-requisites \
+	     --html-extension \
+	     --convert-links \
+	     --domains ${Website} \
+	     --no-parent \
+	     ${StoryPage} >/dev/null 2>&1
+	[ -f "${StoryPage#https://}.html" ] || return 1
+
+	echo "${StoryPage#https://}.html retrieved"
+	return 0
+}
+
+reset_index_page()
+{
+	local Url=
+	local Stem=
+	local HERE=
+	local FileName=
+
+	Url="$1"
+	Stem="${Url#https://}" ; shift
+	HERE=$(pwd)
+	FileName="${Stem}.html"
+	eval sed -i -e "'"s,href=.https://"\("${Stem}"\)".page="\("[0-9]"*""\)",href='"'file://$HERE/\\1_page-\\2\\.html,g"'" $FileName
+}
+
+reset_hrefs()
+{
+	local Url=
+	local HERE=
+	local Page=
+	local Stem=
+	local FileName=
+
+	Url="$1"
+	Stem="${Url#https://}" ; shift
+	HERE=$(pwd)
+	reset_index_page "$Url"
+
+	for dafile in $(ls ${Stem}\?*) ; do
+		Page=_page-${dafile#*page=}
+		[ "$dafile" == "${Stem}.html" ] && continue
+		FileName="${Stem}${Page}"
+		dbg_echo "mv $dafile ${FileName}"
+		mv $dafile ${FileName}
+		eval sed -i -e "'"s,href=.https://"\("${dafile%?page=*}"\)".page="\("[0-9]"*""\)",href='"'file://$HERE/\\1_page-\\2\\.html,g"'" $FileName
+	done
+}
 
 #
 # Keep pulling the next page until no more pages.
@@ -25,47 +105,32 @@ get_page_count()
 get_story()
 {
         local Pages=
-        local Name=
-        local Website=
+	local Count=
+        local Story=
+        local File=
 
-        Website="$1"
-        Pages=1
-	Name="${Website}?page=$Pages"
-	while wget \
-	             --recursive \
-	             --page-requisites \
-	             --html-extension \
-	             --convert-links \
-	             --domains ${Website%%/*} \
-	             --no-parent \
-	                ${Name} ; do
-	        [ ! -f ${Name#https://}.html ] && return 1
-	        sed -i -e '/page=/s,https://,file:///home/zglue/,g' -e 's,?page=\([0-9]\)",%3Fpage=\1.html",g' ${Name#https://}.html
-	        Pages=$(( Pages + 1 ))
-	        Name="${Website}?page=$Pages"
-                echo "Page# ${Pages}, Name $Name"
-                sleep 2
+        Story="$1"
+	Count=2
+	Pages=0
+	File="${Story#https://}.html"
+	get_page $Story 2>/dev/null
+	if Doh=$(grep Pages: $File) 2>/dev/null ; then
+		Pages=$(echo $Doh | sed -e 's,^.*>\([0-9][0-9]*\)[	 ]*Pages:.*,\1,')
+	fi
+	[ $Pages -gt -0 ] && fecho "This story is $Pages pages long"
+	while [ $Count -le $Pages ] ; do
+		get_page "${Story}?page=$Count"
+		Count=$(( Count + 1 ))
 	done
+
+	reset_hrefs $Story
 }
 
 
-grab_story()
-{
-	while [ $PAGES -ne 0 ] ; do
-	        NAME="${WEBSITE}?page=$PAGES"
-	        wget \
-	             --recursive \
-	             --page-requisites \
-	             --html-extension \
-	             --convert-links \
-	             --domains ${WEBSITE%%/*} \
-	             --no-parent \
-	                ${NAME}
-	        ls ${NAME#https://}.html
-	        sed -i -e '/page=/s,https://,file:///home/zglue/,g' -e 's,?page=\([0-9]\)",%3Fpage=\1.html",g' ${NAME#https://}.html
-	        PAGES=$(( PAGES - 1 ))
-	done
-}
+while [ $# -ne 0 ] ; do
+	WEBSITE=$(convert $1) ; shift
+	fecho "Download the story ${WEBSITE##*/s/}"
+	get_story "$WEBSITE"
+	sleep 1
+done
 
-# get_story ${WEBSITE}
-grab_story
