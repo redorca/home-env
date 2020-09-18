@@ -105,7 +105,7 @@ function display-geo()
                 dbg_echo "xdpyinfo not found."
                 return 1
         fi
-        [ $# -eq 1 ] &&  TargetRes="$1"
+#       [ $# -eq 1 ] &&  TargetRes="$1"
 
         xdpyinfo | grep dimension | awk '{print $2}'
 }
@@ -118,23 +118,20 @@ function what()
         esac
 }
 
-function set-display-resolution()
+function set-display-mode()
 {
-        funame $@
-        local IPaddr=
-        local TargetRes=
-        local CurrentRes=
-        local IP_ADDR=
+	local Output=
+	local Mode=
 
-	TargetRes="2560x1600"
-        if ! CurrentRes=$(display-geo) ; then
-		return 1
+	[ $# -ne 2 ] && err_echo "only two args needed." && return 1
+	Output="$1" ; shift
+	Mode="$1" ; shift
+
+	if xrandr --output $Output --mode $Mode ; then
+		return 0
 	fi
 
-        [ "$TargetRes" == "$CurrentRes" ] && return 0
-        err_echo "Reset display to $TargetRes." && xrandr -s $TargetRes
-
-	return 0
+	return 1
 }
 
 function set_assoc_array()
@@ -909,11 +906,20 @@ set_term_colors()
 #
 function initialize-main-window()
 {
+	local TargetRes=
+	local CurrentRes=
+
+ 	TargetRes="2560x1600"
 	set_term_colors
 	#
 	# Force display resolution to 2560x1600. Assumes 4k display
 	#
-	return $(set-display-resolution)
+        if ! CurrentRes=$(display-geo) ; then
+		err_echo "Could not figure out display resolution." && return 1
+	fi
+
+        [ "$TargetRes" == "$CurrentRes" ] && return 0
+	return $(set-display-mode Virtual1 $TargetRes)
 }
 
 #
@@ -966,7 +972,7 @@ expand_conf_vars USER ~/.dput.cf
 PROPER_MODE="2560x1600"
 if [ "$(display-geo)" != "$PROPER_MODE" ] ; then
 	echo "Reset mode from $(display-geo) to $PROPER_MODE"
-	xrandr --output Virtual1 --mode "$PROPER_MODE"
+	set-display-mode Virtual1 $PROPER_MODE
 fi
 
 #
