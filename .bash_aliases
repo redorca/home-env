@@ -833,7 +833,7 @@ function apt()
         Cmd="sudo /usr/bin/apt-get -y"
 
         case "$1" in
-        search)
+        search|show)
                 Cmd=/usr/bin/apt
         ;;
         esac
