@@ -123,7 +123,9 @@ function set-display-mode()
 	local Output=
 	local Mode=
 
-	[ $# -ne 2 ] && err_echo "only two args needed." && return 1
+	which xrandr >/dev/null 2>&1 || return 1
+
+	[ $# -ne 2 ] && err_echo "Two args [screen & resolution ] needed." && return 1
 	Output="$1" ; shift
 	Mode="$1" ; shift
 
@@ -969,11 +971,10 @@ expand_conf_vars REPO_ARCHIVEDIR ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.dput.cf 
 
-PROPER_MODE="2560x1600"
-if [ "$(display-geo)" != "$PROPER_MODE" ] ; then
-	echo "Reset mode from $(display-geo) to $PROPER_MODE"
-	set-display-mode Virtual1 $PROPER_MODE
-fi
+# PROPER_MODE="2560x1600"
+# if [ "$(display-geo)" != "$PROPER_MODE" ] ; then
+# 	set-display-mode Virtual1 $PROPER_MODE
+# fi
 
 #
 # Reset to home dir unless VIRTUAL_ENV is set.
