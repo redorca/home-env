@@ -99,13 +99,24 @@ function get_home_ip()
         done
 }
 
+#
+# Set use xrandr to determine if we're running on a desktop or server.
+#
+function system-is-desktop()
+{
+	/usr/bin/which xrandr >/dev/null 2>&1 || return 1
+}
+
+#
+# find the current display resolution if we're running
+# on a desktop.
+#
 function display-geo()
 {
         if ! which xdpyinfo >/dev/null 2>&1 ; then
                 dbg_echo "xdpyinfo not found."
                 return 1
         fi
-#       [ $# -eq 1 ] &&  TargetRes="$1"
 
         xdpyinfo | grep dimension | awk '{print $2}'
 }
@@ -119,14 +130,6 @@ function what()
 }
 
 #
-# Set use xrandr to determine if we're running on a desktop or server.
-#
-function system-is-desktop()
-{
-	which xrandr >/dev/null 2>&1
-}
-
-#
 #
 #
 function set-display-mode()
@@ -134,7 +137,7 @@ function set-display-mode()
 	local Output=
 	local Mode=
 
-	[ system-is-desktop ] || return 1
+	[ $(system-is-desktop) ] || return 1
 
 	[ $# -ne 2 ] && err_echo "only two args needed." && return 1
 	Output="$1" ; shift
@@ -915,12 +918,15 @@ set_term_colors()
 }
 
 #
-# Make sure screen size is big enough. Assumes we are running as a VM.
+# Make sure screen size is big enough. Assumes we
+# are running as a VM and as a desktop.
 #
 function initialize-main-window()
 {
 	local TargetRes=
 	local CurrentRes=
+
+	[ ! $(system-is-desktop) ] && return 1
 
  	TargetRes="2560x1600"
 	set_term_colors
@@ -983,13 +989,6 @@ sudo chown -R $USER:$USER $REPO_ARCHIVEDIR
 expand_conf_vars REPO_ARCHIVEDIR ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.dput.cf 
-
-
-PROPER_MODE="2560x1600"
-if [ "$(display-geo)" != "$PROPER_MODE" ] ; then
-	echo "Reset mode from $(display-geo) to $PROPER_MODE"
-	set-display-mode Virtual1 $PROPER_MODE
-fi
 
 #
 # Reset to home dir unless VIRTUAL_ENV is set.
