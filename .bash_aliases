@@ -118,10 +118,23 @@ function what()
         esac
 }
 
+#
+# Set use xrandr to determine if we're running on a desktop or server.
+#
+function system-is-desktop()
+{
+	which xrandr >/dev/null 2>&1
+}
+
+#
+#
+#
 function set-display-mode()
 {
 	local Output=
 	local Mode=
+
+	[ system-is-desktop ] || return 1
 
 	[ $# -ne 2 ] && err_echo "only two args needed." && return 1
 	Output="$1" ; shift
@@ -946,6 +959,8 @@ function set-os-personality()
 	fi
 }
 
+FOCUS=
+
 export GPG_TTY=$(tty)
 
 initialize-main-window
@@ -968,6 +983,7 @@ sudo chown -R $USER:$USER $REPO_ARCHIVEDIR
 expand_conf_vars REPO_ARCHIVEDIR ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.dput.cf 
+
 
 PROPER_MODE="2560x1600"
 if [ "$(display-geo)" != "$PROPER_MODE" ] ; then
