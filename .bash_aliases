@@ -104,7 +104,8 @@ function get_home_ip()
 #
 function system-is-desktop()
 {
-	/usr/bin/which xrandr >/dev/null 2>&1 || return 1
+	/usr/bin/which xrandr >/dev/null 2>&1 && return 0
+	return 5
 }
 
 #
@@ -137,7 +138,9 @@ function set-display-mode()
 	local Output=
 	local Mode=
 
-	[ $(system-is-desktop) ] || return 1
+	if ! system-is-desktop ; then
+		return 2
+	fi
 
 	[ $# -ne 2 ] && err_echo "only two args needed." && return 1
 	Output="$1" ; shift
@@ -147,7 +150,7 @@ function set-display-mode()
 		return 0
 	fi
 
-	return 1
+	return 3
 }
 
 function set_assoc_array()
@@ -926,7 +929,9 @@ function initialize-main-window()
 	local TargetRes=
 	local CurrentRes=
 
-	[ ! $(system-is-desktop) ] && return 1
+	if ! system-is-desktop ; then
+		return 2
+	fi
 
  	TargetRes="2560x1600"
 	set_term_colors
