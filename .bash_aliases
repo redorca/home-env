@@ -138,14 +138,19 @@ function set-display-mode()
 	local Output=
 	local Mode=
 
+# <<<<<<< Updated upstream
 	if ! system-is-desktop ; then
 		return 2
 	fi
+# =======
+# 	[ ! $(system-is-desktop) ] && return 1
+# >>>>>>> Stashed changes
 
 	[ $# -ne 2 ] && err_echo "only two args needed." && return 1
 	Output="$1" ; shift
 	Mode="$1" ; shift
 
+	err_echo "Setting Display Mode: $Output, $Mode"
 	if xrandr --output $Output --mode $Mode ; then
 		return 0
 	fi

@@ -1,0 +1,10 @@
+username tQOV2NKukJcQ8MYD
+password f5uV6AmuplTtUPXw  
+
+
+ddclient.conf:
+ssl=yes
+protocol=googledomains
+login=tQOV2NKukJcQ8MYD
+password=f5uV6AmuplTtUPXw
+furious.dev  
