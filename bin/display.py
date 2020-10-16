@@ -53,9 +53,9 @@ def run_tasks(**da_tasks):
             try:
                 subprocess.run(da_tasks[key], check=True)
             except subprocess.CalledProcessError as cpe:
-                syslog("Failed running task " + key + cpe.stderr)
+                syslog.syslog("Failed running task " + key + cpe.stderr)
         else:
-            syslog.syslog("Can't run " + key)
+            syslog.syslog("Can't find " + key)
     return
 
 syslog.openlog()
