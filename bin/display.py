@@ -40,18 +40,17 @@ def is_there(thing):
     return True
 
 
-def run_tasks(da_tasks):
+def run_tasks(**da_tasks):
     ''';
         da_tasks a dictionary of file,command tuples.
     '''
-
-    for items in da_tasks:
-        if is_there(items):
-            subprocess.run(da_tasks[items], check=True)
+    for key in da_tasks.keys():
+        if is_there(key):
+            subprocess.run(da_tasks[key], check=True)
+            print("Start ", key)
         else:
             return False
-        return True
+    return True
 
-
-run_tasks(TASKS)
-run_tasks(MORE_TASKS)
+run_tasks(**TASKS)
+run_tasks(**MORE_TASKS)
