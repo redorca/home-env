@@ -21,7 +21,7 @@ TASKS[GNOME_TERMINAL] = ['gnome-terminal', '--window-with-profile', "big an ligh
 
 MORE_TASKS = dict()
 MORE_TASKS[TILIX] = ['tilix', '--profile', "Light 0", "--geometry", "+500+800"]
-MORE_TASKS[GNOME_TERMINAL] = ['gnome-terminal', '--window-with-profile', "big an light", "--geometry", "+500+700"]
+MORE_TASKS[GNOME_TERMINAL] = ['gnome-terminal', '--window-with-profile', "big an light", "--geometry", "+600+800"]
 
 
 def is_there(thing):
