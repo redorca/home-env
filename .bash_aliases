@@ -934,6 +934,7 @@ function initialize-main-window()
 	local TargetRes=
 	local CurrentRes=
 
+	return 1
 	if ! system-is-desktop ; then
 		return 2
 	fi
