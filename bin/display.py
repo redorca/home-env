@@ -16,12 +16,12 @@ GNOME_TERMINAL = "/usr/bin/gnome-terminal"
 
 TASKS = dict()
 TASKS[XRANDR] = ['xrandr', '--output', 'Virtual1', '--mode', '2560x1600']
-TASKS[TILIX] = ['tilix', '--profile', "Light 0"]
-TASKS[GNOME_TERMINAL] = ['gnome-terminal', '--window-with-profile', "big an light"]
+TASKS[TILIX] = ['tilix', '--profile', "Light 0", "--geometry", "+500+000"]
+TASKS[GNOME_TERMINAL] = ['gnome-terminal', '--window-with-profile', "big an light", "--geometry", "+600+000"]
 
 MORE_TASKS = dict()
-MORE_TASKS[TILIX] = ['tilix', '--profile', "Light 0"]
-MORE_TASKS[GNOME_TERMINAL] = ['gnome-terminal', '--window-with-profile', "big an light"]
+MORE_TASKS[TILIX] = ['tilix', '--profile', "Light 0", "--geometry", "+500+800"]
+MORE_TASKS[GNOME_TERMINAL] = ['gnome-terminal', '--window-with-profile', "big an light", "--geometry", "+500+700"]
 
 
 def is_there(thing):
