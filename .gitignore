@@ -147,3 +147,5 @@ patch.*
 freeze.*
 *.patch
 *.freeze
+lib/
+ig.*
