@@ -639,6 +639,7 @@ alias         pylint="pylint --max-line-length=131"
 alias  	       pypip="python3 -m pip"
 alias		 pip=pypip
 alias          which="type -a"
+alias        dumplog="journalctl -b -x > log.journal 2>&1"
 
 #
 # Map a standard tool to an arm directed tool name.

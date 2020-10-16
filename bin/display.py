@@ -51,7 +51,8 @@ def run_tasks(**da_tasks):
         if is_there(key):
             syslog.syslog("Run key " + key)
             try:
-                subprocess.run(da_tasks[key], check=True)
+                pid = subprocess.Popen(da_tasks[key]).pid
+                syslog.syslog(key.split("/")[-1] + "[" + str(pid) + "] launched.")
             except subprocess.CalledProcessError as cpe:
                 syslog.syslog("Failed running task " + key + cpe.stderr)
         else:
@@ -61,4 +62,5 @@ def run_tasks(**da_tasks):
 syslog.openlog()
 run_tasks(**TASKS)
 run_tasks(**MORE_TASKS)
+syslog.syslog("... Finished.")
 syslog.closelog()
