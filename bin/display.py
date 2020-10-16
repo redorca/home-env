@@ -7,6 +7,7 @@
 
 import os
 import subprocess
+import syslog
 
 XRANDR = "/usr/bin/xrandr"
 HOW_MANY_TERMS = 2
@@ -42,15 +43,19 @@ def is_there(thing):
 
 def run_tasks(**da_tasks):
     ''';
-        da_tasks a dictionary of file,command tuples.
+        da_tasks a dictionary of file,command tuples where command
+        is a list of the command tokens suitable for subprocess.run().
     '''
+    syslog.syslog("\nKeys ... " + " ".join(da_tasks.keys()))
     for key in da_tasks.keys():
         if is_there(key):
+            syslog.syslog("Run key " + key)
             subprocess.run(da_tasks[key], check=True)
-            print("Start ", key)
         else:
-            return False
-    return True
+            syslog.syslog("Can't run " + key)
+    return
 
+syslog.openlog()
 run_tasks(**TASKS)
 run_tasks(**MORE_TASKS)
+syslog.closelog()
