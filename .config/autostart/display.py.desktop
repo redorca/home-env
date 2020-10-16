@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Exec=/home/zglue/.local/bin/display.py
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name[en_US]=xpand screen
+Name=xpand screen
+Comment[en_US]=can it work?
+Comment=can it work?
