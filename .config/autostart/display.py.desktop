@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Exec=/home/rick/.local/bin/display.py
+Exec=display.py
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
-Name[en_US]=xpand screen
-Name=xpand screen
-Comment[en_US]=can it work?
-Comment=can it work?
+Name[en_US]=xpand
+Name=xpand
+Comment[en_US]=start 2 terminal windows
+Comment=start 2 terminal windows
