@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Exec=/home/zglue/.local/bin/display.py
+Exec=/home/rick/.local/bin/display.py
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
