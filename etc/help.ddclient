@@ -1,0 +1,641 @@
+usage: ddclient [options]
+options are:
+  -daemon delay         : run as a daemon, specify delay as an interval. (default: 0).
+  -foreground           : do not fork (default: noforeground).
+  -proxy host           : use 'host' as the HTTP proxy.
+  -server host          : update DNS information on 'host' (default: members.dyndns.org).
+  -protocol type        : update protocol used (default: dyndns2).
+  -file path            : load configuration information from 'path' (default: /etc/ddclient.conf).
+  -cache path           : record address used in 'path' (default: /var/cache/ddclient/ddclient.cache).
+  -pid path             : record process id in 'path'.
+
+  -use which            : how should the IP address be obtained. (default: ip).
+  -usev6 which          : how should the IPv6 address be obtained..
+    -use=2wire                  : obtain IP from 2Wire 1701HG Gateway at the -fw {address}.
+    -use=3com-3c886a            : obtain IP from 3com 3c886a 56k Lan Modem at the -fw {address}.
+    -use=3com-oc-remote812      : obtain IP from 3com OfficeConnect Remote 812 at the -fw {address}.
+    -use=alcatel-510            : obtain IP from Alcatel Speed Touch 510 at the -fw {address}.
+    -use=alcatel-stp            : obtain IP from Alcatel Speed Touch Pro at the -fw {address}.
+    -use=allnet-1298            : obtain IP from Allnet 1298 at the -fw {address}.
+    -use=cayman-3220h           : obtain IP from Cayman 3220-H DSL at the -fw {address}.
+    -use=cisco                  : obtain IP from Cisco FW at the -fw {address}.
+    -use=cisco-asa              : obtain IP from Cisco ASA at the -fw {address}.
+    -use=cmd                    : obtain IP from the -cmd {external-command}.
+    -use=dlink-524              : obtain IP from D-Link DI-524 at the -fw {address}.
+    -use=dlink-604              : obtain IP from D-Link DI-604 at the -fw {address}.
+    -use=dlink-614              : obtain IP from D-Link DI-614+ at the -fw {address}.
+    -use=e-tech                 : obtain IP from E-tech Router at the -fw {address}.
+    -use=elsa-lancom-dsl10      : obtain IP from ELSA LanCom DSL/10 DSL FW at the -fw {address}.
+    -use=elsa-lancom-dsl10-ch01 : obtain IP from ELSA LanCom DSL/10 DSL FW (isdn ch01) at the -fw {address}.
+    -use=elsa-lancom-dsl10-ch02 : obtain IP from ELSA LanCom DSL/10 DSL FW (isdn ch01) at the -fw {address}.
+    -use=fw                     : obtain IP from the firewall specified by -fw {type|address}.
+    -use=if                     : obtain IP from the -if {interface}.
+    -use=ip                     : obtain IP from -ip {address}.
+    -use=linksys                : obtain IP from Linksys FW at the -fw {address}.
+    -use=linksys-rv042-wan1     : obtain IP from Linksys RV042 Dual Homed Router WAN Port 2 at the -fw {address}.
+    -use=linksys-rv042-wan2     : obtain IP from Linksys RV042 Dual Homed Router WAN Port 2 at the -fw {address}.
+    -use=linksys-ver2           : obtain IP from Linksys FW version 2 at the -fw {address}.
+    -use=linksys-ver3           : obtain IP from Linksys FW version 3 at the -fw {address}.
+    -use=linksys-wcg200         : obtain IP from Linksys WCG200 FW at the -fw {address}.
+    -use=linksys-wrt854g        : obtain IP from Linksys WRT854G FW at the -fw {address}.
+    -use=maxgate-ugate3x00      : obtain IP from MaxGate UGATE-3x00 FW at the -fw {address}.
+    -use=netcomm-nb3            : obtain IP from NetComm NB3 at the -fw {address}.
+    -use=netgear-dg834g         : obtain IP from netgear-dg834g at the -fw {address}.
+    -use=netgear-rp614          : obtain IP from Netgear RP614 FW at the -fw {address}.
+    -use=netgear-rt3xx          : obtain IP from Netgear FW at the -fw {address}.
+    -use=netgear-wgt624         : obtain IP from Netgear WGT624 at the -fw {address}.
+    -use=netgear-wpn824         : obtain IP from Netgear WPN824 FW at the -fw {address}.
+    -use=netopia-r910           : obtain IP from Netopia R910 FW at the -fw {address}.
+    -use=olitec-SX200           : obtain IP from olitec-SX200 at the -fw {address}.
+    -use=rtp300                 : obtain IP from Linksys RTP300 at the -fw {address}.
+    -use=sitecom-dc202          : obtain IP from Sitecom DC-202 FW at the -fw {address}.
+    -use=smc-barricade          : obtain IP from SMC Barricade FW at the -fw {address}.
+    -use=smc-barricade-7004vbr  : obtain IP from SMC Barricade FW (7004VBR model config) at the -fw {address}.
+    -use=smc-barricade-7401bra  : obtain IP from SMC Barricade 7401BRA FW at the -fw {address}.
+    -use=smc-barricade-alt      : obtain IP from SMC Barricade FW (alternate config) at the -fw {address}.
+    -use=sohoware-nbg800        : obtain IP from SOHOWare BroadGuard NBG800 at the -fw {address}.
+    -use=sveasoft               : obtain IP from Sveasoft WRT54G/WRT54GS at the -fw {address}.
+    -use=vigor-2200usb          : obtain IP from Vigor 2200 USB at the -fw {address}.
+    -use=watchguard-edge-x      : obtain IP from Watchguard Edge X FW at the -fw {address}.
+    -use=watchguard-soho        : obtain IP from Watchguard SOHO FW at the -fw {address}.
+    -use=web                    : obtain IP from an IP discovery page on the web.
+    -use=westell-6100           : obtain IP from Westell C90-610015-06 DSL Router at the -fw {address}.
+    -use=xsense-aero            : obtain IP from Xsense Aero at the -fw {address}.
+
+  -ip address           : set the IP address to 'address'.
+
+  -if interface         : obtain IP address from 'interface' (default: ppp0).
+  -if-skip pattern      : skip any IP addresses before 'pattern' in the output of ifconfig {if}.
+
+  -web provider|url     : obtain IP address from provider's IP checking page (default: dyndns).
+  -web-skip pattern     : skip any IP addresses before 'pattern' on the web provider|url.
+
+  -fw address|url       : obtain IP address from firewall at 'address'.
+  -fw-skip pattern      : skip any IP addresses before 'pattern' on the firewall address|url.
+  -fw-login login       :   use 'login' when getting IP from fw.
+  -fw-password secret   :   use password 'secret' when getting IP from fw.
+
+  -cmd program          : obtain IP address from by calling {program}.
+  -cmd-skip pattern     : skip any IP addresses before 'pattern' in the output of {cmd}.
+
+  -login user           : login as 'user'.
+  -password secret      : use password 'secret'.
+  -host host            : update DNS information for 'host'.
+
+  -options opt,opt     : optional per-service arguments (see below).
+
+  -{no}ssl              : do updates over encrypted SSL connection (default: nossl).
+  -{no}retry            : retry failed updates. (default: noretry).
+  -{no}force            : force an update even if the update may be unnecessary (default: noforce).
+  -timeout max          : wait at most 'max' seconds for the host to respond (default: 120).
+  -{no}syslog           : log messages to syslog (default: nosyslog).
+  -facility {type}      : log messages to syslog to facility {type} (default: daemon).
+  -priority {pri}       : log messages to syslog with priority {pri} (default: notice).
+  -mail address         : e-mail messages to {address}.
+  -mail-failure address : e-mail messages for failed updates to {address}.
+  -{no}exec             : do {not} execute; just show what would be done (default: exec).
+  -{no}debug            : print {no} debugging information (default: nodebug).
+  -{no}verbose          : print {no} verbose information (default: noverbose).
+  -{no}quiet            : print {no} messages for unnecessary updates (default: noquiet).
+  -help                 : this message (default: 0).
+  -postscript           : script to run after updating ddclient, has new IP as param.
+  -{no}query            : print {no} ip addresses and exit.
+
+== CONFIGURING ddclient
+
+The configuration file, ddclient.conf, can be used to define the
+default behaviour and operation of ddclient.  The file consists of
+sequences of global variable definitions and host definitions.
+
+Global definitions look like:
+  name=value [,name=value]*
+
+For example:
+  daemon=5m                   
+  use=if, if=eth0             
+  proxy=proxy.myisp.com       
+  protocol=dyndns2
+
+specifies that ddclient should operate as a daemon, checking the
+eth0 interface for an IP address change every 5 minutes and use the
+'dyndns2' protocol by default. The daemon interval can be specified
+as seconds (600s), minutes (5m), hours (1h) or days (1d).
+
+Host definitions look like:
+  [name=value [,name=value]*]* a.host.domain [,b.host.domain] [login] [password]
+
+For example:
+  protocol=hammernode1, \
+  login=my-hn-login, password=my-hn-password  myhost.hn.org
+  login=my-login, password=my-password  myhost.dyndns.org,my2nd.dyndns.org
+
+specifies two host definitions.  
+
+The first definition will use the hammernode1 protocol,
+my-hn-login and my-hn-password to update the ip-address of
+myhost.hn.org and my2ndhost.hn.org.
+
+The second host definition will use the current default protocol
+('dyndns2'), my-login and my-password to update the ip-address of
+myhost.dyndns.org and my2ndhost.dyndns.org.
+
+The order of this sequence is significant because the values of any
+global variable definitions are bound to a host definition when the
+host definition is encountered.
+
+See the sample-ddclient.conf file for further examples.
+
+== NIC specific variables and examples:
+
+o 'changeip'
+
+The 'changeip' protocol is used by DNS services offered by changeip.com.
+
+Configuration variables applicable to the 'changeip' protocol are:
+  protocol=changeip            ##
+  server=fqdn.of.service       ## defaults to nic.changeip.com
+  login=service-login          ## login name and password registered with the service
+  password=service-password    ##
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=changeip,                                               \
+  login=my-my-changeip.com-login,                                  \
+  password=my-changeip.com-password                                \
+  myhost.changeip.org
+
+
+o 'cloudflare'
+
+The 'cloudflare' protocol is used by DNS service offered by www.cloudflare.com.
+
+Configuration variables applicable to the 'cloudflare' protocol are:
+  protocol=cloudflare          ## 
+  server=fqdn.of.service       ## defaults to www.cloudflare.com
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=cloudflare,                                         \
+  zone=dns.zone,                                               \
+  login=my-cloudflare.com-login,                               \
+  password=my-cloudflare.com-secure-token                      \
+  myhost.com 
+
+  ## multiple host update to the custom DNS service
+  protocol=cloudflare,                                         \
+  zone=dns.zone,                                               \
+  login=my-cloudflare.com-login,                               \
+  password=my-cloudflare.com-secure-token                      \
+  my-toplevel-domain.com,my-other-domain.com
+
+
+o 'concont'
+                          
+The 'concont' protocol is the protocol used by the content management
+system ConCont's dydns module. This is currently used by the free
+dynamic DNS service offered by Tyrmida at www.dydns.za.net
+    
+Configuration variables applicable to the 'concont' protocol are:
+  protocol=concont             ## 
+  server=www.fqdn.of.service   ## for example www.dydns.za.net (for most add a www)
+  login=service-login          ## login registered with the service
+  password=service-password    ## password registered with the service
+  mx=mail.server.fqdn          ## fqdn of the server handling domain's mail (leave out for none)
+  wildcard=yes|no              ## set yes for wild (*.host.domain) support
+  fully.qualified.host         ## the host registered with the service.
+                        
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=concont,                                     \
+  login=dydns.za.net,                                   \
+  password=my-dydns.za.net-password,                    \
+  mx=mailserver.fqdn,                                   \
+  wildcard=yes                                          \
+  myhost.hn.org           
+                        
+
+
+o 'dnspark'
+
+The 'dnspark' protocol is used by DNS service offered by www.dnspark.com.
+
+Configuration variables applicable to the 'dnspark' protocol are:
+  protocol=dnspark             ## 
+  server=fqdn.of.service       ## defaults to www.dnspark.com
+  backupmx=no|yes              ## indicates that DNSPark should be the secondary MX 
+                               ## for this domain or host.
+  mx=any.host.domain           ## a host MX'ing for this host or domain.
+  mxpri=priority               ## MX priority.
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=dnspark,                                         \
+  login=my-dnspark.com-login,                               \
+  password=my-dnspark.com-password                          \
+  myhost.dnspark.com 
+
+  ## multiple host update with wildcard'ing mx, and backupmx
+  protocol=dnspark,                                         \
+  login=my-dnspark.com-login,                               \
+  password=my-dnspark.com-password,                         \
+  mx=a.host.willing.to.mx.for.me,                           \
+  mxpri=10, 	                                            \
+  my-toplevel-domain.com,my-other-domain.com
+
+  ## multiple host update to the custom DNS service
+  protocol=dnspark,                                         \
+  login=my-dnspark.com-login,                               \
+  password=my-dnspark.com-password                          \
+  my-toplevel-domain.com,my-other-domain.com
+
+
+o 'dslreports1'
+
+The 'dslreports1' protocol is used by a free DSL monitoring service
+offered by www.dslreports.com. 
+
+Configuration variables applicable to the 'dslreports1' protocol are:
+  protocol=dslreports1         ## 
+  server=fqdn.of.service       ## defaults to www.dslreports.com
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  unique-number                ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=dslreports1,                                     \
+  server=www.dslreports.com,                                \
+  login=my-dslreports-login,                                \
+  password=my-dslreports-password                           \
+  123456
+
+Note: DSL Reports uses a unique number as the host name.  This number
+can be found on the Monitor Control web page.
+
+
+o 'dtdns'
+                          
+The 'dtdns' protocol is the protocol used by the dynamic hostname services
+of the 'DtDNS' dns services. This is currently used by the free
+dynamic DNS service offered by www.dtdns.com.
+    
+Configuration variables applicable to the 'dtdns' protocol are:
+  protocol=dtdns               ## 
+  server=www.fqdn.of.service   ## defaults to www.dtdns.com
+  password=service-password    ## password registered with the service
+  client=name_of_updater       ## defaults to ddclient (10 chars max, no spaces)
+  fully.qualified.host         ## the host registered with the service.
+                        
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=dtdns,                                       \
+  password=my-dydns.za.net-password,                    \
+  client=ddclient                                       \
+  myhost.dtdns.net
+                        
+
+
+o 'duckdns'
+
+The 'duckdns' protocol is used by the free
+dynamic DNS service offered by www.duckdns.org.
+Check http://www.duckdns.org/install.jsp?tab=linux-cron for API
+
+Configuration variables applicable to the 'duckdns' protocol are:
+  protocol=duckdns               ##
+  server=www.fqdn.of.service   ## defaults to www.duckdns.org
+  password=service-password    ## password (token) registered with the service
+  non-fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=duckdns,                                       \
+  password=z0mgs3cjur3p4ss                    \
+  myhost
+
+
+
+o 'dyndns1'
+
+The 'dyndns1' protocol is a deprecated protocol used by the free dynamic
+DNS service offered by www.dyndns.org. The 'dyndns2' should be used to
+update the www.dyndns.org service.  However, other services are also 
+using this protocol so support is still provided by ddclient.
+
+Configuration variables applicable to the 'dyndns1' protocol are:
+  protocol=dyndns1             ## 
+  server=fqdn.of.service       ## defaults to members.dyndns.org
+  backupmx=no|yes              ## indicates that this host is the primary MX for the domain.
+  mx=any.host.domain           ## a host MX'ing for this host definition.
+  wildcard=no|yes              ## add a DNS wildcard CNAME record that points to {host}
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=dyndns1,                                         \
+  login=my-dyndns.org-login,                                \
+  password=my-dyndns.org-password                           \
+  myhost.dyndns.org 
+
+  ## multiple host update with wildcard'ing mx, and backupmx
+  protocol=dyndns1,                                         \
+  login=my-dyndns.org-login,                                \
+  password=my-dyndns.org-password,                          \
+  mx=a.host.willing.to.mx.for.me,backupmx=yes,wildcard=yes  \
+  myhost.dyndns.org,my2ndhost.dyndns.org 
+
+
+o 'dyndns2'
+
+The 'dyndns2' protocol is a newer low-bandwidth protocol used by a
+free dynamic DNS service offered by www.dyndns.org.  It supports
+features of the older 'dyndns1' in addition to others.  [These will be
+supported in a future version of ddclient.]
+
+Configuration variables applicable to the 'dyndns2' protocol are:
+  protocol=dyndns2             ## 
+  server=fqdn.of.service       ## defaults to members.dyndns.org
+  script=/path/to/script       ## defaults to /nic/update
+  backupmx=no|yes              ## indicates that this host is the primary MX for the domain.
+  static=no|yes                ## indicates that this host has a static IP address.
+  custom=no|yes                ## indicates that this host is a 'custom' top-level domain name.
+  mx=any.host.domain           ## a host MX'ing for this host definition.
+  wildcard=no|yes              ## add a DNS wildcard CNAME record that points to {host}
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=dyndns2,                                         \
+  login=my-dyndns.org-login,                                \
+  password=my-dyndns.org-password                           \
+  myhost.dyndns.org 
+
+  ## multiple host update with wildcard'ing mx, and backupmx
+  protocol=dyndns2,                                         \
+  login=my-dyndns.org-login,                                \
+  password=my-dyndns.org-password,                          \
+  mx=a.host.willing.to.mx.for.me,backupmx=yes,wildcard=yes  \
+  myhost.dyndns.org,my2ndhost.dyndns.org 
+
+  ## multiple host update to the custom DNS service
+  protocol=dyndns2,                                         \
+  login=my-dyndns.org-login,                                \
+  password=my-dyndns.org-password                           \
+  my-toplevel-domain.com,my-other-domain.com
+
+
+o 'easydns'
+
+The 'easydns' protocol is used by the for fee DNS service offered 
+by www.easydns.com.
+
+Configuration variables applicable to the 'easydns' protocol are:
+  protocol=easydns             ## 
+  server=fqdn.of.service       ## defaults to members.easydns.com
+  backupmx=no|yes              ## indicates that EasyDNS should be the secondary MX 
+                               ## for this domain or host.
+  mx=any.host.domain           ## a host MX'ing for this host or domain.
+  wildcard=no|yes              ## add a DNS wildcard CNAME record that points to {host}
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=easydns,                                         \
+  login=my-easydns.com-login,                               \
+  password=my-easydns.com-password                          \
+  myhost.easydns.com 
+
+  ## multiple host update with wildcard'ing mx, and backupmx
+  protocol=easydns,                                         \
+  login=my-easydns.com-login,                               \
+  password=my-easydns.com-password,                         \
+  mx=a.host.willing.to.mx.for.me,                           \
+  backupmx=yes,                                             \
+  wildcard=yes                                              \
+  my-toplevel-domain.com,my-other-domain.com
+
+  ## multiple host update to the custom DNS service
+  protocol=easydns,                                         \
+  login=my-easydns.com-login,                               \
+  password=my-easydns.com-password                          \
+  my-toplevel-domain.com,my-other-domain.com
+
+
+
+o 'freedns'
+
+The 'freedns' protocol is used by DNS services offered by freedns.afraid.org.
+
+Configuration variables applicable to the 'freedns' protocol are:
+  protocol=freedns             ##
+  server=fqdn.of.service       ## defaults to freedns.afraid.org
+  login=service-login          ## login name and password registered with the service
+  password=service-password    ##
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=freedns,                                             \
+  login=my-freedns.afraid.org-login,                            \
+  password=my-freedns.afraid.org-password                       \
+  myhost.afraid.com
+
+
+
+o 'googledomains'
+
+The 'googledomains' protocol is used by DNS service offered by www.google.com/domains.
+
+Configuration variables applicable to the 'googledomains' protocol are:
+  protocol=googledomains       ##
+  login=service-login          ## the user name provided by the admin interface
+  password=service-password    ## the password provided by the admin interface
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=googledomains,                                      \
+  login=my-generated-user-name,                                \
+  password=my-genereated-password                              \
+  myhost.com
+
+  ## multiple host update to the custom DNS service
+  protocol=googledomains,                                      \
+  login=my-generated-user-name,                                \
+  password=my-genereated-password                              \
+  my-toplevel-domain.com,my-other-domain.com
+
+
+o 'hammernode1'
+
+The 'hammernode1' protocol is the protocol used by the free dynamic
+DNS service offered by Hammernode at www.hn.org
+
+Configuration variables applicable to the 'hammernode1' protocol are:
+  protocol=hammernode1         ## 
+  server=fqdn.of.service       ## defaults to members.dyndns.org
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=hammernode1,                                 \
+  login=my-hn.org-login,                                \
+  password=my-hn.org-password                           \
+  myhost.hn.org 
+
+  ## multiple host update
+  protocol=hammernode1,                                 \
+  login=my-hn.org-login,                                \
+  password=my-hn.org-password,                          \
+  myhost.hn.org,my2ndhost.hn.org
+
+
+
+o 'namecheap'
+
+The 'namecheap' protocol is used by DNS service offered by www.namecheap.com.
+
+Configuration variables applicable to the 'namecheap' protocol are:
+  protocol=namecheap           ## 
+  server=fqdn.of.service       ## defaults to dynamicdns.park-your-domain.com
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=namecheap,                                         \
+  login=my-namecheap.com-login,                               \
+  password=my-namecheap.com-password                          \
+  myhost.namecheap.com 
+
+
+
+o 'noip'
+
+The 'No-IP Compatible' protocol is used to make dynamic dns updates
+over an http request.  Details of the protocol are outlined at:
+http://www.no-ip.com/integrate/
+
+Configuration variables applicable to the 'noip' protocol are:
+  protocol=noip		           ## 
+  server=fqdn.of.service       ## defaults to dynupdate.no-ip.com
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  fully.qualified.host         ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=noip,                                        \
+  login=userlogin@domain.com,                                \
+  password=noip-password                           \
+  myhost.no-ip.biz 
+
+
+
+
+o 'nsupdate'
+
+The 'nsupdate' protocol is used to submit Dynamic DNS Update requests as
+defined in RFC2136 to a name server using the 'nsupdate' command line
+utility part of ISC BIND.  Dynamic DNS updates allow resource records to
+be added or removed from a zone configured for dynamic updates through
+DNS requests protected using TSIG.  BIND ships with 'ddns-confgen', a
+utility to generate sample configurations and instructions for both the
+server and the client.  See nsupdate(1) and ddns-confgen(8) for details.
+
+Configuration variables applicable to the 'nsupdate' protocol are:
+  protocol=nsupdate
+  server=ns1.example.com       ## name or IP address of the DNS server to send
+                               ## the update requests to; usually master for
+                               ## zone, but slaves should forward the request
+  password=tsig.key            ## path and name of the symmetric HMAC key file
+                               ## to use for TSIG signing of the request
+                               ## (as generated by 'ddns-confgen -q' and
+                               ## configured on server in 'grant' statement)
+  zone=dyn.example.com         ## forward zone that is to be updated
+  ttl=600                      ## time to live of the record;
+                               ## defaults to 600 seconds
+  login=/usr/bin/nsupdate      ## path and name of nsupdate binary;
+                               ## defaults to '/usr/bin/nsupdate'
+  <hostname>                   ## fully qualified hostname to update
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=nsupdate \
+  server=ns1.example.com \
+  password=/etc/ddclient/dyn.example.com.key \
+  zone=dyn.example.com \
+  ttl=3600 \
+  myhost.dyn.example.com
+
+
+
+
+o 'sitelutions'
+
+The 'sitelutions' protocol is used by DNS services offered by www.sitelutions.com.
+
+Configuration variables applicable to the 'sitelutions' protocol are:
+  protocol=sitelutions         ## 
+  server=fqdn.of.service       ## defaults to sitelutions.com
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  A_record_id                  ## Id of the A record for the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=sitelutions,                                         \
+  login=my-sitelutions.com-login,                               \
+  password=my-sitelutions.com-password                          \
+  my-sitelutions.com-id_of_A_record
+
+
+
+o 'zoneedit1'
+
+The 'zoneedit1' protocol is used by a DNS service offered by
+www.zoneedit.com.
+
+Configuration variables applicable to the 'zoneedit1' protocol are:
+  protocol=zoneedit1           ## 
+  server=fqdn.of.service       ## defaults to www.zoneedit.com
+  zone=zone-where-domains-are  ## only needed if 1 or more subdomains are deeper
+                               ## than 1 level in relation to  the zone where it
+                               ## is defined. For example, b.foo.com in a zone
+                               ## foo.com doesn't need this, but a.b.foo.com in
+                               ## the same zone needs zone=foo.com
+  login=service-login          ## login name and password  registered with the service
+  password=service-password    ##
+  your.domain.name             ## the host registered with the service.
+
+Example ddclient.conf file entries:
+  ## single host update
+  protocol=zoneedit1,                                     \
+  server=dynamic.zoneedit.com,                            \
+  zone=zone-where-domains-are,                            \
+  login=my-zoneedit-login,                                \
+  password=my-zoneedit-password                           \
+  my.domain.name
+
+
+
+ddclient version 3.8.3, 
+  originally written by Paul Burry, paul+ddclient@burry.ca
+  project now maintained on http://ddclient.sourceforge.net
+
