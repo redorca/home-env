@@ -852,7 +852,10 @@ function apt()
 
 	if [ $SECONDS -gt $TIMEOUT ] ; then
 		echo "But first, run update." >&2
-		sudo apt-get update >/dev/null >/dev/null
+		if ! sudo apt-get update >/dev/null >/dev/null ; then
+			echo "Encountered a problem so try again later."
+			return 1
+		fi
 		SECONDS=0
 	fi
         Cmd="sudo /usr/bin/apt-get -y"

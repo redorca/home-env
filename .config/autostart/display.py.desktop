@@ -1,10 +1,11 @@
 [Desktop Entry]
 Type=Application
-Exec=/home/zglue/.local/bin/display.py
+Categories=Utility;
+Exec=display.py
+Name[en_US]=Display Fixup
+GenericName[en_US]=User Setup
+Comment[en_US]=Ensure screen resolution is 2560x1600 and 2 terminal windows are open.
+Comment=Set screen resolution is 2560x1600 and launch 2 terminal windows
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
-Name[en_US]=xpand screen
-Name=xpand screen
-Comment[en_US]=can it work?
-Comment=can it work?
