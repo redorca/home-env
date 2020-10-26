@@ -31,7 +31,7 @@ int scan(char **sentence, char **word)
 	uint8_t numchars;
 
 	wordy = *sentence;
-	while ((wordy != NULL) && !(isalpha(*wordy))) { wordy++; }
+	while ((wordy != NULL) && (isspace(*wordy))) { wordy++; }
 
 	*word = wordy;
 	while ((wordy != NULL) && (isalpha(*wordy))) { wordy++; }
