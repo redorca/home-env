@@ -17,7 +17,6 @@ char *bigword;
 #define UPDATE_BIGGEST(a, b)	\
 	if (b > bignum)	\
 	{			\
-		printf("Updating from (%d) %s to (%d) %s\n", bignum, bigword, b, a);	\
 		bignum = b;	\
 		bigword = a;	\
 	}
@@ -32,10 +31,10 @@ int scan(char **sentence, char **word)
 	uint8_t numchars;
 
 	wordy = *sentence;
-	while (!(isalpha(*wordy++))) { ; }
+	while (!(isalpha(*wordy))) { *wordy++; }
 
 	*word = wordy;
-	while(isalpha(*wordy++)) { ; }
+	while(isalpha(*wordy)) { *wordy++; }
 
 	numchars = wordy - *word;
 	*sentence = wordy;
@@ -49,9 +48,7 @@ int scan(char **sentence, char **word)
 int main(int argc, char *argv[])
 {
 	char *word, *sntnce;
-	uint8_t many, count;
-
-	printf("argc %d\n", argc);
+	uint8_t many;
 	if (argc < 2)
 	{
 		printf("What? No words come to mind?\n");
@@ -60,16 +57,16 @@ int main(int argc, char *argv[])
 	}
 
 	bignum = 0;
-	count = 0;
 	sntnce = word = argv[argc - 1];
-	while ((count < 7) && (*word != 0))
+	while (*word != 0)
 	{
-		count++;
 		many = scan(&sntnce, &word);
 		if (ISEVEN(many))
 		{
-			printf("Even %d\n", many);
+			printf("Even [%d], %s\n", many, word);
 			UPDATE_BIGGEST(word, many);
 		}
 	}
+
+	printf("The word with the most even number of letters [%d] is <%ss>\n", bignum, bigword);
 }
