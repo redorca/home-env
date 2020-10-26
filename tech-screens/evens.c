@@ -31,10 +31,17 @@ int scan(char **sentence, char **word)
 	uint8_t numchars;
 
 	wordy = *sentence;
-	while (!(isalpha(*wordy))) { wordy++; }
+	while ((wordy != NULL) && !(isalpha(*wordy))) { wordy++; }
 
 	*word = wordy;
-	while(isalpha(*wordy)) { wordy++; }
+	while ((wordy != NULL) && (isalpha(*wordy))) { wordy++; }
+
+	if (wordy == NULL)
+	{
+		printf("wordy is null\n");
+		*sentence = NULL;
+		return 0;
+	}
 
 	numchars = wordy - *word;
 	*sentence = wordy;
