@@ -7,11 +7,13 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
 uint8_t bignum;
 char *bigword;
+char err_string[] = " Something's up here.";
 
 #define ISEVEN(a)	!(a & 0x1)
 #define UPDATE_BIGGEST(a, b)	\
@@ -46,6 +48,23 @@ int scan(char **sentence, char **word)
 	return numchars;
 }
 
+/*
+ * In case the string enterd was not quoted
+ * collect everything from the command line
+ * and assemble into a string.
+ */
+char *foo(int count, char *stuff[])
+{
+	int i, total;
+
+	if (count == 1) return stuff[count];
+
+	for(i = 0; i <= count; i++)
+	{
+		total += strlen(stuff[i]);
+	}
+	return err_string;
+}
 
 int main(int argc, char *argv[])
 {
@@ -58,7 +77,9 @@ int main(int argc, char *argv[])
 	}
 
 	bignum = 0;
-	sntnce = word = argv[argc - 1];
+	// sntnce = word = argv[argc - 1];
+	sntnce = word = foo(argc -1, argv);
+	printf("Sentence from the command line %s\n", sntnce);
 	while (*sntnce != 0)
 	{
 		many = scan(&sntnce, &word);
