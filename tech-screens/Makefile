@@ -38,6 +38,6 @@ clean:
 clobber: clean
 	@$(RM) core
 
-test:
+tests test:
 	@./$(testprog)
 
