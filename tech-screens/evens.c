@@ -36,17 +36,9 @@ int scan(char **sentence, char **word)
 	*word = wordy;
 	while ((wordy != NULL) && (isalpha(*wordy))) { wordy++; }
 
-	if (wordy == NULL)
-	{
-		printf("wordy is null\n");
-		*sentence = NULL;
-		return 0;
-	}
-
 	numchars = wordy - *word;
 	*sentence = wordy;
 	*(*sentence)++ = 0;
-
 
 	return numchars;
 }
@@ -59,7 +51,6 @@ int main(int argc, char *argv[])
 	if (argc < 2)
 	{
 		printf("What? No words come to mind?\n");
-		// exit -2;
 		return -2;
 	}
 
