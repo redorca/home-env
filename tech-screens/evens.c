@@ -38,7 +38,10 @@ int scan(char **sentence, char **word)
 
 	numchars = wordy - *word;
 	*sentence = wordy;
-	*(*sentence)++ = 0;
+	if (*wordy != 0)
+	{
+		*(*sentence)++ = 0;
+	}
 
 	return numchars;
 }
@@ -56,15 +59,16 @@ int main(int argc, char *argv[])
 
 	bignum = 0;
 	sntnce = word = argv[argc - 1];
-	while (*word != 0)
+	while (*sntnce != 0)
 	{
 		many = scan(&sntnce, &word);
-		if (ISEVEN(many))
-		{
-			printf("Even [%d], %s\n", many, word);
-			UPDATE_BIGGEST(word, many);
-		}
+		if (ISEVEN(many)) { UPDATE_BIGGEST(word, many); }
 	}
 
-	printf("The word with the most even number of letters [%d] is <%ss>\n", bignum, bigword);
+	if (bignum == 0)
+	{
+		printf("There aren't any words of an even number of letters.\n");
+		return -3;
+	}
+	printf("The word with the most even number of letters [%d] is <%s>\n", bignum, bigword);
 }
