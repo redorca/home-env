@@ -31,10 +31,10 @@ int scan(char **sentence, char **word)
 	uint8_t numchars;
 
 	wordy = *sentence;
-	while (!(isalpha(*wordy))) { *wordy++; }
+	while (!(isalpha(*wordy))) { wordy++; }
 
 	*word = wordy;
-	while(isalpha(*wordy)) { *wordy++; }
+	while(isalpha(*wordy)) { wordy++; }
 
 	numchars = wordy - *word;
 	*sentence = wordy;
