@@ -89,6 +89,7 @@ astyled
 eclipse/
 embedded
 *.log
+log.*
 jre
 jre1.8.0_121/
 mergehex
@@ -149,3 +150,4 @@ freeze.*
 *.freeze
 lib/
 ig.*
+git-cinnabar
