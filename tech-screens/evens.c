@@ -77,9 +77,7 @@ int main(int argc, char *argv[])
 	}
 
 	bignum = 0;
-	// sntnce = word = argv[argc - 1];
 	sntnce = word = foo(argc -1, argv);
-	printf("Sentence from the command line %s\n", sntnce);
 	while (*sntnce != 0)
 	{
 		many = scan(&sntnce, &word);
