@@ -11,40 +11,45 @@ import sys
 
 
 RECORD_FILE = "/home/rick/.local/Documents/txt.replay"
-StdRunArgs = { "check":True }
+STD_RUN_ARGS = {"check": True, "stderr": subprocess.STDOUT}
 
 
 def apt(*pkgs):
     '''
         Run apt obly for searching for the given *pkgs
     '''
-    Cmd = [ "sudo", "apt", *pkgs ]
-    Result = subprocess.run(Cmd, **StdRunArgs)
+    cmd = ["sudo", "apt", *pkgs]
+    result = subprocess.run(cmd, **STD_RUN_ARGS)
+    return result
 
 
 def apt_get(action, *pkgs):
     '''
         Run aot-get with action for **pkgs
     '''
-    Cmd = [ "sudo", "apt-get", "-y", action, *pkgs ]
-    Result = subprocess.run(Cmd, **StdRunArgs)
+    cmd = ["sudo", "apt-get", "-y", action, *pkgs]
+    return subprocess.run(cmd, **STD_RUN_ARGS)
 
-def fu():
-    print("Bar damnit")
 
 def main(myargs):
     '''
         Arg checks and routing.
     '''
-    # AllowedActs = [ "remove", "install", "auto-remove", "auto-clean", "search" ]
-    RouteArgs = { "remove":apt_get, "install":apt_get, "auto-remove":apt_get, "auto-clean":apt_get, "update":apt_get, "search":apt }
-    if not sys.argv[1] in RouteArgs:
+    # AllowedActs = ["remove", "install", "auto-remove", "auto-clean", "search"]
+    route_args = {"remove": apt_get, "install": apt_get, "auto-remove": apt_get,
+                  "auto-clean": apt_get, "update": apt_get, "search": apt}
+    if not sys.argv[1] in route_args:
         print("No action specified.")
         return False
 
     print("Will perform", sys.argv[1], *sys.argv[2:])
-    RouteArgs[sys.argv[1]](sys.argv[1], *sys.argv[2:])
-
+    try:
+        result = route_args[sys.argv[1]](sys.argv[1], *sys.argv[2:])
+        print("Result :: ", result.stdout)
+        return True
+    except subprocess.CalledProcessError as e_e:
+        print("Command :: ", e_e.cmd, " returned ", e_e.returncode)
+        return False
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
