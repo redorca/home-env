@@ -48,9 +48,7 @@ def main(myargs):
         result = route_args[myargs[1]](myargs[1], *myargs[2:])
         print("Result :: ", result.stdout)
         return True
-    # except subprocess.CalledProcessError as e_e:
-        # print("Command :: ", e_e.cmd, " returned ", e_e.returncode)
-        # return False
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
