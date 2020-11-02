@@ -641,6 +641,8 @@ alias		 pip=pypip
 alias          which="type -a"
 alias        dumplog="journalctl -b -x > log.journal 2>&1"
 alias         docker="sudo -H docker"
+alias		 apt="apt.py"
+
 
 #
 # Map a standard tool to an arm directed tool name.
@@ -841,7 +843,7 @@ function expand_conf_vars()
         sed ${SED_OPTS[@]}
 }
 
-function apt()
+function Apt()
 {
         local Action=
         local Cmd=
