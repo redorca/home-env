@@ -8,9 +8,9 @@
 
 import subprocess
 import sys
+import os
 
-
-RECORD_FILE = "/home/rick/.local/Documents/txt.replay"
+RECORD_FILE = os.environ['HOME'] + "/.local/Documents/txt.replay"
 STD_RUN_ARGS = {"check": True, "stderr": subprocess.STDOUT}
 
 
@@ -38,18 +38,19 @@ def main(myargs):
     # AllowedActs = ["remove", "install", "auto-remove", "auto-clean", "search"]
     route_args = {"remove": apt_get, "install": apt_get, "auto-remove": apt_get,
                   "auto-clean": apt_get, "update": apt_get, "search": apt}
-    if not sys.argv[1] in route_args:
+    if not myargs[1] in route_args:
         print("No action specified.")
         return False
 
-    print("Will perform", sys.argv[1], *sys.argv[2:])
-    try:
-        result = route_args[sys.argv[1]](sys.argv[1], *sys.argv[2:])
+    print("Will perform", myargs[1], *myargs[2:])
+    with open(RECORD_FILE, mode='ab') as recf:
+        STD_RUN_ARGS["stdout"] = recf
+        result = route_args[myargs[1]](myargs[1], *myargs[2:])
         print("Result :: ", result.stdout)
         return True
-    except subprocess.CalledProcessError as e_e:
-        print("Command :: ", e_e.cmd, " returned ", e_e.returncode)
-        return False
+    # except subprocess.CalledProcessError as e_e:
+        # print("Command :: ", e_e.cmd, " returned ", e_e.returncode)
+        # return False
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
