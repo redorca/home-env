@@ -104,8 +104,8 @@ function get_home_ip()
 #
 function system-is-desktop()
 {
-	/usr/bin/which xrandr >/dev/null 2>&1 && return 0
-	return 5
+        /usr/bin/which xrandr >/dev/null 2>&1 && return 0
+        return 5
 }
 
 #
@@ -135,27 +135,27 @@ function what()
 #
 function set-display-mode()
 {
-	local Output=
-	local Mode=
+        local Output=
+        local Mode=
 
 # <<<<<<< Updated upstream
-	if ! system-is-desktop ; then
-		return 2
-	fi
+        if ! system-is-desktop ; then
+                return 2
+        fi
 # =======
-# 	[ ! $(system-is-desktop) ] && return 1
+#         [ ! $(system-is-desktop) ] && return 1
 # >>>>>>> Stashed changes
 
-	[ $# -ne 2 ] && err_echo "only two args needed." && return 1
-	Output="$1" ; shift
-	Mode="$1" ; shift
+        [ $# -ne 2 ] && err_echo "only two args needed." && return 1
+        Output="$1" ; shift
+        Mode="$1" ; shift
 
-	err_echo "Setting Display Mode: $Output, $Mode"
-	if xrandr --output $Output --mode $Mode ; then
-		return 0
-	fi
+        err_echo "Setting Display Mode: $Output, $Mode"
+        if xrandr --output $Output --mode $Mode ; then
+                return 0
+        fi
 
-	return 3
+        return 3
 }
 
 function set_assoc_array()
@@ -323,31 +323,31 @@ function find-fu()
 #
 function enter-any-venv()
 {
-	[ -f bin/activate ] && source bin/activate && return 0
+        [ -f bin/activate ] && source bin/activate && return 0
 
-	return 1
+        return 1
 }
 
 function exit-any-venv()
 {
-	[ "$(type -t deactivate)" == "function" ] && deactivate && return 0
-	return 1
+        [ "$(type -t deactivate)" == "function" ] && deactivate && return 0
+        return 1
 }
 
 function pd()
 {
-	exit-any-venv
-	pushd $1 >/dev/null
-	enter-any-venv
-	dirs -v
+        exit-any-venv
+        pushd $1 >/dev/null
+        enter-any-venv
+        dirs -v
 }
 
 function po()
 {
-	exit-any-venv
-	popd $1 >/dev/null
-	enter-any-venv
-	dirs -v
+        exit-any-venv
+        popd $1 >/dev/null
+        enter-any-venv
+        dirs -v
 }
 
 # alias             po="popd >/dev/null && dirs -v"
@@ -636,13 +636,14 @@ alias        restart="sudo systemctl restart"
 alias          deact="deactivate"
 alias         flake8="flake8 --max-line-length=131"
 alias         pylint="pylint --max-line-length=131"
-alias  	       pypip="python3 -m pip"
-alias		 pip=pypip
+alias          pypip="python3 -m pip"
+alias            pip=pypip
 alias          which="type -a"
 alias        dumplog="journalctl -b -x > log.journal 2>&1"
 alias         docker="sudo -H docker"
-alias		 apt="apt.py"
-
+alias            apt="apt.py"
+alias           ping="ping -4"
+alias         telnet="telnet -4"
 
 #
 # Map a standard tool to an arm directed tool name.
@@ -847,20 +848,20 @@ function Apt()
 {
         local Action=
         local Cmd=
-	local TIMEOUT=
+        local TIMEOUT=
 
-	TIMEOUT=14400
+        TIMEOUT=14400
 
         [ $# -eq 0 ] && return 1
 
-	if [ $SECONDS -gt $TIMEOUT ] ; then
-		echo "But first, run update." >&2
-		if ! sudo apt-get update >/dev/null >/dev/null ; then
-			echo "Encountered a problem so try again later."
-			return 1
-		fi
-		SECONDS=0
-	fi
+        if [ $SECONDS -gt $TIMEOUT ] ; then
+                echo "But first, run update." >&2
+                if ! sudo apt-get update >/dev/null >/dev/null ; then
+                        echo "Encountered a problem so try again later."
+                        return 1
+                fi
+                SECONDS=0
+        fi
         Cmd="sudo /usr/bin/apt-get -y"
 
         case "$1" in
@@ -938,25 +939,25 @@ set_term_colors()
 #
 function initialize-main-window()
 {
-	local TargetRes=
-	local CurrentRes=
+        local TargetRes=
+        local CurrentRes=
 
-	return 1
-	if ! system-is-desktop ; then
-		return 2
-	fi
+        return 1
+        if ! system-is-desktop ; then
+                return 2
+        fi
 
- 	TargetRes="2560x1600"
-	set_term_colors
-	#
-	# Force display resolution to 2560x1600. Assumes 4k display
-	#
+        TargetRes="2560x1600"
+        set_term_colors
+        #
+        # Force display resolution to 2560x1600. Assumes 4k display
+        #
         if ! CurrentRes=$(display-geo) ; then
-		err_echo "Could not figure out display resolution." && return 1
-	fi
+                err_echo "Could not figure out display resolution." && return 1
+        fi
 
         [ "$TargetRes" == "$CurrentRes" ] && return 0
-	return $(set-display-mode Virtual1 $TargetRes)
+        return $(set-display-mode Virtual1 $TargetRes)
 }
 
 #
@@ -964,23 +965,23 @@ function initialize-main-window()
 #
 function set-os-personality()
 {
-	if which apt-get >/dev/null 2>&1 ; then
-	        unalias ls && alias ls='ls -F --color=auto'
-	        echo "Set prompt for Debian sys-arch"
-	        PS1='${debian_chroot:+($debian_chroot)}$(branch 15)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
-	else
-	        # disable gnome-ssh-askpass
-	        unset SSH_ASKPASS
-	        #
-	        #  Aliases found in my Ubuntu bash environment by default.
-	        #
-	        alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
-	        alias egrep='egrep --color=auto'
-	        alias fgrep='fgrep --color=auto'
-	        alias ls='ls -F --color=auto'
-	        echo "Set prompt for Redhat sys-arch"
-	        PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
-	fi
+        if which apt-get >/dev/null 2>&1 ; then
+                unalias ls && alias ls='ls -F --color=auto'
+                echo "Set prompt for Debian sys-arch"
+                PS1='${debian_chroot:+($debian_chroot)}$(branch 15)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+        else
+                # disable gnome-ssh-askpass
+                unset SSH_ASKPASS
+                #
+                #  Aliases found in my Ubuntu bash environment by default.
+                #
+                alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+                alias egrep='egrep --color=auto'
+                alias fgrep='fgrep --color=auto'
+                alias ls='ls -F --color=auto'
+                echo "Set prompt for Redhat sys-arch"
+                PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+        fi
 }
 
 FOCUS=
