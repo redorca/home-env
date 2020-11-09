@@ -35,7 +35,6 @@ def main(myargs):
     '''
         Arg checks and routing.
     '''
-    # AllowedActs = ["remove", "install", "auto-remove", "auto-clean", "search"]
     route_args = {"remove": apt_get, "install": apt_get, "auto-remove": apt_get,
                   "auto-clean": apt_get, "update": apt_get, "search": apt}
     if not myargs[1] in route_args:
