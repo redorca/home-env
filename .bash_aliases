@@ -643,6 +643,7 @@ alias        dumplog="journalctl -b -x > log.journal 2>&1"
 alias         docker="sudo -H docker"
 alias            apt="apt.py"
 alias           ping="ping -4"
+alias           wget="wget -4"
 alias         telnet="telnet -4"
 
 #
