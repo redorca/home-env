@@ -1,0 +1,1000 @@
+  393  jobs
+  394  exit
+  395  set-display-mode Virtual1 800x600
+  396  echo $?
+  397  exit
+  398  set-display-mode Virtual1 800x600
+  399  exit
+  400  set-display-mode Virtual1 800x600
+  401  exit
+  402  system-is-desktop
+  403  echo $?
+  404  set-display-mode Virtual1 800x600
+  405  [ system-is-desktop -eq 0 ] && echo "as"
+  406  [ $(system-is-desktop) -eq 0 ] && echo "as"
+  407  [ $(system-is-desktop) = 0 ] && echo "as"
+  408  shlvl
+  409  exit
+  410  system-is-desktop
+  411  echo $?
+  412  bash
+  413  exit
+  414  set-display-mode Virtual1 800x600
+  415  [ $(system-is-desktop) -eq 0 ] || echo "llll"
+  416  system-is-desktop
+  417  echo $?
+  418  if system-is-desktop ; then echo "JJJJ" ; fi
+  419  [ $(system-is-desktop) ] && echo "../../"
+  420  echo $?
+  421  system-is-desktop
+  422  echo $?
+  423  exit
+  424  system-is-desktop
+  425  echo $?
+  426  set-display-mode Virtual1 800x600
+  427  echo $?
+  428  [ $(system-is-desktop) -eq 0 ] || echo "===="
+  429  [ 1 -eq 0 ] || echo "===="
+  430  exit
+  431  set-display-mode Virtual1 800x600
+  432  shlvl
+  433  exit
+  434  set-display-mode Virtual1 2560x1600
+  435  jobs
+  436  exit
+  437  set-display-mode Virtual1 2560x1600'
+  438  set-display-mode Virtual1 2560x1600
+  439  echo $?
+  440  exit
+  441  set-display-mode Virtual1 2560x1600
+  442  echo $?
+  443  shlvl
+  444  exit
+  445  set-display-mode Virtual1 2560x1600
+  446  [ system-is-desktop ] && echo "-=-"
+  447  [ $(system-is-desktop)_ ] && echo "-=-"
+  448  [ $(system-is-desktop) ] && echo "-=-"
+  449  [ system-is-desktop -eq 0 ] && echo "-=-"
+  450  [ $(system-is-desktop) -eq 0 ] && echo "-=-"
+  451  [ $(system-is-desktop) ] && echo "-=-"
+  452  exit
+  453  set-display-mode Virtual1 800x600
+  454  echo $?
+  455  bash
+  456  shlvl
+  457  bash
+  458  shlvl
+  459  bash
+  460  jobs
+  461  shlvl
+  462  bash
+  463  set-display-mode Virtual1 2560x1600
+  464  fg
+  465  bash
+  466  fg
+  467  jobs
+  468  shklvl
+  469  shlvl
+  470  bash
+  471  exit
+  472  valias
+  473  cd .local/
+  474  git diff
+  475  fg
+  476  git diff
+  477  jobs
+  478  fg
+  479  git diff
+  480  fg
+  481  git diff
+  482  fg
+  483  git diff
+  484  fg
+  485  git status
+  486  git x -c
+  487  git pull
+  488  git push
+  489  set-display-mode Virtual1 2560x1600
+  490  home
+  491  git status
+  492  git pull
+  493  po
+  494  man -k firewall
+  495  man ufw
+  496  man -k redirect
+  497  mount
+  498  ls /media/
+  499  ls /media/ermine/
+  500  df -k /media/ermine/
+  501  pd /media/ermine/
+  502  df -k .
+  503  ls /dev/sr0
+  504  ls /sys/block
+  505  eject /dev/sr0
+  506  echo $?
+  507  ls /media/ermine/
+  508  mount
+  509  ls /mount
+  510  ls /mnt
+  511  ls -art /
+  512  ls -lrt /dev
+  513  mount | grep sr0
+  514  sudo mount /dev/sr0 /media/ermine
+  515  ls /media/ermine
+  516  sudo /media/ermine/VBoxLinuxAdditions.run 
+  517  sudo umount /media/ermine 
+  518  reboot
+  519  uname -a
+  520  apt search 5.4.0-48
+  521  apt search 5.4.0-48 | header
+  522  apt search 5.4.0-48 | grep header
+  523  grep ^deb /etc/apt/sources.list
+  524  wget http://us.archive.ubuntu.com/ubuntu
+  525  vi ubuntu 
+  526  wget http://us.archive.ubuntu.com/ubuntu/dists
+  527  vi dists
+  528  wget http://us.archive.ubuntu.com/ubuntu/dists/focal
+  529  vi focal 
+  530  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/InRelease
+  531  vi InRelease 
+  532  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/main/binary.packages
+  533  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/main/
+  534  vi index.html 
+  535  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/main/binary-amd64
+  536  vi binary-amd64 
+  537  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/main/Release
+  538  vi binary-amd64 
+  539  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/main/packages.gz
+  540  vi binary-amd64 
+  541  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/main/Packages.gz
+  542  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/main/binary-amd64/Packages.gz
+  543  file Packages.gz 
+  544  gunzip Packages.gz 
+  545  grep header Packages 
+  546  grep linux-header Packages
+  547  uname -a
+  548  grep linux-header Packages | grep 5.4.0.48
+  549  grep header Packages | grep 5.4.0.48
+  550  grep header Packages | grep 5.4.0-48
+  551  grep header Packages | grep 5.4.0
+  552  grep linux-headers-generic Packages 
+  553  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/main/l/linux-meta/linux-headers-generic-hw-18.04_5.4.0.26.32_amd64.deb
+  554  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/main/l/linux-meta/linux-headers-generic-hwe-18.04_5.4.0.26.32_amd64.deb
+  555  wget http://us.archive.ubuntu.com/ubuntu/dists/pool/main/l/linux-meta/linux-headers-generic-hwe-18.04_5.4.0.26.32_amd64.deb
+  556  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/pool/main/l/linux-meta/linux-headers-generic-hwe-18.04_5.4.0.26.32_amd64.deb
+  557  wget http://us.archive.ubuntu.com/ubuntu/dists/focal/
+  558  vi index.html
+  559  wget http://us.archive.ubuntu.com/ubuntu/dists/
+  560  vi index.html.2
+  561  ls index.html*
+  562  vi index.html.1
+  563  wget http://us.archive.ubuntu.com/ubuntu/
+  564  vi index.html.34
+  565  vi index.html.3
+  566  wget http://us.archive.ubuntu.com/ubuntu/pool/main/l/linux-meta/linux-headers-generic-hw-18.04_5.4.0.26.32_amd64.deb
+  567  vi index.html.3
+  568  wget http://us.archive.ubuntu.com/ubuntu/
+  569  vi index.html.4
+  570  wget http://us.archive.ubuntu.com/ubuntu/pool/main/
+  571  vi index.html.5
+  572  wget http://us.archive.ubuntu.com/ubuntu/pool/main/l/linux-meta/
+  573  vi index.html.6
+  574  wget http://us.archive.ubuntu.com/ubuntu/pool/main/l/linux-meta/linux-headers-generic-hwe-20.04_5.4.0.48.51_amd64.deb
+  575  uname -a
+  576  jobs
+  577  ls
+  578  rm index.html.*
+  579  rm index.html 
+  580  ls *.html
+  581  ls -rt
+  582  rm dists focal binary-amd64 ubuntu
+  583  file begin
+  584  rm begin
+  585  ls -rt
+  586  file linux-headers-generic-hwe-20.04_5.4.0.48.51_amd64.deb 
+  587  jobs
+  588  scp bigred@pkg-engine.com:.ssh/authorized_keys .
+  589  scp bigred@138.68.100.14:.ssh/authorized_keys .
+  590  ls .ssh
+  591  ls ../
+  592  cat .ssh/id_rsa.pub 
+  593  vi ff
+  594  ssh bigred@134.122.37.128
+  595  ssh bigred@pkg-engine.com
+  596  jobs
+  597  cp .ssh/id_rsa.pub foo
+  598  vi foo
+  599  scp .ssh_safe/id_rsa.pub bigred@pkg-engine.com:foo
+  600  ls .ssh
+  601  ping furious.dev
+  602  jobs
+  603  ls foo
+  604  mv foo .local/
+  605  home
+  606  git add foo
+  607  mv foo ssh_id
+  608  git add ssh_id
+  609  git x -p
+  610  git push
+  611  git pull
+  612  git push
+  613  vi ssh_id 
+  614  ping furious.dev
+  615  ping pkg-engine.com
+  616  ping furious.id
+  617  ls.ssh
+  618  ls .ssh
+  619  mv .ssh .ssh_safe
+  620  cp -a .ssh_safe/ .ssh
+  621  ls .ssh
+  622  ls .ssh_safe/
+  623  cp -a .ssh_safe/ .ssh
+  624  ls .ssh
+  625  ls -a .ssh
+  626  cd .ssh
+  627  cd .ssh_safe/
+  628  ls
+  629  mv id_rsa* ../
+  630  cd ..
+  631  ls
+  632  ls -l
+  633  rm -rf .ssh_safe/
+  634  chmod go-r id_rsa.pub 
+  635  ls -l
+  636  home
+  637  git pull
+  638  ls ../../.config/autostart
+  639  ls ../.config/autostart
+  640  ls ../.config/autostart/plank.desktop 
+  641  ls -l ../.config/autostart/plank.desktop
+  642  vi ../.config/autostart/plank.desktop
+  643  which plank
+  644  man plank
+  645  pd ../.config/autostart/
+  646  ls
+  647  ln -sf ../../.local/bin/display.py display
+  648  ls -l
+  649  reboot
+  650  valias
+  651  cd .config/autostart/
+  652  ls
+  653  which display.py
+  654  cp plank.desktop screen.desktop
+  655  vi screen.desktop 
+  656  reboot
+  657  exit
+  658  exit
+  659  fg
+  660  exit
+  661  fg
+  662  exit
+  663  display.py
+  664  which tilix
+  665  man tilix
+  666  bin
+  667  vi display.py 
+  668  display.py
+  669  vi display.py 
+  670  display.py
+  671  which tilix
+  672  jobs
+  673  vi display.py 
+  674  python3
+  675  fg
+  676  display.py
+  677  fg
+  678  display.py
+  679  fg
+  680  display.py
+  681  fg
+  682  display.py
+  683  fg
+  684  display.py
+  685  fg
+  686  display.py
+  687  grep Except *.py
+  688  grep -i except *
+  689  fg
+  690  display.py
+  691  fg
+  692  display.py
+  693  fg
+  694  display.py
+  695  fg
+  696  display.py
+  697  fg
+  698  display.py
+  699  fg
+  700  which xrandr
+  701  fg
+  702  display.py
+  703  fg
+  704  display.py
+  705  fg
+  706  display.py
+  707  fg
+  708  display.py
+  709  fg
+  710  display.py
+  711  fg
+  712  display.py
+  713  fg
+  714  display.py
+  715  fg
+  716  display.py
+  717  fg
+  718  display.py
+  719  fg
+  720  display.py
+  721  echo $?
+  722  fg
+  723  display.py
+  724  fg
+  725  display.py
+  726  fg
+  727  display.py
+  728  fg
+  729  display.py
+  730  fg
+  731  display.py
+  732  fg
+  733  display.py
+  734  fg
+  735  display.py
+  736  fg
+  737  display.py
+  738  fg
+  739  display.py
+  740  fg
+  741  display.py
+  742  fg
+  743  display.py
+  744  fg
+  745  display.py
+  746  fg
+  747  display.py
+  748  fg
+  749  display.py
+  750  fg
+  751  display.py
+  752  fg
+  753  display.py
+  754  fg
+  755  display.py
+  756  fg
+  757  display.py
+  758  fg
+  759  pylint display.py
+  760  which flake8
+  761  flake8 display.py 
+  762  which flake8
+  763  apt install pylint flake8
+  764  pylint display.py
+  765  fg
+  766  pylint display.py
+  767  fg
+  768  pylint display.py
+  769  fg
+  770  pylint display.py
+  771  fg
+  772  pylint display.py
+  773  display.py
+  774  fg
+  775  pylint display.py
+  776  flake8 display.py
+  777  fg
+  778  flake8 display.py
+  779  pylint display.py
+  780  fg
+  781  git x -p
+  782  exit
+  783  journalctl -n 100
+  784  journalctl -n 100 > /tmp/ff
+  785  grep -i plank /tmp/ff
+  786  journalctl -b > /tmp/ff
+  787  grep -i plank /tmp/ff
+  788  grep display.py /tmp/ff
+  789  vi /tmp/ff
+  790  jobs
+  791  python3 
+  792  man python
+  793  python3 
+  794  reboot
+  795  journalctl -b > /tmp/ff
+  796  vi /tmp/ff
+  797  ls .config/autostart/display 
+  798  ls .config/autostart
+  799  jobs
+  800  ls .config/autostart
+  801  ls .config/autostart/display 
+  802  rm .config/autostart/display
+  803  vi /tmp/ff
+  804  vi .config/autostart/screen.desktop 
+  805  reboot
+  806  display.py
+  807  exit
+  808  vi .local/bin/display.py 
+  809  display.py
+  810  fg
+  811  display.py
+  812  fg
+  813  display.py
+  814  fg
+  815  display.py
+  816  fg
+  817  display.py
+  818  fg
+  819  display.py
+  820  fg
+  821  display.py
+  822  fg
+  823  display.py
+  824  fg
+  825  display.py
+  826  fg
+  827  display.py
+  828  fg
+  829  display.py
+  830  fg
+  831  display.py
+  832  fg
+  833  display.py
+  834  fg
+  835  display.py
+  836  fg
+  837  display.py
+  838  fg
+  839  display.py
+  840  fg
+  841  display.py
+  842  fg
+  843  display.py
+  844  fg
+  845  display.py
+  846  fg
+  847  display.py
+  848  fg
+  849  display.py
+  850  fg
+  851  git x -p
+  852  dirs
+  853  home
+  854  git x -p
+  855  reboot
+  856  display.py
+  857  exit
+  858  journalctl -b > /tmp/ff
+  859  grep screen\.desktop /tmp/ff
+  860  vi .config/autostart/screen.desktop 
+  861  jobs
+  862  vi .config/autostart/screen.desktop 
+  863  reboot
+  864  journalctl -b > /tmp/ff
+  865  grep screen\.desktop /tmp/ff
+  866  grep plank.desktop /tmp/ff
+  867  grep screen.desktop /tmp/ff
+  868  vi /tmp/ff
+  869  reboot
+  870  dmesg
+  871  cd .config/autostart/
+  872  ls
+  873  mv screen.desktop screen
+  874  reboot
+  875  display.py 
+  876  exit
+  877  journalctl -n 5
+  878  journalctl -n 50
+  879  journalctl -n 40
+  880  journalctl -n 30
+  881  cd .config/autostart/
+  882  mv screen screen.desktop
+  883  python3
+  884  bin
+  885  git status
+  886  vi display.py 
+  887  display.py
+  888  fg
+  889  display.py
+  890  fg
+  891  display.py
+  892  fg
+  893  display.py
+  894  fg
+  895  display.py
+  896  python3
+  897  fg
+  898  display.py
+  899  fg
+  900  display.py
+  901  fg
+  902  display.py
+  903  fg
+  904  display.py
+  905  fg
+  906  display.py
+  907  fg
+  908  display.py
+  909  fg
+  910  display.py
+  911  fg
+  912  display.py
+  913  fg
+  914  display.py
+  915  fg
+  916  display.py
+  917  fg
+  918  display.py
+  919  fg
+  920  display.py
+  921  fg
+  922  display.py
+  923  fg
+  924  display.py
+  925  fg
+  926  display.py
+  927  python3
+  928  fg
+  929  display.py
+  930  fg
+  931  display.py
+  932  fg
+  933  display.py
+  934  fg
+  935  display.py
+  936  fg
+  937  display.py
+  938  fg
+  939  display.py
+  940  fg
+  941  jobs
+  942  git x -p
+  943  rebooty
+  944  reboot
+  945  exit
+  946  exit
+  947  journalctl -n 30
+  948  journalctl -n 300 > /tmp/ff
+  949  vi /tmp/ff
+  950  journalctl -n 300 > /tmp/ff
+  951  grep plank.desktop /tmp/ff
+  952  journalctl -b > /tmp/ff
+  953  grep plank.desktop /tmp/ff
+  954  grep screen.desktop /tmp/ff
+  955  vi /tmp/ff
+  956  home
+  957  vi bin/display.py 
+  958  python3
+  959  fg
+  960  display.py
+  961  journalctl -b
+  962  jobs
+  963  fg
+  964  git x -p
+  965  reboot
+  966  journalctl -b > /tmp/ff
+  967  vi /tmp/ff
+  968  bin
+  969  vi display.py 
+  970  git x -p
+  971  reboot
+  972  exit
+  973  exit
+  974  journalctl -b -x > /tmp/ff
+  975  journalctl -b -X > /tmp/gg
+  976  vi /tmp/ff
+  977  man gsd-color
+  978  man -k gsd-color
+  979  find /usr/share -type f -name "gsd-color"
+  980  bin
+  981  vi display.py 
+  982  display.py 
+  983  fg
+  984  display.py 
+  985  reboot
+  986  journalctl -b -x >/tmp/ff
+  987  vi /tmp/ff
+  988  find .config/ -type f -name "gsd-color*"
+  989  jobs
+  990  vi /tmp/ff
+  991  find .config | grep -i gsd
+  992  dconf dump / | grep -i gsd
+  993  jobs
+  994  bin
+  995  git diff
+  996  git checkout display.py
+  997  exit
+  998  bin
+  999  vi display.py 
+ 1000  journalctl -b -x >/tmp/ff
+ 1001  grep display.py /tmp/ff
+ 1002  exit
+ 1003  journalctl -b -x >/tmp/ff
+ 1004  vi /tmp/ff
+ 1005  jobs
+ 1006  bin
+ 1007  vi display.py 
+ 1008  reboot
+ 1009  journalctl -b -x >/tmp/ff
+ 1010  vi /tmp/ff
+ 1011  exit
+ 1012  uptime
+ 1013  journalctl -b -x >/tmp/ff
+ 1014  grep Finished /tmp/ff
+ 1015  grep display.pl /tmp/ff
+ 1016  grep dispyay.pl /tmp/ff
+ 1017  grep display.py /tmp/ff
+ 1018  reboot
+ 1019  journalctl -b -x > /tmp/ff
+ 1020  grep display.py /tmp/ff
+ 1021  bin
+ 1022  vi display.py 
+ 1023  display.py
+ 1024  fg
+ 1025  git diff
+ 1026  git checkout display.py
+ 1027  grep display.py /tmp/ff
+ 1028  python3
+ 1029  man tilix
+ 1030  git status
+ 1031  halt
+ 1032  exigt
+ 1033  exit
+ 1034  journalctl -b -x > /tmp/ff
+ 1035  grep Finished /tmp/ff
+ 1036  exit
+ 1037  dumplog
+ 1038  grep Fini log.journal 
+ 1039  grep display.py log.journal
+ 1040  vi log.journal
+ 1041  jobs
+ 1042  exity
+ 1043  exit
+ 1044  dumplog
+ 1045  alias
+ 1046  resource
+ 1047  dumpklog
+ 1048  exit
+ 1049  journalctl -b -x >/tmp/ff
+ 1050  grep Finished /tmp/ff
+ 1051  grep display.py /tmp/ff
+ 1052  ps -ef | grep display
+ 1053  valias
+ 1054  resource
+ 1055  dumplog
+ 1056  grep display log.journal 
+ 1057  bin
+ 1058  grep Finis display.py 
+ 1059  git pull
+ 1060  vi display.py 
+ 1061  display.py 
+ 1062  fg
+ 1063  display.py 
+ 1064  fg
+ 1065  display.py 
+ 1066  fg
+ 1067  display.py 
+ 1068  jobs
+ 1069  fg
+ 1070  display.py 
+ 1071  python3
+ 1072  fg
+ 1073  display.py 
+ 1074  fg
+ 1075  display.py 
+ 1076  fg
+ 1077  display.py 
+ 1078  fg
+ 1079  display.py 
+ 1080  fg
+ 1081  display.py 
+ 1082  dumplog
+ 1083  grep Finis display.py 
+ 1084  grep display.py log.journal 
+ 1085  jobs
+ 1086  git diff
+ 1087  fg
+ 1088  git diff
+ 1089  git stash list
+ 1090  git stash
+ 1091  display.py 
+ 1092  dumplog
+ 1093  grep display.py log.journal 
+ 1094  git stash pop
+ 1095  git x -p
+ 1096  vi .gitignore 
+ 1097  git status
+ 1098  git x -p
+ 1099  reboot
+ 1100  man tilix
+ 1101  which gnome-terminal
+ 1102  tilix --help
+ 1103  reboot
+ 1104  exit
+ 1105  man tilix
+ 1106  tilix --geometry +500+100
+ 1107  exit
+ 1108  ls
+ 1109  exit
+ 1110  tilix --geometry +100+200
+ 1111  tilix --geometry +1000+200
+ 1112  tilix --geometry 132x40+1000+200
+ 1113  tilix --geometry 132x40+800+200
+ 1114  tilix --geometry 132x32+800+200
+ 1115  tilix --geometry 132x32+600+200
+ 1116  tilix --geometry 132x32+600+400
+ 1117  tilix --geometry 132x32+600+1000
+ 1118  tilix --geometry 132x32+600+800
+ 1119  tilix --geometry 132x32+600+900
+ 1120  tilix --geometry 132x32+600+0
+ 1121  tilix --geometry 132x32+600+400
+ 1122  tilix --geometry 132x32+600+200
+ 1123  tilix --geometry 132x32+2500+200
+ 1124  tilix --geometry 132x32+1200+200
+ 1125  tilix --geometry 132x32+1500+200
+ 1126  tilix --geometry 132x32+1400+200
+ 1127  tilix --geometry 132x32+1300+200
+ 1128  tilix --geometry 132x32+1350+200
+ 1129  tilix --geometry 132x32+1380+200
+ 1130  tilix --geometry 132x32+1370+200
+ 1131  exit
+ 1132  ls
+ 1133  ls -art
+ 1134  ls -rt
+ 1135  rm log.journal 
+ 1136  find .local -type f -name log.journal
+ 1137  find .local -type f -name log.journal -exec rm {} \;
+ 1138  find .local -type f -name log.journal
+ 1139  ls
+ 1140  df -k .
+ 1141  rm linux-headers-generic-hwe-20.04_5.4.0.48.51_amd64.deb 
+ 1142  ls
+ 1143  dirs
+ 1144  bin
+ 1145  git status
+ 1146  git push
+ 1147  netstat
+ 1148  ping sgi.com
+ 1149  ping pkg-engine.com
+ 1150  git push
+ 1151  exit
+ 1152  ps -ef | grep tilix
+ 1153  ping pkg-engine.com
+ 1154  exit
+ 1155  dumplog
+ 1156  ls -rt
+ 1157  grep Finish log.journal 
+ 1158  grep display.py log.journal
+ 1159  ps -f
+ 1160  ps -ef | grep tilix
+ 1161  halt
+ 1162  home
+ 1163  git status
+ 1164  git pull
+ 1165  reboot
+ 1166  dumplog
+ 1167  grep display.py log.journal 
+ 1168  ps -f | grep tilix
+ 1169  ps -ef | grep tilix
+ 1170  bin
+ 1171  jobs
+ 1172  vi display.py 
+ 1173  reboot
+ 1174  bin
+ 1175  vi display.py 
+ 1176  reboot
+ 1177  bin
+ 1178  vi display.py 
+ 1179  reboot
+ 1180  bin
+ 1181  git x -p
+ 1182  man tilix
+ 1183  jobs
+ 1184  halt
+ 1185  cd Projects/
+ 1186  svn checkout https://svn.code.sf.net/p/lazarus-ccr/svn/ lazarus-ccr-svn
+ 1187  apt install subversion
+ 1188  apt update
+ 1189  valias
+ 1190  resource
+ 1191  git status
+ 1192  svn checkout https://svn.code.sf.net/p/lazarus-ccr/svn/ lazarus-ccr-svn
+ 1193  cd lazarus-ccr-svn/
+ 1194  ls
+ 1195  ls applications/
+ 1196  cd ..
+ 1197  mkdir lazaruss-ccr-git
+ 1198  cd lazaruss-ccr-git
+ 1199  git svn init
+ 1200  apt install git-svn
+ 1201  git svn init
+ 1202  git svn init Apple News+ Audio
+ 1203  ls -a
+ 1204  ls News+/
+ 1205  rm -rf News+/
+ 1206  git svn checkout https://svn.code.sf.net/p/lazarus-ccr/svn/ lazarus-ccr-svn
+ 1207  git svn init https://svn.code.sf.net/p/lazarus-ccr/svn/ lazarus-ccr-svn
+ 1208  git svn checkout
+ 1209  git svn fetch
+ 1210  ls -a
+ 1211  cd lazarus-ccr-svn/
+ 1212  ls
+ 1213  ls -a
+ 1214  git svn checkout
+ 1215  git svn fetch
+ 1216  ls
+ 1217  ls -a
+ 1218  git log -2
+ 1219  git svn help checkout
+ 1220  git svn help
+ 1221  cd ../..
+ 1222  ls -lrt
+ 1223  cd codeblocks/
+ 1224  ls
+ 1225  cd trunk/
+ 1226  ls
+ 1227  ls -a
+ 1228  ls -la
+ 1229  home
+ 1230  ls ../.config/autostart/
+ 1231  ls -l ../.config/autostart/
+ 1232  ls -l ../.config/autostart/screen.desktop 
+ 1233  diff ../.config/autostart/screen.desktop .config/autostart/display.py.desktop 
+ 1234  vi .config/autostart/display.py.desktop
+ 1235  diff ../.config/autostart/screen.desktop .config/autostart/display.py.desktop 
+ 1236  diff ../.config/autostart/screen.desktop .config/autostart/display.py.desktop  > foo
+ 1237  vi foo .config/autostart/display.py.desktop
+ 1238  diff ../.config/autostart/screen.desktop .config/autostart/display.py.desktop  > foo
+ 1239  vi foo .config/autostart/display.py.desktop
+ 1240  cp ../.config/autostart/screen.desktop .config/autostart/
+ 1241  cp .config/autostart/display.py.desktop ../.config/autostart/
+ 1242  ls ../.config/autostart/
+ 1243  ls ../.config/autostart/screen.desktop 
+ 1244  rm ../.config/autostart/screen.desktop
+ 1245  dumplog
+ 1246  grep screen.desktop log.journal 
+ 1247  grep display.py log.journal
+ 1248  jobs
+ 1249  exit
+ 1250  cd Projects/
+ 1251  ls
+ 1252  ls codeblocks/
+ 1253  ls -a codeblocks/
+ 1254  mv codeblocks/ codeblocks-svn
+ 1255  git clone ssh://git@github.com/redorca/codeblocks.git
+ 1256  ping furious.dev
+ 1257  git help rebase
+ 1258  rm -rf codeblocks
+ 1259  git clone ssh://git@github.com/redorca/codeblocks.git
+ 1260  diff -ru codeblocks codeblocks-svn/
+ 1261  cd codeblocks
+ 1262  git svn fetch
+ 1263  cd ../codeblocks-svn/
+ 1264  git svn fetch
+ 1265  cd ..
+ 1266  git clone file:codeblocks-svn/ codeblocks-copy
+ 1267  git clone file://codeblocks-svn/ codeblocks-copy
+ 1268  git clone file:./codeblocks-svn/ codeblocks-copy
+ 1269  pwd
+ 1270  git clone file://home/ermine/Projects/codeblocks-svn/ codeblocks-copy
+ 1271  git clone file:///home/ermine/Projects/codeblocks-svn/ codeblocks-copy
+ 1272  cd codeblocks-svn/
+ 1273  ls
+ 1274  git remote -v
+ 1275  git push
+ 1276  git push -f
+ 1277  git svn fetch
+ 1278  pd
+ 1279  pd ../codeblocks
+ 1280  git svn -fetch
+ 1281  ggit svn fetch
+ 1282  git svn fetch
+ 1283  cd ..
+ 1284  diff -ru codeblocks codeblocks-svn/
+ 1285  diff -ru codeblocks codeblocks-copy/
+ 1286  pd
+ 1287  cd codeblocks-copy/
+ 1288  git svn fetch
+ 1289  ls -a
+ 1290  git --version
+ 1291  git svn version
+ 1292  git svn --version
+ 1293  git --version
+ 1294  git update
+ 1295  apt upgrade git-svn
+ 1296  git svn fetch
+ 1297  grep -r svn-remote .git
+ 1298  vi .git/config
+ 1299  vi .git/config ../codeblocks-svn/.git/config 
+ 1300  git svn fetch
+ 1301  fg
+ 1302  git svn fetch
+ 1303  vi .git/config ../codeblocks-svn/.git/config 
+ 1304  git status
+ 1305  git log -2
+ 1306  ls
+ 1307  git log -2
+ 1308  git svn fetch
+ 1309  ls
+ 1310  git log -2
+ 1311  git fetch
+ 1312  git svn fetch
+ 1313  git tag
+ 1314  cd ..
+ 1315  git svn clone -s svn+ssh://
+ 1316  git history 40
+ 1317  history 40
+ 1318  history | grep clone
+ 1319  ssh bigred@furious.dev
+ 1320  ping furious.dev
+ 1321  ssh bigred@pkg-engine.com
+ 1322  ls .ssh
+ 1323  cat .ssh/id_rsa.pub 
+ 1324  ssh bigred@furious.dev
+ 1325  ssh =vvv bigred@furious.dev
+ 1326  ssh -vvv bigred@furious.dev
+ 1327  ls -l .ssh
+ 1328  ssh -vvv bigred@furious.dev
+ 1329  cat .ssh/id_rsa.pub 
+ 1330  mv .ssh .ssh.should-work
+ 1331  ssh-keygen
+ 1332  cat .ssh/id_rsa.pub 
+ 1333  mv .ssh .ssh-new
+ 1334  mv .ssh.should-work/ .ssh
+ 1335  ssh-keygen
+ 1336  ssh -vvv bigred@furious.dev
+ 1337  home
+ 1338  ls
+ 1339  cp ../.ssh/id_rsa.pub .
+ 1340  mv id_rsa.pub id_rsa.pub.ermine
+ 1341  git add id_rsa.pub.ermine
+ 1342  git x -p'
+ 1343  git x -p'
+ 1344  git x -p
+ 1345  git pull
+ 1346  vi .config/autostart/display.py.desktop 
+ 1347  git x -c
+ 1348  git push
+ 1349  ssh -vvv bigred@furious.dev
+ 1350  ssh  bigred@furious.dev
+ 1351  jobs
+ 1352  exit
+ 1353  exit
+ 1354  apt install git-cinnabar
+ 1355  df -k .
+ 1356  ls /sys/block
+ 1357  hostname
+ 1358  id
+ 1359  ls
+ 1360  ls Documents/
+ 1361  ls Downloads/
+ 1362  du -s snap
+ 1363  cd Projects/
+ 1364  ls
+ 1365  du -sc codeblocks* lazarus*
+ 1366  rm -rf codeblocks 
+ 1367  cd codeblocks-svn/
+ 1368  ls -al
+ 1369  ls -alrt ../codeblocks-copy/
+ 1370  cd ..
+ 1371  diff -ru codeblocks-svn/ codeblocks-copy/
+ 1372  rm -rf codeblocks-copy/
+ 1373  ls
+ 1374  cd lazarus-ccr-svn/
+ 1375  ls
+ 1376  ls -a
+ 1377  du -sc *
+ 1378  df -k .
+ 1379  cd ../../
+ 1380  du -sc .??*
+ 1381  ls ../home
+ 1382  pwd
+ 1383  ls ../
+ 1384  blueshieldca support 877 455 6777
+ 1385  877   0504
+ 1386  sudo python3 -m pip install --upgrade
+ 1387  sudo python3 -m pip install --upgrade pip
+ 1388  dpkg -l | grep pip
+ 1389  apt update
+ 1390  bin
+ 1391  git clone ssh://git@github.com/glandium/git-cinnabar.git
+ 1392  history > ../blueshieldca
