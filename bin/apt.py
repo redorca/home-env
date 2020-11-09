@@ -42,12 +42,14 @@ def main(myargs):
         return False
 
     print("Will perform", myargs[1], *myargs[2:])
-    with open(RECORD_FILE, mode='ab') as recf:
-        STD_RUN_ARGS["stdout"] = recf
-        result = route_args[myargs[1]](myargs[1], *myargs[2:])
-        print("Result :: ", result.stdout)
+    if myargs[1] == "remove" or myargs[1] == "install":
+        with open(RECORD_FILE, mode='ab') as recf:
+            STD_RUN_ARGS["stdout"] = recf
+            result = route_args[myargs[1]](myargs[1], *myargs[2:])
+            print("Result :: ", result.stdout)
         return True
-
+    result = route_args[myargs[1]](myargs[1], *myargs[2:])
+    return True
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
