@@ -41,7 +41,7 @@ def main(myargs):
         print("No action specified.")
         return False
 
-    print("Will perform", myargs[1], *myargs[2:])
+    print("Will ", myargs[1], *myargs[2:])
     if myargs[1] == "remove" or myargs[1] == "install":
         with open(RECORD_FILE, mode='ab') as recf:
             STD_RUN_ARGS["stdout"] = recf
