@@ -32,12 +32,24 @@ class Codec():
 
     def __set_goals(self):
         print(" ends with? ", self.filename.split(sep="."))
-        self.ending = self.filename.split(sep=".")[-1]
+        #
+        # Default to no ending in case the filename has no suffix
+        # If there is a suffix then use it, else stick with the default
+        #
+        self.ending = ""
+        if self.filename.split(sep=".")[-1] != self.filename.split(sep=".")[0]:
+                self.ending = self.filename.split(sep=".")[-1]
         self.mode = self.suffixes[self.ending]
+        self.filename = self.filename + "." + self.mode.split(":")[1]
 
     def codopen(self):
         Codec.__set_goals(self)
-        tarfile.open(self.filename, self.mode)
+        foo = tarfile.open(self.filename, self.mode)
+        if foo is None:
+                print("no file opened.")
+        # foo.add("/home/zglue/.local/debian/repo-setup/")
+        foo.add("../repo-setup/")
+        foo.close()
 
 def blah(filename):
     Engage = Codec(filename)
