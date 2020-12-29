@@ -1,0 +1,26 @@
+'
+    stream of consciousness`thoughts on what needs to happen.
+'
+
+is the generic rules file enough?
+should I breakout the builds within rules?
+
+dh_ commands do fall into disuse (i.e. deprecated)
+
+must support building a package from app source, providing source, binary, and maybe debug, pkgs.
+
+
+
+
+
+order:
+
+==>    code unwrapping of tar file
+
+
+
+    mkdir <pkg-dir>/debian
+
+    setup control, license, and other required files.
+
+
