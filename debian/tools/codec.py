@@ -40,15 +40,26 @@ class Codec():
         if self.filename.split(sep=".")[-1] != self.filename.split(sep=".")[0]:
                 self.ending = self.filename.split(sep=".")[-1]
         self.mode = self.suffixes[self.ending]
-        self.filename = self.filename + "." + self.mode.split(":")[1]
+        if  self.mode.split(":")[0] == "w":
+                self.filename = self.filename + "." + self.mode.split(":")[1]
+
+    def compress(self, filename, mode="bz2"):
+        self.mode = mode
+        print("compress ", filename, " & mode ", self.mode)
+
+    def decompress(self, filename):
+        print("decompress ", filename)
 
     def codopen(self):
         Codec.__set_goals(self)
+        print("codeopen file: ", self.filename, " & mode: ", self.mode)
         foo = tarfile.open(self.filename, self.mode)
         if foo is None:
                 print("no file opened.")
-        # foo.add("/home/zglue/.local/debian/repo-setup/")
-        foo.add("../repo-setup/")
+        if self.mode.split(".")[0] == "w":
+                foo.add("../repo-setup/")
+        else:
+            foo.extractall()
         foo.close()
 
 def blah(filename):
@@ -58,7 +69,7 @@ def blah(filename):
 
 
 the_filename = "../../my-keys.tgz"
-the_filename = "boohoo"
+the_filename = "boohoo.bz2"
 # blah(the_filename)
 
 main(blah(the_filename))
