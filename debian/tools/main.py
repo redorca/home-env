@@ -3,7 +3,7 @@
     without having to type all of the stuff.
 '''
 
-def main(instructions):
+def name_is_main(instructions):
     if __name__ == "__main__":
         instructions()
 

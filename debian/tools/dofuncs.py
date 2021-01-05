@@ -6,5 +6,5 @@ from main import *
 import subprocess
 import os
 
-main(print("lkjdas;ljf"))
+name_is_main(print("lkjdas;ljf"))
 
