@@ -1,1 +1,14 @@
-sdk-gcc-arm/
+*
+!changelog
+!control
+!compat
+!copyright
+!README.*
+!Makefile*
+!.gitignore
+!rules
+!source/
+!*.links
+!*.docs
+!*.doc-base
+
