@@ -1,8 +1,9 @@
-debhelper-build-stamp
-files
-nuttx/
-nuttx.substvars
-*.ex
-*.EX
-bills-env/
-
+*
+!changelog
+!control
+!compat
+!copyright
+!README.*
+!Makefile*
+!.gitignore
+!rules
