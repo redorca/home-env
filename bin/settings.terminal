@@ -1,0 +1,33 @@
+#
+# /org/gnome/terminal/legacy/
+#
+[/]
+alt= ['b1dcc9dd-5262-4d8d-a863-c897e6d979b9', '4c74bbbc-e1ad-4f31-a3b7-4c5528c8b3ca', '73818996-a629-48de-b7d8-8ffd805e00c2', '61338449-d879-473a-a523-9da155d81491', '7661bb38-0ac4-4bf6-aacd-3c445cdc739a']
+list=['b1dcc9dd-5262-4d8d-a863-c897e6d979b9', '4c74bbbc-e1ad-4f31-a3b7-4c5528c8b3ca', '73818996-a629-48de-b7d8-8ffd805e00c2', '61338449-d879-473a-a523-9da155d81491', '7661bb38-0ac4-4bf6-aacd-3c445cdc739a']
+menu-accelerator-enabled=false
+mnemonics-enabled=true
+theme-variant='light'
+
+[profiles:]
+list=['8c8c0f9e-d39f-4b73-8b21-2f64447adafd']
+#
+#  This one or 'Light II (Copy)'
+#
+[profiles:/:8c8c0f9e-d39f-4b73-8b21-2f64447adafd/
+audible-bell=false
+background-color='rgb(253,246,227)'
+bold-color='rgb(249,252,21)'
+bold-color-same-as-fg=false
+bold-is-bright=true
+cursor-blink-mode='on'
+cursor-shape='block'
+default-size-columns=132
+default-size-rows=32
+font='Liberation Mono Bold 14'
+foreground-color='rgb(21,21,21)'
+highlight-colors-set=true
+palette=['rgb(7,54,66)', 'rgb(220,50,47)', 'rgb(133,153,0)', 'rgb(181,137,0)', 'rgb(38,139,210)', 'rgb(211,54,130)', 'rgb(42,161,152)', 'rgb(238,232,213)', 'rgb(0,43,54)', 'rgb(203,75,22)', 'rgb(88,110,117)', 'rgb(101,123,131)', 'rgb(131,148,150)', 'rgb(108,113,196)', 'rgb(147,161,161)', 'rgb(253,246,227)']
+use-system-font=false
+use-theme-colors=false
+visible-name='Light III'
+

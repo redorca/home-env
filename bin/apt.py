@@ -36,7 +36,8 @@ def main(myargs):
         Arg checks and routing.
     '''
     route_args = {"remove": apt_get, "install": apt_get, "auto-remove": apt_get,
-                  "auto-clean": apt_get, "update": apt_get, "search": apt}
+                  "auto-clean": apt_get, "update": apt_get, "download": apt_get,
+                  "search": apt}
     if not myargs[1] in route_args:
         print("No action specified.")
         return False
