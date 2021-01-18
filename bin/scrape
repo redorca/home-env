@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 fecho()
 {
@@ -23,7 +23,6 @@ convert()
 	ShortForm=${1##*/}
 	WebSite="https://www.literotica.com/s/${ShortForm}"
 	# WEBSITE=https:"${1#http*:}" ; shift
-        [ "${1%%/*}" == "https:" ] && WebSite="$1"
 	echo "$WebSite"
 }
 
@@ -45,25 +44,21 @@ get_page_count()
 
 get_page()
 {
+	local Website=
 	local StoryPage=
-        local RV=
 
-        RV=1
 	StoryPage="$1"
-        wget -U "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0" \
-                --save-cookies=/tmp/cookies.txt --keep-session-cookies ${StoryPage%%.com*}.com
+	wget2 --recursive \
+	      --page-requisites \
+              --level=0  \
+	      --convert-links \
+	      --no-parent \
+              --robots=no \
+	      ${StoryPage}
+	[ -f "${StoryPage#https://}.html" ] || return 1
 
-	if wget -U "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0" \
-	     --load-cookies=/tmp/cookies.txt --recursive \
-	     --page-requisites \
-	     --convert-links \
-	     --no-parent \
-	     ${StoryPage} ; then
-
-	        echo "${StoryPage} retrieved"
-	        RV=0
-        fi
-        return $RV
+	echo "${StoryPage#https://}.html retrieved"
+	return 0
 }
 
 reset_index_page()
@@ -117,7 +112,7 @@ get_story()
 	Count=2
 	Pages=0
 	File="${Story#https://}.html"
-	get_page $Story
+	get_page $Story 2>/dev/null
 	if Doh=$(grep Pages: $File) 2>/dev/null ; then
 		Pages=$(echo $Doh | sed -e 's,^.*>\([0-9][0-9]*\)[	 ]*Pages:.*,\1,')
 	fi
@@ -130,7 +125,8 @@ get_story()
 	reset_hrefs $Story
 }
 
-
+get_page $1
+exit
 while [ $# -ne 0 ] ; do
 	WEBSITE=$(convert $1) ; shift
 	fecho "Download the story ${WEBSITE##*/s/}"
