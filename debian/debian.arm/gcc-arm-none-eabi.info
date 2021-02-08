@@ -1,0 +1,13 @@
+share/doc/gcc-arm-none-eabi/info/bfd.info
+share/doc/gcc-arm-none-eabi/info/gprof.info
+share/doc/gcc-arm-none-eabi/info/ld.info
+share/doc/gcc-arm-none-eabi/info/cppinternals.info
+share/doc/gcc-arm-none-eabi/info/stabs.info
+share/doc/gcc-arm-none-eabi/info/gdb.info
+share/doc/gcc-arm-none-eabi/info/cpp.info
+share/doc/gcc-arm-none-eabi/info/gccinstall.info
+share/doc/gcc-arm-none-eabi/info/gcc.info
+share/doc/gcc-arm-none-eabi/info/gccint.info
+share/doc/gcc-arm-none-eabi/info/annotate.info
+share/doc/gcc-arm-none-eabi/info/binutils.info
+share/doc/gcc-arm-none-eabi/info/as.info

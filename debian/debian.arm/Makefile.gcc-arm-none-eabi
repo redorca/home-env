@@ -1,0 +1,70 @@
+#############################################################################
+#                                                                           #
+#        Copyright (C) 2019, Bill Rees                                      #
+#                                                                           #
+#                                                                           #
+#                                                                           #
+#                                                                           #
+#############################################################################
+
+PACKAGE = gcc-arm-none-eabi
+#
+# DESTDIR points to the root directory
+#
+DESTDIR?=debian/$(PACKAGE)
+FULLNAME = $(shell pwd)
+BASE_NAME = $(shell basename $(FULLNAME)
+DEB_VER = $(BASE_NAME:$(PACKAGE)-%=%)
+
+ROOT_DIRS = bin lib include share
+# TARGETDIR=.$(PACKAGE)/usr
+# TARGETDIR = $(shell echo "$(PACKAGE:gcc-%=%)" )
+#
+# TARGETDIR points to the directory to copy files
+# into.
+#
+TARGETDIR = /usr
+
+INSTALL_PATH = $(DESTDIR)$(TARGETDIR)
+SOURCEDIR=gcc-arm-none-eabi
+Q=@
+
+all:
+	$(Q) echo "====================="
+
+changelog:
+	$(Q) echo "$(PACKAGE) ($(DEB_VER)) phoo; urgency=medium" > fupu
+	$(Q) echo "\n\n * Initial release (Closes: \043899095)\n" >> fupu
+	$(Q) echo "\t-- bill <bill@zglue.com>  Sat, 04 May 2019 23:28:32 -0700" >> fupu
+ 
+
+install: package doc-fix
+
+package: Foo=$(PACKAGE:gcc-%=%)
+package: $(DESTDIR)$(TARGETDIR)
+	$(Q) cp -a lib share bin $(INSTALL_PATH) ; $(RM) $(INSTALL_PATH)/share/doc/gcc-arm-none-eabi/info/dir
+	$(Q) for dir in $(ROOT_DIRS) ; do \
+		[ -d  $(INSTALL_PATH)/$$dir/${Foo} ] || mkdir -p $(INSTALL_PATH)/$$dir/${Foo}  ; \
+		cp -a ${Foo}/$$dir/* ${INSTALL_PATH}/$${dir}/${Foo} ;       \
+	     done
+
+doc-fix:
+	$(Q) for pdf in $$(find $(INSTALL_PATH)/share/doc -name "*.pdf") ; do   \
+		gzip $$pdf  ; \
+	     done
+	$(Q) 
+	$(Q) 
+
+$(DESTDIR)$(TARGETDIR):
+	$(Q) [ -d $@ ] || mkdir -p $@
+
+
+clean:
+	$(Q) $(RM) -r $(DESTDIR)
+
+clobber: clean
+	# $(Q) $(RM) -r ${DESTDIR%debian*}debian/{debhelper-build-stamp,gcc-arm-none-eabi.substvars,files,.debhelper}
+	$(Q) cd ${DESTDIR%debian*}debian/ && $(RM) -r debhelper-build-stamp gcc-arm-none-eabi.substvars files .debhelper
+	$(Q)
+
+
