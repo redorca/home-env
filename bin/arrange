@@ -1,0 +1,14 @@
+#!/bin/bash
+
+declare -a StandardDirs
+
+StandardDirs=( bin include lib share )
+
+PKGNAME=arm-none-eabi
+
+for dirr in ${StandardDirs[@]} ; do
+    echo "Operate on $dirr"
+    [ ! -d $dirr/$PKGNAME ] && mkdir -p $dirr/$PKGNAME
+    [ -d $PKGNAME/$dirr ] && pushd $PKGNAME && cp -a $dirr/* ../$dirr/$PKGNAME && popd
+done
+
