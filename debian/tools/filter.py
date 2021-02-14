@@ -26,4 +26,4 @@ def sift_names(topdir):
             perms_oct, perms_alpha = what_perms(dirpath, afile)
             print(" file :: ", afile, "  ",  perms_oct, "  ", perms_alpha)
 
-name_is_main(sift_names(TOPDIR))
+main_if_main(sift_names(TOPDIR))

@@ -1,3 +1,5 @@
+#!/bin/env python3
+
 '''
     Interface to the outside world hiding the specifics of
     the compression or decompression.a
@@ -53,14 +55,18 @@ class Codec():
     def codopen(self):
         Codec.__set_goals(self)
         print("codeopen file: ", self.filename, " & mode: ", self.mode)
-        foo = tarfile.open(self.filename, self.mode)
-        if foo is None:
-                print("no file opened.")
-        if self.mode.split(".")[0] == "w":
+        with tarfile.open(self.filename, self.mode) as foo:
+            if self.mode.split(".")[0] == "z":
                 foo.add("../repo-setup/")
-        else:
             foo.extractall()
-        foo.close()
+
+        # if foo is None:
+        #         print("no file opened.")
+        # if self.mode.split(".")[0] == "w":
+        #         foo.add("../repo-setup/")
+        # else:
+        #    foo.extractall()
+        # foo.close()
 
 def blah(filename):
     Engage = Codec(filename)
@@ -70,6 +76,4 @@ def blah(filename):
 the_filename = "/home/zglue/Downloads/gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2"
 # blah(the_filename)
 
-name_is_main(blah(the_filename))
-
-
+main_if_main(blah(the_filename))

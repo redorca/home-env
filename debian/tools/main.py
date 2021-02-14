@@ -3,7 +3,6 @@
     without having to type all of the stuff.
 '''
 
-def name_is_main(instructions):
+def main_if_main(instructions, *positional, **args):
     if __name__ == "__main__":
-        instructions()
-
+        instructions(*positional, **args)
