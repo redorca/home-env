@@ -8,7 +8,7 @@
 '''
 
 '''
-    The module "main" provides the function main(func(dkkdkd))
+    The module "main" provides the function main_if_main(func(dkkdkd))
     to turns this file into a callable command
 '''
 from main import *
@@ -52,11 +52,12 @@ class Codec():
     def decompress(self, filename):
         print("decompress ", filename)
 
-    def codopen(self):
+    def code_open(self):
         Codec.__set_goals(self)
-        print("codeopen file: ", self.filename, " & mode: ", self.mode)
+        print("code_open file: ", self.filename, " & mode: ", self.mode)
         with tarfile.open(self.filename, self.mode) as foo:
-            if self.mode.split(".")[0] == "z":
+            if self.mode.split(".")[0] == "w":
+                print("adding ../repo-setup")
                 foo.add("../repo-setup/")
             foo.extractall()
 
@@ -70,10 +71,9 @@ class Codec():
 
 def blah(filename):
     Engage = Codec(filename)
-    Engage.codopen()
+    Engage.code_open()
     print(" file and mode:  ", filename, "  ", Engage.mode)
 
-the_filename = "/home/zglue/Downloads/gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2"
-# blah(the_filename)
+the_filename = "/home/zglue/Downloads/gcc-arm-none-eabi-11-2020-q4-major-x86_64-linux.tar.bz2"
 
 main_if_main(blah(the_filename))
