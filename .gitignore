@@ -152,3 +152,8 @@ lib/
 ig.*
 git-cinnabar
 www.*
+GTAGS
+GPATH
+GRTAGS
+tags
+*.swp
