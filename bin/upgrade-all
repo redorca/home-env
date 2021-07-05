@@ -1,0 +1,23 @@
+#!/bin/bash
+
+ACTION=upgrade
+ACTION=dist-upgrade
+
+INITIAL=1
+TRIGGER=5
+count=$INITIAL
+sleep_by_five()
+{
+    # [ $count -eq $TRIGGER ] && count=$INITIAL && sleep 2 && return
+    # count=$(( count + 1 ))
+
+    [ "$count" -lt "$TRIGGER" ] && count=$(( count + 1 )) && return
+    count=$INITIAL
+    sleep 2
+}
+
+dpkg -l | grep ^ii | awk -F' ' '{print $2}' | while read ipkg ; do
+    sudo /usr/bin/apt-get -y $ACTION
+    sleep_by_five
+done
+
