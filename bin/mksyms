@@ -1,0 +1,9 @@
+#!/bin/bash
+
+SYMS=".gitconfig .gitignore .vim .vimrc .bash_aliases"
+
+pushd $HOME >/dev/null
+for lnk in $SYMS ; do
+    ln -sf ~/.local/$lnk
+done
+popd >/dev/null
