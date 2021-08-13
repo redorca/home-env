@@ -1,2 +1,5 @@
 [pull]
 	rebase = false
+[user]
+	name = Bill Hooper
+	email = me@billrees.io
