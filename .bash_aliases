@@ -34,10 +34,11 @@ well_known_files["hosts"]="/etc/hosts"
 well_known_files["ssh-config"]=${HOME}/.ssh/config
 well_known_files["known_hosts"]=${HOME}/.ssh/known_hosts
 well_known_files["known-hosts"]=${HOME}/.ssh/known_hosts
-well_known_files["gitconfig"]=${HOME}/.gitconfig
-well_known_files["/gitignore"]=${HOME}/.gitignore
+well_known_files[".gitconfig"]=${HOME}/.gitconfig
+well_known_files[".gitignore"]=${HOME}/.gitignore
+well_known_files["/.gitignore"]=${HOME}/.gitignore
 well_known_files["ignore"]=${HOME}/.config/git/ignore
-well_known_files["gdbinit"]=${HOME}/.gdbinit
+well_known_files[".gdbinit"]=${HOME}/.gdbinit
 well_known_files["/gdbinit"]=${HOME}/.gdbinit
 well_known_files["${HOME##*/}"]=/etc/sudoers.d/${HOME##*/}
 
@@ -669,7 +670,7 @@ alias             jo="jobs -l"
 alias           jobs="jobs -l"
 alias           home="pushd ~${LOCAL} >/dev/null && dirs -v"
 alias            bin="pushd ~${LOCAL}bin >/dev/null && dirs -v"
-alias             vi="vim"
+alias             vi="vim_x"
 alias         valias="vim ~${LOCAL}.bash_aliases"
 alias         status="git status | sed -n -e '1,/^Untracked/p'"
 alias           mods="git status | grep modified:"
@@ -1031,6 +1032,20 @@ function set-os-personality()
                 echo "Set prompt for Redhat sys-arch"
                 PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
         fi
+}
+
+#
+# Substitute a well_known_file location
+#
+function vim_x()
+{
+	[ $# -eq 0 ] && return 1
+
+	local xFile=
+
+	xFile="$1"
+	CMD="/bin/vim $(find_file ${well_known_files[${xFile}]})"
+	$CMD
 }
 
 FOCUS=
