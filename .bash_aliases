@@ -26,6 +26,22 @@ INVERT=7
 #  to ths fil will only ever see an interactive environment.
 #
 
+declare -A well_known_files
+well_known_files["smb.conf"]="/etc/samba/smb.conf"
+well_known_files["sources.list"]="/etc/apt/sources.list"
+well_known_files["fstab"]="/etc/fstab"
+well_known_files["hosts"]="/etc/hosts"
+well_known_files["ssh-config"]=${HOME}/.ssh/config
+well_known_files["known_hosts"]=${HOME}/.ssh/known_hosts
+well_known_files["known-hosts"]=${HOME}/.ssh/known_hosts
+well_known_files["gitconfig"]=${HOME}/.gitconfig
+well_known_files["/gitignore"]=${HOME}/.gitignore
+well_known_files["ignore"]=${HOME}/.config/git/ignore
+well_known_files["gdbinit"]=${HOME}/.gdbinit
+well_known_files["/gdbinit"]=${HOME}/.gdbinit
+well_known_files["${HOME##*/}"]=/etc/sudoers.d/${HOME##*/}
+
+
 declare -A dir_to_flag
 dir_to_flag["dir"]="d"
 dir_to_flag["file"]="f"
@@ -68,6 +84,19 @@ function do-exit()
         echo "$ErrMsg" >&2
 
         exit $ErrCode
+}
+
+#
+# Simplify accessing well known files by allowing
+# an alias for the file.
+#
+function find_file()
+{
+	[ -e "$1" ] && echo "$1" && return 0
+	[ -e ${well_known_files["$1"]} ] && echo ${well_known_files["$1"]} && return 0
+
+	echo "Not found" >&2
+	return 1
 }
 
 function funame()
@@ -400,6 +429,25 @@ function show()
         esac
 
         set | eval sed  -n -e '/^$1/,/^}/p'
+}
+
+#
+# For a file in BNF print the section specified.
+#
+function view()
+{
+	# Arg 1:  File to examine
+	# Arg 2:  Heading to extract.
+
+	local File=
+	local Heading=
+
+	File=$1
+	Heading=$2
+
+	sed -n -e '/'${Heading}'/,/^$/p' "${File}"
+
+	return
 }
 
 #
