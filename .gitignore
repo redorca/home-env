@@ -60,11 +60,6 @@ dkms.conf
 *.orig
 *.rej
 *.dep
-/.??*
-!.gnupg/
-!/.bash_aliases
-!/.vimrc
-!/.vim/
 Downloads/
 Documents/
 Music/

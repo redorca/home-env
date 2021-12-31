@@ -25,22 +25,23 @@ INVERT=7
 #  an interactive (login?) environment.  So, any code added
 #  to ths fil will only ever see an interactive environment.
 #
-
-declare -A well_known_files
-well_known_files["smb.conf"]="/etc/samba/smb.conf"
-well_known_files["sources.list"]="/etc/apt/sources.list"
-well_known_files["fstab"]="/etc/fstab"
-well_known_files["hosts"]="/etc/hosts"
-well_known_files["ssh-config"]=${HOME}/.ssh/config
-well_known_files["known_hosts"]=${HOME}/.ssh/known_hosts
-well_known_files["known-hosts"]=${HOME}/.ssh/known_hosts
-well_known_files[".gitconfig"]=${HOME}/.gitconfig
-well_known_files[".gitignore"]=${HOME}/.gitignore
-well_known_files["/.gitignore"]=${HOME}/.gitignore
-well_known_files["ignore"]=${HOME}/.config/git/ignore
-well_known_files[".gdbinit"]=${HOME}/.gdbinit
-well_known_files["/gdbinit"]=${HOME}/.gdbinit
-well_known_files["${HOME##*/}"]=/etc/sudoers.d/${HOME##*/}
+KnownFiles="${HOME}/.known_files"
+[ -e "${KnownFiles}" ] && source "${KnownFiles}"
+## declare -A well_known_files
+## well_known_files["smb.conf"]="/etc/samba/smb.conf"
+## well_known_files["sources.list"]="/etc/apt/sources.list"
+## well_known_files["fstab"]="/etc/fstab"
+## well_known_files["hosts"]="/etc/hosts"
+## well_known_files["ssh-config"]="${HOME}/.ssh/config"
+## well_known_files["known_hosts"]="${HOME}/.ssh/known_hosts"
+## well_known_files["known-hosts"]="${HOME}/.ssh/known_hosts"
+## well_known_files[".gitconfig"]="${HOME}/.gitconfig"
+## well_known_files[".gitignore"]="${HOME}/.gitignore"
+## well_known_files["/.gitignore"]="${HOME}/.gitignore"
+## well_known_files["ignore"]="${HOME}/.config/git/ignore"
+## well_known_files[".gdbinit"]="${HOME}/.gdbinit"
+## well_known_files["/gdbinit"]="${HOME}/.gdbinit"
+## well_known_files["${HOME##*/}"]="/etc/sudoers.d/${HOME##*/}"
 
 
 declare -A dir_to_flag
@@ -93,10 +94,13 @@ function do-exit()
 #
 function find_file()
 {
-	[ -e "$1" ] && echo "$1" && return 0
-	[ -e ${well_known_files["$1"]} ] && echo ${well_known_files["$1"]} && return 0
+	local ffile=
 
-	echo "Not found" >&2
+	ffile="$1"
+	[ -e "$ffile" ] && echo "$ffile" && return 0
+	[ -e ${well_known_files["$ffile"]} ] && echo ${well_known_files["$ffile"]} && return 0
+
+	echo -e "\t$ffile Not found" >&2
 	return 1
 }
 
@@ -662,6 +666,7 @@ fi
 
 # alias             po="popd >/dev/null && dirs -v"
 # alias            apt="sudo apt-get -y"
+alias            lsa="ls -d .??*"
 alias  preset-phrase="/usr/lib/gnupg2/gpg-preset-passphrase --preset"
 alias             ve="virtualenv -p /usr/bin/python3"
 alias           path="echo \$PATH | sed -e 's/^/	/' -e 's/:/	/g'"
@@ -1042,9 +1047,9 @@ function vim_x()
 	[ $# -eq 0 ] && return 1
 
 	local xFile=
-
 	xFile="$1"
-	CMD="/bin/vim $(find_file ${well_known_files[${xFile}]})"
+
+	CMD="/bin/vim $(find_file $xFile)"
 	$CMD
 }
 
@@ -1081,4 +1086,27 @@ STARTING_DIR="$(pwd)"
 [ "$(basename $STARTING_DIR)" == "Desktop" ] && STARTING_DIR="$HOME"
 cd $STARTING_DIR && enter-any-venv
 
+
+
+function crul()
+{
+	local Base=
+	local Proto=
+	local repo=
+
+	repo="${1%%.git}.git"
+	Base=endogiteng01.strykercorp.com:7999/e_ccu
+	Proto=ssh://git@
+
+	echo ${Proto}${Base}/${repo}
+}
+
+function clone()
+{
+	local Repo=
+
+	[ $# -eq 0 ] && return 1
+	Repo="$1"
+	git clone $(crul $Repo)
+}
 
