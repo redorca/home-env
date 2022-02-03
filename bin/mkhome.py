@@ -5,9 +5,11 @@
 '''
 
 import os
+import sys
 import subprocess as subp
 import constants.constants as fra
 
+sys.path.append(".local/bin/home-env/bin")
 def symlink(real_file, fake_file, dir_link):
     '''
         Create a symlink between a managed file and a . file in ~

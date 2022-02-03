@@ -6,7 +6,10 @@
 
 import subprocess
 import os
+import sys
 import constants.constants as fra
+
+sys.path.append(".local/bin/home-env/bin")
 
 def main():
     '''
