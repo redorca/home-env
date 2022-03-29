@@ -27,7 +27,7 @@ INVERT=7
 #
 KnownFiles="${HOME}/.known_files"
 [ -e "${KnownFiles}" ] && source "${KnownFiles}"
-## declare -A well_known_files
+declare -A well_known_files
 ## well_known_files["smb.conf"]="/etc/samba/smb.conf"
 ## well_known_files["sources.list"]="/etc/apt/sources.list"
 ## well_known_files["fstab"]="/etc/fstab"
@@ -98,10 +98,9 @@ function find_file()
 
 	ffile="$1"
 	[ -e "$ffile" ] && echo "$ffile" && return 0
-	[ -e ${well_known_files["$ffile"]} ] && echo ${well_known_files["$ffile"]} && return 0
+	[ -e "${well_known_files[$ffile]}" ] && echo "${well_known_files[$ffile]}" && return 0
+        echo "$ffile" && return 0
 
-	echo -e "\t$ffile Not found" >&2
-	return 1
 }
 
 function funame()
@@ -323,6 +322,8 @@ function dbg()
 function find-fu()
 {
         funame $@
+        local CMD=
+
         ([ -z "$1" ] || [ -z "$2" ]) && err_echo "Missing an arg or two."  && return 1
         local find_key=
         local Flag=
@@ -393,6 +394,8 @@ function po()
 function rm-fu()
 {
         funame $@
+        local CMD=
+
         ([ -z "$1" ] || [ -z "$2" ]) && err_echo "Missing an arg or two."  && return 1
         local find_key=
         local Flag=
@@ -625,6 +628,8 @@ function vim_color_setup()
 function zee()
 {
         funame $@
+        local CMD=
+
         local ZSERVER=
         local Msg=
 
@@ -1045,8 +1050,9 @@ function set-os-personality()
 function vim_x()
 {
 	[ $# -eq 0 ] && return 1
-
 	local xFile=
+        local CMD=
+
 	xFile="$1"
 
 	CMD="/bin/vim $(find_file $xFile)"
