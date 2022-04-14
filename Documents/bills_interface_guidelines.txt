@@ -1,0 +1,83 @@
+Instead of a Human Interface Guideline that imnplies specing for the general population this is a guide wholly intended for my satisfaction.
+
+B.I.G.
+
+No modal dialogue boxes
+    If you need to pause operation of your app then redisign it or shut it down upon return from the dialogue
+
+No confirmation dialogue boxes
+    If I say close the window then close the damn window. If there are questions about what to do with in procss activity save it off and prepare a means of recovery.
+
+    If the deletion without confirmation is a problem then design in a recovery mechanism that allows for retrieval in the near term but full deletion in the not too distant future.
+
+    The actor-state model is required. No MVC. Or think of it as a model and controller in one that knows nothing about the gui element, only the data going back and forth.
+
+    The model and gui elements should support running in a separate processes.
+
+    No root permissions for anything. Installation is local only, accessing devices is through named pipes or sockets, mounting and unmounting removable media is local only and not automatic; and if there are multiple users on a system then the user must use the UUID to mount.
+
+    Samba supports user mode only for mounting and exporting shares
+
+    nfs supports user mode only for mounting and exporting shares
+
+    ssh is a per user daemon
+
+    Installing to a different user will be a non-login user and allied to the user installing.
+
+    web servers, or any servers,  access locally only.
+
+    A command to shutdown, restart, hibernate, sleep, proceeds without interruptiong there are no modal dialoges to ask for confirmation.
+
+    Upon boot if there are multiple users who have permissions to login then there will be no memory of any previous login. Past history shall/must not be available at all times.
+
+
+=============
+GUI/UI principles
+
+    per file encryption is required and supports password changes. Ideally the key may be a dongle.
+
+    for removable media the key must be exportable to an independent device.
+
+    Focus of the user never loses context. Rather than switching tabs or windows something else must exist that satisifies the need to always maintain the user's focus on the original work.
+
+    The majority of action available to the user must not involve menu recursion and prferably avaid menu selection completely
+
+    Certified programs are limited to the certified libraries which will contain restrictions on system access, restrictions on system calls, insulation from network connectivity,
+
+    Files opened for app config, administering, shall be opened direct without using file system cacheing.
+
+=============
+kernel principles
+
+Processes are memory guarded from each other, stack and heap.
+
+kernel code runs on dedicated cores that are never used by user space programs
+
+kernel heap separate from user process heaps
+
+=============
+system design
+
+Storage is to be a nas model. The systems boot's diskless so all accesses to storage are network based, all interfaces to devices are blocked including network devices,
+
+firmware runs off of a separate processor which disengages once control is passed to the os.
+
+firmware updates are lan side only where any external contact is through a service that retrieves the blob.
+
+The blob is to be copied to a dongle for the prom processor to access.
+in the future some means of running the update in user flow shall be defined.
+
+no system management processors or engines, or at least the isolation of such from external access. Management of systems remotely shall be handled such that the system is secure from attack, privacy or otherwise.
+
+=============
+undefined.
+
+adding devices and capabilities (i.e. file systems, drives) to the os
+adding drivers
+os updates
+automatic servicing (updates, firmware, logging, administering)
+network management (firewalls, connect, disconnect, socket handling & management).
+log file and syslog handling.
+vendor access to details
+
+
