@@ -4,6 +4,8 @@ Instead of a Human Interface Guideline that imnplies specing for the general pop
 
 B.I.G.
 
+menus reverse order when they reverse layout direction. Any selection's muscle memory must apply no mater the location on the screen.
+
 No modal dialogue boxes
     If you need to pause operation of your app then redisign it or shut it down upon return from the dialogue
 
