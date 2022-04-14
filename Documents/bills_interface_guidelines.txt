@@ -14,6 +14,8 @@ No confirmation dialogue boxes
 
     The actor-state model is required. No MVC. Or think of it as a model and controller in one that knows nothing about the gui element, only the data going back and forth.
 
+    The gui/ui must support more than one style; if you support gnome then you also support at least on of kde, elightenment, vulkan.
+
     The model and gui elements should support running in a separate processes.
 
     No root permissions for anything. Installation is local only, accessing devices is through named pipes or sockets, mounting and unmounting removable media is local only and not automatic; and if there are multiple users on a system then the user must use the UUID to mount.
