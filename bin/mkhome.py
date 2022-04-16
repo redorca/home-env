@@ -30,9 +30,12 @@ def process(refiles):
     '''
     for phoo in refiles:
         fake = phoo.split("/")[-1]
+        offset = phoo.split("/")[0]
+        if not offset is None:
+            relocate(offset)
         # uproot = [ ".." for x in phoo.split("/")[0:-1] if not x is None]
         # flop = "/".join(uproot)
-        real = "/".join([fra.LOCAL, phoo])
+        real = "/".join([os.getenv("HOME"), fra.LOCAL, phoo])
         if not symlink(real, fake, False):
             print("bad symlink: ", fake)
 
@@ -48,7 +51,7 @@ def setup_git():
         "Symlink bin/home-env/.git to .local/.git and checkout files"
     '''
     try:
-        symlink(fra.GIT_DIR + "/.git", ".git", True)
+        symlink(fra.GIT_DIR, ".git", True)
         subp.run(["git", "checkout", "."], check=True)
     except OSError as ose:
         print(ose)
@@ -57,8 +60,7 @@ def main():
     '''
         Run the program
     '''
-    # relocate(os.getenv("HOME") + fra.LOCAL)
-    print("cwd ", relocate(fra.LOCAL))
+    print("cwd ", relocate('/'.join([os.getenv("HOME") , fra.LOCAL])))
     setup_git()
     print("cwd ", relocate(".."))
     try:
