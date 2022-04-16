@@ -29,22 +29,25 @@ def process(refiles):
         Set up all the symlinks
     '''
     for phoo in refiles:
-        fake = phoo.split("/")[-1]
-        offset = phoo.split("/")[0]
-        if not offset is None:
-            relocate(offset)
-        # uproot = [ ".." for x in phoo.split("/")[0:-1] if not x is None]
-        # flop = "/".join(uproot)
+        elements = phoo.split("/")
+        original_dir = None
+        if len(elements) > 1:
+            dirs = elements[0]
+            original_dir = relocate(dirs)
+        fake = elements[-1]
         real = "/".join([os.getenv("HOME"), fra.LOCAL, phoo])
         if not symlink(real, fake, False):
             print("bad symlink: ", fake)
+        if not original_dir is None:
+            relocate(original_dir)
 
 def relocate(root):
     '''
         Movce to ROOT
     '''
+    before = os.getcwd()
     os.chdir(root)
-    return os.getcwd()
+    return before
 
 def setup_git():
     '''
