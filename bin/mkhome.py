@@ -29,26 +29,32 @@ def process(refiles):
         Set up all the symlinks
     '''
     for phoo in refiles:
-        fake = phoo.split("/")[-1]
-        # uproot = [ ".." for x in phoo.split("/")[0:-1] if not x is None]
-        # flop = "/".join(uproot)
-        real = "/".join([fra.LOCAL, phoo])
+        elements = phoo.split("/")
+        original_dir = None
+        if len(elements) > 1:
+            dirs = elements[0]
+            original_dir = relocate(dirs)
+        fake = elements[-1]
+        real = "/".join([os.getenv("HOME"), fra.LOCAL, phoo])
         if not symlink(real, fake, False):
             print("bad symlink: ", fake)
+        if not original_dir is None:
+            relocate(original_dir)
 
 def relocate(root):
     '''
         Movce to ROOT
     '''
+    before = os.getcwd()
     os.chdir(root)
-    return os.getcwd()
+    return before
 
 def setup_git():
     '''
         "Symlink bin/home-env/.git to .local/.git and checkout files"
     '''
     try:
-        symlink(fra.GIT_DIR + "/.git", ".git", True)
+        symlink(fra.GIT_DIR, ".git", True)
         subp.run(["git", "checkout", "."], check=True)
     except OSError as ose:
         print(ose)
@@ -57,8 +63,7 @@ def main():
     '''
         Run the program
     '''
-    # relocate(os.getenv("HOME") + fra.LOCAL)
-    print("cwd ", relocate(fra.LOCAL))
+    print("cwd ", relocate('/'.join([os.getenv("HOME") , fra.LOCAL])))
     setup_git()
     print("cwd ", relocate(".."))
     try:
