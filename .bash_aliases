@@ -1021,6 +1021,19 @@ function initialize-main-window()
 }
 
 #
+# Reset display resolution. Virtual Box sometimes resizes but doesn't update
+# the geometry values so sync things up again.
+#
+function reset-geometry()
+{
+        local CurrentRes=
+
+        CurrentRes=$(display-geo)
+        set-display-mode Virtual1 1024x768
+        set-display-mode Virtual1 $CurrentRes
+}
+
+#
 # Customize to distribution type (debian, fedora/redhat/centos, opensuse, ... )
 #
 function set-os-personality()
@@ -1047,6 +1060,7 @@ function set-os-personality()
 #
 # Substitute a well_known_file location
 #
+
 function vim_x()
 {
 	[ $# -eq 0 ] && return 1
@@ -1055,8 +1069,9 @@ function vim_x()
 
 	xFile="$1"
 
-	CMD="/bin/vim $(find_file $xFile)"
-	$CMD
+	# CMD="/bin/vim $(find_file $xFile)"
+	CMD="/bin/vim $@"
+        eval $CMD
 }
 
 FOCUS=
