@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ $# -eq 0 ] ; then
+        echo "Please supply a disk path ala /dev/sdx" >&2
+        exit 1
+fi
+if ! [ -b "$1" ] ; then
+        echo "Invalid disk path: $1" >&2
+        exit 2
+fi
+
+CMD="sed -e \'s/UUID/\'$(uuidgen)\'/\' sfdisk.txt | sudo sfdisk \"$1\""
+# CMD="sed -e 's/UUID/'$(uuidgen)'/' sfdisk.txt"
+eval "$CMD"
+
