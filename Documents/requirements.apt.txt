@@ -1,4 +1,7 @@
 cmake
+g++
+libcrypt-dev
+libgcrypt20-dev
 libudev-dev
 libbz2-dev
 libdb5.3-dev
@@ -11,7 +14,8 @@ doxygen
 libxslt1-dev
 xsltproc
 triehash
-xxhash
+libxxhash-dev
+libgtest-dev
 libgnutls28-dev
 libglib2.0-dev
 libsystemd-dev

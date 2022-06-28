@@ -1,3 +1,19 @@
 ninja-build
 pkgconf
 libpixman-1-dev
+sparse
+libaio-dev
+liburing-dev
+libnfs-dev
+libncursesw5-dev
+libcurl4-openssl-dev
+libgtk-3-dev
+liblzo2-dev
+libusbredirparser-dev
+libusb-1.0-0-dev
+libdaxctl-dev
+libfuse3-dev
+libbpf-dev libcap-ng-dev libattr1-dev
+libssh-dev
+python3-sphinx
+qemu-system
