@@ -1,3 +1,16 @@
 samba
 smbclient
 vlc
+vim
+git
+gcc
+cmake
+make
+curl
+wget
+bzip2
+bzip2-doc
+xz-utils
+bison
+automake
+autoconf
