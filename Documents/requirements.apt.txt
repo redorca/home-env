@@ -8,10 +8,11 @@ libdb5.3-dev
 libseccomp-dev
 liblzma-dev
 liblz4-dev
+libxslt1-dev
+libzstd-dev
 docbook
 docbook-xsl
 doxygen
-libxslt1-dev
 xsltproc
 triehash
 libxxhash-dev
@@ -20,3 +21,4 @@ libgnutls28-dev
 libglib2.0-dev
 libsystemd-dev
 po4a
+w3m
