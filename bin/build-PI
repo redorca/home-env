@@ -1,0 +1,65 @@
+#!/bin/bash
+
+ROOT=${HOME}/Working
+CROSS_COMPILE_ROOT_ARM64=gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/
+CROSS_COMPILE_ROOT_ARM=gcc-arm-11.2-2022.02-x86_64-arm-none-linux-gnueabihf/
+
+
+if [ $# -eq 0 ] ; then
+        echo "Please specify an architecture: arm | arm64" >&2
+        exit 1
+fi
+
+ARCH=${1} ; shift
+if [ "$ARCH" != "arm" ] && [ "$ARCH" != "arm64" ] ; then
+        echo "Well you specified something but it wasnt [arm|arm64] :: $ARCH" >&2
+        exit 2
+fi
+
+KERNEL=
+IMAGE=
+CROSS_COMPILE=
+
+setup_arm()
+{
+        KERNEL=kernel7
+        DEFCONFIG=bcm2709_defconfig
+        IMAGE=zImage
+}
+
+setup_arm64()
+{
+        KERNEL=kernel8
+        DEFCONFIG=bcm2711_defconfig
+        IMAGE=Image
+}
+
+make_config()
+{
+        setup_${ARCH}
+        make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} ${DEFCONFIG}
+        GCC=${CROSS_COMPILE}gcc
+        if ! which ${GCC} ; then
+                echo "Not found: ${GCC}" >&2
+                exit 3
+        fi
+}
+
+make_kernel()
+{
+        make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} ${IMAGE} modules dtbs
+}
+
+PATH_ONE=CROSS_COMPILE_ROOT_${ARCH^^[a-z]}
+PATH_TWO=${!PATH_ONE}
+PATH_TWO=${PATH_TWO%/}
+CROSS_COMPILE=${PATH_TWO##*x86_64-}-
+PATH=${ROOT}/${!PATH_ONE}bin:${PATH}
+
+if make_config ; then
+        make_kernel
+else
+        echo "Nope" >&2
+        exit 4
+fi
+
