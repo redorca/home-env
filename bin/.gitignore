@@ -8,3 +8,4 @@ home-env/*
 log.*
 *.log
 wooks
+get-docker.sh
