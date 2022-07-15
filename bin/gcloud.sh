@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#
+# Orient ourselves to a known location everytime.
+#
 cd $HOME
 sudo apt-get -y install apt-transport-https ca-certificates gnupg curl docker
 
@@ -8,8 +11,6 @@ echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.clou
 curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
 
 sudo apt-get update && sudo apt-get -y install google-cloud-cli
-
-## RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring  /usr/share/keyrings/cloud.google.gpg  add - && apt-get update -y && apt-get install google-cloud-cli -y
 
 sudo apt-get -y install "
     google-cloud-cli
@@ -49,28 +50,29 @@ curl -fsSL https://tailscale.com/install.sh | sh
 
 
 mkdir ~/dusty
-cd dusty
+cd ~/dusty
 git clone ssh://git@github.com/dustyrobotics/markbot
 
 
 curl -fsSL https://get.docker.com -o get-docker.sh
 sh get-docker.sh
 sudo apt install docker-compose
-## sudo groupadd docker
-## sudo usermod -a -G docker $USER
-
+sudo usermod -a -G docker $USER
 reboot
-## > cd ~/dusty/markbot/robot/docker/dev
-## > ./build_dev.sh
-## > ./run_dev_container.sh
-## > ./join_dev_container.sh
-## > ./publish_dev.sh
-## source $HOME/dusty/markbot/bin/bashrc
-## export PS1=${GIT_PROMPT}
+
+# sudo groupadd docker
+# sudo usermod -a -G docker $USER
+# cd ~/dusty/markbot/robot/docker/dev
+# ./build_dev.sh
+# ./run_dev_container.sh
+# ./join_dev_container.sh
+# ./publish_dev.sh
+# source $HOME/dusty/markbot/bin/bashrc
+# export PS1=${GIT_PROMPT}
 ## 
 ## # then re-load your bashrc:
 ## 
-## > source ~/.bashrc
+resource ~/.bashrc
 ## 
 ## https://code.visualstudio.com/docs/?dv=linux64_deb
 ## # inside your development container:

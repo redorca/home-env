@@ -2,6 +2,9 @@
 
 ulimit -c unlimited
 
+export SAFE_PATH="${PATH}"
+
+
 export DEBUG="$DEBUG"
 export DEBUG=1
 RESET="\033[0;39;49m"
@@ -158,7 +161,7 @@ function display-geo()
 function what()
 {
         case "$1" in
-        reso*) diplay-geo ; exit ;;
+        reso*) diplay-geo ; return ;;
         *);;
         esac
 }
@@ -204,33 +207,6 @@ function set_assoc_array()
         done
 }
 
-function prune_path()
-{
-        funame $@
-        declare -a Foo
-        local Limit=
-        local Path=
-        declare -g -A Paths
-
-        Foo=( $(echo $PATH | sed -e 's/:/  /g') )
-#       echo -n "${Foo[0]}"
-
-        Limit=$(( ${#Foo[@]} -1 ))
-        for i in $(seq 1 1 $Limit); do
-                dbg_echo "\${Paths[${Foo[$i]}]}   ${Paths[${Foo[$i]}]}"
-                [ -z "${Paths[${Foo[$i]}]}" ] && continue
-                [ -n "${Paths[${Foo[$i]}]}" ] && dbg_echo "Already in Paths: ($Path)" && continue
-#               echo -n ":${Foo[$i]}"
-        done
-        echo ""
-}
-
-eval $(set_assoc_array Paths $(echo $PATH | sed -e 's/:/ /g'))
-dbg_echo -n ":${Foo[$@]}"
-dbg_echo "========================"
-
-prune_path A::a
-
 #
 # Set a BOARD env var used by zmake to determine which configs dir to use.
 #
@@ -251,7 +227,18 @@ function board()
 #
 function reset_hash()
 {
+        local PName=
+
+        return
         eval $(set_assoc_array Paths $(echo $PATH | sed -e 's/:/ /g'))
+}
+
+#
+# Test for a paths presence in $PATH
+#
+function has-path()
+{
+        echo $PATH | grep "$1" > /dev/null
 }
 
 function add-path()
@@ -263,9 +250,31 @@ function add-path()
 
         [ ! -d "$Dir" ] && dbg_echo "No such path exists: ($Dir)" && return
 
-        [ -n "${Paths[$Dir]}" ] && dbg_echo "Path already present: $Dir" && return
-        ([ -z "$PATH" ] && err_echo "Starting with empty PATH.")
-        PATH="$Dir:$PATH"
+        if has-path "$Dir" ; then return ; fi
+        [ -n "$PATH" ] && Dir="${Dir}":
+        PATH="${Dir}${PATH}"
+        reset_hash
+        set +x
+}
+
+function append-path()
+{
+        funame $@
+        local Paths=
+        local Dir=
+        local SEP=:
+
+        Paths="$1" ; shift
+        Dir="$1" ; shift
+
+        [ ! -d "$Dir" ] && dbg_echo "No such path exists: ($Dir)" && return
+
+        if echo "${!Paths}" | grep "$Dir" > /dev/null ; then
+                dbg_echo "Already in PATH: $Dir"
+                return
+        fi
+        [ -z "${!Paths}" ] && unset SEP
+        eval ${Paths}=${!Paths}${SEP}$Dir
         reset_hash
         set +x
 }
@@ -285,12 +294,38 @@ function del-path()
         reset_hash
 }
 
-#
-# Test for a paths presence in $PATH
-#
-function has-path()
+function prune_path()
 {
-        echo $PATH | grep $1 >/dev/null
+        funame $@
+        declare -a Foo
+        local Limit=
+        local Path=
+        declare -g -A Paths
+
+        Foo=( $(echo $PATH | sed -e 's/:/  /g') )
+
+        Limit=$(( ${#Foo[@]} -1 ))
+        for i in $(seq 0 1 $Limit); do
+                if [ -d "${Foo[$i]}" ] ; then
+                        append-path Path "${Foo[$i]}"
+                fi
+        done
+        echo ""
+}
+
+#
+# Conditionally add to the PATH variable
+#
+function config_paths()
+{
+        while [ $# -ne 0 ] ; do
+                if [ ! -d "$1" ] ; then
+                        shift ; continue
+                fi
+                add-path "$1"
+                dbg_echo "Added $1"
+                shift
+        done
 }
 
 #
@@ -366,7 +401,7 @@ function enter-any-venv()
 function exit-any-venv()
 {
         [ "$(type -t deactivate)" == "function" ] && deactivate && return 0
-        return 1
+        return 3
 }
 
 function pd()
@@ -503,7 +538,7 @@ function find_root_gitdir()
         if [ ! -d "$Path" && ! -L "$Path" ] ; then
                 err_echo "That path doesn't point to a directory."
                 trace_on_off
-                exit 1
+                exit 2
         fi
         while [ ! -d $Path/.git ] ; do
                 if [ -d "$Path/home" ] && [ -d "$Path/boot" ] ; then
@@ -657,17 +692,10 @@ export GOPATH=$HOME/${SRCDIR}/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
 LOCAL=/.local/
-add-path ${HOME}${LOCAL}bin
-add-path /usr/share/doc/git/contrib/git-jump
-add-path ~/.cabal/bin
-add-path ~/usr/bin
-if [   ! -d "$HOME/.local/bin" ] ; then
-    del_path ~${LOCAL}bin
-    LOCAL=/
-    add-path ~${LOCAL}bin
-else
-        [ ! -d "$HOME/bin" ] && add-path ~/bin
-fi
+
+
+config_paths  ${HOME}${LOCAL}bin /usr/share/doc/git/contrib/git-jump ~/.cabal/bin ~/usr/bin
+
 
 # alias             po="popd >/dev/null && dirs -v"
 # alias            apt="sudo apt-get -y"
@@ -915,7 +943,6 @@ function Apt()
         [ $# -eq 0 ] && return 1
 
         if [ $SECONDS -gt $TIMEOUT ] ; then
-                echo "But first, run update." >&2
                 if ! sudo apt-get update >/dev/null >/dev/null ; then
                         echo "Encountered a problem so try again later."
                         return 1
@@ -1021,7 +1048,7 @@ function initialize-main-window()
 }
 
 #
-# Reset display resolution. Virtual Box sometimes resizes but doesn't update
+# Reset display resolution. Virtual Box sometimes resizes but doesn''t update
 # the geometry values so sync things up again.
 #
 function reset-geometry()
@@ -1082,11 +1109,11 @@ initialize-main-window
 set-os-personality
 
 #
-# To satisfy .vimrcs need for a file to source until I know
+# To satisfy .vimrc's need for a file to source until I know
 # more .vimrc coding and can check for its existence first.
 #
 prune_path A::b
-PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
+# PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 
 touch ~/.vimrc_color
 
@@ -1129,5 +1156,12 @@ function clone()
 	[ $# -eq 0 ] && return 1
 	Repo="$1"
 	git clone $(crul $Repo)
+}
+
+function gcloud_go()
+{
+#        gcloud init
+        gcloud auth login
+#        gcloud auth configure-docker
 }
 
