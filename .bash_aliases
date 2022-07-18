@@ -1165,3 +1165,7 @@ function gcloud_go()
 #        gcloud auth configure-docker
 }
 
+if [ -e /.dockerenv ] ; then
+        source ${HOME}/dusty/markbot/bin/bashrc
+        PS1=${GIT_PROMPT}
+fi
