@@ -1106,7 +1106,7 @@ FOCUS=
 export GPG_TTY=$(tty)
 
 initialize-main-window
-set-os-personality
+## set-os-personality
 
 #
 # To satisfy .vimrc's need for a file to source until I know
@@ -1167,5 +1167,5 @@ function gcloud_go()
 
 if [ -e /.dockerenv ] ; then
         source ${HOME}/dusty/markbot/bin/bashrc
-        PS1=${GIT_PROMPT}
 fi
+set-os-personality

@@ -11,6 +11,7 @@ wget
 bzip2
 bzip2-doc
 xz-utils
+flex
 bison
 automake
 autoconf
