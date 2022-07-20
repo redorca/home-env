@@ -1068,7 +1068,7 @@ function set-os-personality()
         if which apt-get >/dev/null 2>&1 ; then
                 unalias ls && alias ls='ls -F --color=auto'
                 echo "Set prompt for Debian sys-arch"
-                PS1='${debian_chroot:+($debian_chroot)}$(branch 15)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+                PS1='${debian_chroot:+($debian_chroot)}$(branch 21)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
         else
                 # disable gnome-ssh-askpass
                 unset SSH_ASKPASS
