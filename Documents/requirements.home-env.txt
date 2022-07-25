@@ -15,3 +15,5 @@ bison
 flex
 automake
 autoconf
+libsdl2-2.0-0
+
