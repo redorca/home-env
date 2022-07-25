@@ -12,5 +12,6 @@ bzip2
 bzip2-doc
 xz-utils
 bison
+flex
 automake
 autoconf

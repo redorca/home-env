@@ -657,7 +657,7 @@ export GOPATH=$HOME/${SRCDIR}/GOlang/newt
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
 LOCAL=/.local/
-add-path ~${LOCAL}bin
+add-path ${HOME}${LOCAL}bin
 add-path /usr/share/doc/git/contrib/git-jump
 add-path ~/.cabal/bin
 add-path ~/usr/bin
