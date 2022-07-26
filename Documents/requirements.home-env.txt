@@ -16,4 +16,6 @@ flex
 automake
 autoconf
 libsdl2-2.0-0
-
+global
+exuberant-ctags
+cscope

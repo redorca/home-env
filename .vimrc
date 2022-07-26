@@ -1,6 +1,7 @@
 set tags=./tags
 set t_ut=
 set expandtab
+set cscopetag
 set csprg=gtags-cscope
 cs  add GTAGS
 
