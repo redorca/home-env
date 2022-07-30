@@ -704,6 +704,7 @@ alias            apt="apt.py"
 alias           ping="ping -4"
 alias           wget="wget -4"
 alias         telnet="telnet -4"
+alias          water="setsid waterfox >/dev/null 2>&1"
 
 #
 # Map a standard tool to an arm directed tool name.
