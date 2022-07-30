@@ -1,5 +1,6 @@
 samba
 smbclient
+cifs-utils
 vlc
 vim
 git
