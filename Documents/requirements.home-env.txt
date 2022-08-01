@@ -21,3 +21,5 @@ id-utils
 global
 exuberant-ctags
 cscope
+cifs-utils
+
