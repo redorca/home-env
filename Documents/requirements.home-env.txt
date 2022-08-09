@@ -1,5 +1,6 @@
 samba
 smbclient
+cifs-utils
 vlc
 vim
 git
@@ -19,11 +20,4 @@ id-utils
 global
 exuberant-ctags
 cscope
-cifs-utils
 python3-pip
-libusb-1.0-0-dev
-libusb-1.0-0
-python3-usb1
-python3-project-generator
-python3-serial
-python3-serial-asyncio
