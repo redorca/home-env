@@ -1,25 +1,27 @@
 #!/bin/bash
 
 if [ $(id -u)  -ne 0 ]  ; then
-	echo "== Run with root permissions, please"
-	exit 1
+        SUDO=sudo
+	echo "== Running with root permissions, please"
 fi
 
-APT_CMD="apt-get -y"
+MKDIR_CMD="${SUDO} mkdir"
+CURL_CMD="${SUDO} curl"
+TEE_CMD="${SUDO} tee"
+APT_CMD="${SUDO} apt-get -y"
 ${APT_CMD} update
 ${APT_CMD} install \
     ca-certificates \
     curl \
     gnupg \
     lsb-release
-mkdir -p /etc/apt/keyrings
- curl -fsSL https://download.docker.com/linux/ubuntu/gpg |  gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+${MKDIR_CMD} -p /etc/apt/keyrings
+${CURL_CMD} -fsSL https://download.docker.com/linux/ubuntu/gpg |  sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" |  tee /etc/apt/sources.list.d/docker.list > /dev/null
+  $(lsb_release -cs) stable" |  ${TEE_CMD} /etc/apt/sources.list.d/docker.list > /dev/null
 
 ${APT_CMD} update
+${APT_CMD} install qemu qemu-system-x86 pass uidmap
 ${APT_CMD} install docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-doc
-
-${APT_CMD} qemu qemu-system-x86 pass uidmap
