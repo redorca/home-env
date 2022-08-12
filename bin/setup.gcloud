@@ -1,0 +1,24 @@
+#!/bin/bash
+
+if [ $(id -u)  -ne 0 ]  ; then
+        SUDO=sudo
+	echo "== Running with root permissions, please"
+fi
+
+MKDIR_CMD="${SUDO} mkdir"
+CURL_CMD="${SUDO} curl"
+TEE_CMD="${SUDO} tee"
+APT_CMD="${SUDO} apt-get -y"
+${APT_CMD} update
+${APT_CMD} install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | ${TEE_CMD} -a /etc/apt/sources.list.d/google-cloud-sdk.list
+
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | ${TEE_CMD} /etc/apt/trusted.gpg.d/cloud.google.gpg
+
+${APT_CMD} update
+${APT_CMD} install google-cloud-cli
