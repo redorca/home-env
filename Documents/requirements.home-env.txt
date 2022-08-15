@@ -5,7 +5,6 @@ vlc
 vim
 git
 gcc
-cmake
 make
 curl
 wget

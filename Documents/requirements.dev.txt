@@ -19,3 +19,9 @@ librabbitmq4
 libdb5.3
 libdb5.3
 libdb5.3
+virtualenv
+cmake
+subversion
+mercurial
+meld
+python3-meld3
