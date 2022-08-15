@@ -1102,6 +1102,55 @@ function vim_x()
         eval $CMD
 }
 
+function which-path()
+{
+        local Bin="$1"
+        if ! which "$Bin" > /dev/null ; then
+                echo "Can't find $Bin"
+                return 1
+        fi
+        /bin/which "$Bin"
+}
+
+function xoo()
+{
+        if [ -x "$(which-path $1)" ] ; then
+                setsid "$1" > /dev/null 2>&1
+        else
+                echo "No x for $1" 1>&2
+        fi
+}
+
+function crul()
+{
+	local Base=
+	local Proto=
+	local repo=
+
+	repo="${1%%.git}.git"
+	Base=endogiteng01.strykercorp.com:7999/e_ccu
+	Proto=ssh://git@
+
+	echo ${Proto}${Base}/${repo}
+}
+
+function clone()
+{
+	local Repo=
+
+	[ $# -eq 0 ] && return 1
+	Repo="$1"
+	git clone $(crul $Repo)
+}
+
+function gcloud_go()
+{
+#        gcloud init
+        gcloud auth login
+#        gcloud auth configure-docker
+}
+
+
 FOCUS=
 
 export GPG_TTY=$(tty)
@@ -1135,36 +1184,6 @@ STARTING_DIR="$(pwd)"
 [ "$(basename $STARTING_DIR)" == "Desktop" ] && STARTING_DIR="$HOME"
 cd $STARTING_DIR && enter-any-venv
 
-
-
-function crul()
-{
-	local Base=
-	local Proto=
-	local repo=
-
-	repo="${1%%.git}.git"
-	Base=endogiteng01.strykercorp.com:7999/e_ccu
-	Proto=ssh://git@
-
-	echo ${Proto}${Base}/${repo}
-}
-
-function clone()
-{
-	local Repo=
-
-	[ $# -eq 0 ] && return 1
-	Repo="$1"
-	git clone $(crul $Repo)
-}
-
-function gcloud_go()
-{
-#        gcloud init
-        gcloud auth login
-#        gcloud auth configure-docker
-}
 
 if [ -e /.dockerenv ] ; then
         source ${HOME}/dusty/markbot/bin/bashrc
