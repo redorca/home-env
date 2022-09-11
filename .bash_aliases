@@ -905,14 +905,13 @@ function repo()
 }
 
 #
-# Call xdg-open but disconnect from the terminal.
+# Call xdg-open which disconnects from the terminal.
 #
-function launch()
+function xopen()
 {
     [ ! -e "$1" ] && return 99
 
     xdg-open "$1" >/dev/null 2>&1
-
 }
 
 function expand_conf_vars()
