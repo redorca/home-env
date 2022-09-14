@@ -12,7 +12,7 @@ system_prep()
         sudo apt-get -y install $PREP_PACKAGES
 }
 
-gcloud_create()
+gcloud-create()
 {
     echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 
@@ -58,7 +58,7 @@ tailscale_init()
         curl -fsSL https://tailscale.com/install.sh | sh
 }
 
-dusty_init()
+dusty-init()
 {
         mkdir $dusty_dir
         cd $dusty_dir
@@ -95,17 +95,17 @@ prep_chk()
         return 0
 }
 
-docker_chk()
+docker-chk()
 {
-        if ! grep docker /etc/group 2>/dev/null ; then
+        if ! grep docker /etc/passwd 2>/dev/null ; then
                 return -1
         fi
         return 0
 }
 
-dusty_chk()
+dusty-chk()
 {
-        if ! [ -d "$dusty_dir" ] ; then
+        if ! [ -d "$dusty_dir/markbot" ] ; then
                 return 1
         fi
         return 0
@@ -119,8 +119,6 @@ contained()
         return 0
 }
 
-container
-exit
 #
 # Don't run inside a container
 #
@@ -128,26 +126,35 @@ if  contained ; then
         exit 0
 fi
 
-if ! gcloud auth configure-docker ; then
-        gcloud_init
-fi
-
-if ! tailscale >/dev/null 2>&1 ; then
-        tailscale_init
-fi
-
-if ! dusty_chk ; then
-        dusty_init
+if ! dusty-chk ; then
+        echo "Clone the dusty repo" >&2
+        dusty-init
 fi
 
 if ! prep_chk ; then
+        echo "Preparing the system" >&2
         system_prep
 fi
 
-if ! docker_chk ; then
+if ! tailscale >/dev/null 2>&1 ; then
+        echo "Ready tailscale" >&2
+        tailscale_init
+fi
+
+if ! docker-chk ; then
+        echo "personalize docker" >&2
         setup_docker
         reboot
 fi
+if [ -x gcloud ] ; then
+        echo "gcloud auth & init" >&2
+        if ! gcloud auth configure-docker ; then
+                gcloud_init
+        fi
+else
+        gcloud-create
+fi
+
 
 container
 
