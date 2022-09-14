@@ -67,6 +67,7 @@ dusty-init()
 
 setup_docker()
 {
+        setup.docker
         curl -fsSL https://get.docker.com -o get-docker.sh
         sh get-docker.sh
         sudo apt install docker-compose
