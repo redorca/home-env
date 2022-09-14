@@ -4,12 +4,74 @@ if [ $# -eq 0 ] ; then
         echo "Please supply a disk path ala /dev/sdx" >&2
         exit 1
 fi
-if ! [ -b "$1" ] ; then
-        echo "Invalid disk path: $1" >&2
-        exit 2
-fi
+UUID=$(uuidgen)
 
-CMD="sed -e \'s/UUID/\'$(uuidgen)\'/\' sfdisk.txt | sudo sfdisk \"$1\""
-# CMD="sed -e 's/UUID/'$(uuidgen)'/' sfdisk.txt"
-eval "$CMD"
+validate-part()
+{
+        local Part=
+
+        Part="$1"; shift
+        [ -b "$Part" ]  && [ -b "${Part:0: -1}" ]  && return 0
+        echo "Not a partition $Part" >&2
+        return 1
+}
+
+setup-disk()
+{
+        local Part=
+
+        Part="$1"; shift
+        CMD="cat sfdisk.txt | sed -e 's/UUID/'$(uuidgen)'/' | sudo sfdisk \"$Part\""
+        echo "$CMD"
+        eval "$CMD"
+}
+
+setup-fs()
+{
+        local Uuid=
+        local Part=
+
+        Uuid="$1"; shift
+        Part="$1"; shift
+        sudo mkfs -t ext4 -U $Uuid $Part
+}
+
+mnt-initial()
+{
+        local User=
+        local Part=
+
+        Part="$1" ; shift
+        User="$1" ; shift
+        sudo -H mkdir -p /home/boo/$User/
+        sudo -H chown $User:$User /home/boo/$User
+        sudo -H mount /dev/sdb1 /home/boo/$User
+        sudo -H chown -R $User:$User /home/boo/$User
+}
+
+dup-user()
+{
+        local User=
+
+        User="$1"
+        cp -a /home/$User /home/boo
+}
+
+update-fstab()
+{
+        local Uuid=
+        local User=
+
+        Uuid="$1"; shift
+        User="$1"; shift
+        eval "sudo sed -i -e '\$aUUID='$Uuid' /home/'$User'      ext4    errors=remount-ro 0       1' /etc/fstab"
+}
+
+if ! validate-part $1 ; then exit 1; fi
+
+setup-disk $1
+setup-fs $UUID $1
+mnt-initial $1 $USER
+dup-user $USER
+update-fstab $UUID $USER
 
