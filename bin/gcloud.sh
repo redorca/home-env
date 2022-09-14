@@ -97,15 +97,14 @@ prep_chk()
 
 docker-chk()
 {
-        if ! grep docker /etc/passwd 2>/dev/null ; then
-                return -1
-        fi
-        return 0
+        if /bin/which docker >/dev/null 2>&1 ; then return 0; fi
+        if grep docker /etc/passwd 2>/dev/null ; then return 0; fi
+        return 1
 }
 
 dusty-chk()
 {
-        if ! [ -d "$dusty_dir/markbot" ] ; then
+        if ! [ -d "$dusty_dir/markbot/robot/docker/dev" ] ; then
                 return 1
         fi
         return 0
