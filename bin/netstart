@@ -1,7 +1,0 @@
-#!/bin/bash
-
-
-NETALL="networkd-dispatcher systemd-resolved systemd-networkd NetworkManager"
-
-sudo systemctl restart $NETALL
-

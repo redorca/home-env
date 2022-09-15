@@ -1,8 +1,0 @@
-#!/bin/bash
-
-OPTIONS=( "--skip-unreadable" "--skip-symlink" "--accept-dotfiles" )
-# "--explain"
-CMD=gtags
-
-$CMD ${OPTIONS[@]}
-
