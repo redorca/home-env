@@ -119,6 +119,8 @@ contained()
         return 0
 }
 
+gcloud-create
+exit
 #
 # Don't run inside a container
 #
@@ -149,7 +151,7 @@ fi
 if [ -x gcloud ] ; then
         echo "gcloud auth & init" >&2
         if ! gcloud auth configure-docker ; then
-                gcloud_init
+                gcloud init
         fi
 else
         gcloud-create
