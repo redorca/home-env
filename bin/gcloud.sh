@@ -16,11 +16,14 @@ gcloud-create()
 {
     echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 
+sleep 10
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
 
     sudo apt-get update && sudo apt-get -y install google-cloud-cli
+sleep 10
 
-    sudo apt-get -y install "
+    sudo apt-get -y install \
+"
         google-cloud-cli
         google-cloud-cli-anthos-auth
         google-cloud-cli-app-engine-go
@@ -47,8 +50,10 @@ gcloud-create()
         google-cloud-cli-spanner-emulator
         google-cloud-cli-terraform-validator
         google-cloud-cli-tests
-        kubectl"
+        kubectl
+"
 
+sleep 10
         gcloud init
         gcloud auth login
 }
@@ -119,8 +124,6 @@ contained()
         return 0
 }
 
-gcloud-create
-exit
 #
 # Don't run inside a container
 #
@@ -129,7 +132,7 @@ if  contained ; then
 fi
 
 if ! dusty-chk ; then
-        echo "Clone the dusty repo" >&2
+        echo "Cloning the dusty markbot repo" >&2
         dusty-init
 fi
 
@@ -148,11 +151,10 @@ if ! docker-chk ; then
         setup_docker
         reboot
 fi
-if [ -x gcloud ] ; then
+if [ -x $(/usr/bin/which gcloud) ] ; then
         echo "gcloud auth & init" >&2
-        if ! gcloud auth configure-docker ; then
-                gcloud init
-        fi
+        gcloud auth configure-docker
+        gcloud init
 else
         gcloud-create
 fi
