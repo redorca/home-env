@@ -5,7 +5,7 @@
 #
 cd $HOME
 PREP_PACKAGES="apt-transport-https ca-certificates gnupg curl docker"
-dusty_dir=${HOME}/"Dusty"
+dusty_dir=${HOME}/"dusty"
 
 system_prep()
 {
@@ -16,11 +16,9 @@ gcloud-create()
 {
     echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 
-sleep 10
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
 
     sudo apt-get update && sudo apt-get -y install google-cloud-cli
-sleep 10
 
     sudo apt-get -y install \
 "
@@ -52,8 +50,6 @@ sleep 10
         google-cloud-cli-tests
         kubectl
 "
-
-sleep 10
         gcloud init
         gcloud auth login
 }
@@ -83,8 +79,8 @@ setup_docker()
 container()
 {
         cd ${dusty_dir}/markbot/robot/docker/dev
-        sudo ./build_dev
-        sudo ./run_dev_container
+        ./build_dev
+        ./run_dev_container
 }
 
 prep_chk()
@@ -151,13 +147,17 @@ if ! docker-chk ; then
         setup_docker
         reboot
 fi
-if [ -x $(/usr/bin/which gcloud) ] ; then
-        echo "gcloud auth & init" >&2
-        gcloud auth configure-docker
-        gcloud init
-else
-        gcloud-create
-fi
+sleep 5
+
+#
+# if /usr/bin/which gcloud ; then
+#         echo "gcloud auth & init" >&2
+#         gcloud auth configure-docker
+#         gcloud init
+# else
+#         gcloud-create
+# fi
+sleep 5
 
 
 container
