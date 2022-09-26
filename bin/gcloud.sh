@@ -5,7 +5,7 @@
 #
 cd $HOME
 PREP_PACKAGES="apt-transport-https ca-certificates gnupg curl docker"
-dusty_dir=${HOME}/"Dusty"
+dusty_dir=${HOME}/"dusty"
 
 system_prep()
 {
@@ -20,7 +20,8 @@ gcloud-create()
 
     sudo apt-get update && sudo apt-get -y install google-cloud-cli
 
-    sudo apt-get -y install "
+    sudo apt-get -y install \
+"
         google-cloud-cli
         google-cloud-cli-anthos-auth
         google-cloud-cli-app-engine-go
@@ -47,8 +48,8 @@ gcloud-create()
         google-cloud-cli-spanner-emulator
         google-cloud-cli-terraform-validator
         google-cloud-cli-tests
-        kubectl"
-
+        kubectl
+"
         gcloud init
         gcloud auth login
 }
@@ -78,8 +79,8 @@ setup_docker()
 container()
 {
         cd ${dusty_dir}/markbot/robot/docker/dev
-        sudo ./build_dev
-        sudo ./run_dev_container
+        ./build_dev
+        ./run_dev_container
 }
 
 prep_chk()
@@ -119,8 +120,6 @@ contained()
         return 0
 }
 
-gcloud-create
-exit
 #
 # Don't run inside a container
 #
@@ -129,7 +128,7 @@ if  contained ; then
 fi
 
 if ! dusty-chk ; then
-        echo "Clone the dusty repo" >&2
+        echo "Cloning the dusty markbot repo" >&2
         dusty-init
 fi
 
@@ -148,14 +147,17 @@ if ! docker-chk ; then
         setup_docker
         reboot
 fi
-if [ -x gcloud ] ; then
-        echo "gcloud auth & init" >&2
-        if ! gcloud auth configure-docker ; then
-                gcloud init
-        fi
-else
-        gcloud-create
-fi
+sleep 5
+
+#
+# if /usr/bin/which gcloud ; then
+#         echo "gcloud auth & init" >&2
+#         gcloud auth configure-docker
+#         gcloud init
+# else
+#         gcloud-create
+# fi
+sleep 5
 
 
 container
