@@ -2,7 +2,7 @@
     Constant string values used for home environment setup
 '''
 
-MANAGED_FILES = [ ".bash_aliases", ".gdbinit", ".gitignore", ".gitconfig", ".vimrc", "Documents/colors.modal.ls", "Documents/colors.template" ]
+MANAGED_FILES = [ ".bash_aliases", ".gdbinit", ".gitignore", ".gitconfig", ".vimrc", "Documents/colors.modal.ls", "Documents/colors.template", ".ssh/config" ]
 LOCAL = ".local"
 LOCO_BIN = "/".join([LOCAL, "bin"])
 CLONE_URI = "ssh://git@github.com/redorca/home-env.git"
