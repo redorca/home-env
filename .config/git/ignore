@@ -31,3 +31,9 @@ external/
 copyright.*
 log.*
 Public/
+*.swp
+GRTAGS
+GTAGS
+GPATH
+ID
+

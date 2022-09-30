@@ -733,7 +733,7 @@ alias           ping="ping -4"
 alias           wget="wget -4"
 alias         telnet="telnet -4"
 alias          water="setsid waterfox >/dev/null 2>&1"
-
+alias          pgrep="pgrep -a"
 #
 # Map a standard tool to an arm directed tool name.
 #
