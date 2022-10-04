@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ $(id -u)  -ne 0 ]  ; then
+        SUDO="sudo "
+	echo "== Running with root permissions."
+fi
+
+MKDIR="${SUDO}mkdir"
+CURL="${SUDO}curl"
+TEE="${SUDO}tee"
+APT="${SUDO}apt-get -y"
+
+${SUDO}dpkg --add-architecture i386 
+${MKDIR} -pm755 /etc/apt/keyrings
+${WGET} -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
+${WGET} -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources
+${APT} install --install-recommends winehq-stable
+
