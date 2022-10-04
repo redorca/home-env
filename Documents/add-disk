@@ -11,7 +11,8 @@ validate-part()
         local Part=
 
         Part="$1"; shift
-        [ -b "$Part" ]  && [ -b "${Part:0: -1}" ]  && return 0
+        # [ -b "${Part%1}" ]  && return 0
+        [ -b "${Part:0: -1}" ]  && return 0
         echo "Not a partition $Part" >&2
         return 1
 }
@@ -21,7 +22,7 @@ setup-disk()
         local Part=
 
         Part="$1"; shift
-        CMD="cat sfdisk.txt | sed -e 's/UUID/'$(uuidgen)'/' | sudo sfdisk \"$Part\""
+        CMD="cat sfdisk.txt | sudo sfdisk \"${Part%1}\""
         echo "$CMD"
         eval "$CMD"
 }
@@ -33,7 +34,9 @@ setup-fs()
 
         Uuid="$1"; shift
         Part="$1"; shift
-        sudo mkfs -t ext4 -U $Uuid $Part
+        CMD="sudo mkfs -t ext4 -U $Uuid $Part"
+        echo "$CMD"
+        eval "$CMD"
 }
 
 mnt-initial()
@@ -69,9 +72,15 @@ update-fstab()
 
 if ! validate-part $1 ; then exit 1; fi
 
-setup-disk $1
-setup-fs $UUID $1
-mnt-initial $1 $USER
+if ! setup-disk $1 ; then
+        exit 1
+fi
+if ! setup-fs $UUID $1 ; then
+        exit 2
+fi
+if ! mnt-initial $1 $USER ; then
+        exit 3
+fi
 dup-user $USER
 update-fstab $UUID $USER
 
