@@ -21,3 +21,5 @@ exuberant-ctags
 cscope
 python3-pip
 apt-transport-https
+inetutils-traceroute
+net-tools

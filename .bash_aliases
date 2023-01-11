@@ -26,7 +26,7 @@ INVERT=7
 #
 #  If this script is called then we know for sure we're in
 #  an interactive (login?) environment.  So, any code added
-#  to ths fil will only ever see an interactive environment.
+#  to ths file will only ever see an interactive environment.
 #
 KnownFiles="${HOME}/.known_files"
 [ -e "${KnownFiles}" ] && source "${KnownFiles}"
@@ -393,9 +393,11 @@ function find-fu()
 #
 function enter-any-venv()
 {
-        [ -f bin/activate ] && source bin/activate && return 0
+        [ ! -f bin/activate ] && return 1
+        source bin/activate
+        export PYTHONPATH=.
 
-        return 1
+        return 0
 }
 
 function exit-any-venv()
@@ -406,17 +408,13 @@ function exit-any-venv()
 
 function pd()
 {
-        exit-any-venv
         pushd $1 >/dev/null
-        enter-any-venv
         dirs -v
 }
 
 function po()
 {
-        exit-any-venv
         popd $1 >/dev/null
-        enter-any-venv
         dirs -v
 }
 
@@ -888,6 +886,11 @@ function branch()
         echo -e "$(invert $Kolor)${TMP#*/}${RESET}"
 }
 
+function venv_prompt()
+{
+        echo -e "$(bold GREEN)[$(basename $VIRTUAL_ENV)]${RESET}"
+}
+
 function repo()
 {
         local Remote=
@@ -1068,7 +1071,7 @@ function set-os-personality()
         if which apt-get >/dev/null 2>&1 ; then
                 unalias ls && alias ls='ls -F --color=auto'
                 echo "Set prompt for Debian sys-arch"
-                PS1='${debian_chroot:+($debian_chroot)}$(branch 21)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+                PS1='$(venv_prompt)${debian_chroot:+($debian_chroot)}$(branch 21)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
         else
                 # disable gnome-ssh-askpass
                 unset SSH_ASKPASS
