@@ -888,6 +888,7 @@ function branch()
 
 function venv_prompt()
 {
+        [ -z "$VIRTUAL_ENV" ] && return
         echo -e "$(bold GREEN)[$(basename $VIRTUAL_ENV)]${RESET}"
 }
 
