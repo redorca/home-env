@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ls *XV*.mp4 | while read title ;  do
+        foo=$(echo "$title" | sed -e 's/\ -\ XV.*/\.mp4/')
+        echo "Moving $title to $foo"
+        mv "$title" "$foo"
+done
