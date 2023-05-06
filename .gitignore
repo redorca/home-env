@@ -147,3 +147,5 @@ lib/
 ig.*
 git-cinnabar
 www.*
+PycharmProjects/
+state/

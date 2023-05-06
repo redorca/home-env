@@ -86,7 +86,7 @@ EOF
                 | grep /colors/ \
                 | eval sed -e \''s:^.*\/::'\' -e \'s:^:"$PREAMBLE":\' \
                         -e 's:\.vim$::' >> $File
-        sed -i -e '/pablo$/s/^\" //' $File
+        sed -i -e '/desert$/s/^\" //' $File
 
         debug && cat $File
 }
