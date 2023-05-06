@@ -395,6 +395,8 @@ function enter-any-venv()
 {
         [ ! -f bin/activate ] && return 1
         source bin/activate
+        export CONNECTION="ssh -p 7997 -L 127.0.0.1:5901:127.0.0.1:5921 mark@btchfpaper.rockyahoo.com"
+        export TARGET="127.0.0.1:5901"
         export PYTHONPATH=.
 
         return 0
@@ -888,6 +890,7 @@ function branch()
 
 function venv_prompt()
 {
+        [ -z "$VIRTUAL_ENV" ] && return
         echo -e "$(bold GREEN)[$(basename $VIRTUAL_ENV)]${RESET}"
 }
 
