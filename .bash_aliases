@@ -30,22 +30,6 @@ INVERT=7
 #
 KnownFiles="${HOME}/.known_files"
 [ -e "${KnownFiles}" ] && source "${KnownFiles}"
-declare -A well_known_files
-## well_known_files["smb.conf"]="/etc/samba/smb.conf"
-## well_known_files["sources.list"]="/etc/apt/sources.list"
-## well_known_files["fstab"]="/etc/fstab"
-## well_known_files["hosts"]="/etc/hosts"
-## well_known_files["ssh-config"]="${HOME}/.ssh/config"
-## well_known_files["known_hosts"]="${HOME}/.ssh/known_hosts"
-## well_known_files["known-hosts"]="${HOME}/.ssh/known_hosts"
-## well_known_files[".gitconfig"]="${HOME}/.gitconfig"
-## well_known_files[".gitignore"]="${HOME}/.gitignore"
-## well_known_files["/.gitignore"]="${HOME}/.gitignore"
-## well_known_files["ignore"]="${HOME}/.config/git/ignore"
-## well_known_files[".gdbinit"]="${HOME}/.gdbinit"
-## well_known_files["/gdbinit"]="${HOME}/.gdbinit"
-## well_known_files["${HOME##*/}"]="/etc/sudoers.d/${HOME##*/}"
-
 
 declare -A dir_to_flag
 dir_to_flag["dir"]="d"
@@ -357,13 +341,13 @@ function dbg()
 function find-fu()
 {
         funame $@
-        local CMD=
-
         ([ -z "$1" ] || [ -z "$2" ]) && err_echo "Missing an arg or two."  && return 1
         local find_key=
         local Flag=
         local regex=
         local ACTION_ARG=
+        local CMD=
+
         find_key="${1,,}"
         [ -z "$Flag" ] && err_echo "Please supply a proper key"  return 1
         [ "$TRACE" = "2" ] && set -x
@@ -429,13 +413,13 @@ function po()
 function rm-fu()
 {
         funame $@
-        local CMD=
-
         ([ -z "$1" ] || [ -z "$2" ]) && err_echo "Missing an arg or two."  && return 1
         local find_key=
         local Flag=
         local regex=
         local ACTION_ARG=
+        local CMD=
+
         find_key="${1,,}"
         Flag="${dir_to_flag["$find_key"]}"; shift
         regex="$1"; shift
@@ -663,10 +647,9 @@ function vim_color_setup()
 function zee()
 {
         funame $@
-        local CMD=
-
         local ZSERVER=
         local Msg=
+        local CMD=
 
         Msg="Please pass only a single digit between 1 and 6."
         if [ -z "$1" ] || [ "${#1}" -gt 1 ] || [ -z "$(echo $1 | tr -d [:alpha:])" ] ; then
@@ -1011,7 +994,7 @@ function pyhelp()
 
     echo "${Phrase[*]}"
     ${Phrase[@]} | python
- 
+
 }
 
 #
@@ -1179,7 +1162,7 @@ fi
 sudo chown -R $USER:$USER $REPO_ARCHIVEDIR
 expand_conf_vars REPO_ARCHIVEDIR ~/.mini-dinstall.conf
 expand_conf_vars USER ~/.mini-dinstall.conf
-expand_conf_vars USER ~/.dput.cf 
+expand_conf_vars USER ~/.dput.cf
 
 #
 # Reset to home dir unless VIRTUAL_ENV is set.
@@ -1190,7 +1173,4 @@ STARTING_DIR="$(pwd)"
 cd $STARTING_DIR && enter-any-venv
 
 
-if [ -e /.dockerenv ] ; then
-        source ${HOME}/dusty/markbot/bin/bashrc
-fi
 set-os-personality
