@@ -2,9 +2,6 @@
 
 ulimit -c unlimited
 
-export SAFE_PATH="${PATH}"
-
-
 export DEBUG="$DEBUG"
 export DEBUG=1
 RESET="\033[0;39;49m"
@@ -26,7 +23,7 @@ INVERT=7
 #
 #  If this script is called then we know for sure we're in
 #  an interactive (login?) environment.  So, any code added
-#  to ths file will only ever see an interactive environment.
+#  to this file will only ever see an interactive environment.
 #
 KnownFiles="${HOME}/.known_files"
 [ -e "${KnownFiles}" ] && source "${KnownFiles}"
@@ -73,21 +70,6 @@ function do-exit()
         echo "$ErrMsg" >&2
 
         exit $ErrCode
-}
-
-#
-# Simplify accessing well known files by allowing
-# an alias for the file.
-#
-function find_file()
-{
-	local ffile=
-
-	ffile="$1"
-	[ -e "$ffile" ] && echo "$ffile" && return 0
-	[ -e "${well_known_files[$ffile]}" ] && echo "${well_known_files[$ffile]}" && return 0
-        echo "$ffile" && return 0
-
 }
 
 function funame()
@@ -191,6 +173,10 @@ function set_assoc_array()
         done
 }
 
+eval $(set_assoc_array Paths $(echo $PATH | sed -e 's/:/ /g'))
+dbg_echo -n ":${Foo[$@]}"
+dbg_echo "========================"
+
 #
 # Set a BOARD env var used by zmake to determine which configs dir to use.
 #
@@ -241,28 +227,6 @@ function add-path()
         set +x
 }
 
-function append-path()
-{
-        funame $@
-        local Paths=
-        local Dir=
-        local SEP=:
-
-        Paths="$1" ; shift
-        Dir="$1" ; shift
-
-        [ ! -d "$Dir" ] && dbg_echo "No such path exists: ($Dir)" && return
-
-        if echo "${!Paths}" | grep "$Dir" > /dev/null ; then
-                dbg_echo "Already in PATH: $Dir"
-                return
-        fi
-        [ -z "${!Paths}" ] && unset SEP
-        eval ${Paths}=${!Paths}${SEP}$Dir
-        reset_hash
-        set +x
-}
-
 function del-path()
 {
         funame $@
@@ -276,25 +240,6 @@ function del-path()
                 PATH=$(echo $FOO | sed -e 's/^ //' -e 's/  */:/g')
         fi
         reset_hash
-}
-
-function prune_path()
-{
-        funame $@
-        declare -a Foo
-        local Limit=
-        local Path=
-        declare -g -A Paths
-
-        Foo=( $(echo $PATH | sed -e 's/:/  /g') )
-
-        Limit=$(( ${#Foo[@]} -1 ))
-        for i in $(seq 0 1 $Limit); do
-                if [ -d "${Foo[$i]}" ] ; then
-                        append-path Path "${Foo[$i]}"
-                fi
-        done
-        echo ""
 }
 
 #
@@ -679,6 +624,17 @@ LOCAL=/.local/
 
 config_paths  ${HOME}${LOCAL}bin /usr/share/doc/git/contrib/git-jump ~/.cabal/bin ~/usr/bin
 
+add-path ~${LOCAL}bin
+add-path /usr/share/doc/git/contrib/git-jump
+add-path ~/.cabal/bin
+add-path ~/usr/bin
+if [   ! -d "$HOME/.local/bin" ] ; then
+    del_path ~${LOCAL}bin
+    LOCAL=/
+    add-path ~${LOCAL}bin
+else
+        [ ! -d "$HOME/bin" ] && add-path ~/bin
+fi
 
 # alias             po="popd >/dev/null && dirs -v"
 # alias            apt="sudo apt-get -y"
@@ -715,8 +671,8 @@ alias            apt="apt.py"
 alias           ping="ping -4"
 alias           wget="wget -4"
 alias         telnet="telnet -4"
-alias          water="setsid waterfox >/dev/null 2>&1"
 alias          pgrep="pgrep -a"
+
 #
 # Map a standard tool to an arm directed tool name.
 #
@@ -932,6 +888,7 @@ function Apt()
         [ $# -eq 0 ] && return 1
 
         if [ $SECONDS -gt $TIMEOUT ] ; then
+                echo "But first, run update." >&2
                 if ! sudo apt-get update >/dev/null >/dev/null ; then
                         echo "Encountered a problem so try again later."
                         return 1
@@ -1037,19 +994,6 @@ function initialize-main-window()
 }
 
 #
-# Reset display resolution. Virtual Box sometimes resizes but doesn''t update
-# the geometry values so sync things up again.
-#
-function reset-geometry()
-{
-        local CurrentRes=
-
-        CurrentRes=$(display-geo)
-        set-display-mode Virtual1 1024x768
-        set-display-mode Virtual1 $CurrentRes
-}
-
-#
 # Customize to distribution type (debian, fedora/redhat/centos, opensuse, ... )
 #
 function set-os-personality()
@@ -1073,10 +1017,6 @@ function set-os-personality()
         fi
 }
 
-#
-# Substitute a well_known_file location
-#
-
 function vim_x()
 {
 	[ $# -eq 0 ] && return 1
@@ -1084,8 +1024,6 @@ function vim_x()
         local CMD=
 
 	xFile="$1"
-
-	# CMD="/bin/vim $(find_file $xFile)"
 	CMD="/bin/vim $@"
         eval $CMD
 }
@@ -1140,8 +1078,7 @@ initialize-main-window
 # To satisfy .vimrc's need for a file to source until I know
 # more .vimrc coding and can check for its existence first.
 #
-prune_path A::b
-# PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
+## PATH=$(echo ${!Paths[@]} | sed -e 's/ /:/g')
 
 touch ~/.vimrc_color
 
@@ -1161,6 +1098,5 @@ STARTING_DIR="$(pwd)"
 
 [ "$(basename $STARTING_DIR)" == "Desktop" ] && STARTING_DIR="$HOME"
 cd $STARTING_DIR && enter-any-venv
-
 
 set-os-personality
