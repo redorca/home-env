@@ -1131,17 +1131,7 @@ function clone()
 	git clone $(crul $Repo)
 }
 
-function gcloud_go()
-{
-#        gcloud init
-        gcloud auth login
-#        gcloud auth configure-docker
-}
-
-
 FOCUS=
-
-export GPG_TTY=$(tty)
 
 initialize-main-window
 ## set-os-personality
