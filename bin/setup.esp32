@@ -1,0 +1,14 @@
+#!/bin/bash
+
+mkdir -p esp
+cd esp
+git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
+
+cd esp-idf
+./install.sh esp32
+
+IDF_TOOLS_PATH=$(pwd)/esp/esp-idf/tools
+. export.sh
+
+tools/idf_tools.py install
+
