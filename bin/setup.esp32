@@ -1,16 +1,39 @@
 #!/bin/bash
 
-[ -d esp-idf ] && cd esp-idf
-[ ! -d esp-idf ] git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
+REDORIGIN="ssh://git@github.com/redorca/home-env.git"
+#
+# Add a remote to point to redorca in parallel with espressif
+# and fix the redorca remote as origin.
+#
+repo-fixup()
+{
+        # Get a list of remotes
+        repos=$(git remote)
 
-echo "$(basename $(pwd))"
-[ $(basename $(pwd)) == esp-idf ] && echo "Right where we belong" >&2
-[ $(basename $(pwd)) != esp-idf ] && cd esp-idf
-exit
-IDF_PATH=$(pwd)
-IDF_TOOLS_PATH=$(pwd)
+        if [ "$(git remote get-url --push origin)" != "$REDORIGIN" ] ; then
+                git remote add redorca $REDORIGIN
+
+        fi
+}
+
+verify-venv()
+{
+        PKG=python3-venv
+        if [ $(dpkg -l "$PKG" | tail -1 | awk '{print $1}') != 'ii' ] ; then
+                echo " == installing $PKG" >&2
+                sudo /usr/bin/apt-get -y install $PKG
+        fi
+        echo "$PKG is installed" >&2
+}
+
+[ ! -d esp-idf ] && git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
+cd esp-idf
+
+verify-venv
+
+export IDF_PATH=$(pwd)
+export IDF_TOOLS_PATH=$(pwd)
 ./install.sh esp32
 . export.sh
 
 tools/idf_tools.py install
-
