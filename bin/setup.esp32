@@ -1,13 +1,15 @@
 #!/bin/bash
 
-mkdir -p esp
-cd esp
-git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
+[ -d esp-idf ] && cd esp-idf
+[ ! -d esp-idf ] git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
 
-cd esp-idf
+echo "$(basename $(pwd))"
+[ $(basename $(pwd)) == esp-idf ] && echo "Right where we belong" >&2
+[ $(basename $(pwd)) != esp-idf ] && cd esp-idf
+exit
+IDF_PATH=$(pwd)
+IDF_TOOLS_PATH=$(pwd)
 ./install.sh esp32
-
-IDF_TOOLS_PATH=$(pwd)/esp/esp-idf/tools
 . export.sh
 
 tools/idf_tools.py install
