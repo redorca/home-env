@@ -26,6 +26,13 @@ verify-venv()
         echo "$PKG is installed" >&2
 }
 
+make-udev-rules()
+{
+        cat <<EOF>/tmp/esp.rules
+KERNEL="ttyUSB0", OWNER="orville", MODE="0660"
+EOF
+}
+
 [ ! -d esp-idf ] && git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 

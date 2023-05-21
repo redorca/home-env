@@ -1,0 +1,7 @@
+ACTION!="add|bind", GOTO="eof"
+KERNEL=="ttyUSB0", OPTIONS="log_level=debug", SUBSYSTEM=="usb-serial", DRIVER=="cp210x", OWNER="orville"
+KERNELS=="1-2:1.0", SUBSYSTEMS=="usb", OWNER="orville"
+# KERNELS="1-2", SUBSYSTEMS="usb"
+# KERNEL="tty", OPTIONS="log_level=debug"
+# KERNEL="ttyUSB[0-9]", OWNER="orville", MODE="0660"
+LABEL="eof"
