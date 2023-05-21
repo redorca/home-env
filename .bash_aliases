@@ -327,8 +327,13 @@ function enter-any-venv()
         # export CONNECTION="ssh -p 7997 -L 127.0.0.1:5901:127.0.0.1:5921 mark@btchfpaper.rockyahoo.com"
         # export TARGET="127.0.0.1:5901"
         export PYTHONPATH=.
-        [ -f export.sh ] && export IDF_PATH=$(pwd) && export IDF_TOOLS_PATH=$(pwd)
-        [ -f export.sh ] && source export.sh
+        if Root=$(git rev-parse --show-toplevel) ; then
+                if [ -f $Root/export.sh ] ; then
+                        export IDF_PATH=$(pwd) && export IDF_TOOLS_PATH=$(pwd)
+                        source export.sh
+                        echo "Environs established" >&2
+                fi
+        fi
         echo "IDF_TOOLS_PATH ${IDF_TOOLS_PATH}, IDF_PATH ${IDF_PATH}" >&2
         [ ! -f $IDF_TOOLS_PATH/tools/idf.py ] && echo "IDF_TOOLS_PATH is not set properly" >&2
 
