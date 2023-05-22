@@ -3,7 +3,7 @@ set t_ut=
 set expandtab
 set cscopetag
 :set csprg=gtags-cscope
-:cs  add GTAGS
+cs  add GTAGS
 
 :filetype on
 :filetype indent on
