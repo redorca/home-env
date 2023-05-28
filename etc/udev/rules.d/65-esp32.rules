@@ -1,6 +1,7 @@
 ACTION!="add|bind", GOTO="eof"
 KERNEL=="ttyUSB[0-9]", OPTIONS="log_level=debug", SUBSYSTEM=="usb-serial"
-SUBSYSTEMS=="usb", OWNER="orville"
+SUBSYSTEMS=="usb", MODE="666"
+# SUBSYSTEMS=="usb", OWNER="orville"
 # ATTRS{manufacturer}=="Silicon Labs"
 # KERNEL=="ttyUSB[0-9]", OPTIONS="log_level=debug", SUBSYSTEM=="usb-serial", DRIVER=="cp210x"
 # KERNELS=="1-2:1.0", SUBSYSTEMS=="usb", OWNER="orville"
