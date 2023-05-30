@@ -16,7 +16,11 @@ repo-fixup()
         fi
 }
 
-verify-venv()
+#
+# Make sure the python3-venv package is installed.
+# Setup uses this to create virtual environments.
+#
+verify-venv-pkg()
 {
         PKG=python3-venv
         if [ $(dpkg -l "$PKG" | tail -1 | awk '{print $1}') != 'ii' ] ; then
@@ -33,14 +37,50 @@ KERNEL="ttyUSB0", OWNER="orville", MODE="0660"
 EOF
 }
 
-[ ! -d esp-idf ] && git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
-cd esp-idf
+#
+# Set IDF_PATH and IDF_TOOLS_PATH, assign aliases to help with build, config, run
+# source export.sh
+#
+fixup-venv-activate()
+{
+        [ ! -d "$1" ] && return 1
+        cd "$1"
 
-verify-venv
+cat >> bin/activate <<"EOF"
+
+export IDF_PATH=$(git rev-parse --show-toplevel)
+export IDF_TOOLS_PATH=$(git rev-parse --show-toplevel)
+export SERIAL_DEV=ttyUSB0
+pushd $IDF_PATH
+[ -f ${IDF_PATH}/export.sh ] && source ${IDF_PATH}/export.sh ]
+alias build="idf.py build"
+alias clean="idf.py clean"
+alias config="idf.py menuconfig"
+alias flash="idf.py -p /dev/${SERIAL_DEV} flash"
+alias run="idf.py -p /dev/${SERIAL_DEV} monitor"
+EOF
+}
+
+#
+# Make sure the python virtual environment package, python3-venv, is installed.
+#
+verify-venv-pkg
+
+ESP_IDF_DIR=esp-idf
+( [ ! $(basename $(pwd)) == $ESP_IDF_DIR ] && [ ! -d $ESP_IDF_DIR ] ) && git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
+[ -d $ESP_IDF_DIR ] && cd $ESP_IDF_DIR
 
 export IDF_PATH=$(pwd)
 export IDF_TOOLS_PATH=$(pwd)
-./install.sh esp32
-. export.sh
+./install.sh all
+foo=$(ls python_env)
+if ! fixup-venv-activate python_env/${foo} ; then
+        echo "Unable to fixup $foo/bin/activate" >&2
+fi
 
-tools/idf_tools.py install
+cd python_env/${foo}
+${IDF_TOOLS_PATH}/tools/idf_tools.py install
+exit 0
+
+sleep 5
+. export.sh
