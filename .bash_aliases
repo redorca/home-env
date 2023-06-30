@@ -327,6 +327,17 @@ function enter-any-venv()
         # export CONNECTION="ssh -p 7997 -L 127.0.0.1:5901:127.0.0.1:5921 mark@btchfpaper.rockyahoo.com"
         # export TARGET="127.0.0.1:5901"
         export PYTHONPATH=.
+
+        return 0
+}
+
+function enter-most-any-venv()
+{
+        [ ! -f bin/activate ] && return 1
+        source bin/activate
+        # export CONNECTION="ssh -p 7997 -L 127.0.0.1:5901:127.0.0.1:5921 mark@btchfpaper.rockyahoo.com"
+        # export TARGET="127.0.0.1:5901"
+        export PYTHONPATH=.
         if Root=$(git rev-parse --show-toplevel) ; then
                 if [ -f $Root/export.sh ] ; then
                         export IDF_PATH=$(pwd) && export IDF_TOOLS_PATH=$(pwd)
