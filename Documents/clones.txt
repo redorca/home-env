@@ -1,0 +1,4 @@
+nuttx ssh://git@github.com/apache/nuttx.git
+nuttx-apps ssh://git@github.com/apache/nuttx-apps.git
+ib_insync ssh://git@github.com/erdewit/ib_insync.git
+cpython ssh://git@github.com/python/cpython.git
