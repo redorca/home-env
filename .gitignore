@@ -149,3 +149,4 @@ git-cinnabar
 www.*
 PycharmProjects/
 state/
+include/

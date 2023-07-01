@@ -1,4 +1,8 @@
+
 nuttx ssh://git@github.com/apache/nuttx.git
 nuttx-apps ssh://git@github.com/apache/nuttx-apps.git
 ib_insync ssh://git@github.com/erdewit/ib_insync.git
 cpython ssh://git@github.com/python/cpython.git
+spi-tools ssh://git@github.com/cpb-/spi-tools.git
+ib-api https://github.com/rbermani/ib-api
+ctags ssh://git@github.com/universal-ctags/ctags.git
