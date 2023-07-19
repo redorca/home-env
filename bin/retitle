@@ -1,7 +1,11 @@
 #!/bin/bash
 
-ls *XV*.mp4 | while read title ;  do
-        foo=$(echo "$title" | sed -e 's/\ -\ XV.*/\.mp4/')
+# ls *XV*.mp4 | while read title ;  do
+# ls *XNX*.mp4 | while read title ;  do
+# ls *xHa*.mp4 | while read title ;  do
+# ls *Free*.mp4 | while read title ;  do
+ls *Porn*.mp4 | while read title ;  do
+        foo=$(echo "$title" | sed -e 's/[,]*\ Porn.*/\.mp4/')
         echo "Moving $title to $foo"
         mv "$title" "$foo"
 done
