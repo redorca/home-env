@@ -18,15 +18,21 @@ while [ $# -ne 0 ] ; do
         case "$1" in
                 -M)     M="$(pwd)"
                         TARGET=""
-                        echo "Building modules" >&2
+                        echo "\tBuilding modules" >&2
                         ;;
                 -A)     shift; ARCH="${1}"
                         ;;
+                -I)     shift; INCREMENTAL="Y"
+                        echo -e "\tIncremental Pass" >&2
+                        ;;
                 -C)     shift; CLEAN=1
+                        echo -e "\tWill run a distclean" >&2
                         ;;
                 --cross) shift; CROSS_COMPILE="${1}"
+                        echo -e "\tWill cross compile." >&2
                         ;;
                 -K)     shift; KDIR="$1"
+                        echo -e "\tBuild from the directory ${KDIR}." >&2
                         ;;
                 -D)     dump
                         exit 0
@@ -69,7 +75,7 @@ if ! verify ; then
         dump
 fi
 
-if [ -z "${M}" ] ; then
+if [ -z "${M}" ] && [ "${INCREMENTAL}" != "Y" ] ; then
         config
 fi
 build
