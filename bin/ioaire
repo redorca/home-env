@@ -1,0 +1,75 @@
+#!/bin/bash
+
+KERNEL_DIR=
+ARCH=arm64
+CROSS_COMPILE=aarch64-linux-gnu-
+TARGET="Image modules dtbs"
+
+dump()
+{
+        echo -e "\tARCH:\t${ARCH}" >&2
+        echo -e "\tCROSS:\t$CROSS_COMPILE" >&2
+        echo -e "\tTarget:\t${TARGET}" >&2
+        echo -e "\tKDIR:\t${KDIR}" >&2
+        [ ! -z "${M}" ] && echo -e "\tM:\t${M}" >&2
+}
+
+while [ $# -ne 0 ] ; do
+        case "$1" in
+                -M)     M="$(pwd)"
+                        TARGET=""
+                        echo "Building modules" >&2
+                        ;;
+                -A)     shift; ARCH="${1}"
+                        ;;
+                -C)     shift; CLEAN=1
+                        ;;
+                --cross) shift; CROSS_COMPILE="${1}"
+                        ;;
+                -K)     shift; KDIR="$1"
+                        ;;
+                -D)     dump
+                        exit 0
+                        ;;
+                *) echo "What is this? <$1>?" >&2
+                        exit 1
+                        ;;
+        esac
+        shift
+done
+
+build()
+{
+        [ ! -z "${M}" ] && Target=""
+        echo "make -j 3 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} M=${M}  ${TARGET}"
+        make -j 3 ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" M="${M}"  ${TARGET}
+}
+
+config()
+{
+        if [ "${CLEAN}" == "1" ] ; then
+                make distclean
+        fi
+        make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" bcm2711_defconfig
+}
+
+verify()
+{
+        local rv=0
+        [ ! -z "${M}" ] && [ -z "${KDIR}" ] && rv=1
+        return $rv
+}
+
+# make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- bcm2711_defconfig
+# make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- Image modules dtbs
+# make ARCH=arm64 CROSS_COMPILE=$CROSSBUILD M=$MODULE_DIR bcm2711_defconfig
+# make ARCH=arm64 CROSS_COMPILE=$CROSSBUILD M=$MODULE_DIR Image modules dtbs
+if ! verify ; then
+        echo "Wrong. -M and -K are dependent upon each other." >&2
+        dump
+fi
+
+if [ -z "${M}" ] ; then
+        config
+fi
+build
