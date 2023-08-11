@@ -18,7 +18,7 @@ while [ $# -ne 0 ] ; do
         case "$1" in
                 -M)     M="$(pwd)"
                         TARGET=""
-                        echo "\tBuilding modules" >&2
+                        echo -e "\tBuilding modules" >&2
                         ;;
                 -A)     shift; ARCH="${1}"
                         ;;
@@ -47,6 +47,9 @@ done
 build()
 {
         [ ! -z "${M}" ] && Target=""
+        if [ "${CLEAN}" == "1" -a ! -z "${M}" ] ; then
+                make clean
+        fi
         echo "make -j 3 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} M=${M}  ${TARGET}"
         make -j 3 ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" M="${M}"  ${TARGET}
 }
@@ -75,7 +78,7 @@ if ! verify ; then
         dump
 fi
 
-if [ -z "${M}" ] && [ "${INCREMENTAL}" != "Y" ] ; then
+if [ -z "${M}" -a "${INCREMENTAL}" != "Y" ] ; then
         config
 fi
 build
