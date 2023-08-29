@@ -1,24 +1,24 @@
 #!/bin/bash
 
-KERNEL_DIR=
+KDIR=/home/orville/IoAire/linux
 ARCH=arm64
 CROSS_COMPILE=aarch64-linux-gnu-
 TARGET="Image modules dtbs"
 
 dump()
 {
-        echo -e "\tARCH:\t${ARCH}" >&2
-        echo -e "\tCROSS:\t$CROSS_COMPILE" >&2
-        echo -e "\tTarget:\t${TARGET}" >&2
-        echo -e "\tKDIR:\t${KDIR}" >&2
-        [ ! -z "${M}" ] && echo -e "\tM:\t${M}" >&2
+        echo -e "ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} KDIR=${KDIR} M=${M}"
+        echo -e "\tARCH:\t${ARCH}"
+        echo -e "\tCROSS:\t$CROSS_COMPILE"
+        echo -e "\tTarget:\t${TARGET}"
+        echo -e "\tKDIR:\t${KDIR}"
+        [ ! -z "${M}" ] && echo -e "\tM:\t${M}"
 }
 
 while [ $# -ne 0 ] ; do
         case "$1" in
                 -M)     M="$(pwd)"
                         TARGET=""
-                        echo -e "\tBuilding modules" >&2
                         ;;
                 -A)     shift; ARCH="${1}"
                         ;;
