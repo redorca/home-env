@@ -4,6 +4,7 @@ KDIR=/home/orville/IoAire/linux
 ARCH=arm64
 CROSS_COMPILE=aarch64-linux-gnu-
 TARGET="Image modules dtbs"
+KERNEL=kernel8
 
 dump()
 {
@@ -54,11 +55,23 @@ build()
         make -j 3 ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" M="${M}"  ${TARGET}
 }
 
+oldconfig()
+{
+        if [ "${CLEAN}" == "1" ] ; then
+                make distclean
+        fi
+        KERNEL=${KERNEL}
+        echo "make ARCH=\"${ARCH}\" CROSS_COMPILE=\"${CROSS_COMPILE}\" bcm2711_defconfig"
+        make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}"  oldconfig
+}
+
 config()
 {
         if [ "${CLEAN}" == "1" ] ; then
                 make distclean
         fi
+        KERNEL=${KERNEL}
+        echo "make ARCH=\"${ARCH}\" CROSS_COMPILE=\"${CROSS_COMPILE}\" bcm2711_defconfig"
         make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" bcm2711_defconfig
 }
 
@@ -79,6 +92,7 @@ if ! verify ; then
 fi
 
 if [ -z "${M}" -a "${INCREMENTAL}" != "Y" ] ; then
+        echo -e "\tRun config" >&2
         config
 fi
 build
