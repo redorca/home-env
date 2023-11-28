@@ -2,6 +2,7 @@ ninja-build
 automake
 autoconf
 libtool
+libtool-bin
 libstlink1
 libstlink-dev
 stlink-tools

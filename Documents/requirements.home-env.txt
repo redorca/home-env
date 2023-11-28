@@ -4,6 +4,7 @@ cifs-utils
 vlc
 vim
 git
+git-hub
 gcc
 make
 curl

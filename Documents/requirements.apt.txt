@@ -1,10 +1,8 @@
-cmake
 g++
 libcrypt-dev
 libgcrypt20-dev
 libudev-dev
 libbz2-dev
-libdb5.3-dev
 libseccomp-dev
 liblzma-dev
 liblz4-dev
