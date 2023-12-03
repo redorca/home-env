@@ -1089,6 +1089,11 @@ function clone()
 	git clone $(crul $Repo)
 }
 
+function pygrep()
+{
+        grep $@ *.py
+}
+
 FOCUS=
 
 initialize-main-window
