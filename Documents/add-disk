@@ -4,15 +4,16 @@ if [ $# -eq 0 ] ; then
         echo "Please supply a disk path ala /dev/sdx" >&2
         exit 1
 fi
-UUID=$(uuidgen)
+
+TMPDIR=boo
 
 validate-part()
 {
         local Part=
 
         Part="$1"; shift
-        # [ -b "${Part%1}" ]  && return 0
-        [ -b "${Part:0: -1}" ]  && return 0
+        [ -b "${Part}" ]  && return 0
+        # [ -b "${Part:0: -1}" ]  && return 0
         echo "Not a partition $Part" >&2
         return 1
 }
@@ -29,12 +30,10 @@ setup-disk()
 
 setup-fs()
 {
-        local Uuid=
         local Part=
 
-        Uuid="$1"; shift
         Part="$1"; shift
-        CMD="sudo mkfs -t ext4 -U $Uuid $Part"
+        CMD="sudo mkfs -t ext4 $Part"
         echo "$CMD"
         eval "$CMD"
 }
@@ -46,10 +45,10 @@ mnt-initial()
 
         Part="$1" ; shift
         User="$1" ; shift
-        sudo -H mkdir -p /home/boo/$User/
-        sudo -H chown $User:$User /home/boo/$User
-        sudo -H mount /dev/sdb1 /home/boo/$User
-        sudo -H chown -R $User:$User /home/boo/$User
+        sudo -H mkdir -p /home/$TMPDIR/
+        # sudo -H chown $User:$User /home/$TMPDIR/
+        sudo -H mount /dev/$Part /home/$TMPDIR/$User
+        sudo -H chown -R $User:$User /home/$TMPDIR
 }
 
 dup-user()
@@ -57,30 +56,35 @@ dup-user()
         local User=
 
         User="$1"
-        cp -a /home/$User /home/boo
+        sudo rcp -rp /home/$User/. /home/$TMPDIR/
 }
 
 update-fstab()
 {
-        local Uuid=
         local User=
+        local Part=
 
-        Uuid="$1"; shift
+        [ $# -eq 2 ] || return 3
+
         User="$1"; shift
+        Part="$1"; shift
+        Uuid=$(lsblk --fs /dev/$Part | tail -1 | awk '{print $4}')
         eval "sudo sed -i -e '\$aUUID='$Uuid' /home/'$User'      ext4    errors=remount-ro 0       1' /etc/fstab"
 }
 
-if ! validate-part $1 ; then exit 1; fi
+DEVICE="$1"
+echo "Validate $DEVICE"
+if ! validate-part $DEVICE ; then exit 1 ; fi
 
-if ! setup-disk $1 ; then
-        exit 1
-fi
-if ! setup-fs $UUID $1 ; then
-        exit 2
-fi
-if ! mnt-initial $1 $USER ; then
-        exit 3
-fi
+echo "Setup disk $DEVICE"
+if ! setup-disk $DEVICE ; then exit 2 ; fi
+
+echo "Create filesystem on $1"
+if ! setup-fs $DEVICE ; then exit 3 ; fi
+
+echo "Mount $DEVICE to $TMPDIR"
+if ! mnt-initial $USER $DEVICE ; then exit 3 ; fi
+
 dup-user $USER
-update-fstab $UUID $USER
+update-fstab $USER $
 
