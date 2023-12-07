@@ -39,3 +39,6 @@ tags
 ib_nsync
 syncio
 ID
+bin/
+lib/
+pyvenv.cfg
