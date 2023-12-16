@@ -995,13 +995,13 @@ function initialize-main-window()
         local TargetRes=
         local CurrentRes=
 
-        return 1
         if ! system-is-desktop ; then
                 return 2
         fi
 
         TargetRes="2560x1600"
         set_term_colors
+        return 1
         #
         # Force display resolution to 2560x1600. Assumes 4k display
         #
@@ -1021,7 +1021,7 @@ function set-os-personality()
         if which apt-get >/dev/null 2>&1 ; then
                 unalias ls && alias ls='ls -F --color=auto'
                 echo "Set prompt for Debian sys-arch"
-                PS1='$(venv_prompt)${debian_chroot:+($debian_chroot)}$(branch 21)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+                PS1='$(venv_prompt)${debian_chroot:+($debian_chroot)}$(branch 21)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;33m\]\w\[\033[00m\]\n:: '
         else
                 # disable gnome-ssh-askpass
                 unset SSH_ASKPASS
@@ -1087,6 +1087,11 @@ function clone()
 	[ $# -eq 0 ] && return 1
 	Repo="$1"
 	git clone $(crul $Repo)
+}
+
+function pygrep()
+{
+        grep $@ *.py
 }
 
 FOCUS=

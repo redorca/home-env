@@ -1,11 +1,42 @@
 #!/bin/bash
 
-# ls *XV*.mp4 | while read title ;  do
-# ls *XNX*.mp4 | while read title ;  do
-# ls *xHa*.mp4 | while read title ;  do
-# ls *Free*.mp4 | while read title ;  do
+fixup()
+{
+    local Pattern=
+
+    Pattern="$1"
+    ls *$Pattern*.mp4 | while read title ;  do
+        foo=$(echo "$title" | sed -e 's/[ ,-]*'$Pattern'.*/\.mp4/')
+        echo -e "\tMoving $title to $foo"
+        mv "$title" "$foo"
+    done
+}
+
+fixup "$1"
+exit
+
+ls *XV*.mp4 | while read title ;  do
+        foo=$(echo "$title" | sed -e 's/[ ,-]*\XV.*/\.mp4/')
+        echo "Moving $title to $foo"
+        mv "$title" "$foo"
+done
+ls *XNX*.mp4 | while read title ;  do
+        foo=$(echo "$title" | sed -e 's/[ ,-]*\XNX.*/\.mp4/')
+        echo "Moving $title to $foo"
+        mv "$title" "$foo"
+done
+ls *xHa*.mp4 | while read title ;  do
+        foo=$(echo "$title" | sed -e 's/[ ,-]*\xHa.*/\.mp4/')
+        echo "Moving $title to $foo"
+        mv "$title" "$foo"
+done
+ls *Free*.mp4 | while read title ;  do
+        foo=$(echo "$title" | sed -e 's/[ ,-]*Free.*/\.mp4/')
+        echo "Moving $title to $foo"
+        mv "$title" "$foo"
+done
 ls *Porn*.mp4 | while read title ;  do
-        foo=$(echo "$title" | sed -e 's/[,]*\ Porn.*/\.mp4/')
+        foo=$(echo "$title" | sed -e 's/[ ,-]*\Porn.*/\.mp4/')
         echo "Moving $title to $foo"
         mv "$title" "$foo"
 done

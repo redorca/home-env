@@ -26,3 +26,4 @@ mercurial
 meld
 python3-meld3
 minicom
+elf-binutils
