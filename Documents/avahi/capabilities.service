@@ -3,12 +3,12 @@
 
 <service-group>
 
-  <name replace-wildcards="yes">features</name>
+  <name replace-wildcards="yes">Features on %h</name>
 
   <service protocol="ipv4">
     <type>_http._tcp</type>
     <port>5555</port>
-    <host-name>flight.local</host-name>
+    <host-name>%h.local</host-name>
     <txt-record value-format="text">key="blah blah blah"</txt-record>
 </service>
 </service-group>
