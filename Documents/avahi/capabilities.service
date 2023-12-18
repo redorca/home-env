@@ -8,7 +8,7 @@
   <service protocol="ipv4">
     <type>_http._tcp</type>
     <port>5555</port>
-    <host-name>%h.local</host-name>
+    <host-name>Estonia.local</host-name>
     <txt-record value-format="text">key="blah blah blah"</txt-record>
 </service>
 </service-group>
