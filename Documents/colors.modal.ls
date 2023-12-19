@@ -76,7 +76,7 @@ TERM xterm-debian
 RESET 0 # reset to "normal" color
 # XX DIR 01;34 # directory
 # XX LINK 01;36 # symbolic link. (If you set this to 'target' instead of a
-DIR 03;30;43 # directory
+DIR 01;37;46 # directory
 # LINK 03;36 # symbolic link. (If you set this to 'target' instead of a
 LINK target # symbolic link. (If you set this to 'target' instead of a
  # numerical value, the color is as for the file pointed to.)
