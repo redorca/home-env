@@ -69,7 +69,13 @@ def setup_git():
     except OSError as ose:
         print(ose)
 
-def setup_sudo(user):
+def setup_sudo():
+    SUDOERS_DIR='/etc/sudoers.d/'
+    with open(os.getenv('USER'), "w") as ff:
+        ff.write(f"{os.getenv('USER')} ALL=(ALL:ALL) NOPASSWD: ALL\n")
+    subp.run(["sudo", "cp", os.getenv('USER'), SUDOERS_DIR])
+    subp.run(["rm", os.getenv('USER')])
+
     return
 
 def main():
