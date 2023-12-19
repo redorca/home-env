@@ -53,11 +53,24 @@ def setup_git():
     '''
         "Symlink bin/home-env/.git to .local/.git and checkout files"
     '''
+    GITCONF_NAME = "Bill Rees"
+    GITCONF_EMAIL = 'uberfoot@yahoo.com'
     try:
         symlink(fra.GIT_DIR, ".git", True)
         subp.run(["git", "checkout", "."], check=True)
+        config_name = subp.run(["git", "config", "user.name", GITCONF_NAME], capture_output=True, check=True)
+        if config_name.stdout is None:
+            print("Set user.name: ", GITCONF_NAME)
+            subp.run(["git", "config", "--global", "user.name", GITCONF_NAME], check=True)
+        config_name = subp.run(["git", "config", "user.email", GITCONF_NAME], capture_output=True, check=True)
+        if config_name.stdout is None:
+            print("Set user.email: ", GITCONF_EMAIL)
+            subp.run(["git", "config", "--global", "user.email", GITCONF_EMAIL], check=True)
     except OSError as ose:
         print(ose)
+
+def setup_sudo(user):
+    return
 
 def main():
     '''
