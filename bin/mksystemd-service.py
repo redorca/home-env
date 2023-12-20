@@ -3,7 +3,7 @@
 '''
 
 import os
-import xml.etree.ElementTree as tree
+import xml.etree.ElementTree as eltree
 
 TOP_TEMPLATE = ["<?xml version='1.0' standalone=\'no\'?><!--*-nxml-*-->",
                 "<!DOCTYPE service-group SYSTEM 'avahi-service.dtd'>"]
@@ -18,22 +18,28 @@ XML_TEMPLATE = "<service-group>     \
 </service>      \
 </service-group>        \
 "
-top = tree.fromstring(XML_TEMPLATE)
+GROUP_ELEMENTS = {'service':{'protocol':'ipv4'}, 'name':{'replace-wildcards':'yes', 'text':'stuff on %h'}}
+SERVICE_ELEMENTS = { 'host-name':None, 'type':'_http._tcp', 'port':5555}
+ROOT_ELEMENT={'root':'service-group', 'children':GROUP_ELEMENTS}
+def build_xmltree(xmlFile):
+	top = eltree.Element('service-group')
+	name = eltree.SubElement(top, 'name', attrib={"replace-wildcards":'yes'}).text = "Stuff on %h"
+	service = eltree.SubElement(top, 'service', attrib={"protocol":'ipv4'})
+	eltree.SubElement(service, 'type').text="_http._tcp"
+	eltree.SubElement(service, 'port').text='555'
+	eltree.SubElement(service, 'host-name').text='flight.local'
+	tree = eltree.ElementTree(top)
+	eltree.indent(tree)
+	tree.write(xmlFile)
 
-for child in top:
-    if child.tag == 'service':
-        blah = tree.SubElement(child, 'host-name')
-        blah.text = "flight.local"
+def fixup(xmlFile, tmpFile):
+    '''
+    Post process the output file to include the doc string and xml version declarations
+    '''
+    with open(xmlFile, 'r') as xml, open(tmpFile, 'w') as tmp:
+        tmp.write('\n'.join(TOP_TEMPLATE))
+        tmp.write('\n\n\n')
+        tmp.write(xml.read())
+        tmp.write('\n')
 
-tree.indent(top)
-line = tree.tostringlist(top)
-lines = str(line[0]).split('\\n')
-for intro in TOP_TEMPLATE:
-    print(f'{intro}')
-print('\n')
-print(f'0: {lines[0]}')
-# for xxx in lines:
-#     print(f'{xxx}')
-# print(f'{tree.tostring(top)}')
-# bush = tree.ElementTree(top)
-# bush.write('/tmp/foo.xml')
+fixup('/tmp/foo.xml', '/tmp/bar.service')
