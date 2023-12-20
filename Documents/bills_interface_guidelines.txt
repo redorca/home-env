@@ -3,6 +3,7 @@ the big spec
 Instead of a Human Interface Guideline that imnplies specing for the general population this is a guide wholly intended for my satisfaction.
 
 B.I.G.
+    Bill's Interface Guide
 
 menus reverse order when they reverse layout direction. Any selection's muscle memory must apply no mater the location on the screen.
 
