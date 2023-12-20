@@ -5,7 +5,7 @@
 import os
 import xml.etree.ElementTree as tree
 
-TOP_TEMPLATE = ["<?xml version='1.0' standalone=\'no\'?><!--*-nxml-*-->", 
+TOP_TEMPLATE = ["<?xml version='1.0' standalone=\'no\'?><!--*-nxml-*-->",
                 "<!DOCTYPE service-group SYSTEM 'avahi-service.dtd'>"]
 XML_TEMPLATE = "<service-group>     \
         \
