@@ -21,6 +21,7 @@ def node_create(channel, mesh_id, ipaddr):
             result = subp.run(cmd_args, **DEF_FLAGS)
             print(f'result: {result.stdout}')
         except subp.CalledProcessError as CPE:
+            print(f"Command::\n\t{' '.join(CPE.cmd)}\nfailed with error: {CPE.returncode}")
             print(f'{CPE.stderr}')
             return
 
