@@ -19,4 +19,5 @@ def main():
             print(f"index: {index['addr_info'][0]['local']}")
             print("=====")
 
-main()
+if __name__ == "__main__":
+    main()

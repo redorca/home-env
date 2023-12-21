@@ -34,5 +34,6 @@ def node_create(channel, mesh_id, ipaddr):
             print(f"{CPE.stderr.decode('utf8')}")
             return
 
-node_create(161, "meshme", "192.168.183.44")
+if __name__ == '__main__':
+    node_create(161, "meshme", "192.168.183.44")
 

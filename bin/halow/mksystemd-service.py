@@ -42,4 +42,5 @@ def fixup(xmlFile, tmpFile):
         tmp.write(xml.read())
         tmp.write('\n')
 
-fixup('/tmp/foo.xml', '/tmp/bar.service')
+if __name__ == '__main__':
+    fixup('/tmp/foo.xml', '/tmp/bar.service')
