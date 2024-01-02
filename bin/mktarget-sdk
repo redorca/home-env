@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ $# -lt 1 ] ; then
+        echo "Please supply an application name as in sample_http." >&2
+        exit 1
+fi
+
+[ ! -e sdk/apps/"$1" ] && echo "Not found: $1" >&2 && exit 2
+
+make select target=nrc7292.sdk.release APP_NAME="$1"
