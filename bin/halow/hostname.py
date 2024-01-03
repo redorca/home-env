@@ -31,4 +31,5 @@ if cmdLine.ip is None:
     print("Please provide to file names for args to this program")
     exit(3)
 
-main(cmdLine.ip[0], HOSTNAMES_FILE)
+if __name__ == "__main__":
+    main(cmdLine.ip[0], HOSTNAMES_FILE)

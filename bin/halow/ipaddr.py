@@ -9,6 +9,9 @@ import subprocess as subp
 import json
 
 def ip_info():
+    '''
+    pull json formatted data from the command: 'ip addr'
+    '''
     return json.loads(subp.run(['ip', '-4', '-j', 'addr'], capture_output=True, check=True).stdout)
 
 def main():
@@ -19,4 +22,5 @@ def main():
             print(f"index: {index['addr_info'][0]['local']}")
             print("=====")
 
-main()
+if __name__ == "__main__":
+    main()

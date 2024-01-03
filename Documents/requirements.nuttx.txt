@@ -1,0 +1,6 @@
+kconfig-frontends
+genromfs
+libncurses-dev
+gcc-9-riscv64-linux-gnu
+gcc-12-aarch64-linux-gnu
+
