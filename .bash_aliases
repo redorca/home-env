@@ -691,7 +691,7 @@ alias            apt="apt.py"
 alias           ping="ping -4"
 alias           wget="wget -4"
 alias         telnet="telnet -4"
-alias          pgrep="pgrep -a"
+alias          pgrep="pgrep -ia"
 
 #
 # Map a standard tool to an arm directed tool name.
