@@ -8,13 +8,13 @@ import xml.etree.ElementTree as eltree
 TOP_TEMPLATE = ["<?xml version='1.0' standalone=\'no\'?><!--*-nxml-*-->",
                 "<!DOCTYPE service-group SYSTEM 'avahi-service.dtd'>"]
 
-def build_xmltree(xmlFile):
+def build_xmltree(xmlFile, descr, service_type, service_port, hostname):
 	top = eltree.Element('service-group')
 	name = eltree.SubElement(top, 'name', attrib={"replace-wildcards":'yes'}).text = "Stuff on %h"
 	service = eltree.SubElement(top, 'service', attrib={"protocol":'ipv4'})
-	eltree.SubElement(service, 'type').text="_http._tcp"
-	eltree.SubElement(service, 'port').text='555'
-	eltree.SubElement(service, 'host-name').text='flight.local'
+	eltree.SubElement(service, 'type').text=service_type
+	eltree.SubElement(service, 'port').text=service_port
+	eltree.SubElement(service, 'host-name').text='.'.join([hostname, 'local'])
 	tree = eltree.ElementTree(top)
 	eltree.indent(tree)
 	tree.write(xmlFile)
