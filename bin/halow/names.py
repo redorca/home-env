@@ -265,5 +265,3 @@ NAMES=[
 class ipInfo():
     def __init__(self):
         self.names = NAMES
-
-    
