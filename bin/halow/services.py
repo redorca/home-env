@@ -35,4 +35,5 @@ def fixup(xmlFile, tmpFile):
         tmp.write('\n')
 
 if __name__ == "__main__":
-    print("foo faa")
+    build_xmltree('/tmp/foo.xml', 'video', '_http._tcp', '8080', 'IOAire')
+    fixup('/tmp/foo.xml', '/tmp/bar.service')
