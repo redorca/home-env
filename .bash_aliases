@@ -637,6 +637,7 @@ function zee()
 SRCDIR=Projects
 export EDITOR=vim
 export GOPATH=$HOME/${SRCDIR}/GOlang/newt
+export PYTHONPATH=$HOME/.local/bin
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
 LOCAL=/.local/
