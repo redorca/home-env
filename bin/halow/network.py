@@ -53,7 +53,7 @@ class Mesh():
         print(f' wlan:\t\t{self.wlan},\n mesh:\t\t{self.mesh},\n channel:\t{self.channel},\n'
               f' ipaddr:\t{self.ipaddr},\n mesh_name:\t{self.mesh_name}')
 
-class Ipdevices():
+class InetDevices():
     '''
     The set of interfaces that constitute the network subsystem for this host.
     '''
@@ -99,7 +99,7 @@ class Ipdevices():
         result = subp.run(cmd_args, **DEF_FLAGS)
         print(f'{cmd_args}')
 
-class Interface():
+class InetInterface():
     '''
     A particular interface of the network subsystem. Provides access to comms, statistics, config
     '''
