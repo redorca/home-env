@@ -1,8 +1,5 @@
 '''
-handle services management and creation. Which means using avahi service xml snippets, services.
-'''
-
-'''
+    handle services management and creation. Which means using avahi service xml snippets, services.
     Build a service file suitable for avahi to find and run. It goes into /etc/avahi/services
 '''
 
