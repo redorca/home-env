@@ -5,6 +5,7 @@
 from collections import OrderedDict, defaultdict
 import argparse as args
 import io
+import halow.names
 
 Help = defaultdict(lambda: None, {
     'ip':"The subnet value. E.G. aaa.bbb.ccc.ddd would be ddd"

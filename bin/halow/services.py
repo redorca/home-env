@@ -7,7 +7,6 @@ handle services management and creation. Which means using systemctl, avahi serv
 '''
 
 import os
-import subprocess as subp
 import xml.etree.ElementTree as eltree
 
 TOP_TEMPLATE = ["<?xml version='1.0' standalone=\'no\'?><!--*-nxml-*-->",

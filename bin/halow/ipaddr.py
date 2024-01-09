@@ -14,7 +14,7 @@ def ip_info():
     '''
     return json.loads(subp.run(['ip', '-4', '-j', 'addr'], capture_output=True, check=True).stdout)
 
-def main():
+def report_ipaddr():
     topo = ip_info()
     print(f'element 1: {topo[1]["ifname"]}')
     for index in topo:
