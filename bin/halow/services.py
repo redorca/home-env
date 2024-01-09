@@ -1,9 +1,9 @@
 '''
-handle services management and creation. Which means using systemctl, avahi service xml snippets, services.
+handle services management and creation. Which means using avahi service xml snippets, services.
 '''
 
 '''
-    Build a service file suitable for systemd to find and run. It goes into /etc/avahi/services
+    Build a service file suitable for avahi to find and run. It goes into /etc/avahi/services
 '''
 
 import os
