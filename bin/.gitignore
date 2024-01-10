@@ -202,5 +202,5 @@
 !tech-screens/Makefile
 !tech-screens/evens.c
 !tech-screens/tests.py
-!halow
+!halow/
 !halow/.gitignore
