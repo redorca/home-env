@@ -106,7 +106,6 @@ git-hub/
 warnings/
 Pictures/
 scripts/
-!Downloads/
 Desktop/
 Videos
 /.vim/.netrwhist

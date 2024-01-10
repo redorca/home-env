@@ -1,7 +1,7 @@
 *
 !/.gitignore
 !add-disk
-!avahi/capabilities.service
+!avahi/
 !bills_interface_guidelines.txt
 !blueshieldca
 !clones.txt
