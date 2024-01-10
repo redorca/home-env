@@ -1,0 +1,4 @@
+
+!/.gitignore
+!fast_jtag_bitbang.c
+!fast_jtag_bitbang.h
