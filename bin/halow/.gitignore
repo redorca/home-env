@@ -1,8 +1,10 @@
+
+*
+
+!__init__.py
 !.gitignore
 !hostname.py
-!__init__.py
 !ipaddr.py
-!mksystemd-service.py
 !names.py
 !network.py
 !services.py

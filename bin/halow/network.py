@@ -30,9 +30,9 @@ class Mesh():
 
     def node_create(self):
         '''
-        Setup one mesh node on wlanX based on dynamic values.
-        Fill out the command set with the values passed in. The substition only works
-        within the local scope so the commands must be assigned in that scope
+            Setup one mesh node on wlanX based on dynamic values.
+            Fill out the command set with the values passed in. The substition only works
+            within the local scope so the commands must be assigned in that scope
         '''
         CMDS = [ f"iw dev {self.wlan} interface add {self.mesh} type mp mesh_id {self.mesh_name}",
                 f"iw dev {self.mesh} set channel {self.channel}",
@@ -55,11 +55,11 @@ class Mesh():
 
 class InetDevices():
     '''
-    The set of interfaces that constitute the network subsystem for this host.
+        The set of interfaces that constitute the network subsystem for this host.
     '''
     def __init__(self, ipversion):
         '''
-        pull json formatted data from the command: 'ip addr'
+            pull json formatted data from the command: 'ip addr'
         '''
         self.ipversion = ipversion
         self.family = family[ipversion]
@@ -82,7 +82,7 @@ class InetDevices():
 
     def ipaddress(self, ifname):
         '''
-        return a string of the ip.
+            return a string of the ip.
         '''
         return ''.join([ x['addr_info'][0]['local'] for x in self.json if x['ifname'] == ifname ])
 
@@ -91,8 +91,8 @@ class InetDevices():
 
     def setup_link_local(self, ifname, iftype):
         '''
-        ifname is the name of the interface like eth0 or wlan5
-        iftype is the type of the interface; i.e. ethernet, wifi, olpc-mesh (olpc:: one laptop per child)
+            ifname is the name of the interface like eth0 or wlan5
+            iftype is the type of the interface; i.e. ethernet, wifi, olpc-mesh (olpc:: one laptop per child)
         '''
         CMD = f'nmcli c a ifname {ifname} type {iftype} ipv4.method link-local ipv6.method disabled'
         cmd_args = CMD.split(' ')
@@ -101,7 +101,7 @@ class InetDevices():
 
 class InetInterface():
     '''
-    A particular interface of the network subsystem. Provides access to comms, statistics, config
+        A particular interface of the network subsystem. Provides access to comms, statistics, config
     '''
     def __init__(self, ifname):
         self.ifname = ifname
@@ -111,7 +111,4 @@ class InetInterface():
         return self.interface
 
 if __name__ == '__main__':
-    # Ipdevices(ipv4).setup_link_local('mesh0', 'wifi')
-    # mesh('wlan0', 'mesh0', 'meshme', 161, "192.168.183.44").node_create()
     Mesh('wlan0', 'mesh0', 'meshme', 161, "192.168.183.44").dump_config()
-

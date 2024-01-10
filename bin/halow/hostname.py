@@ -1,5 +1,6 @@
 '''
     Pick a hostname from a list, read from a file, by subnet ip.
+
 '''
 
 from collections import OrderedDict, defaultdict

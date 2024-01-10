@@ -70,15 +70,11 @@ class Avahi():
             return
         try:
             results = subp.run(args, **DEF_FLAGS)
-
         except subp.CalledProcessError as cpe:
             print(f'error {cpe.returncode} {cpe.stderr.decode("utf8")}')
 
 
 if __name__ == "__main__":
-    # build_xmltree('/tmp/foo.xml', 'video', '_http._tcp', '8080', 'IOAire')
-    # fixup('/tmp/foo.xml', '/tmp/bar.service')
-    # serviceFile = Avahi()
     avahiFile = 'bar.service'
     Avahi().build_service(avahiFile, 'video', '_http._tcp', '8080', 'IOAire')
     Avahi().install_service(avahiFile)
