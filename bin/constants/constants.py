@@ -10,4 +10,3 @@ GIT_DIR = "bin/home-env/.git"
 SAMBA_ENTRY = [ "[]", "path = /home//", "read only = no", "browseable = yes", "guest ok = yes" ]
 SAMBA_GLOBAL = [ "guest account = USER" ]
 print(SAMBA_ENTRY[1])
-
