@@ -1,7 +1,7 @@
 [unit]
 Description= Meta data provider of system details like version of v4l, mesh stats, wifi stats, and anything else needed
 Documentation="None available yet"
-Requires=IoAire-halow.socket
+# Requires=IoAire-halow.socket
 
 [service]
 
