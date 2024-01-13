@@ -1,11 +1,10 @@
-[unit]
+[Unit]
 Description= Meta data provider of system details like version of v4l, mesh stats, wifi stats, and anything else needed
-Documentation="None available yet"
-# Requires=IoAire-halow.socket
+#Documentation="None available yet"
 
-[service]
+[Service]
+ExecStart="/usr/bin/python3.11 /home/wilbur/.local/bin/halow/daemon/IoAire-daemon.py"
 
-[install]
+[Install]
 
-[environment]
 
