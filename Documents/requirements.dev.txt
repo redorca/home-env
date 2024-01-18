@@ -1,4 +1,6 @@
 ninja-build
+meson
+python3-ply
 automake
 autoconf
 libtool
@@ -28,3 +30,14 @@ python3-meld3
 minicom
 elf-binutils
 libssl-dev
+libevent-pthreads-2.1-7
+libdw1
+libunwind-15
+libyaml-dev
+python3-yaml
+python3-ply
+python3-jinja2
+libudev-dev
+libpython3-dev
+pybind11-dev
+libevent-dev
