@@ -24,3 +24,4 @@ apt-transport-https
 inetutils-traceroute
 net-tools
 iw
+pkg-config
