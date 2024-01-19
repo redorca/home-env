@@ -4,7 +4,8 @@ Description= Meta data provider of system details like version of v4l, mesh stat
 
 [Service]
 ExecStart="/usr/bin/python3.11 /home/wilbur/.local/bin/halow/daemon/IoAire-daemon.py"
+User=avahi
 
 [Install]
-
+WantedBy=multi-user.target
 

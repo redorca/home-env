@@ -14,12 +14,15 @@ queue_size = 5
 port = 5000
 
 sckt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# sckt = socket.socket()
-sckt.bind(('',port))
+sckt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sckt.bind(('0.0.0.0', port))
 sckt.listen(queue_size)
 
 while True:
     c, addr = sckt.accept()
     stuffed = c.recv(100)
-    c.send(b(f'=====  {stuffed}'))
+    buffer = json.loads(str(stuffed.decode('utf8')))
+    print(f'buffer {buffer["name"]}')
+    goff = {'name':'foo', 'time':'now'}
+    c.send(bytes(json.dumps(goff).encode('utf8')))
 
