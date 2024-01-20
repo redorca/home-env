@@ -49,6 +49,16 @@ def relocate(root):
     os.chdir(root)
     return before
 
+def gen_ssh_keys():
+    '''
+        create ssh keys
+    '''
+    prefix = os.getenv('HOME')
+    filename = '/'.join([prefix, '.ssh', 'id_ed25519'])
+    cmd = [ "ssh-keygen", "-t", "ed25519", "-N", "''", '-f', filename]
+    subp.run(cmd, check=True, capture_output=True)
+
+
 def setup_git():
     '''
         "Symlink bin/home-env/.git to .local/.git and checkout files"
