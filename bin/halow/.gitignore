@@ -11,3 +11,4 @@
 !IoAire-halow.service
 !IoAire-halow.sockets
 !daemon/
+!zero.py
