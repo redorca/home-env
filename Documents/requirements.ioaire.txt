@@ -8,7 +8,6 @@ cloudcompare
 python3-meshio
 libnss-myhostname
 libnss-mdns
-libnss-mymachines
 avahi-utils
 apt-transport-https
 inetutils-traceroute
