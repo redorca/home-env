@@ -1,5 +1,6 @@
 '''
-    Run as a daemon vi systemd .service files and provide a remote access to system meta data, primarily.
+    A template for a daemon via systemd .service files that provides data, takes commands, checks for gateways 
+    provide a remote access to system meta data, primarily.
 
     May want to add capabilities like OTA updates, location data, location signalling for physically identifying
     the node.
