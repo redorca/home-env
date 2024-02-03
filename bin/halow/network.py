@@ -86,6 +86,9 @@ class InetDevices():
         '''
         return ''.join([ x['addr_info'][0]['local'] for x in self.json if x['ifname'] == ifname ])
 
+    def ipaddress_sequence(self, ipaddr):
+        return [int(x) for x in ipaddr.split('.')]
+
     def set_ipaddr(self, ifname, addr):
         print(f' set the ip address of dev {ifname} to {addr}')
 
