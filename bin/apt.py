@@ -11,7 +11,8 @@ import sys
 import os
 
 RECORD_FILE = os.environ['HOME'] + "/.local/Documents/txt.replay"
-STD_RUN_ARGS = {"check": True, "capture_output": True}
+BASIC_RUN_ARGS = {"check": True, }
+STD_RUN_ARGS = {**BASIC_RUN_ARGS, 'capture_output': True, "check": True, }
 
 
 def apt(*pkgs):
@@ -21,6 +22,29 @@ def apt(*pkgs):
     cmd = ["sudo", "apt", *pkgs]
     result = subp.run(cmd, **STD_RUN_ARGS)
     return result
+
+def present(*pkgs):
+    '''
+        See if the set of pkgs is installed.
+    '''
+    presented = dict()
+    presented['found'] = list()
+    presented['missing'] = list()
+
+    for pkg in pkgs[1:]:
+        try:
+            cmds = ['dpkg', '-l', pkg]
+            subp.run(cmds, **STD_RUN_ARGS)
+            presented['found'].append(pkg)
+        except subp.CalledProcessError as cpe:
+            presented['missing'].append(pkg)
+    found = '\n\t'.join(presented['found'])
+    missing = '\n\t'.join(presented['missing'])
+    if not len(found) == 0:
+        print(f'Found\n\t{found}')
+    if not len(missing) == 0:
+        print(f'Missing\n\t{missing}')
+
 
 def verify(*pkgs):
     verified = dict()
@@ -45,6 +69,7 @@ def apt_get(action, *pkgs):
     '''
         Run aot-get with action for **pkgs
     '''
+    print(f'pkgs to install: {pkgs[2:]}')
     try:
         cmd = ["sudo", "apt-get", "-y", action, *pkgs]
         return subp.run(cmd, **STD_RUN_ARGS)
@@ -57,15 +82,17 @@ def main(myargs):
     '''
     route_args = {"remove": apt_get, "install": apt_get, "auto-remove": apt_get,
                   "auto-clean": apt_get, "update": apt_get, "download": apt_get,
-                  "search": apt, 'verify': verify}
+                  "search": apt, 'verify': verify, 'present': present}
     if not myargs[1] in route_args:
         print("No action specified.")
         return False
 
-    result = route_args[myargs[1]](myargs[1], *myargs[2:])
-    if not result is None and result.returncode == 0:
-        print(f'Result :: {result.stderr.decode("UTF8")}')
-        return True
+    with open(RECORD_FILE, mode='ab') as recf:
+        BASIC_RUN_ARGS["stdout"] = recf
+        result = route_args[myargs[1]](myargs[1], *myargs[2:])
+        if not result is None and result.returncode == 0:
+            print(f'Result :: {result.stderr.decode("UTF8")}')
+            return True
 
     return False
 

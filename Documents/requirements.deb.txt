@@ -1,10 +1,14 @@
 debarchiver
 debconf
+debconf-doc
 debconf-utils
 debhelper
 debianutils
-dh-buildingo
-dh-dkms
+dkms
+dh-buildinfo
+dh-cmake
+dh-exec
 dh-make
+dh-sysuser
 dh-virtualenv
 dh-python
