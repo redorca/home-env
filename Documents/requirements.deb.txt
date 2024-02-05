@@ -1,0 +1,10 @@
+debarchiver
+debconf
+debconf-utils
+debhelper
+debianutils
+dh-buildingo
+dh-dkms
+dh-make
+dh-virtualenv
+dh-python
