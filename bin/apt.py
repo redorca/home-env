@@ -11,8 +11,7 @@ import sys
 import os
 
 RECORD_FILE = os.environ['HOME'] + "/.local/Documents/txt.replay"
-BASIC_RUN_ARGS = {"check": True, }
-STD_RUN_ARGS = {**BASIC_RUN_ARGS, 'capture_output': True, "check": True, }
+STD_RUN_ARGS = {"check": True, }
 
 
 def apt(*pkgs):
@@ -31,6 +30,7 @@ def present(*pkgs):
     presented['found'] = list()
     presented['missing'] = list()
 
+    STD_RUN_ARGS['capture_output'] =  True,
     for pkg in pkgs[1:]:
         try:
             cmds = ['dpkg', '-l', pkg]
@@ -46,12 +46,13 @@ def present(*pkgs):
         print(f'Missing\n\t{missing}')
 
 
-def verify(*pkgs):
+def verify(dummy, *pkgs):
     verified = dict()
     verified['found'] = list()
     verified['unknown'] = list()
 
-    for pkg in pkgs[1:]:
+    STD_RUN_ARGS['capture_output'] =  True,
+    for pkg in pkgs:
         try:
             cmds = ['apt', 'show', pkg]
             subp.run(cmds, **STD_RUN_ARGS)
@@ -69,12 +70,15 @@ def apt_get(action, *pkgs):
     '''
         Run aot-get with action for **pkgs
     '''
-    print(f'pkgs to install: {pkgs[2:]}')
-    try:
-        cmd = ["sudo", "apt-get", "-y", action, *pkgs]
-        return subp.run(cmd, **STD_RUN_ARGS)
-    except subp.CalledProcessError as cpe:
-        return cpe
+    print(f'pkgs to {action}: {pkgs}')
+    with open(RECORD_FILE, mode='ab') as recf:
+        STD_RUN_ARGS["stdout"] = recf
+        try:
+            cmd = ["sudo", "apt-get", "-y", action, *pkgs]
+            return subp.run(cmd, **STD_RUN_ARGS)
+        except subp.CalledProcessError as cpe:
+            verify(action, *pkgs)
+            return cpe
 
 def main(myargs):
     '''
@@ -87,12 +91,10 @@ def main(myargs):
         print("No action specified.")
         return False
 
-    with open(RECORD_FILE, mode='ab') as recf:
-        BASIC_RUN_ARGS["stdout"] = recf
-        result = route_args[myargs[1]](myargs[1], *myargs[2:])
-        if not result is None and result.returncode == 0:
-            print(f'Result :: {result.stderr.decode("UTF8")}')
-            return True
+    result = route_args[myargs[1]](myargs[1], *myargs[2:])
+    if not result is None and result.returncode == 0:
+        print(f'Result :: {result.stderr}')
+        return True
 
     return False
 
