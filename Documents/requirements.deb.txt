@@ -1,9 +1,11 @@
+build-essential
 debarchiver
 debconf
 debconf-doc
 debconf-utils
 debhelper
 debianutils
+devscripts
 dkms
 dh-buildinfo
 dh-cmake
