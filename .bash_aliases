@@ -694,6 +694,7 @@ alias           ping="ping -4"
 alias           wget="wget -4"
 alias         telnet="telnet -4"
 alias          pgrep="pgrep -a"
+alias         commit='git commit && git push'
 
 #
 # Map a standard tool to an arm directed tool name.
