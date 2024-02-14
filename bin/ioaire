@@ -16,6 +16,12 @@ dump()
         [ ! -z "${M}" ] && echo -e "\tM:\t${M}"
 }
 
+verify()
+{
+        [ -n "${ARCH}" ] && [ -n "${CROSS_COMPILE}" ] && [ -n "${TARGET}" ] && return 0
+        return 1
+}
+
 while [ $# -ne 0 ] ; do
         case "$1" in
                 -M)     M="$(pwd)"
@@ -44,6 +50,11 @@ while [ $# -ne 0 ] ; do
         esac
         shift
 done
+
+if ! verify ; then
+        echo "Missing an arg: ARCH? <${ARCH}>, CROSS_COMPILE? <${CROSS_COMPILE}>, TARGET? <${TARGET}>" >&2
+        exit 1
+fi
 
 build()
 {
