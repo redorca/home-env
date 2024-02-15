@@ -1,0 +1,740 @@
+commit 73a7a097d589b0eaa5e201c5ddd993d774f9db69
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Feb 5 18:16:10 2024 -0800
+
+      Fixup stdout redirect to txt.replay
+
+bin/apt.py
+
+commit 258adee049b1ab0cad533707a8801153bae16618
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Feb 5 12:53:44 2024 -0800
+
+      Fixup replay recording
+
+.bash_aliases
+Documents/requirements.deb.txt
+bin/apt.py
+
+commit ad1edd6d469ed3fb7e037ad31d4c91b5eed84040
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Feb 5 11:56:20 2024 -0800
+
+     Build up a .deb build environment
+
+Documents/.gitignore
+Documents/requirements.deb.txt
+
+commit fdc4c7369a8962a08b26f0e674c9536a32a44ecc
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Feb 2 20:09:23 2024 -0800
+
+     Locate the symlink target in /home/ioaire/bin
+
+bin/halow/daemon/IoAire-halow.service
+
+commit 2166b7a1e49be38ab2f05760431d399dd0280804
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Feb 2 20:08:40 2024 -0800
+
+     Early pass on gateway systemd service setup
+
+bin/halow/.gitignore
+bin/halow/gateway-chk.py
+bin/halow/network.py
+
+commit 5686ab71257d9af4e9ca3da150ae5e33cb4215b4
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Feb 2 11:29:26 2024 -0800
+
+      Change intro comment to state this is a template`:wq
+
+bin/halow/daemon/IoAire-daemon.py
+
+==== 2.0
+commit cc30847f621eb66b1d4dbf42caef59f74c25f30e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 12:20:38 2024 -0800
+
+     Place in final location relative to root
+
+notes/etc/avahi/avahi-daemon.conf
+notes/etc/nsswitch.conf
+
+commit 6a23a9ca2a45a2d6bd5074a38385fd0537a74718
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 12:07:05 2024 -0800
+
+     Comment on avahi-daemon.conf: no ipv6 output
+
+notes/stuff.txt
+
+commit cac284e1c44f0c4b297128907f0cb559dfbcfbb0
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 12:04:28 2024 -0800
+
+     Turn off ipv6 processing for avahi-daemon
+
+notes/.gitignore
+notes/avahi-daemon.conf
+
+commit f9e89fcf8aa57bcaed8e4b52190016f486d9a137
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 11:59:18 2024 -0800
+
+     add gitignore file (inverted ignores), nss files
+
+notes/.gitignore
+notes/nsswitch.conf
+scripts/ip-report.py
+
+commit 4b1b009c594a5c4639750e7c2c66fa5260195c00
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 11:51:12 2024 -0800
+
+     More complete set of needed packages
+
+notes/requirements.dpkg
+
+=== 
+commit 88f18aa7a851bbe787728abec8746998fc901f18
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 12:21:38 2024 -0800
+
+     Remove libnss-mymachines (container specific pkg)
+
+Documents/.gitignore
+Documents/requirements.ioaire.txt
+
+commit 648c474eb1e369f82f30bd9901fa61891a7387f5
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 11:54:25 2024 -0800
+
+      Correct order so myhostname precedes dns
+
+Documents/nsswitch.conf
+
+commit 0fcd1f2fa4a565680c79c79681c4c89896635467
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 11:44:12 2024 -0800
+
+      Misspelling: meshsdfilter-tools (ds -> sd)
+
+Documents/requirements.ioaire.txt
+
+commit 539186f6a657fded3556f9bea4045832a757b116
+Merge: 46f6a24 8b51c88
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 11:26:09 2024 -0800
+
+    Merge branch 'master' of ssh://github.com/redorca/home-env
+
+commit 46f6a2491a65d9534b96fe3fc9fba4e56e5e1610
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 11:25:47 2024 -0800
+
+      ioaire specific package requirements
+
+Documents/.gitignore
+Documents/requirements.ioaire.txt
+
+commit 43c65e0cbadb044cd9fbfb7be7f8ee0c7b8416fe
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 11:24:30 2024 -0800
+
+     Catching up with IoAire tools needed
+
+Documents/requirements.home-env.txt
+
+=== 1.5
+commit 8b51c8882f074606833f0afd833825230c7ddd33
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 00:03:38 2024 -0800
+
+     Capture trial of zeroconf code
+
+bin/halow/.gitignore
+bin/halow/zero.py
+
+=== 1.5
+commit 64824a7892f2a62d4621289ddc581e066175b6bf
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Sun Jan 21 00:27:13 2024 -0800
+
+      Add defaults for subp.run, mod mkhome to use it
+
+bin/constants/constants.py
+bin/mkhome.py
+
+=== 1.5
+commit 551c08cc3186d8830239902e6bdd28e4d4395c19
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Sat Jan 20 00:37:57 2024 -0800
+
+     Work for creating ssh keys as part of home env
+
+bin/mkhome.py
+
+=== 1.5
+commit aad94444d51a93e9e9c01abba5ad4e4fba0dce49
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Jan 18 19:29:08 2024 -0800
+
+     Known good service file.
+
+bin/halow/daemon/IoAire-halow.service
+
+commit 19a3b89af93cd1dba9b45b9b0323141ecbb34c65
+Merge: f60c712 a226d2c
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Jan 18 19:03:48 2024 -0800
+
+    Merge branch 'master' of ssh://github.com/redorca/home-env
+
+commit f60c7122c1eb2ce25ceff4e755ae34b9317a879f
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Jan 18 19:02:51 2024 -0800
+
+     Sending a simpe json string/dict back and forth
+    
+      SO_REUSEADDR enabled.
+
+bin/halow/daemon/IoAire-daemon.py
+bin/halow/daemon/IoAire-halow.service
+bin/halow/daemon/boop.py
+
+=== 1.5
+commit a226d2c8c3ddd9193623aad33c3f0e2a4b3c317a
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Jan 18 15:28:51 2024 -0800
+
+     update .dev to support libcamera builds
+
+Documents/requirements.dev.txt
+Documents/requirements.home-env.txt
+
+=== 1.5
+commit 89fab1a859aed6295e28a845cafff693dd0fe858
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Sat Jan 13 00:10:42 2024 -0800
+
+     Begin support for json, subprocesses,...
+
+bin/halow/daemon/IoAire-daemon.py
+
+=== 1.5
+commit 84dea4139c5e065de06fd47803507d835d540e55
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Jan 12 19:46:50 2024 -0800
+
+     python3 is symlink and fails. python3.11 functions
+
+bin/halow/daemon/IoAire-halow.service
+
+commit bd0ba409c0abf60329300006dd18a2fb092454bb
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Jan 12 19:31:49 2024 -0800
+
+     Group all daemon related stuff
+
+bin/halow/daemon/IoAire-halow.service
+bin/halow/daemon/IoAire-halow.sockets
+
+commit 48ff91a88f9e0735939332349143e831f17b4914
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Jan 12 19:30:55 2024 -0800
+
+     Simple server/daemon and client for experiments
+
+bin/halow/.gitignore
+bin/halow/daemon/.gitignore
+bin/halow/daemon/IoAire-daemon.py
+bin/halow/daemon/boop.py
+
+=== 1.5
+commit 81e887c60035acaadf6433208b514d5544e9ca71
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Jan 12 15:29:01 2024 -0800
+
+     Fixup alignments
+
+bin/halow/names.py
+
+commit 9264b485de4fd79f0b57b6b1eb5ef38e5683bf47
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Jan 12 15:25:51 2024 -0800
+
+      Reorg and limit dependencies
+
+bin/halow/IoAire-halow.service
+bin/hostname.py
+bin/ipaddr.py
+
+=== 1.5
+commit c8e410267dc0c222270877334a6b88d242bd7cff
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Jan 11 16:07:24 2024 -0800
+
+     Systemd socket file for IoAire-halow.service
+
+bin/halow/.gitignore
+bin/halow/IoAire-halow.sockets
+
+commit 4b9d2377b5f7a37964406242017e8ac42d547009
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Jan 11 16:05:02 2024 -0800
+
+    Systemd service to launch avahi advertised service
+
+bin/halow/.gitignore
+bin/halow/IoAire-halow.service
+
+=== 1.5
+commit 9275622764981a805e29a748b7abe8372216e5ac
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 10 15:59:40 2024 -0800
+
+     Fine tune
+
+.gitignore
+Documents/.gitignore
+Documents/avahi/.gitignore
+bin/.gitignore
+bin/constants/.gitignore
+bin/fast-bangers/Austin_2D/.gitignore
+bin/halow/.gitignore
+
+commit 5f764d6adb623bad88cca7467306519f807f4459
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 10 14:44:18 2024 -0800
+
+      Minor format changes
+
+.gitignore
+bin/.gitignore
+bin/halow/.gitignore
+bin/halow/__init__.py
+bin/halow/hostname.py
+bin/halow/network.py
+bin/halow/services.py
+
+commit 2a89fb67baafd159cc7e8d59c433b1103d73e884
+Merge: ed27549 a31e143
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 10 14:08:19 2024 -0800
+
+    Merge branch 'master' of ssh://github.com/redorca/home-env
+
+commit a31e14318ba5e75fa3f8d1e3d8d919b8ac6d8f32
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 10 12:47:50 2024 -0800
+
+     Define class Avahi with build_xml, install, remove
+
+bin/halow/services.py
+
+=== 1.5
+commit aff9b795e1f66e602d0f05bdc40dae82a32ef101
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Jan 9 09:43:09 2024 -0800
+
+      Merge some comments
+
+bin/halow/services.py
+
+commit 4ac229a1590a245dbe6415d13d3ee682d582c33e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Jan 9 09:42:09 2024 -0800
+
+      Allow tracked files to avoid the '-f' message
+
+bin/.gitignore
+bin/halow/.gitignore
+
+commit 5ccc03100b2fa7c81978c43329a0b3dcbedb408c
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Jan 9 09:35:14 2024 -0800
+
+      Remove mentions of systemctl/systemd
+
+bin/halow/services.py
+
+=== 1.5
+commit c75da2006d4ed5f132cf395bc742150214523896
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Jan 8 22:54:54 2024 -0800
+
+     Rename classes
+
+bin/halow/network.py
+
+commit cbe1e451d742d877cddd1207707d4a5d9e92c16c
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Jan 8 19:47:59 2024 -0800
+
+     Slowly converge on a clean module
+
+bin/halow/hostname.py
+bin/halow/ipaddr.py
+bin/halow/network.py
+bin/halow/services.py
+
+=== 3.0
+commit 5befe11a1807017d3d6bba0021e824cb2afec457
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 21:21:41 2024 -0800
+
+      Further parameterization
+
+bin/halow/services.py
+
+commit 8d9675d9bbb13df804ec52b9045ca2264a45f841
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 20:39:49 2024 -0800
+
+     more services structuring
+
+bin/halow/mksystemd-service.py
+bin/halow/services.py
+
+commit a7d6cf846f9e6571587792562039f07564b60233
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 19:45:57 2024 -0800
+
+     Generalize service handling and services
+    
+      supercede mksystemd-service
+
+bin/halow/services.py
+
+commit 11066b6e0833f7fd353bf1d1a15393fb981c97a9
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 19:42:37 2024 -0800
+
+     parameterize xmlfile creation
+
+bin/halow/mksystemd-service.py
+
+commit 40330dc36808733ecb67ff94513e429c3b4840ad
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 19:09:53 2024 -0800
+
+      Formatting: remove empty lines at end of file.
+
+bin/halow/names.py
+
+commit 34fb2f73016ee5f6d302177f2491a1595130998d
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 19:07:45 2024 -0800
+
+     classify mesh for each node.
+
+bin/halow/network.py
+
+commit 865997ca11e9001381636c4d8e55c7a97c29120e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 18:41:14 2024 -0800
+
+     export PYTHONPATH=$HOME/.local/bin
+
+.bash_aliases
+
+commit 23e3ab77138fab4e6061a5270d8a4b72c3f40e04
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 18:40:45 2024 -0800
+
+     Rename to accomodate linklocal and other configs
+
+bin/halow/network.py
+
+==== 1
+commit 95d09123a476fd341be9b1f6a92e72e8dbd97d96
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 11:06:34 2024 -0800
+
+      set [ipv4]method=link-local
+
+notes/etc/NetworkManager/system-connections/Wired connection 1.nmconnection
+
+commit 238e946cbb2e32f868647b287eb5dbba940d1a6e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 10:57:21 2024 -0800
+
+      File to use for iface properties e.g. linklocal
+
+notes/etc/NetworkManager/system-connections/Wired connection 1.nmconnection
+
+==== 2
+commit b7ecb7f36641ec1edd8bf233e8686bb69e03e07e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Jan 2 14:52:03 2024 -0800
+
+     Three more rivers
+
+notes/hostnames-rivers.dictionary
+
+commit 72c8b594f1dc08dff7829dc64822f051f620e86d
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Jan 2 14:49:09 2024 -0800
+
+     Set the hostname via hostnamectl. Untested.
+
+scripts/first-boot.py
+
+===
+commit b4fd75611affe334a7a2d4b56b72483e36627c11
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Jan 2 14:09:28 2024 -0800
+
+     bash script for nrc7292-sdk, req for nuttx builds
+
+Documents/requirements.nuttx.txt
+bin/mktarget-sdk
+
+=== 1.5
+commit 6f6a291b469b92f483f76ee758ddde3d13712bd1
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Dec 29 20:01:04 2023 -0800
+
+     Laundered changes, no longer necessary
+
+Documents/patch.sample_tcp_server
+
+commit 89556a92f8277568c0b848253e1efd63256e4ce1
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Dec 28 15:36:50 2023 -0800
+
+      Laundering changes for nrc7292_sdk compile errors
+
+Documents/patch.sample_tcp_server
+
+commit 2a45754fc4a87642c8a2491bf824a59b7d658485
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 23:02:20 2023 -0800
+
+      Clean up vestigial xml strings
+
+bin/halow/mksystemd-service.py
+
+commit 56def637bdcda776e3aa90fa72008d669620b1a5
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 22:55:58 2023 -0800
+
+      change to list of lists not list of dicts
+
+bin/halow/names.py
+
+commit 468246f8b32343ccb4730e2274f2dbc68343069e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 18:07:50 2023 -0800
+
+     A list of dictionaries of name:description pairs
+
+bin/halow/names.py
+
+commit c60cf9f6066cd076c53c90278028bc5d5577dcf9
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 17:08:33 2023 -0800
+
+     Reorg so can call from outside and find the ip_addr
+
+bin/halow/__init__.py
+bin/halow/ipaddr.py
+
+commit faf26b854d6c678fcbd5d840e042f332739ccc4b
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 17:07:46 2023 -0800
+
+     Filename violates python module format
+
+bin/halow/ipaddr.py
+
+commit a833a529ce21ad21dd5d8e9581a5447fc2b9739e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 16:54:36 2023 -0800
+
+     Early change set for creating this module
+
+bin/halow/__init__.py
+bin/halow/config-mesh.py
+bin/halow/grab-ipaddr.py
+bin/halow/hostname.py
+bin/halow/mksystemd-service.py
+
+commit bbc3670a07cf2e01a7ee368204f2e34e0067bd93
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 16:53:47 2023 -0800
+
+      Build a module for creating IoAire nodes
+
+bin/halow/config-mesh.py
+bin/halow/grab-ipaddr.py
+bin/halow/hostname.py
+bin/halow/mksystemd-service.py
+
+commit 4aeae8bb203948356038018ba629bc65675a24fc
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 16:52:46 2023 -0800
+
+     Comment updates
+
+bin/config-mesh.py
+
+commit 88eabc06376664db7ec62500d9a99358f201f25d
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 16:34:59 2023 -0800
+
+     Convert hard-coded data to f'{vars}'
+
+bin/config-mesh.py
+
+commit cb974a6f8310a629ef1df7e6649353fbee7f55f9
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 13:56:10 2023 -0800
+
+     Add the .cmd and .returncode to error exception
+
+bin/config-mesh.py
+
+commit 00a49466d5b60b2d4eeafb7624a0cd8105614175
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 12:18:17 2023 -0800
+
+     Framework for configuring a mesh node
+
+bin/config-mesh.py
+
+commit 758af27b3cdadefb7355250e0a473a10b34034c6
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 10:40:31 2023 -0800
+
+     Build service xml snippet from scratch
+
+bin/mksystemd-service.py
+
+commit 685c3fed76a31bf54e26ddd8100fecd623723911
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Dec 19 23:30:13 2023 -0800
+
+     Remove trailing space
+
+bin/mksystemd-service.py
+
+commit 8b12f2d1aa9ef1e7987b9395ce19f0359266c4b1
+Merge: 881bcb6 19ab5b8
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Dec 19 23:29:23 2023 -0800
+
+    Merge branch 'master' of ssh://github.com/redorca/home-env
+
+commit 881bcb67578fe1e6a5dd783dbc6ccbfedd1a63ed
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Dec 19 23:28:48 2023 -0800
+
+     Build a systemd.service file
+
+bin/mksystemd-service.py
+
+commit 19ab5b83a7f50f060819e89b363386f2f86785ec
+Merge: 94b271a ceb47f8
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Dec 19 17:54:37 2023 -0800
+
+    Merge branch 'master' of ssh://github.com/redorca/home-env
+
+commit ceb47f81f92af851ea5709a2408d5cab9542c24f
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Dec 19 13:05:16 2023 -0800
+
+     Choose a hostname from a file, find ip from command
+
+bin/grab-ipaddr.py
+bin/hostname.py
+
+commit 6e894c4220d5c34df645e8efde637ddf7098c8d4
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Dec 18 18:36:25 2023 -0800
+
+     Native american tribes
+
+Documents/hostnames.dictionary
+
+commit efb9b639c415f3dbdd937e0bedd443d40644ea47
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Dec 18 17:54:38 2023 -0800
+
+      Lower case names
+
+Documents/hostnames.dictionary
+
+commit 06adc0b27cf376684d35ffc27921c47bb925e849
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Dec 18 17:51:35 2023 -0800
+
+     A couple of mesopotameian names + Celtic
+
+Documents/hostnames.dictionary
+
+commit bd0fe3a41d4a976eaff40c6abcba01b02b0b9922
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Dec 18 10:46:04 2023 -0800
+
+      Sumerian references, city of Ur, Nanna a moon god
+
+Documents/hostnames.dictionary
+
+commit 9390b7d8f667553d4d940fa90c2ae1802c94f888
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Dec 18 10:26:10 2023 -0800
+
+        Add a set of Maya deities
+
+Documents/hostnames.dictionary
+
+commit bc754d325b551f009b4f55c1d9eacd5c674aa2b9
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Dec 18 09:51:37 2023 -0800
+
+      List of names to use for hostname assignments
+    
+      Will be 256 names so avery node on a minor subnet can be named
+    automatically outside of dhcp.
+    
+      Hopefully, I can use the last 3 digits to index into the set of
+    hostnames and assign that to hostname.
+    
+      There is a reasonable chance that this produces unique assignments
+    with minimal clashing
+
+Documents/hostnames.dictionary
+
+commit 16cb02fdda3f8bd28f83d9e60406b65469d344a9
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Sun Dec 17 23:53:31 2023 -0800
+
+      Fix hostname entry
+
+Documents/avahi/capabilities.service
+
+commit ba146bee8be3747b229691b7a6c94bc05ea0734c
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Sat Dec 16 11:28:50 2023 -0800
+
+      Fixup the name tag
+
+Documents/avahi/capabilities.service
+
+commit 4192a94757f06e7393a65e32153739748fd4e147
+Merge: dd3cb37 db6e9e3
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Sat Dec 16 11:22:36 2023 -0800
+
+    Merge branch 'master' of ssh://github.com/redorca/home-env
+
+commit dd3cb37a0b823767e9ee3f9f428e2dd4e93cac90
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Sat Dec 16 11:22:23 2023 -0800
+
+     More to ignore
+
+.config/git/ignore
