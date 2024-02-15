@@ -27,3 +27,4 @@
 !requirements.ioaire.txt
 !nsswitch.conf
 !requirements.deb.txt
+!log.history.*

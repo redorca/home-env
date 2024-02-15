@@ -175,6 +175,10 @@ Date:   Sat Jan 20 00:37:57 2024 -0800
 
 bin/mkhome.py
 
+=== 2.0
+book Jan 18
+        debug client server network connectivity, validate sending and receiving correctly.
+        define a simple json string to provide meta info on the transfer.
 === 1.5
 commit aad94444d51a93e9e9c01abba5ad4e4fba0dce49
 Author: Bill Rees <uberfoot@yahoo.com>
@@ -251,6 +255,12 @@ bin/halow/daemon/.gitignore
 bin/halow/daemon/IoAire-daemon.py
 bin/halow/daemon/boop.py
 
+=== 4.0
+book Jan 12
+    Systemd service to launch daemon advertised by avahi
+    The daemon is early days intending to provide client/server
+    interaction in support of OTA updating
+
 === 1.5
 commit 81e887c60035acaadf6433208b514d5544e9ca71
 Author: Bill Rees <uberfoot@yahoo.com>
@@ -283,8 +293,6 @@ bin/halow/IoAire-halow.sockets
 commit 4b9d2377b5f7a37964406242017e8ac42d547009
 Author: Bill Rees <uberfoot@yahoo.com>
 Date:   Thu Jan 11 16:05:02 2024 -0800
-
-    Systemd service to launch avahi advertised service
 
 bin/halow/.gitignore
 bin/halow/IoAire-halow.service
@@ -332,6 +340,13 @@ Date:   Wed Jan 10 12:47:50 2024 -0800
      Define class Avahi with build_xml, install, remove
 
 bin/halow/services.py
+
+=== 4
+book:
+        Decipher systemd service files, how to run a daemon
+        Finish up the daemon so it runs out of /usr/bin
+        write a couple of modules to provide helpers for network configs, hostname, avahi services
+        Figure out how to have NetworkManager setup an interface in link-local mode
 
 === 1.5
 commit aff9b795e1f66e602d0f05bdc40dae82a32ef101
