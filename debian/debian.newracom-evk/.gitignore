@@ -1,4 +1,2 @@
-!debian/
-!changelog
-!control
-!copyright
+!install/
+!Makefile
