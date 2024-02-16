@@ -13,6 +13,7 @@ BUILD_DIR = ${packageName}-${packageVersion}
 DEB = ${packageName}_${packageVersion}_all.deb
 RM = rm -f
 MKDIR = mkdir -p
+DIRS_LIST = /lib/firmware ${KDIR}/extra /usr/bin /boot/overlays
 
 .PHONY: install all
 
@@ -20,16 +21,11 @@ all:
 	@echo "use the isntall target instead."
 
 dirs:
-	${MKDIR} ${BUILD_DIR}
-	${MKDIR} ${BUILD_DIR}/lib/firmware
-	${MKDIR} ${BUILD_DIR}${KDIR}/extra
-	${MKDIR} ${BUILD_DIR}/usr/bin
+	@for dir in $(addprefix ${BUILD_DIR}, ${DIRS_LIST}) ; do ${MKDIR} $${dir}; done
 
 install: dirs dtb
-	# cp ${evk_bindir}/nrc.ko ${BUILD_DIR}${KDIR}/extra
 	cp -a debian ${BUILD_DIR}
-	cp ${evk_bindir}/nrc7292_bd.dat ${BUILD_DIR}/lib/firmware
-	cp ${evk_bindir}/nrc7292_cspi.bin ${BUILD_DIR}/lib/firmware
+	cp ${evk_bindir}/nrc7292_bd.dat ${evk_bindir}/nrc7292_cspi.bin ${BUILD_DIR}/lib/firmware
 	cp ${evk_bindir}/cli_app ${BUILD_DIR}/usr/bin
 
 build:
