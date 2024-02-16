@@ -496,7 +496,7 @@ Date:   Tue Jan 2 14:49:09 2024 -0800
 
 scripts/first-boot.py
 
-===
+=== 1.5
 commit b4fd75611affe334a7a2d4b56b72483e36627c11
 Author: Bill Rees <uberfoot@yahoo.com>
 Date:   Tue Jan 2 14:09:28 2024 -0800
