@@ -41,3 +41,4 @@ libudev-dev
 libpython3-dev
 pybind11-dev
 libevent-dev
+device-tree-compiler

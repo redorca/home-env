@@ -1,0 +1,7 @@
+#!/bin/bash
+
+OVERLAY=newracom_overlay.dtb
+
+if ! grep ${OVERLAY} /boot/config.txt >/dev/null 2>&1 ; then
+        echo "${OVERLAY}" >> /boot/config.txt
+fi
