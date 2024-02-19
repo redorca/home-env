@@ -4,3 +4,4 @@
 !control
 !changelog
 !newracom-evk.postinst
+!newracom-evk.prerm

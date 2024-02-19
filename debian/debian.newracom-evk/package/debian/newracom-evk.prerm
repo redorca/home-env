@@ -1,0 +1,8 @@
+#!/bin/bash
+
+OVERLAY=newracom_overlay.dtb
+CONF_FILE=/boot/config.txt
+
+if grep ${OVERLAY} ${CONF_FILE} >/dev/null 2>&1 ; then
+        sed -i -e '/'${OVERLAY}'/d' $CONF_FILE
+fi
