@@ -11,7 +11,7 @@ clean:
 
 build::
 	@mkdir -p debian/${PACKAGE}
-	@cp -a lib/ usr/ debian/${PACKAGE}
+	@cp -a boot/ lib/ usr/ debian/${PACKAGE}
 binary:
 	dh_installdeb
 	dh_gencontrol

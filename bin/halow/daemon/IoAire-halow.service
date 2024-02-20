@@ -3,7 +3,7 @@ Description= Meta data provider of system details like version of v4l, mesh stat
 #Documentation="None available yet"
 
 [Service]
-ExecStart=/usr/bin/python3.11 /home/ioaire/bin/halow/daemon/IoAire-daemon.py
+ExecStart=/usr/bin/python3.11 /usr/bin/halow/daemon/IoAire-daemon.py
 User=ioaire
 Group=ioaire
 

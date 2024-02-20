@@ -28,3 +28,4 @@
 !nsswitch.conf
 !requirements.deb.txt
 !leet.c
+!log.history.*
