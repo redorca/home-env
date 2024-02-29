@@ -5,6 +5,7 @@ ARCH=arm64
 CROSS_COMPILE=aarch64-linux-gnu-
 TARGET="Image modules dtbs"
 KERNEL=kernel8
+V=0
 
 dump()
 {
@@ -62,8 +63,8 @@ build()
         if [ "${CLEAN}" == "1" -a ! -z "${M}" ] ; then
                 make clean
         fi
-        echo "make -j 3 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} M=${M}  ${TARGET}"
-        make -j 3 ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" M="${M}"  ${TARGET}
+        echo "make -j 3 V=${V} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} M=${M}  ${TARGET}"
+        make -j 3 V=${V} ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" M="${M}"  ${TARGET}
 }
 
 oldconfig()

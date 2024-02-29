@@ -42,3 +42,4 @@ libpython3-dev
 pybind11-dev
 libevent-dev
 device-tree-compiler
+gcc-10-aarch64-linux-gnu
