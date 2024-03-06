@@ -695,7 +695,8 @@ alias           wget="wget -4"
 alias         telnet="telnet -4"
 alias          pgrep="pgrep -a"
 alias         commit="git commit && git push"
-
+alias            add="git add"
+alias         status="git status"
 #
 # Map a standard tool to an arm directed tool name.
 #
