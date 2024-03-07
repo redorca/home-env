@@ -64,7 +64,6 @@
 !hash-bash.sh
 !install.py
 !instrument
-!ioaire
 !jtag.c
 !jtag.h
 !kfind
