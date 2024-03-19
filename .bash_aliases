@@ -637,6 +637,7 @@ function zee()
 SRCDIR=Projects
 export EDITOR=vim
 export GOPATH=$HOME/${SRCDIR}/GOlang/newt
+export PYTHONPATH=$HOME/.local/bin
 # SSH="ssh -v -C -L 5999:localhost:5990"
 SSH="ssh -Y"
 LOCAL=/.local/
@@ -666,6 +667,7 @@ alias           dirs="dirs -v"
 alias             jo="jobs -l"
 alias           jobs="jobs -l"
 alias           home="pushd ~${LOCAL} >/dev/null && dirs -v"
+alias            Doc="pushd ~${LOCAL}/Documents >/dev/null && dirs -v"
 alias            bin="pushd ~${LOCAL}bin >/dev/null && dirs -v"
 alias             vi="vim_x"
 alias         valias="vim ~${LOCAL}.bash_aliases"
@@ -692,7 +694,9 @@ alias           ping="ping -4"
 alias           wget="wget -4"
 alias         telnet="telnet -4"
 alias          pgrep="pgrep -ia"
-
+alias         commit="git commit && git push"
+alias            add="git add"
+alias         status="git status"
 #
 # Map a standard tool to an arm directed tool name.
 #

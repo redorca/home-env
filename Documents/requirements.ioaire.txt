@@ -1,0 +1,17 @@
+iw
+pahole
+meshio-tools
+meshlab
+meshsdfilter-tools
+batctl
+batmand
+cloudcompare
+python3-meshio
+libnss-myhostname
+libnss-mdns
+avahi-utils
+apt-transport-https
+inetutils-traceroute
+net-tools
+iperf
+wireless-tools

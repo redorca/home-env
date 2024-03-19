@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+
+PACKAGE = newracom-evk
+VERSION = 1.5.nrc7292
+BUILD_DIR=${PACKAGE}-${VERSION}
+SERVICES = newracom.servvice
+RM = rm -f
+clean:
+	@dh_clean
+	@${RM} ../*.deb ../*.buildinfo ../*.changlogs
+
+build::
+	@mkdir -p debian/${PACKAGE}
+	@cp -a boot/ lib/ usr/ debian/${PACKAGE}
+binary:
+	dh_installdeb
+	dh_gencontrol
+	dh_builddeb
+	dh_fixperms

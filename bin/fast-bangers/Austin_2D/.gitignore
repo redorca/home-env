@@ -1,0 +1,5 @@
+*
+!/.gitignore
+!fast_api.h
+!jtag.c
+!jtag.h

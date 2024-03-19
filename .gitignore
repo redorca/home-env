@@ -60,14 +60,11 @@ dkms.conf
 *.orig
 *.rej
 *.dep
-Downloads/
-Documents/
+!Downloads/
+!Documents/
 Music/
 Packages/
 usr/
-# bin/
-!bin/.gitignore
-!.gdbinit
 examples.desktop
 gerrit/
 zglue-bill/
@@ -75,7 +72,6 @@ git-repo/
 pkgs.list.centos
 src/
 workspace/
-home-env/bin
 
 # bin files not to be tracked
 astyle
@@ -110,15 +106,12 @@ git-hub/
 warnings/
 Pictures/
 scripts/
-Downloads/
 Desktop/
 Videos
 /.vim/.netrwhist
 klone
 /firefox
 /share
-/Downloads
-/bin/home-env
 /snap
 /work
 *.gz
@@ -131,7 +124,6 @@ klone
 *.deb
 .gnupg/
 autorun/
-/Documents
 /.vim
 /Qt
 GTAGS
@@ -150,3 +142,4 @@ www.*
 PycharmProjects/
 state/
 include/
+!bin/

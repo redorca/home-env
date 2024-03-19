@@ -5,6 +5,7 @@ ARCH=arm64
 CROSS_COMPILE=aarch64-linux-gnu-
 TARGET="Image modules dtbs"
 KERNEL=kernel8
+V=0
 
 dump()
 {
@@ -14,6 +15,12 @@ dump()
         echo -e "\tTarget:\t${TARGET}"
         echo -e "\tKDIR:\t${KDIR}"
         [ ! -z "${M}" ] && echo -e "\tM:\t${M}"
+}
+
+verify()
+{
+        [ -n "${ARCH}" ] && [ -n "${CROSS_COMPILE}" ] && [ -n "${TARGET}" ] && return 0
+        return 1
 }
 
 while [ $# -ne 0 ] ; do
@@ -45,14 +52,19 @@ while [ $# -ne 0 ] ; do
         shift
 done
 
+if ! verify ; then
+        echo "Missing an arg: ARCH? <${ARCH}>, CROSS_COMPILE? <${CROSS_COMPILE}>, TARGET? <${TARGET}>" >&2
+        exit 1
+fi
+
 build()
 {
         [ ! -z "${M}" ] && Target=""
         if [ "${CLEAN}" == "1" -a ! -z "${M}" ] ; then
                 make clean
         fi
-        echo "make -j 3 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} M=${M}  ${TARGET}"
-        make -j 3 ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" M="${M}"  ${TARGET}
+        echo "make -j 3 V=${V} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} M=${M}  ${TARGET}"
+        make -j 3 V=${V} ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" M="${M}"  ${TARGET}
 }
 
 oldconfig()

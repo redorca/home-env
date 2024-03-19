@@ -49,6 +49,16 @@ def relocate(root):
     os.chdir(root)
     return before
 
+def gen_ssh_keys():
+    '''
+        create ssh keys
+    '''
+    prefix = os.getenv('HOME')
+    filename = '/'.join([prefix, '.ssh', 'id_ed25519'])
+    cmd = [ "ssh-keygen", "-t", "ed25519", "-N", "''", '-f', filename]
+    subp.run(cmd, **fra.RunProcDefaults)
+
+
 def setup_git():
     '''
         "Symlink bin/home-env/.git to .local/.git and checkout files"
@@ -57,15 +67,15 @@ def setup_git():
     GITCONF_EMAIL = 'uberfoot@yahoo.com'
     try:
         symlink(fra.GIT_DIR, ".git", True)
-        subp.run(["git", "checkout", "."], check=True)
-        config_name = subp.run(["git", "config", "user.name", GITCONF_NAME], capture_output=True, check=True)
+        subp.run(["git", "checkout", "."], **fra.RunProcDefaults)
+        config_name = subp.run(["git", "config", "user.name", GITCONF_NAME], **fra.RunProcDefaults)
         if config_name.stdout is None:
             print("Set user.name: ", GITCONF_NAME)
-            subp.run(["git", "config", "--global", "user.name", GITCONF_NAME], check=True)
-        config_name = subp.run(["git", "config", "user.email", GITCONF_NAME], capture_output=True, check=True)
+            subp.run(["git", "config", "--global", "user.name", GITCONF_NAME], **fra.RunProcDefaults)
+        config_name = subp.run(["git", "config", "user.email", GITCONF_NAME], **fra.RunProcDefaults)
         if config_name.stdout is None:
             print("Set user.email: ", GITCONF_EMAIL)
-            subp.run(["git", "config", "--global", "user.email", GITCONF_EMAIL], check=True)
+            subp.run(["git", "config", "--global", "user.email", GITCONF_EMAIL], **fra.RunProcDefaults)
     except OSError as ose:
         print(ose)
 
@@ -73,8 +83,8 @@ def setup_sudo():
     SUDOERS_DIR='/etc/sudoers.d/'
     with open(os.getenv('USER'), "w") as ff:
         ff.write(f"{os.getenv('USER')} ALL=(ALL:ALL) NOPASSWD: ALL\n")
-    subp.run(["sudo", "cp", os.getenv('USER'), SUDOERS_DIR])
-    subp.run(["rm", os.getenv('USER')])
+    subp.run(["sudo", "cp", os.getenv('USER'), SUDOERS_DIR], **fra.RunProcDefaults)
+    subp.run(["rm", os.getenv('USER')], **fra.RunProcDefaults)
 
     return
 

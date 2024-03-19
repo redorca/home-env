@@ -1,0 +1,342 @@
+commit 76f6d1367851cbb21164e24013cc44d28e4c753d
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Feb 5 22:10:58 2024 -0800
+
+     remove *.deb for "make clean"
+
+notes/Makefile
+
+commit 5c3222bd19775ac509280f7218a9dae1d84e2792
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Feb 5 22:01:46 2024 -0800
+
+     To avoid colliding with the avahi package
+
+notes/etc/avahi/avahi-daemon.conf
+notes/etc/avahi/my-daemon.conf
+
+commit c381dc31f44895a614b7342986279b4925b7f233
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Feb 5 21:59:07 2024 -0800
+
+     Add to file set for deb packaging
+
+notes/.gitignore
+
+commit d2889d57e5fdbbbde059dbd9fcb401f453206f83
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Feb 5 21:40:09 2024 -0800
+
+     Create debian packaging tree including source
+
+notes/Makefile
+notes/debian/control
+
+commit 553df04bf61cfae82b5a35ab7dd52252ea43caff
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Mon Feb 5 21:21:58 2024 -0800
+
+      Structure to create a deb package file of this
+
+notes/.gitignore
+notes/debian/.gitignore
+notes/debian/changelog
+notes/debian/control
+notes/debian/copyright
+notes/debian/files
+notes/debian/ioaire.substvars
+notes/debian/rules
+
+commit 059effccf4afee2b8ff6bc3897b30eb138f885b2
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Feb 2 18:27:19 2024 -0800
+
+     Localise edit permissions for nmconnections
+
+notes/.gitignore
+notes/etc/NetworkManager/system-connections/.gitignore
+
+commit 467b2b93c967b13d4bddbacc406027941944984d
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Feb 2 18:26:40 2024 -0800
+
+     Define a profile to disable enp0s3
+
+notes/etc/NetworkManager/system-connections/41-enp0s3-disabled.nmconnection
+
+commit 7cb5cd71c6f7e9ad1a4a5a0e6732c1133d4b2bf9
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Feb 2 18:23:30 2024 -0800
+
+     Provide an identity (name) for the interfaces
+
+notes/etc/NetworkManager/system-connections/40-enp0s3.nmconnection
+notes/etc/NetworkManager/system-connections/44-enp0s8.nmconnection
+
+commit a394a2fadd06ef30c7d62247301db82b2e29ef4d
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Feb 2 17:52:17 2024 -0800
+
+     Enable action on nsswitch.conf
+
+notes/etc/.gitignore
+
+commit f119fe0d1cdb4783886dc2755a3c1fae82b349c3
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Fri Feb 2 17:41:48 2024 -0800
+
+      Allow avahi/services commits, + gateway service
+
+notes/etc/avahi/.gitignore
+notes/etc/avahi/services/.gitignore
+notes/etc/avahi/services/gateway.service
+
+commit f05c60a02f46a7285625202925b8d8e20adc4fe1
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Feb 1 19:54:24 2024 -0800
+
+    On Ubuntu mantic interface-name=, not match-device
+
+notes/etc/NetworkManager/system-connections/40-enp0s3.nmconnection
+
+commit 7772de85e27274ad9464a4381a783a408628e450
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Feb 1 16:56:48 2024 -0800
+
+     match-device didn't work, interface-name did
+
+notes/etc/NetworkManager/system-connections/44-enp0s8.nmconnection
+
+commit fbdae51f06846bc001851dfd35a9e79cddb597f7
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Feb 1 16:28:37 2024 -0800
+
+     Disable ipv6, add uuid=
+
+notes/etc/NetworkManager/system-connections/40-enp0s3.nmconnection
+notes/etc/NetworkManager/system-connections/44-enp0s8.nmconnection
+
+commit a1e2723e8c37b6f488516dc9f676bf3e57c2d143
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Feb 1 16:23:06 2024 -0800
+
+     move to relative final location
+
+notes/etc/NetworkManager/system-connections/40-enp0s3.nmconnection
+notes/etc/NetworkManager/system-connections/44-enp0s8.nmconnection
+
+commit c2cbc0a7cb3e4480438268c3329a1fce706aad74
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Feb 1 16:20:30 2024 -0800
+
+     remove pyenv.cfg. Not a file to track
+
+.gitignore
+
+commit 72f830e35f3097cb86adf5168e11c169f97251b6
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Feb 1 16:19:19 2024 -0800
+
+     Setup with inverted logic
+
+.gitignore
+
+commit f4b077f134b33074889b0da97b5914c6a20ac353
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Feb 1 16:07:50 2024 -0800
+
+     Tools to manage the v4l video
+
+notes/requirements.dpkg
+
+commit 989a01bfd523d27dc3b7bfd3754288815a35c012
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Feb 1 16:05:06 2024 -0800
+
+     connection profiles for NetworkManager
+    
+     Each file defines a connection profile for each interface.
+     One profile sets the ip address to a link-local address
+     The other profile sets dhcp active on the remaining interface.
+    
+     Once one interface connection profile exists then every other
+     interface appears to need their own profile so NM will configure it.
+
+.gitignore
+notes/.gitignore
+notes/40-enp0s3.nmconnection
+notes/44-enp0s8.nmconnection
+
+==== 2
+commit 49c2d819b0aa2331314fe21d0abccd43572e929a
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Jan 25 00:24:48 2024 -0800
+
+     Figure out ignores so can use inverted logic
+
+notes/.gitignore
+notes/etc/.gitignore
+notes/etc/NetworkManager/.gitignore
+notes/etc/avahi/.gitignore
+notes/lib/.gitignore
+notes/lib/systemd/.gitignore
+notes/lib/systemd/system/.gitignore
+notes/lib/systemd/system/avahi-daemon.service
+
+==== 1
+commit de12e7c934cde5ac9d552b0b862472578301de6c
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 15:44:54 2024 -0800
+
+     Use this name for config, add '-f' to ExecStart
+
+notes/etc/.gitignore
+notes/etc/avahi/my-daemon.conf
+
+commit e0c2a1c037832df76b0cc5d7e133641ae38882ac
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 15:36:34 2024 -0800
+
+      nsswitch file ordering myhostname before dns
+
+notes/.gitignore
+notes/etc/nsswitch.conf
+
+==== 1.5
+commit cc30847f621eb66b1d4dbf42caef59f74c25f30e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 12:20:38 2024 -0800
+
+     Place in final location relative to root
+
+notes/etc/avahi/avahi-daemon.conf
+notes/etc/nsswitch.conf
+
+commit 6a23a9ca2a45a2d6bd5074a38385fd0537a74718
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 12:07:05 2024 -0800
+
+     Comment on avahi-daemon.conf: no ipv6 output
+
+notes/stuff.txt
+
+commit cac284e1c44f0c4b297128907f0cb559dfbcfbb0
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 12:04:28 2024 -0800
+
+     Turn off ipv6 processing for avahi-daemon
+
+notes/.gitignore
+notes/avahi-daemon.conf
+
+commit f9e89fcf8aa57bcaed8e4b52190016f486d9a137
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 11:59:18 2024 -0800
+
+     add gitignore file (inverted ignores), nss files
+
+notes/.gitignore
+notes/nsswitch.conf
+scripts/ip-report.py
+
+commit 4b1b009c594a5c4639750e7c2c66fa5260195c00
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 24 11:51:12 2024 -0800
+
+     More complete set of needed packages
+
+notes/requirements.dpkg
+
+==== 1
+commit 3df29b58b451d2fad19be57ecbca9290bfd37ea2
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 14:26:16 2024 -0800
+
+      new func: set_hostname
+
+scripts/first-boot.py
+
+==== 1
+commit 95d09123a476fd341be9b1f6a92e72e8dbd97d96
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 11:06:34 2024 -0800
+
+      set [ipv4]method=link-local
+
+notes/etc/NetworkManager/system-connections/Wired connection 1.nmconnection
+
+commit 238e946cbb2e32f868647b287eb5dbba940d1a6e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Jan 3 10:57:21 2024 -0800
+
+      File to use for iface properties e.g. linklocal
+
+notes/etc/NetworkManager/system-connections/Wired connection 1.nmconnection
+
+==== 1
+commit b7ecb7f36641ec1edd8bf233e8686bb69e03e07e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Jan 2 14:52:03 2024 -0800
+
+     Three more rivers
+
+notes/hostnames-rivers.dictionary
+
+commit 72c8b594f1dc08dff7829dc64822f051f620e86d
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Jan 2 14:49:09 2024 -0800
+
+     Set the hostname via hostnamectl. Untested.
+
+scripts/first-boot.py
+
+==== 1
+commit 1e0aeaea13046fbe79f752c42762224f37821b48
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Dec 21 09:43:17 2023 -0800
+
+      print the descriptive text without parens
+
+scripts/first-boot.py
+
+commit 204f9e675af6fadf4be70579239f150eb0fab0d5
+Merge: da8b7af 010ff37
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Dec 21 09:28:52 2023 -0800
+
+    Merge branch 'bill-0' of github.com:mclendon99/sx-newah into bill-0
+
+commit da8b7af4b87de57e1f874ef42da4807f8f8ee369
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Thu Dec 21 09:28:21 2023 -0800
+
+     Add batmand, iw, and wireless-tools
+
+notes/requirements.dpkg
+
+==== 1
+commit 010ff37658debc32d6cb1bdd57f42bbbd069d659
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 23:07:13 2023 -0800
+
+      Push code into a function
+
+scripts/first-boot.py
+
+==== 1
+commit bb77257fe036967fb08e911b3cfe77db759d5592
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Wed Dec 20 18:06:57 2023 -0800
+
+     A script to personalize a node upon first boot
+
+scripts/first-boot.py
+
+==== 1
+commit 9a1b1eba9136677aaf13f1386ea4e303f3191b2e
+Author: Bill Rees <uberfoot@yahoo.com>
+Date:   Tue Dec 19 11:26:42 2023 -0800
+
+     pattern match rivers hostnames filename
+
+notes/hostnames-indigenous.dictionary

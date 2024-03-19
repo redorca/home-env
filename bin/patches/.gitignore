@@ -1,0 +1,10 @@
+!/.gitignore
+!0001-Bring-Nordic-Random-Number-Generator-online.patch
+!0001-Nordic-NRF52-RNG-stuff.patch
+!0002-Merging-Noric-NuttX-behaviors.patch
+!0003-Fixup-defconfig-disable-rng-feature.-Now-builds.patch
+!0004-Update-C-Make.defs-fix-make-buffer-overrun.patch
+!0005-Import-the-base-Nordic-driver-for-rng.patch
+!patch.2577++
+!patch.nuttx
+!patch.nuttx_apps

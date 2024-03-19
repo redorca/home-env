@@ -1,0 +1,4 @@
+*
+!/.gitignore
+!capabilities.service
+!if.c

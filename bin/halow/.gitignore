@@ -1,0 +1,15 @@
+
+*
+
+!__init__.py
+!/.gitignore
+!hostname.py
+!ipaddr.py
+!names.py
+!network.py
+!services.py
+!IoAire-halow.service
+!IoAire-halow.sockets
+!daemon/
+!zero.py
+!gateway-chk.py

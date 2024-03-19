@@ -1,0 +1,12 @@
+[Unit]
+Description= Meta data provider of system details like version of v4l, mesh stats, wifi stats, and anything else needed
+#Documentation="None available yet"
+
+[Service]
+ExecStart=/usr/bin/python3.11 /usr/bin/halow/daemon/IoAire-daemon.py
+User=ioaire
+Group=ioaire
+
+[Install]
+WantedBy=multi-user.target
+
