@@ -1048,7 +1048,7 @@ function vim_x()
         local CMD=
 
 	xFile="$1"
-	CMD="/bin/vim $@"
+	CMD="/bin/vim \"$@\""
         eval $CMD
 }
 
