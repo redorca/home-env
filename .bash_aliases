@@ -702,13 +702,21 @@ alias           track=x_track
 # alias           track="echo '!' >>.gitignore'
 function x_track()
 {
-        if [ $# -ne 1 ] ; then
+        if [ $# -eq 0 ] ; then
                 return 1
         fi
-        if [ ! -f "$1" ] ; then
-                return 1
-        fi
-        echo '!'"$1"  >> .gitignore
+        for file in $@ ; do
+                if [ ! -f "${file}" ] && [ ! -d "${file}" ] ; then
+                        shift
+                        continue
+                fi
+                if [ -d "$file" ] ; then
+                        file="${file}/"
+                        echo "directory: file is set to ${file}" >&2
+                fi
+                echo '!'"${file}"  >> .gitignore
+                shift
+        done
 }
 
 #
