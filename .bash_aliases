@@ -697,6 +697,20 @@ alias          pgrep="pgrep -ia"
 alias         commit="git commit && git push"
 alias            add="git add"
 alias         status="git status"
+alias           track=x_track
+
+# alias           track="echo '!' >>.gitignore'
+function x_track()
+{
+        if [ $# -ne 1 ] ; then
+                return 1
+        fi
+        if [ ! -f "$1" ] ; then
+                return 1
+        fi
+        echo '!'"$1"  >> .gitignore
+}
+
 #
 # Map a standard tool to an arm directed tool name.
 #
