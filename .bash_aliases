@@ -326,7 +326,7 @@ function enter-any-venv()
         source bin/activate
         # export CONNECTION="ssh -p 7997 -L 127.0.0.1:5901:127.0.0.1:5921 mark@btchfpaper.rockyahoo.com"
         # export TARGET="127.0.0.1:5901"
-        export PYTHONPATH=.
+        export PYTHONPATH=.:$(pwd)
 
         return 0
 }
