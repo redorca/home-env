@@ -711,7 +711,7 @@ function x_track()
                         continue
                 fi
                 if [ -d "$file" ] ; then
-                        file="${file}/"
+                        file="${file%/}/"
                         echo "directory: file is set to ${file}" >&2
                 fi
                 echo '!'"${file}"  >> .gitignore
