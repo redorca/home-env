@@ -1,3 +1,7 @@
-!/.gitignore
-!net.downloadhelper.coapp-1.6.3-1_amd64.deb
 !splat/
+!.gitignore
+!net.downloadhelper.coapp-1.6.3-1_amd64.deb
+!splat/.gitignore
+!splat/code_1.69.2-1658162013_amd64.1of3.deb
+!splat/code_1.69.2-1658162013_amd64.2of3.deb
+!splat/code_1.69.2-1658162013_amd64.3of3.deb

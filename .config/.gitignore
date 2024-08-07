@@ -1,0 +1,5 @@
+!.gitignore
+!autostart/display.py.desktop
+!git/ignore
+!github/personal-access-tokens
+!lintian/.lintianrc

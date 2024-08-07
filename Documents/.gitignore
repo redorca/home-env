@@ -1,4 +1,3 @@
-*
 !/.gitignore
 !add-disk
 !avahi/
@@ -30,3 +29,5 @@
 !leet.c
 !log.history.*
 !bookmarks.html
+!Documents/avahi/.gitignore
+!Documents/avahi/capabilities.service

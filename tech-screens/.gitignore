@@ -1,3 +1,4 @@
-evens
-*.o
-core
+!.gitignore
+!Makefile
+!evens.c
+!tests.py

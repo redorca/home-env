@@ -6,3 +6,7 @@
 !source/
 !rules
 !README*
+!.gitignore
+!Makefile.gcc-arm-none-eabi
+!README.Debian
+!README.source
