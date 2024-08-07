@@ -1,14 +1,11 @@
-*
+!.gitignore
 !changelog
 !control
 !compat
 !copyright
 !README.*
 !Makefile*
-!.gitignore
 !rules
+!nuttx-docs.docs
+!source/format
 !source/
-!*.links
-!*.docs
-!*.doc-base
-

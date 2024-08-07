@@ -1,4 +1,3 @@
-*
 !changelog
 !control
 !compat
@@ -11,4 +10,5 @@
 !*.links
 !*.docs
 !*.doc-base
-
+!nuttx-style/DEBIAN/control
+!nuttx-style/DEBIAN/md5sums
