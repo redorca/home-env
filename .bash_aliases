@@ -698,6 +698,7 @@ alias         commit="git commit && git push"
 alias            add="git add"
 alias         status="git status"
 alias           track=x_track
+alias            lora="cd ~/Loraline/loraline && bash"
 
 # alias           track="echo '!' >>.gitignore'
 function x_track()
