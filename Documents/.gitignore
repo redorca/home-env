@@ -1,6 +1,5 @@
-!/.gitignore
+!.gitignore
 !add-disk
-!avahi/
 !bills_interface_guidelines.txt
 !blueshieldca
 !clones.txt
@@ -9,7 +8,6 @@
 !config.gpgconf
 !dconf.Tilix
 !dconf.terminal
-!foo.txt
 !furious.dev
 !hostnames.dictionary
 !list.repos.txt
@@ -27,7 +25,7 @@
 !nsswitch.conf
 !requirements.deb.txt
 !leet.c
-!log.history.*
+!log.history.ioaire
+!log.history.sx-newah
 !bookmarks.html
-!Documents/avahi/.gitignore
-!Documents/avahi/capabilities.service
+!avahi/

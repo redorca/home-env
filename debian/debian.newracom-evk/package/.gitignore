@@ -1,2 +1,11 @@
+!.gitignore
 !Makefile
 !debian/
+!package/
+!package/debian/.gitignore
+!package/debian/changelog
+!package/debian/control
+!package/debian/copyright
+!package/debian/newracom-evk.postinst
+!package/debian/newracom-evk.prerm
+!package/debian/rules
