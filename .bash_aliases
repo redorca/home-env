@@ -1070,10 +1070,8 @@ function set-os-personality()
 function vim_x()
 {
 	[ $# -eq 0 ] && return 1
-	local xFile=
         local CMD=
 
-	xFile="$1"
 	CMD='/bin/vim "$@"'
         eval $CMD
 }
