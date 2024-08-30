@@ -702,7 +702,8 @@ alias           push="git push"
 alias          stash="git stash"
 alias         status="git status"
 alias           track=x_track
-alias            lora="cd ~/Loraline/loraline && bash"
+alias            lora="pushd ~/Loraline/loraline >/dev/null 2>&1 && bash"
+# alias            lora="cd ~/Loraline/loraline && bash"
 
 # alias           track="echo '!' >>.gitignore'
 function x_track()
