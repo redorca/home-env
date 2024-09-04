@@ -703,6 +703,8 @@ alias          stash="git stash"
 alias         status="git status"
 alias           track=x_track
 alias            lora="pushd ~/Loraline/loraline >/dev/null 2>&1 && bash"
+alias          target="export TARGET_USER=$USER"
+alias           tpass="target_pass"
 # alias            lora="cd ~/Loraline/loraline && bash"
 
 # alias           track="echo '!' >>.gitignore'
@@ -1097,19 +1099,6 @@ function xoo()
         fi
 }
 
-function crul()
-{
-	local Base=
-	local Proto=
-	local repo=
-
-	repo="${1%%.git}.git"
-	Base=endogiteng01.strykercorp.com:7999/e_ccu
-	Proto=ssh://git@
-
-	echo ${Proto}${Base}/${repo}
-}
-
 function clone()
 {
 	local Repo=
@@ -1119,9 +1108,10 @@ function clone()
 	git clone $(crul $Repo)
 }
 
-function pygrep()
+function target_pass()
 {
-        grep $@ *.py
+        [ $# -eq 0 ] && echo "$TARGET_PASS" >&2
+        [ $# -gt 0 ] && export TARGET_PASS="$1"
 }
 
 FOCUS=
