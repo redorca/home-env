@@ -2,6 +2,5 @@
 	rebase = false
 [user]
 	name = Bill Rees
-	email = uberfoot@yahoo.com
 [init]
 	defaultBranch = primary
