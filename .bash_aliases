@@ -874,7 +874,7 @@ function branch()
 
         ! gitchk && echo -n -e "$(invert BLACK)===${RESET}" && return
 
-        TMP="$(git branch | sed -e '/^ /d' -e 's/^.*  *//')" 2>/dev/null
+        TMP="$(git branch --show-current)" 2>/dev/null
         if [ "$Length" -gt 0 ] && [ "${#TMP}" -gt "$Length" ] ; then
                 TMP=$(echo "${TMP: -$Length}")
         fi
@@ -1067,7 +1067,8 @@ function set-os-personality()
                 alias fgrep='fgrep --color=auto'
                 alias ls='ls -F --color=auto'
                 echo "Set prompt for Redhat sys-arch"
-                PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
+                PS1='$(venv_prompt)--$(branch 21)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;33m\]\w\[\033[00m\]\n:: '
+                # PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
         fi
 }
 

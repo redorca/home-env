@@ -1,7 +1,7 @@
 #!/bin/bash
 
 HEADER=1
-source ~/bin/colors
+# source ~/bin/colors
 
 declare -a attributes
 
@@ -20,28 +20,33 @@ attributes=( "standard" "bold" "tone" "italics" "underline" "<??>" "6" "invert f
 
 # ($i, $j, $k),
 i=6
-j=2
-k=5
+j=0
+k=3
+RESET='\033]m'
+RESET=
 COLOR="\033[${i};3${j};4${k}m"
-echo -e "${COLOR}one two three${RESET}"
+# echo -e "${COLOR}one two three${RESET}"
 
 for i in 0 1 2 3 4 5 6 7 8 9; do
         echo "== [$i] :: ${attributes[$i]}"
         for j in 0 1 2 3 4 5 6 7 ; do
                 [ "$HEADER" -eq 1 ] && for k in 0 1 2 3 4 5 6 7 8 9 ; do
-                        echo -e -n "         $k  "
+                        echo -e -n "     $k  "
                 done
                 echo -e -n "\n$j: "
                 HEADER=0
-                for k in 0 1 2 3 4 5 6 7 8 9 ; do
-                        echo -e -n "\033[${i};3${j};4${k}m E Pluribus${RESET} "
+                for k in 0 1 2 3 4 5 6 7 8 ; do
+                        echo -e -n "\033[${i};3${j};4${k}mE Pluri${RESET}"
+                        echo -e -n " "
                 done
-                echo -n "::"
+                k=9 
+                echo -e -n "\033[${i};3${j};4${k}mE Pluri${RESET} ::"
                 sleep 1
         done
         HEADER=1
         echo ""
         echo ""
+        exit
         sleep 1
 done
 
