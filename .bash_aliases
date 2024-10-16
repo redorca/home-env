@@ -669,7 +669,7 @@ alias           jobs="jobs -l"
 alias           home="pushd ~${LOCAL} >/dev/null && dirs -v"
 alias            Doc="pushd ~${LOCAL}/Documents >/dev/null && dirs -v"
 alias            bin="pushd ~${LOCAL}bin >/dev/null && dirs -v"
-alias             vi="vim_x"
+alias             vi="vim_t"
 alias         valias="vim ~${LOCAL}.bash_aliases"
 alias           mods="git status | grep modified:"
 alias          shlvl='echo "Shell Depth:   $SHLVL"'
@@ -1072,12 +1072,27 @@ function set-os-personality()
         fi
 }
 
+function vim_t()
+{
+	if [ "$1" == "-t" ] ; then
+		shift
+		pushd $(git rev-parse --show-toplevel) >/dev/null
+		vim_x -t $@
+		popd >/dev/null
+		return
+	fi
+	vim_x $@
+}
+
 function vim_x()
 {
 	[ $# -eq 0 ] && return 1
         local CMD=
 
-	CMD='/bin/vim "$@"'
+	CMD="/bin/vim $@"
+	if [ $# -eq 2 ] ; then
+		CMD="/bin/vim $1 $2"
+	fi
         eval $CMD
 }
 
