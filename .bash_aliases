@@ -708,6 +708,9 @@ alias           tpass="target_pass"
 # alias            lora="cd ~/Loraline/loraline && bash"
 
 # alias           track="echo '!' >>.gitignore'
+alias cmk="cmake --log-level=VERBOSE -D KERNELVERS:STRING=5.14.0-362.24.1.el9_3.0.1.x86_64"
+alias mk="make  KERNELVERS=5.14.0-362.24.1.el9_3.0.1.x86_64"
+
 function x_track()
 {
         if [ $# -eq 0 ] ; then

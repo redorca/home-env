@@ -1,0 +1,32 @@
+#!/bin/bash
+
+LOGSPATH=/var/log/pacbio
+LOGDIRS="wx-daemon basecaller pa-wsgo"
+
+for dir in $LOGDIRS ; do
+	LOGFILE=$(ls ${LOGSPATH}/${dir} | tail -1)
+	if [ "$dir" == "wx-daemon" ] ; then
+		DATE=$(head -1 ${LOGSPATH}/wx-daemon/$LOGFILE | awk '{print $2}')
+		SINCE=$(head -1 ${LOGSPATH}/wx-daemon/$LOGFILE | awk '{print $3}' | awk -F':' '{print $1":"$2}')
+	fi
+	logs="${logs} ${LOGFILE}"
+	cp ${LOGSPATH}/${dir}/${LOGFILE} /tmp
+done
+
+STAMP=$(echo $SINCE | sed -e 's/://g')
+
+XCITER_LOG_FILE="${DATE}_${STAMP}.xciter.log"
+logs="$logs $XCITER_LOG_FILE"
+
+sudo journalctl -a -b -x -g xciter -S "$SINCE" > /tmp/${XCITER_LOG_FILE}
+
+TARDATE=$(echo $SINCE | sed -e 's/ /_/g' -e 's/://')
+TARFILE="${HOME}/logs.${DATE}_${TARDATE}.tgz"
+
+cd /tmp
+if [ -f e2e-test.log ] ; then
+	logs="$logs e2e-test.log"
+fi
+echo $TARFILE
+tar -czf $TARFILE $logs
+rm $logs
