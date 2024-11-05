@@ -2,6 +2,13 @@
 
 LOGSPATH=/var/log/pacbio
 LOGDIRS="wx-daemon basecaller pa-wsgo"
+WX_DAEMON="pacbio-pa-wx-daemon@SOFTLOOP"
+
+if pgrep -a wx >/dev/null 2>&1 ; then
+	sudo systemctl stop ${WX_DAEMON}
+else
+	echo "${WX_DAEMON} not running." >& 2
+fi
 
 for dir in $LOGDIRS ; do
 	LOGFILE=$(ls ${LOGSPATH}/${dir} | tail -1)

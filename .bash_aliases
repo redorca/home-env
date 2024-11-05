@@ -695,6 +695,7 @@ alias         telnet="telnet -4"
 alias          pgrep="pgrep -ia"
 alias         status="git status | sed -n -e '1,/^Untracked/p'"
 alias         commit="git commit && git push"
+alias         branch="git branch"
 alias            add="git add"
 alias            cho="git checkout"
 alias           pull="git pull"
@@ -864,7 +865,7 @@ function foo_git()
         popd >/dev/null
 }
 
-function branch()
+function this_branch()
 {
         local Length=
         local TMP=
@@ -1058,7 +1059,7 @@ function set-os-personality()
         if which apt-get >/dev/null 2>&1 ; then
                 unalias ls && alias ls='ls -F --color=auto'
                 echo "Set prompt for Debian sys-arch"
-                PS1='$(venv_prompt)${debian_chroot:+($debian_chroot)}$(branch 21)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;33m\]\w\[\033[00m\]\n:: '
+                PS1='$(venv_prompt)${debian_chroot:+($debian_chroot)}$(this_branch 21)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;33m\]\w\[\033[00m\]\n:: '
         else
                 # disable gnome-ssh-askpass
                 unset SSH_ASKPASS
@@ -1070,7 +1071,7 @@ function set-os-personality()
                 alias fgrep='fgrep --color=auto'
                 alias ls='ls -F --color=auto'
                 echo "Set prompt for Redhat sys-arch"
-                PS1='$(venv_prompt)--$(branch 21)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;33m\]\w\[\033[00m\]\n:: '
+                PS1='$(venv_prompt)--$(this_branch 21)@$(repo)::$(foo)\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;33m\]\w\[\033[00m\]\n:: '
                 # PS1='\[\033[03;36m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n:: '
         fi
 }
