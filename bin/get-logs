@@ -4,36 +4,116 @@ LOGSPATH=/var/log/pacbio
 LOGDIRS="wx-daemon basecaller pa-wsgo"
 WX_DAEMON="pacbio-pa-wx-daemon@SOFTLOOP"
 
-if pgrep -a wx >/dev/null 2>&1 ; then
-	sudo systemctl stop ${WX_DAEMON}
-else
-	echo "${WX_DAEMON} not running." >& 2
-fi
+stop_daemon()
+{
+	local err=
 
-for dir in $LOGDIRS ; do
-	LOGFILE=$(ls ${LOGSPATH}/${dir} | tail -1)
-	if [ "$dir" == "wx-daemon" ] ; then
-		DATE=$(head -1 ${LOGSPATH}/wx-daemon/$LOGFILE | awk '{print $2}')
-		SINCE=$(head -1 ${LOGSPATH}/wx-daemon/$LOGFILE | awk '{print $3}' | awk -F':' '{print $1":"$2}')
+	err=0
+	if pgrep -a wx >/dev/null 2>&1 ; then
+		sudo systemctl stop ${WX_DAEMON}
+		err=$?
+	else
+		echo "${WX_DAEMON} not running." >& 2
 	fi
-	logs="${logs} ${LOGFILE}"
-	cp ${LOGSPATH}/${dir}/${LOGFILE} /tmp
-done
+	return $err
+}
 
-STAMP=$(echo $SINCE | sed -e 's/://g')
+copy_logs()
+{
+	local dir=
+	local LOGFILE=
+	local dest=
 
-XCITER_LOG_FILE="${DATE}_${STAMP}.xciter.log"
-logs="$logs $XCITER_LOG_FILE"
+	dest="$1"
+	for dir in $LOGDIRS ; do
+		LOGFILE=$(ls ${LOGSPATH}/${dir} | tail -1)
+		echo "${LOGFILE}"
+		cp ${LOGSPATH}/${dir}/${LOGFILE} ${dest}
+	done
+}
 
-sudo journalctl -a -b -x -g xciter -S "$SINCE" > /tmp/${XCITER_LOG_FILE}
+#
+# Figure out a date stamp
+#
+set_datestamp()
+{
+	local LOGFILE=
+	local dir=
 
-TARDATE=$(echo $SINCE | sed -e 's/ /_/g' -e 's/://')
-TARFILE="${HOME}/logs.${DATE}_${TARDATE}.tgz"
+	dir=wx-daemon
+	LOGFILE=$(ls ${LOGSPATH}/${dir} | tail -1)
+	head -1 ${LOGSPATH}/wx-daemon/${LOGFILE} | awk '{print $2}'
+}
 
-cd /tmp
-if [ -f e2e-test.log ] ; then
-	logs="$logs e2e-test.log"
-fi
-echo $TARFILE
-tar -czf $TARFILE $logs
-rm $logs
+#
+# Set the starting point for examining the log.
+#
+set_since()
+{
+	local LOGFILE=
+	local dir=
+
+	dir=wx-daemon
+	LOGFILE=$(ls ${LOGSPATH}/${dir}/ | tail -1)
+	head -1 ${LOGSPATH}/wx-daemon/${LOGFILE} | awk '{print $3}' | awk -F':' '{print $1":"$2}'
+}
+
+make_logs()
+{
+	local STAMP=
+	local XCITER_LOG_FILE=
+	local XCINFO_META=
+	local destdir=
+
+	destdir="$1"; shift
+	pushd ${destdir} >/dev/null
+
+	STAMP=$(echo $SSINCE | sed -e 's/://g')
+
+	XCITER_LOG_FILE="${DDATE}_${STAMP}.xciter.log"
+	sudo journalctl -a -b -x -g xciter -S "$SSINCE" > ${XCITER_LOG_FILE}
+	XCINFO_META=xcinfo-V.log
+	xcinfo -V > ${XCINFO_META}
+	popd >/dev/null
+
+	echo "${XCITER_LOG_FILE} ${XCINFO_META}"
+}
+
+archive_logs()
+{
+	local TARDATE=
+	local LOGS_ARCHIVE=
+	local TARFILE=
+	local Files=
+	local logs=
+	local dest=
+
+	dest="$1"; shift
+	logs="$@"
+	TARDATE=$(echo $SSINCE | sed -e 's/ /_/g' -e 's/://')
+	LOGS_ARCHIVE="logs.${DDATE}_${TARDATE}"
+	TARFILE="${HOME}/${LOGS_ARCHIVE}.tgz"
+
+	pushd /tmp >/dev/null
+	if [ -f e2e-test.log ] ; then
+		logs="$logs e2e-test.log"
+	fi
+	# echo $TARFILE
+	# tar -czf $TARFILE $logs
+	cd $(dirname $dest)
+	tar -czf $TARFILE $(basename $dest)
+	popd >/dev/null
+}
+
+
+SSINCE=$(set_since)
+DDATE=$(set_datestamp)
+
+stop_daemon
+TARDATE=$(echo $SSINCE | sed -e 's/ /_/g' -e 's/://')
+DEST="/tmp/logs.${DDATE}_${TARDATE}"
+mkdir -p "${DEST}"
+ALL=$(copy_logs "${DEST}")
+ALL="${ALL} $(make_logs ${DEST})"
+archive_logs ${DEST}
+rm -rf ${DEST}
