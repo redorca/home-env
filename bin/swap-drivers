@@ -1,0 +1,57 @@
+#!/bin/bash
+
+DAEMON="pacbio-pa-wx-daemon"
+RUN_MODE=""
+
+wx-daemon()
+{
+	local action=
+
+	action=$1
+
+	RUN_MODE="$(pgrep -a wx | grep aurora.mode= | awk -F'=' '{print $NF}')"
+	if [ -n "$RUN_MODE" ] ; then
+		RUN_MODE=SOFTLOOP
+	fi
+	sudo systemctl $action ${DAEMON}@${RUN_MODE}
+}
+
+remove_driver()
+{
+	local target=
+
+	target="$1"
+	sudo dnf remove -y "$target"
+}
+
+install_driver()
+{
+	local install_file=
+
+	if [ $# -eq 0 ] ; then
+		return -1
+	fi
+	install_file="$1"
+	sudo rpm -i "$install_file"
+}
+
+if [ ! -f "$1" ] ; then
+	echo "No file to install. Doing nothing"
+	exit 1
+fi
+
+echo "Stop wx-daemon"
+wx-daemon stop
+echo "Verify that the driver is not in use."
+lsmod | grep xciter
+sleep 1
+echo "Remove the xciter-driver"
+remove_driver xciter-driver
+echo "Install the specified driver"
+install_driver $1
+echo "Expose the has information and verify that the driver is as expected"
+xcinfo -V
+sleep 1
+echo "Start the daemon"
+wx-daemon start
+
