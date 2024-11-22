@@ -703,6 +703,8 @@ alias           pull="git pull"
 alias           push="git push"
 alias          stash="git stash"
 alias         status="git status"
+alias        oneline="git log -1 --oneline"
+alias        twoline="git log -2 --oneline"
 alias           track=x_track
 alias            lora="pushd ~/Loraline/loraline >/dev/null 2>&1 && bash"
 alias          target="export TARGET_USER=$USER"

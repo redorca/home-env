@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DAEMON="pacbio-pa-wx-daemon"
-RUN_MODE=""
+RUN_MODE="NORMAL"
 
 wx-daemon()
 {
@@ -9,8 +9,8 @@ wx-daemon()
 
 	action=$1
 
-	RUN_MODE="$(pgrep -a wx | grep aurora.mode= | awk -F'=' '{print $NF}')"
-	if [ -n "$RUN_MODE" ] ; then
+	MODE="$(pgrep -a wx 2>/dev/null | grep aurora.mode= | awk -F'=' '{print $NF}')"
+	if [ -n "$MODE" ] ; then
 		RUN_MODE=SOFTLOOP
 	fi
 	sudo systemctl $action ${DAEMON}@${RUN_MODE}
@@ -49,7 +49,7 @@ echo "Remove the xciter-driver"
 remove_driver xciter-driver
 echo "Install the specified driver"
 install_driver $1
-echo "Expose the has information and verify that the driver is as expected"
+echo "Show the driver's meta data."
 xcinfo -V
 sleep 1
 echo "Start the daemon"
