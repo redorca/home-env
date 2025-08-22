@@ -12,6 +12,11 @@ fixup()
     done
 }
 
+if [ $# -eq 0 ] ; then
+        echo "No target string specified."
+        exit -1
+fi
+
 fixup "$1"
 exit
 
